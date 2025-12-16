@@ -1,6 +1,8 @@
 # Getting Started — AI Golf Coach (iOS v0)
 
-This guide walks you from a new app to a working foundation: import/play videos, show a live camera preview, access frames for analysis, and run Apple's on‑device 2D body pose on throttled frames. It complements the full roadmap in `../ai.plan.md`.
+This guide walks you from a new app to a working foundation: import/play videos, show a live camera preview, access frames for analysis, and run Apple's on‑device 2D body pose on throttled frames. It complements the full roadmap in `ai.plan.md`.
+
+For detailed code implementations, refer to the Swift files in the SwingCoach project.
 
 ## Tooling
 - Use Xcode to create the project, manage signing, run on device/simulator, and use Instruments/Previews.
@@ -26,197 +28,111 @@ Acceptance: Project builds and runs (blank screen).
 ## Step 2 — Scaffold two screens with a tab bar
 Create a simple two‑tab shell: Library (import/play video) and Capture (camera preview).
 
-```swift
-import SwiftUI
+Create an `AppRootView` with a `TabView` containing:
+- LibraryView with "film" icon
+- CaptureView with "camera" icon
 
-struct AppRootView: View {
-    var body: some View {
-        TabView {
-            LibraryView()
-                .tabItem { Label("Library", systemImage: "film") }
-            CaptureView()
-                .tabItem { Label("Capture", systemImage: "camera") }
-        }
-    }
-}
-```
-
-Set `AppRootView()` as the initial content in your `...App.swift`.
+Set `AppRootView()` as the initial content in your `SwingCoachApp.swift`.
 
 Acceptance: Two tabs switch views.
 
 ## Step 3 — Import a video and play it
 Start with import/playback so you have real assets to test later.
 
-```swift
-import SwiftUI
-import PhotosUI
-import AVKit
+Implement `LibraryView` with:
+- `PhotosPicker` for video selection from Photos library
+- `AVPlayer` and `VideoPlayer` for playback
+- Load selected video data and write to temp directory
+- Create AVPlayer instance with video URL
 
-struct LibraryView: View {
-    @State private var item: PhotosPickerItem?
-    @State private var player: AVPlayer?
-
-    var body: some View {
-        VStack {
-            PhotosPicker("Import Video", selection: $item, matching: .videos)
-                .padding()
-            if let player { VideoPlayer(player: player) }
-        }
-        .onChange(of: item) { _, newItem in
-            Task {
-                if let newItem, let data = try? await newItem.loadTransferable(type: Data.self) {
-                    let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
-                        .appendingPathComponent(UUID().uuidString + ".mov")
-                    try? data.write(to: tmp)
-                    player = AVPlayer(url: tmp)
-                }
-            }
-        }
-    }
-}
-```
+Key imports: SwiftUI, PhotosUI, AVKit
 
 Acceptance: You can import a clip from Photos and play it.
 
 ## Step 4 — Live camera preview (no slo‑mo yet)
 Wire `AVCaptureSession` and show a preview.
 
-```swift
-import SwiftUI
-import AVFoundation
+Create `CameraSession` class:
+- Initialize `AVCaptureSession` with `.high` preset
+- Add back camera device as input
+- Start/stop session methods
 
-final class CameraSession: NSObject, ObservableObject {
-    let session = AVCaptureSession()
+Create `CameraPreview` UIViewRepresentable:
+- Wrap `AVCaptureVideoPreviewLayer`
+- Set video gravity to `.resizeAspectFill`
+- Update layer frame on layout changes
 
-    func start() {
-        session.beginConfiguration()
-        session.sessionPreset = .high
-        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-              let input = try? AVCaptureDeviceInput(device: device),
-              session.canAddInput(input) else { session.commitConfiguration(); return }
-        session.addInput(input)
-        session.commitConfiguration()
-        session.startRunning()
-    }
+Wire up in `CaptureView`:
+- Use `@StateObject` for camera session
+- Start session on appear, stop on disappear
 
-    func stop() { session.stopRunning() }
-}
-
-struct CameraPreview: UIViewRepresentable {
-    let session: AVCaptureSession
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView()
-        let layer = AVCaptureVideoPreviewLayer(session: session)
-        layer.videoGravity = .resizeAspectFill
-        layer.frame = view.bounds
-        view.layer.addSublayer(layer)
-        return view
-    }
-    func updateUIView(_ uiView: UIView, context: Context) {
-        (uiView.layer.sublayers?.first as? AVCaptureVideoPreviewLayer)?.frame = uiView.bounds
-    }
-}
-
-struct CaptureView: View {
-    @StateObject private var camera = CameraSession()
-    var body: some View {
-        CameraPreview(session: camera.session)
-            .onAppear { camera.start() }
-            .onDisappear { camera.stop() }
-    }
-}
-```
+Key imports: SwiftUI, AVFoundation
 
 Acceptance: Live camera image renders on device.
 
 ## Step 5 — Enable high‑FPS (slo‑mo) capture
 Most devices support 120 fps at 1080p or 240 fps at 720p. Pick the highest format that meets your target fps.
 
-```swift
-import AVFoundation
+Create a `configureHighFPS` function:
+- Filter device formats by target FPS capability
+- Sort by resolution (highest first)
+- Lock device for configuration
+- Set active format and frame durations
+- Use `CMTime` for precise frame timing
 
-func configureHighFPS(on device: AVCaptureDevice, targetFPS: Double = 120) {
-    guard let best = device.formats
-        .filter { format in
-            format.videoSupportedFrameRateRanges.contains { $0.maxFrameRate >= targetFPS }
-        }
-        .sorted(by: { $0.formatDescription.dimensions.height > $1.formatDescription.dimensions.height })
-        .first else { return }
+Call this function after creating the camera device, before calling `session.commitConfiguration()`.
 
-    do {
-        try device.lockForConfiguration()
-        device.activeFormat = best
-        let duration = CMTime(value: 1, timescale: CMTimeScale(targetFPS))
-        device.activeVideoMinFrameDuration = duration
-        device.activeVideoMaxFrameDuration = duration
-        device.unlockForConfiguration()
-    } catch { }
-}
-```
+Target 120 fps as a good balance between smoothness and device compatibility.
 
-Call after creating the device, before `commitConfiguration()`.
-
-Acceptance: Log `device.activeFormat` and frame durations to confirm.
+Acceptance: Log `device.activeFormat` and frame durations to confirm high FPS mode.
 
 ## Step 6 — Access frames for analysis
 Add `AVCaptureVideoDataOutput` with a sample buffer delegate and throttle callbacks (e.g., analyze every 2–3 frames).
 
-```swift
-final class CameraSession: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleBufferDelegate {
-    let session = AVCaptureSession()
-    private let queue = DispatchQueue(label: "camera.frames")
+Extend `CameraSession` to implement `AVCaptureVideoDataOutputSampleBufferDelegate`:
+- Create dedicated dispatch queue for frame processing
+- Add `AVCaptureVideoDataOutput` to session
+- Enable `alwaysDiscardsLateVideoFrames` to maintain real-time performance
+- Implement `captureOutput` delegate method
+- Extract `CVPixelBuffer` from `CMSampleBuffer`
 
-    func start() {
-        session.beginConfiguration()
-        // configure input as in Step 4...
-        let output = AVCaptureVideoDataOutput()
-        output.alwaysDiscardsLateVideoFrames = true
-        output.setSampleBufferDelegate(self, queue: queue)
-        guard session.canAddOutput(output) else { session.commitConfiguration(); return }
-        session.addOutput(output)
-        session.commitConfiguration()
-        session.startRunning()
-    }
+Add throttling logic to analyze every 2-3 frames (reduces CPU load while maintaining smooth analysis).
 
-    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        // TODO: throttle and enqueue for analysis
-        _ = CMSampleBufferGetImageBuffer(sampleBuffer)
-    }
-}
-```
-
-Acceptance: Simple counter/log shows steady callbacks.
+Acceptance: Simple counter/log shows steady frame callbacks.
 
 ## Step 7 — Run Vision human body pose (on‑device)
 Start on single frames, then move to throttled live frames.
 
-```swift
-import Vision
+Create `PoseEstimator` class:
+- Use `VNDetectHumanBodyPoseRequest` from Vision framework
+- Create dedicated handler queue for processing
+- Implement `estimate` method that takes `CVPixelBuffer`
+- Create `VNImageRequestHandler` and perform request
+- Extract `VNRecognizedPointsObservation` results
+- Return results via completion handler
 
-final class PoseEstimator {
-    private let request = VNDetectHumanBodyPoseRequest()
-    private let handlerQueue = DispatchQueue(label: "pose.handler")
+Each observation contains body keypoints (joints) with confidence scores.
 
-    func estimate(from pixelBuffer: CVPixelBuffer, completion: @escaping ([VNRecognizedPointsObservation]) -> Void) {
-        handlerQueue.async {
-            let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
-            do {
-                try handler.perform([self.request])
-                let observations = (self.request.results as? [VNRecognizedPointsObservation]) ?? []
-                completion(observations)
-            } catch {
-                completion([])
-            }
-        }
-    }
-}
-```
+Key import: Vision
 
-Acceptance: For a throttled frame, you receive 0–1 observations with recognized points.
+Acceptance: For a throttled frame, you receive 0–1 observations with recognized body keypoints.
 
 ## Step 8 — Overlays and annotations (v0)
-Draw user‑placed guides (head box, plane line, ball/target line) over the preview or video using `ZStack` and simple `Path`/`Canvas`. Keep it manual first; automation comes in v1.
+Draw user‑placed guides (head box, plane line, ball/target line) over the preview or video.
+
+Use SwiftUI drawing tools:
+- `ZStack` to layer annotations over video
+- `Path` or `Canvas` for drawing lines and shapes
+- Store annotation coordinates relative to video dimensions
+- Allow user tap/drag gestures to position guides
+
+Keep it manual first (user positions everything); automation comes in v1.
+
+Common annotations:
+- Head box (rectangle tracking head position)
+- Swing plane line (shows ideal club path)
+- Ball position marker
+- Target line (alignment reference)
 
 Acceptance: Lines/rects render in expected positions while previewing or playing a clip.
 
@@ -229,4 +145,4 @@ Acceptance: Lines/rects render in expected positions while previewing or playing
 - Core metrics per vantage (head/pelvis sway, spine/shoulder tilt, shaft lean, plane deviation)
 - Rule‑based coaching: map metric ranges to concise cues + drills
 
-See `../ai.plan.md` for the full roadmap, hybrid backend addition (v1.5), and the v2 3D sandbox vision.
+See `ai.plan.md` for the full roadmap, hybrid backend addition (v1.5), and the v2 3D sandbox vision.
