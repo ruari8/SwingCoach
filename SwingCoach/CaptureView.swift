@@ -74,14 +74,17 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             session.commitConfiguration()
             return
         }
-        
-        // Configure high FPS based on selected mode
-        configureHighFPS(device: device, mode: captureMode)
 
+        // Add input and output FIRST
         session.addInput(input)
         if session.canAddOutput(movieOutput) {
             session.addOutput(movieOutput)
         }
+        
+        // Configure high FPS AFTER input/output are added to the session
+        // Otherwise the session may override format settings when input is added
+        configureHighFPS(device: device, mode: captureMode)
+        
         session.commitConfiguration()
     }
     
