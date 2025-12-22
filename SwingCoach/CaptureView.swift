@@ -273,6 +273,9 @@ struct CaptureView: View {
     
     // Processing state for slow-mo export
     @State private var isProcessing = false
+    
+    // Trim view presentation
+    @State private var showTrimView = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -327,6 +330,24 @@ struct CaptureView: View {
                             .padding()
                         }
                         Spacer()
+                        
+                        // Trim button (bottom center)
+                        Button {
+                            showTrimView = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "scissors")
+                                Text("Trim Swings")
+                                    .fontWeight(.semibold)
+                            }
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 14)
+                            .background(Color.yellow)
+                            .cornerRadius(25)
+                            .shadow(radius: 4)
+                        }
+                        .padding(.bottom, 30)
                     }
                 }
 
@@ -450,6 +471,25 @@ struct CaptureView: View {
                         isProcessing = false
                     }
                 }
+            }
+        }
+        .fullScreenCover(isPresented: $showTrimView) {
+            if let url = currentRecordingURL {
+                TrimView(
+                    sourceURL: url,
+                    onComplete: { clips, exportedURLs in
+                        // Handle exported clips
+                        print("✅ Exported \(clips.count) clips:")
+                        for (clip, url) in zip(clips, exportedURLs) {
+                            print("   - \(clip.vantage.shortName) \(clip.durationFormatted): \(url.lastPathComponent)")
+                        }
+                        showTrimView = false
+                        clearCurrentRecording()
+                    },
+                    onCancel: {
+                        showTrimView = false
+                    }
+                )
             }
         }
     }
