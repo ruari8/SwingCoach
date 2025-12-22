@@ -9,6 +9,7 @@ import SwiftUI
 import AVKit
 import Combine
 import AVFoundation
+import Photos
 
 enum SloMoMode {
     case standard    // 120 fps @ 1080p
@@ -269,110 +270,143 @@ struct CaptureView: View {
     @State private var recordingStartTime: Date? = nil
     @State private var recordingDuration: TimeInterval = 0
     @State private var timerCancellable: AnyCancellable? = nil
+    
+    // Processing state for slow-mo export
+    @State private var isProcessing = false
 
     var body: some View {
-        ZStack {
-            // Camera preview with tap-to-focus
-            CameraPreview(session: camera.session) { viewPoint, cameraPoint in
-                handleFocusTap(viewPoint: viewPoint, cameraPoint: cameraPoint)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.black)
-            
-            // Focus indicator (yellow square)
-            if showFocusIndicator, let point = focusPoint {
-                FocusIndicatorView()
-                    .position(point)
-            }
-
-            // Video playback overlay
-            if let player {
-                Color.black.opacity(0.4)
-                    .ignoresSafeArea()
-                VideoPlayer(player: player)
-                    .onTapGesture {
-                        self.player = nil
-                    }
-                VStack {
-                    HStack {
-                        Spacer()
-                        Button {
-                            clearCurrentRecording()
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .resizable()
-                                .frame(width: 36, height: 36)
-                                .foregroundColor(.white)
-                                .shadow(radius: 4)
-                        }
-                        .padding()
-                    }
-                    Spacer()
+        VStack(spacing: 0) {
+            // Camera preview area (majority of screen, not full screen)
+            ZStack {
+                // Camera preview with tap-to-focus
+                CameraPreview(session: camera.session) { viewPoint, cameraPoint in
+                    handleFocusTap(viewPoint: viewPoint, cameraPoint: cameraPoint)
                 }
-            }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.black)
+                
+                // Focus indicator (yellow square)
+                if showFocusIndicator, let point = focusPoint {
+                    FocusIndicatorView()
+                        .position(point)
+                }
 
-            // Camera controls (when not playing back)
-            if player == nil {
-                VStack {
-                    // Top bar: Recording timer (center) or FPS badge
-                    HStack {
-                        // FPS toggle (left)
-                        Button {
-                            toggleFPSMode()
-                        } label: {
-                            Text(camera.captureMode == .standard ? "120" : "240")
-                                .font(.system(size: 14, weight: .bold, design: .monospaced))
-                                .foregroundColor(.yellow)
+                // Video playback overlay
+                if let player {
+                    Color.black.opacity(0.4)
+                    VideoPlayer(player: player)
+                        .onTapGesture {
+                            self.player = nil
+                        }
+                    VStack {
+                        HStack {
+                            // Save button
+                            Button {
+                                saveToPhotoLibrary()
+                            } label: {
+                                Image(systemName: "square.and.arrow.down.fill")
+                                    .resizable()
+                                    .frame(width: 28, height: 34)
+                                    .foregroundColor(.white)
+                                    .shadow(radius: 4)
+                            }
+                            .padding()
+                            
+                            Spacer()
+                            
+                            // Close button
+                            Button {
+                                clearCurrentRecording()
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .resizable()
+                                    .frame(width: 36, height: 36)
+                                    .foregroundColor(.white)
+                                    .shadow(radius: 4)
+                            }
+                            .padding()
+                        }
+                        Spacer()
+                    }
+                }
+
+                // Processing overlay
+                if isProcessing {
+                    Color.black.opacity(0.7)
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                            .tint(.white)
+                        Text("Creating slow-mo...")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white)
+                    }
+                }
+                
+                // Camera controls overlay (when not playing back)
+                if player == nil && !isProcessing {
+                    VStack {
+                        // Top controls: FPS toggle and recording timer
+                        HStack {
+                            // FPS toggle (left)
+                            Button {
+                                toggleFPSMode()
+                            } label: {
+                                Text(camera.captureMode == .standard ? "120" : "240")
+                                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.yellow)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .fill(Color.black.opacity(0.5))
+                                    )
+                            }
+                            .disabled(isRecording)
+                            .opacity(isRecording ? 0.5 : 1.0)
+                            
+                            Spacer()
+                            
+                            // Recording indicator (center)
+                            if isRecording {
+                                HStack(spacing: 6) {
+                                    Circle()
+                                        .fill(Color.red)
+                                        .frame(width: 8, height: 8)
+                                    Text(formatDuration(recordingDuration))
+                                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
+                                        .foregroundColor(.white)
+                                }
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
                                 .background(
                                     RoundedRectangle(cornerRadius: 6)
                                         .fill(Color.black.opacity(0.5))
                                 )
-                        }
-                        .disabled(isRecording)
-                        .opacity(isRecording ? 0.5 : 1.0)
-                        
-                        Spacer()
-                        
-                        // Recording indicator (center)
-                        if isRecording {
-                            HStack(spacing: 6) {
-                                Circle()
-                                    .fill(Color.red)
-                                    .frame(width: 8, height: 8)
-                                Text(formatDuration(recordingDuration))
-                                    .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                                    .foregroundColor(.white)
                             }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.black.opacity(0.5))
-                            )
+                            
+                            Spacer()
+                            
+                            // Placeholder for symmetry
+                            Color.clear
+                                .frame(width: 50, height: 30)
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
                         
                         Spacer()
                         
-                        // Placeholder for symmetry (same width as FPS button)
-                        Color.clear
-                            .frame(width: 50, height: 30)
+                        // Bottom: Record button
+                        RecordButton(isRecording: isRecording) {
+                            toggleRecording()
+                        }
+                        .padding(.bottom, 8)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-                    
-                    Spacer()
-                    
-                    // Bottom: Record button
-                    RecordButton(isRecording: isRecording) {
-                        toggleRecording()
-                    }
-                    .padding(.bottom, 40)
                 }
             }
+            .frame(maxWidth: .infinity)
+            .frame(maxHeight: .infinity)
         }
-        .ignoresSafeArea()
         .onAppear {
             camera.start()
         }
@@ -383,14 +417,40 @@ struct CaptureView: View {
         .onReceive(camera.$lastRecordingURL) { url in
             guard let url else { return }
             
-            // Create player with slow-motion playback rate
-            let newPlayer = AVPlayer(url: url)
-            newPlayer.rate = camera.recordedMode.slowMotionRate
-            player = newPlayer
-            
-            currentRecordingURL = url
             isRecording = false
             stopRecordingTimer()
+            isProcessing = true
+            
+            let recordedMode = camera.recordedMode
+            
+            Task {
+                do {
+                    // Export the video as true slow-motion
+                    let slowMoURL = try await exportSlowMotionVideo(from: url, mode: recordedMode)
+                    
+                    // Clean up original temp file
+                    try? FileManager.default.removeItem(at: url)
+                    
+                    await MainActor.run {
+                        // Create player with the slow-mo video (plays at normal rate = slow motion)
+                        let newPlayer = AVPlayer(url: slowMoURL)
+                        newPlayer.play()
+                        player = newPlayer
+                        currentRecordingURL = slowMoURL
+                        isProcessing = false
+                    }
+                } catch {
+                    print("❌ Slow-mo export failed: \(error)")
+                    await MainActor.run {
+                        // Fallback: play original at normal speed
+                        let newPlayer = AVPlayer(url: url)
+                        newPlayer.play()
+                        player = newPlayer
+                        currentRecordingURL = url
+                        isProcessing = false
+                    }
+                }
+            }
         }
     }
     
@@ -442,6 +502,27 @@ struct CaptureView: View {
         camera.lastRecordingURL = nil
     }
     
+    private func saveToPhotoLibrary() {
+        guard let url = currentRecordingURL else { return }
+        
+        PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+            guard status == .authorized else {
+                print("❌ Photo library access denied")
+                return
+            }
+            
+            PHPhotoLibrary.shared().performChanges {
+                PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
+            } completionHandler: { success, error in
+                if success {
+                    print("✅ Video saved to Photos")
+                } else {
+                    print("❌ Failed to save video: \(error?.localizedDescription ?? "unknown")")
+                }
+            }
+        }
+    }
+    
     // MARK: - Timer
     
     private func startRecordingTimer() {
@@ -467,6 +548,107 @@ struct CaptureView: View {
         let seconds = Int(duration) % 60
         let tenths = Int((duration * 10).truncatingRemainder(dividingBy: 10))
         return String(format: "%02d:%02d.%d", minutes, seconds, tenths)
+    }
+    
+    // MARK: - Slow-Mo Export
+    
+    /// Exports a high-fps video as a true slow-motion file by time-scaling
+    /// A 5 second 240fps recording becomes a 40 second 30fps video
+    private func exportSlowMotionVideo(from sourceURL: URL, mode: SloMoMode) async throws -> URL {
+        let asset = AVURLAsset(url: sourceURL)
+        
+        // Get video track
+        guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
+            throw ExportError.noVideoTrack
+        }
+        
+        let duration = try await asset.load(.duration)
+        let timeRange = CMTimeRange(start: .zero, duration: duration)
+        
+        // DEBUG: Log actual recorded frame rate
+        let nominalFrameRate = try await videoTrack.load(.nominalFrameRate)
+        let naturalSize = try await videoTrack.load(.naturalSize)
+        let durationSeconds = CMTimeGetSeconds(duration)
+        print("📹 SOURCE VIDEO INFO:")
+        print("   Resolution: \(Int(naturalSize.width))×\(Int(naturalSize.height))")
+        print("   Frame rate: \(nominalFrameRate) fps")
+        print("   Duration: \(String(format: "%.2f", durationSeconds)) seconds")
+        print("   Expected mode: \(mode.displayName) (\(mode.targetFPS) fps)")
+        
+        // Calculate slow-motion multiplier (240fps / 30fps = 8x, 120fps / 30fps = 4x)
+        let slowMotionFactor = mode.targetFPS / 30.0
+        
+        // Create composition
+        let composition = AVMutableComposition()
+        
+        guard let compositionVideoTrack = composition.addMutableTrack(
+            withMediaType: .video,
+            preferredTrackID: kCMPersistentTrackID_Invalid
+        ) else {
+            throw ExportError.failedToCreateTrack
+        }
+        
+        // Insert video at original time range
+        try compositionVideoTrack.insertTimeRange(timeRange, of: videoTrack, at: .zero)
+        
+        // Copy the transform (orientation) from original track
+        let transform = try await videoTrack.load(.preferredTransform)
+        compositionVideoTrack.preferredTransform = transform
+        
+        // Scale the time to create slow motion
+        // scaleTimeRange stretches the content: original duration * slowMotionFactor
+        let scaledDuration = CMTimeMultiplyByFloat64(duration, multiplier: slowMotionFactor)
+        compositionVideoTrack.scaleTimeRange(timeRange, toDuration: scaledDuration)
+        
+        // Handle audio track if present (also slow it down)
+        if let audioTrack = try? await asset.loadTracks(withMediaType: .audio).first,
+           let compositionAudioTrack = composition.addMutableTrack(
+               withMediaType: .audio,
+               preferredTrackID: kCMPersistentTrackID_Invalid
+           ) {
+            try? compositionAudioTrack.insertTimeRange(timeRange, of: audioTrack, at: .zero)
+            compositionAudioTrack.scaleTimeRange(timeRange, toDuration: scaledDuration)
+        }
+        
+        // Create export session
+        guard let exportSession = AVAssetExportSession(
+            asset: composition,
+            presetName: AVAssetExportPresetHighestQuality
+        ) else {
+            throw ExportError.failedToCreateExportSession
+        }
+        
+        // Output to new temp file
+        let outputURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString + "_slomo.mov")
+        
+        exportSession.outputURL = outputURL
+        exportSession.outputFileType = .mov
+        
+        await exportSession.export()
+        
+        guard exportSession.status == .completed else {
+            throw exportSession.error ?? ExportError.exportFailed
+        }
+        
+        // DEBUG: Log output video info
+        let outputAsset = AVURLAsset(url: outputURL)
+        if let outputTrack = try? await outputAsset.loadTracks(withMediaType: .video).first {
+            let outputDuration = try await outputAsset.load(.duration)
+            let outputFrameRate = try await outputTrack.load(.nominalFrameRate)
+            print("📹 OUTPUT SLOW-MO VIDEO:")
+            print("   Duration: \(String(format: "%.2f", CMTimeGetSeconds(outputDuration))) seconds")
+            print("   Frame rate: \(outputFrameRate) fps")
+        }
+        
+        return outputURL
+    }
+    
+    enum ExportError: Error {
+        case noVideoTrack
+        case failedToCreateTrack
+        case failedToCreateExportSession
+        case exportFailed
     }
 }
 
