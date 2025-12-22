@@ -20,6 +20,9 @@ struct ThumbnailTimeline: View {
     
     let onSeek: (CMTime) -> Void
     
+    // Drag state for moving the selection box
+    @State private var dragStartPositions: (start: CMTime, end: CMTime)?
+    
     // Layout: scale timeline width based on duration
     private let pixelsPerSecond: CGFloat = 15
     private let thumbnailHeight: CGFloat = 50
@@ -55,10 +58,14 @@ struct ThumbnailTimeline: View {
                         clipMarkers
                             .padding(.top, 18)
                         
-                        // Selected range overlay
+                        // Start marker (when only start is set)
+                        if let start = rangeStart, rangeEnd == nil {
+                            startMarkerLine(at: start)
+                        }
+                        
+                        // Selected range overlay (when both start and end are set)
                         if let start = rangeStart, let end = rangeEnd {
                             rangeOverlay(start: start, end: end)
-                                .padding(.top, 18)
                         }
                         
                         // Current time indicator (playhead)
@@ -196,78 +203,90 @@ struct ThumbnailTimeline: View {
         .frame(width: totalWidth, height: thumbnailHeight)
     }
     
-    // MARK: - Range Overlay
+    // MARK: - Start Marker Line (when only start is set)
     
-    private func rangeOverlay(start: CMTime, end: CMTime) -> some View {
-        let startX = positionFromTime(start)
-        let endX = positionFromTime(end)
-        let width = max(handleWidth * 2, endX - startX)
+    private func startMarkerLine(at time: CMTime) -> some View {
+        let position = positionFromTime(time)
         
-        return ZStack(alignment: .leading) {
-            // Dimmed area before selection
+        return VStack(spacing: 0) {
+            Triangle()
+                .fill(Color.yellow)
+                .frame(width: 14, height: 10)
+                .rotationEffect(.degrees(180))
+            
             Rectangle()
-                .fill(Color.black.opacity(0.6))
-                .frame(width: max(0, startX), height: thumbnailHeight)
-            
-            // Dimmed area after selection
-            Rectangle()
-                .fill(Color.black.opacity(0.6))
-                .frame(width: max(0, totalWidth - endX), height: thumbnailHeight)
-                .offset(x: endX)
-            
-            // Selection border
-            RoundedRectangle(cornerRadius: 4)
-                .stroke(Color.yellow, lineWidth: 3)
-                .frame(width: width, height: thumbnailHeight + 4)
-                .offset(x: startX, y: -2)
-            
-            // Start handle
-            handleView()
-                .offset(x: startX - handleWidth / 2)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            let newX = startX + value.translation.width
-                            let newTime = timeFromPosition(newX)
-                            if let end = rangeEnd, CMTimeCompare(newTime, end) < 0,
-                               CMTimeCompare(newTime, .zero) >= 0 {
-                                rangeStart = newTime
-                            }
-                        }
-                )
-            
-            // End handle
-            handleView()
-                .offset(x: endX - handleWidth / 2)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            let newX = endX + value.translation.width
-                            let newTime = timeFromPosition(newX)
-                            if let start = rangeStart, CMTimeCompare(newTime, start) > 0,
-                               CMTimeCompare(newTime, duration) <= 0 {
-                                rangeEnd = newTime
-                            }
-                        }
-                )
+                .fill(Color.yellow)
+                .frame(width: 3, height: thumbnailHeight + 18)
         }
-        .frame(width: totalWidth, height: thumbnailHeight)
+        .shadow(color: .black.opacity(0.5), radius: 2)
+        .offset(x: position - 7)
     }
     
-    private func handleView() -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 4)
+    // MARK: - Range Overlay (SIMPLIFIED)
+    // Just draw a box from start position to end position. That's it.
+    
+    @ViewBuilder
+    private func rangeOverlay(start: CMTime, end: CMTime) -> some View {
+        let startPos = positionFromTime(start)
+        let endPos = positionFromTime(end)
+        let boxWidth = endPos - startPos
+        
+        // Yellow box - simply positioned at startPos with width to endPos
+        Rectangle()
+            .fill(Color.yellow.opacity(0.3))
+            .frame(width: max(4, boxWidth), height: thumbnailHeight)
+            .overlay(
+                Rectangle()
+                    .stroke(Color.yellow, lineWidth: 3)
+            )
+            .offset(x: startPos)
+            .padding(.top, 18)
+        
+        // Start handle line - SAME code as startMarkerLine
+        VStack(spacing: 0) {
+            Triangle()
                 .fill(Color.yellow)
-                .frame(width: handleWidth, height: thumbnailHeight + 8)
+                .frame(width: 14, height: 10)
+                .rotationEffect(.degrees(180))
             
-            VStack(spacing: 3) {
-                ForEach(0..<3, id: \.self) { _ in
-                    Capsule()
-                        .fill(Color.black.opacity(0.4))
-                        .frame(width: 4, height: 2)
-                }
-            }
+            Rectangle()
+                .fill(Color.yellow)
+                .frame(width: 3, height: thumbnailHeight + 18)
         }
+        .shadow(color: .black.opacity(0.5), radius: 2)
+        .offset(x: startPos - 7)
+        .highPriorityGesture(
+            DragGesture(coordinateSpace: .named("timeline"))
+                .onChanged { value in
+                    let newTime = timeFromPosition(value.location.x)
+                    if CMTimeCompare(newTime, end) < 0, CMTimeCompare(newTime, .zero) >= 0 {
+                        rangeStart = newTime
+                    }
+                }
+        )
+        
+        // End handle line - SAME code as startMarkerLine but at endPos
+        VStack(spacing: 0) {
+            Triangle()
+                .fill(Color.yellow)
+                .frame(width: 14, height: 10)
+                .rotationEffect(.degrees(180))
+            
+            Rectangle()
+                .fill(Color.yellow)
+                .frame(width: 3, height: thumbnailHeight + 18)
+        }
+        .shadow(color: .black.opacity(0.5), radius: 2)
+        .offset(x: endPos - 7)
+        .highPriorityGesture(
+            DragGesture(coordinateSpace: .named("timeline"))
+                .onChanged { value in
+                    let newTime = timeFromPosition(value.location.x)
+                    if CMTimeCompare(newTime, start) > 0, CMTimeCompare(newTime, duration) <= 0 {
+                        rangeEnd = newTime
+                    }
+                }
+        )
     }
     
     // MARK: - Playhead

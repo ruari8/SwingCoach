@@ -123,7 +123,28 @@ class SwingLibrary: ObservableObject {
         isLoading = false
     }
     
-    /// Get the video URL for a swing (for playback or upload)
+    /// Get an AVPlayerItem for a swing (handles slow-mo and edited videos properly)
+    func getPlayerItem(for swing: SavedSwing) async -> AVPlayerItem? {
+        await withCheckedContinuation { continuation in
+            let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [swing.photoAssetID], options: nil)
+            
+            guard let asset = fetchResult.firstObject else {
+                continuation.resume(returning: nil)
+                return
+            }
+            
+            let options = PHVideoRequestOptions()
+            options.version = .current
+            options.deliveryMode = .highQualityFormat
+            options.isNetworkAccessAllowed = true  // Allow iCloud downloads
+            
+            PHImageManager.default().requestPlayerItem(forVideo: asset, options: options) { playerItem, info in
+                continuation.resume(returning: playerItem)
+            }
+        }
+    }
+    
+    /// Get the video URL for a swing (for export/upload - may not work for slow-mo)
     func getVideoURL(for swing: SavedSwing) async -> URL? {
         await withCheckedContinuation { continuation in
             let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [swing.photoAssetID], options: nil)

@@ -148,45 +148,78 @@ struct TrimView: View {
     // MARK: - Controls
     
     private var controlsSection: some View {
-        HStack(spacing: 24) {
-            // Step backward
-            Button {
-                stepBackward()
-            } label: {
-                Image(systemName: "backward.frame.fill")
-                    .font(.title2)
-                    .foregroundColor(.white)
+        HStack(spacing: 12) {
+            // Playback controls
+            HStack(spacing: 16) {
+                Button {
+                    stepBackward()
+                } label: {
+                    Image(systemName: "backward.frame.fill")
+                        .font(.title3)
+                        .foregroundColor(.white)
+                }
+                
+                Button {
+                    togglePlayback()
+                } label: {
+                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                        .font(.title2)
+                        .foregroundColor(.white)
+                        .frame(width: 40, height: 40)
+                }
+                
+                Button {
+                    stepForward()
+                } label: {
+                    Image(systemName: "forward.frame.fill")
+                        .font(.title3)
+                        .foregroundColor(.white)
+                }
             }
             
-            // Play/Pause
-            Button {
-                togglePlayback()
-            } label: {
-                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                    .font(.title)
-                    .foregroundColor(.white)
-                    .frame(width: 44, height: 44)
-            }
-            
-            // Step forward
-            Button {
-                stepForward()
-            } label: {
-                Image(systemName: "forward.frame.fill")
-                    .font(.title2)
-                    .foregroundColor(.white)
-            }
-            
-            Spacer()
-            
-            // Current time display (compact: SS.T format)
+            // Time display
             Text(formatTimeCompact(currentTime))
                 .font(.system(size: 18, weight: .semibold, design: .monospaced))
                 .foregroundColor(.white)
-                .fixedSize()
+            
+            Spacer()
+            
+            // Scissors button - tap once for start, again for end
+            Button {
+                if rangeStart == nil {
+                    markStart()
+                } else if rangeEnd == nil {
+                    markEnd()
+                }
+            } label: {
+                Image(systemName: "scissors")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(rangeStart != nil ? (rangeEnd != nil ? .green : .yellow) : .white)
+                    .frame(width: 44, height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.white.opacity(0.15))
+                    )
+            }
+            .disabled(rangeStart != nil && rangeEnd != nil)
+            
+            // Clear button
+            Button {
+                clearSelection()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(rangeStart != nil ? .white : .gray)
+                    .frame(width: 36, height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.white.opacity(rangeStart != nil ? 0.15 : 0.08))
+                    )
+            }
+            .disabled(rangeStart == nil)
         }
         .padding(.horizontal)
-        .padding(.vertical, 12)
+        .padding(.vertical, 10)
         .background(Color.black.opacity(0.3))
     }
     
@@ -301,17 +334,23 @@ struct TrimView: View {
     
     // MARK: - Bottom Bar
     
+    private var statusText: String {
+        if rangeStart != nil && rangeEnd != nil {
+            return "Adjust selection, then add swing"
+        } else if rangeStart != nil {
+            return "Navigate to end, tap ✂️ again"
+        } else if clips.isEmpty {
+            return "Tap ✂️ at start of swing"
+        } else {
+            return "\(clips.count) swing\(clips.count == 1 ? "" : "s") ready"
+        }
+    }
+    
     private var bottomBar: some View {
         HStack {
-            if clips.isEmpty {
-                Text("Mark start/end to create clips")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.5))
-            } else {
-                Text("\(clips.count) swing\(clips.count == 1 ? "" : "s") ready")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-            }
+            Text(statusText)
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.6))
             
             Spacer()
             
@@ -466,6 +505,11 @@ struct TrimView: View {
         if let start = rangeStart, CMTimeCompare(start, currentTime) >= 0 {
             rangeStart = nil
         }
+    }
+    
+    private func clearSelection() {
+        rangeStart = nil
+        rangeEnd = nil
     }
     
     private func addClip() {

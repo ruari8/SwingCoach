@@ -22,8 +22,10 @@ struct LibraryView: View {
     
     // Playback
     @State private var selectedSwing: SavedSwing? = nil
-    @State private var playbackURL: URL? = nil
+    @State private var playbackItem: AVPlayerItem? = nil
     @State private var showPlayback = false
+    @State private var isLoadingPlayback = false
+    @State private var showPlaybackError = false
     
     // Filter
     @State private var filterVantage: Vantage? = nil
@@ -88,13 +90,37 @@ struct LibraryView: View {
                 }
             }
             .fullScreenCover(isPresented: $showPlayback) {
-                if let url = playbackURL {
-                    SwingPlaybackView(url: url, swing: selectedSwing) {
+                if let playerItem = playbackItem {
+                    SwingPlaybackView(playerItem: playerItem, swing: selectedSwing) {
                         showPlayback = false
-                        playbackURL = nil
+                        playbackItem = nil
                         selectedSwing = nil
                     }
                 }
+            }
+            .overlay {
+                if isLoadingPlayback {
+                    ZStack {
+                        Color.black.opacity(0.4)
+                            .ignoresSafeArea()
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .tint(.white)
+                            Text("Loading video...")
+                                .foregroundColor(.white)
+                                .font(.subheadline)
+                        }
+                        .padding(24)
+                        .background(Color.black.opacity(0.7))
+                        .cornerRadius(12)
+                    }
+                }
+            }
+            .alert("Unable to Load Video", isPresented: $showPlaybackError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("The video could not be loaded. It may have been deleted from your Photos library.")
             }
         }
     }
@@ -340,12 +366,20 @@ struct LibraryView: View {
     
     private func loadAndPlay(_ swing: SavedSwing) {
         selectedSwing = swing
+        isLoadingPlayback = true
         
         Task {
-            if let url = await library.getVideoURL(for: swing) {
+            if let playerItem = await library.getPlayerItem(for: swing) {
                 await MainActor.run {
-                    playbackURL = url
+                    playbackItem = playerItem
+                    isLoadingPlayback = false
                     showPlayback = true
+                }
+            } else {
+                await MainActor.run {
+                    isLoadingPlayback = false
+                    showPlaybackError = true
+                    selectedSwing = nil
                 }
             }
         }
@@ -368,7 +402,7 @@ struct LibraryView: View {
 // MARK: - Playback View
 
 struct SwingPlaybackView: View {
-    let url: URL
+    let playerItem: AVPlayerItem
     let swing: SavedSwing?
     let onDismiss: () -> Void
     
@@ -380,6 +414,10 @@ struct SwingPlaybackView: View {
             
             if let player {
                 VideoPlayer(player: player)
+            } else {
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .tint(.white)
             }
             
             VStack {
@@ -411,7 +449,7 @@ struct SwingPlaybackView: View {
             }
         }
         .onAppear {
-            let newPlayer = AVPlayer(url: url)
+            let newPlayer = AVPlayer(playerItem: playerItem)
             newPlayer.play()
             player = newPlayer
         }
