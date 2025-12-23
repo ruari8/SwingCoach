@@ -282,6 +282,84 @@ iOS App                           Backend API
 15. Present drill recommendations
 ```
 
+### How to Run Locally (Development Setup)
+
+During development, you don't need to deploy the backend anywhere. Your Mac runs the server, and your phone connects to it over WiFi.
+
+```
+Your Mac                              Your iPhone
+┌─────────────────────┐              ┌─────────────────────┐
+│                     │              │                     │
+│  Terminal:          │   WiFi       │  SwingCoach app     │
+│  uvicorn main:app   │◄────────────►│  (via Xcode)        │
+│  --host 0.0.0.0     │              │                     │
+│  (runs on port 8000)│              │  POST to            │
+│                     │              │  192.168.x.x:8000   │
+└─────────────────────┘              └─────────────────────┘
+```
+
+#### Method 1: Local IP (Recommended for Dev)
+
+1. **Start the backend on your Mac:**
+   ```bash
+   cd backend
+   uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+   The `--host 0.0.0.0` flag allows connections from other devices on the network.
+
+2. **Find your Mac's local IP:**
+   ```bash
+   ipconfig getifaddr en0
+   ```
+   Returns something like `192.168.1.50`
+
+3. **Configure the iOS app** to point to `http://192.168.1.50:8000`
+
+4. **Run the app** via Xcode (Cmd+R) on your phone. Both devices must be on the same WiFi network.
+
+**Pros:** Simple, fast, no external dependencies
+**Cons:** IP changes when you switch networks; need to update app config
+
+#### Method 2: ngrok (Public Tunnel)
+
+[ngrok](https://ngrok.com) creates a public URL that tunnels to your localhost. Useful if local network has firewall issues or you want a stable URL.
+
+1. **Install ngrok:**
+   ```bash
+   brew install ngrok
+   ```
+
+2. **Start your backend** (same as above)
+
+3. **Start ngrok tunnel:**
+   ```bash
+   ngrok http 8000
+   ```
+   Gives you a URL like `https://abc123.ngrok.io`
+
+4. **Configure the iOS app** to point to `https://abc123.ngrok.io`
+
+**Pros:** Works across networks, stable URL (paid plan), HTTPS included
+**Cons:** Adds latency, free tier has session limits, requires internet
+
+#### Method 3: Cloudflare Tunnel (Free Alternative)
+
+Similar to ngrok but free and no session limits.
+
+```bash
+brew install cloudflared
+cloudflared tunnel --url http://localhost:8000
+```
+
+#### For Production
+
+When you ship the app, deploy the backend to a cloud provider:
+- **Railway** — simple, good free tier
+- **Fly.io** — good for global distribution
+- **AWS/GCP** — more control, more complexity
+
+The app would then call `https://api.swingcoach.app/analyze` instead of a local IP.
+
 ### Frontend Readiness Checklist (Before Backend)
 
 - [ ] Slo-mo capture working (120 fps)
