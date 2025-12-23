@@ -15,6 +15,7 @@ struct TrimView: View {
     let sourceURL: URL
     let onComplete: ([SwingClip], [URL]) -> Void
     let onCancel: () -> Void
+    var onExportAndAnalyze: (([SwingClip]) -> Void)? = nil
     
     @State private var player: AVPlayer?
     @State private var duration: CMTime = .zero
@@ -354,18 +355,53 @@ struct TrimView: View {
             
             Spacer()
             
-            Button {
-                exportClips()
-            } label: {
-                Text("Export \(clips.count) Clip\(clips.count == 1 ? "" : "s")")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(clips.isEmpty ? .gray : .black)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background(clips.isEmpty ? Color.gray.opacity(0.3) : Color.yellow)
-                    .cornerRadius(10)
+            if onExportAndAnalyze != nil {
+                // Two buttons: Export only, Export & Analyze
+                HStack(spacing: 8) {
+                    Button {
+                        exportClips()
+                    } label: {
+                        Text("Export")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(clips.isEmpty ? .gray : .white)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(clips.isEmpty ? Color.gray.opacity(0.3) : Color.white.opacity(0.2))
+                            .cornerRadius(10)
+                    }
+                    .disabled(clips.isEmpty)
+                    
+                    Button {
+                        onExportAndAnalyze?(clips)
+                        exportClips()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "wand.and.stars")
+                            Text("Export & Analyze")
+                        }
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(clips.isEmpty ? .gray : .black)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(clips.isEmpty ? Color.gray.opacity(0.3) : Color.yellow)
+                        .cornerRadius(10)
+                    }
+                    .disabled(clips.isEmpty)
+                }
+            } else {
+                Button {
+                    exportClips()
+                } label: {
+                    Text("Export \(clips.count) Clip\(clips.count == 1 ? "" : "s")")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(clips.isEmpty ? .gray : .black)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(clips.isEmpty ? Color.gray.opacity(0.3) : Color.yellow)
+                        .cornerRadius(10)
+                }
+                .disabled(clips.isEmpty)
             }
-            .disabled(clips.isEmpty)
         }
         .padding()
         .background(Color.black.opacity(0.5))

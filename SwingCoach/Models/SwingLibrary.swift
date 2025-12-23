@@ -11,7 +11,7 @@ import UIKit
 import Combine
 
 /// Metadata for a saved swing clip (the actual video lives in Photos library)
-struct SavedSwing: Identifiable, Codable {
+struct SavedSwing: Identifiable, Codable, Equatable {
     let id: UUID
     let photoAssetID: String  // PHAsset.localIdentifier
     var vantage: Vantage
@@ -26,6 +26,17 @@ struct SavedSwing: Identifiable, Codable {
     
     enum CodingKeys: String, CodingKey {
         case id, photoAssetID, vantage, duration, createdAt, notes, analyzed
+    }
+    
+    // Custom Equatable (ignore non-codable properties)
+    static func == (lhs: SavedSwing, rhs: SavedSwing) -> Bool {
+        lhs.id == rhs.id &&
+        lhs.photoAssetID == rhs.photoAssetID &&
+        lhs.vantage == rhs.vantage &&
+        lhs.duration == rhs.duration &&
+        lhs.createdAt == rhs.createdAt &&
+        lhs.notes == rhs.notes &&
+        lhs.analyzed == rhs.analyzed
     }
 }
 

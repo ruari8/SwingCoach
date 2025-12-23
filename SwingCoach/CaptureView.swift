@@ -260,6 +260,8 @@ struct CameraPreview: UIViewRepresentable {
 }
 
 struct CaptureView: View {
+    var onAnalyzeSwings: (([SavedSwing]) -> Void)? = nil
+    
     @StateObject private var camera = CameraSession()
     @State private var isRecording = false
     @State private var player: AVPlayer?
@@ -279,6 +281,7 @@ struct CaptureView: View {
     
     // Trim view presentation
     @State private var showTrimView = false
+    @State private var analyzeAfterExport = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -487,11 +490,23 @@ struct CaptureView: View {
                             print("   - \(clip.vantage.shortName) \(clip.durationFormatted): \(url.lastPathComponent)")
                         }
                         showTrimView = false
+                        
+                        // If analyze was requested, get the newly saved swings and send to coach
+                        if analyzeAfterExport, let onAnalyze = onAnalyzeSwings {
+                            // Get the most recent swings (the ones we just added)
+                            let recentSwings = Array(SwingLibrary.shared.swings.prefix(clips.count))
+                            onAnalyze(recentSwings)
+                        }
+                        analyzeAfterExport = false
                         clearCurrentRecording()
                     },
                     onCancel: {
                         showTrimView = false
-                    }
+                        analyzeAfterExport = false
+                    },
+                    onExportAndAnalyze: onAnalyzeSwings != nil ? { clips in
+                        analyzeAfterExport = true
+                    } : nil
                 )
             }
         }
@@ -747,6 +762,6 @@ struct FocusIndicatorView: View {
 }
 
 #Preview {
-    CaptureView()
+    CaptureView(onAnalyzeSwings: nil)
 }
 

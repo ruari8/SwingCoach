@@ -11,6 +11,7 @@ import AVKit
 
 struct LibraryView: View {
     let onNavigateToCapture: () -> Void
+    var onAnalyzeSwings: (([SavedSwing]) -> Void)? = nil
     
     @StateObject private var library = SwingLibrary.shared
     
@@ -74,6 +75,17 @@ struct LibraryView: View {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if isSelecting {
                         if !selectedSwings.isEmpty {
+                            // Analyze button
+                            if onAnalyzeSwings != nil {
+                                Button {
+                                    analyzeSelectedSwings()
+                                } label: {
+                                    Image(systemName: "wand.and.stars")
+                                        .foregroundColor(.blue)
+                                }
+                            }
+                            
+                            // Delete button
                             Button {
                                 showDeleteConfirmation = true
                             } label: {
@@ -464,6 +476,12 @@ struct LibraryView: View {
             }
         }
         exitSelectionMode()
+    }
+    
+    private func analyzeSelectedSwings() {
+        let swings = library.swings.filter { selectedSwings.contains($0.id) }
+        exitSelectionMode()
+        onAnalyzeSwings?(swings)
     }
     
     // MARK: - Actions
