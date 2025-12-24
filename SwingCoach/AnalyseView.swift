@@ -176,7 +176,7 @@ struct AnalyseView: View {
         // Add new analyses
         let newAnalyses = swings.map { SwingAnalysis(swing: $0, status: .pending) }
         analyses.insert(contentsOf: newAnalyses, at: 0)
-        
+            
         // Start analyzing
         isAnalyzing = true
         
@@ -186,12 +186,35 @@ struct AnalyseView: View {
                     analyses[i].status = .analyzing
                 }
                 
-                // Mock API call
-                let result = await mockAnalyzeSwing(analyses[i].swing)
-                
-                await MainActor.run {
-                    analyses[i].result = result
-                    analyses[i].status = .complete
+                do {
+                    // Real API call
+                    let response = try await SwingCoachAPI.shared.analyzeSwing(analyses[i].swing) { stage, progress in
+                        // Could update UI with stage/progress here if we add more granular status
+                        print("📤 \(stage) - \(progress.map { String(format: "%.0f%%", $0 * 100) } ?? "")")
+                    }
+                    
+                    // Convert API response to our local model
+                    let result = AnalysisResult(
+                        summary: response.summary,
+                        metrics: response.metrics,
+                        drillLinks: response.drillLinks.map { drill in
+                            DrillLink(title: drill.title, url: drill.url, platform: drill.platform)
+                        },
+                        rawResponse: response.rawResponse ?? ""
+                    )
+                    
+                    await MainActor.run {
+                        analyses[i].result = result
+                        analyses[i].status = .complete
+                    }
+                    
+                    // Mark as analyzed in library
+                    library.markAnalyzed(analyses[i].swing)
+                    
+                } catch {
+                    await MainActor.run {
+                        analyses[i].status = .failed(error.localizedDescription)
+                    }
                 }
             }
             
@@ -199,42 +222,6 @@ struct AnalyseView: View {
                 isAnalyzing = false
             }
         }
-    }
-    
-    // MARK: - Mock API
-    
-    private func mockAnalyzeSwing(_ swing: SavedSwing) async -> AnalysisResult {
-        // Simulate network delay
-        try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
-        
-        return AnalysisResult(
-            summary: "Your swing is trash",
-            metrics: [
-                "Head Sway": "4.2 inches (too much)",
-                "Hip Slide": "2.1 inches",
-                "Shaft Lean": "-3° (flipping)",
-                "Tempo": "2.8:1 (rushed)"
-            ],
-            drillLinks: [
-                DrillLink(
-                    title: "Fix Your Early Extension",
-                    url: "https://youtube.com/watch?v=example1",
-                    platform: "youtube"
-                ),
-                DrillLink(
-                    title: "Stop Flipping - Shaft Lean Drill",
-                    url: "https://youtube.com/watch?v=example2",
-                    platform: "youtube"
-                )
-            ],
-            rawResponse: """
-            {
-                "diagnosis": "Early extension with excessive head movement",
-                "priority_fix": "Address early extension first",
-                "confidence": 0.85
-            }
-            """
-        )
     }
 }
 
