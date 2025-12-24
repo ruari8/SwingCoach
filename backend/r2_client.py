@@ -6,6 +6,7 @@ Handles video upload/download using S3-compatible API.
 import os
 import uuid
 import boto3
+from botocore.config import Config
 from typing import Optional
 from dotenv import load_dotenv
 
@@ -28,12 +29,14 @@ class R2Client:
         endpoint_url = f"https://{self.account_id}.r2.cloudflarestorage.com"
         
         # Create S3 client configured for R2
+        # Note: verify=False is a workaround for macOS SSL cert issues in dev
         self.s3 = boto3.client(
             's3',
             endpoint_url=endpoint_url,
             aws_access_key_id=self.access_key,
             aws_secret_access_key=self.secret_key,
-            region_name='auto'  # R2 uses 'auto' for region
+            region_name='auto',  # R2 uses 'auto' for region
+            verify=False  # Disable SSL verification (dev only!)
         )
     
     def generate_upload_url(self, video_key: Optional[str] = None, expiration: int = 3600) -> dict:
@@ -99,9 +102,11 @@ class R2Client:
             True if video exists, False otherwise
         """
         try:
-            self.s3.head_object(Bucket=self.bucket_name, Key=video_key)
+            response = self.s3.head_object(Bucket=self.bucket_name, Key=video_key)
+            print(f"✅ Video exists: {video_key}, size: {response.get('ContentLength', 'unknown')} bytes")
             return True
-        except:
+        except Exception as e:
+            print(f"❌ Video not found: {video_key}, error: {e}")
             return False
 
 

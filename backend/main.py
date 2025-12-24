@@ -127,7 +127,7 @@ async def analyze_swing(request: AnalyzeRequest):
         
         # Mock response
         result = AnalysisResult(
-            summary="Mock analysis - pipeline not yet implemented",
+            summary="Your swing is trash",
             metrics={
                 "Head Sway": "4.2 inches (too much)",
                 "Hip Slide": "2.1 inches",
