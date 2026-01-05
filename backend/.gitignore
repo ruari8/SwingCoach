@@ -17,3 +17,17 @@ htmlcov/
 *.mp4
 *.mov
 temp_videos/
+
+# Model weights (large binary files - download separately)
+models/
+*.task
+*.pt
+*.pth
+*.bin
+*.safetensors
+
+# Output files
+output/
+
+# macOS
+.DS_Store

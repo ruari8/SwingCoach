@@ -14,20 +14,24 @@ source venv/bin/activate
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Install SAM3 (for club/ball tracking)
-pip install 'git+https://github.com/facebookresearch/sam3.git'
-pip install einops scipy pycocotools psutil
+# 3. Download MediaPipe model
+mkdir -p models
+curl -L -o models/pose_landmarker_heavy.task \
+  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task"
 
-# 4. Patch SAM3 for macOS compatibility
+# 4. Install SAM3 (for club/ball tracking - optional)
+pip install 'git+https://github.com/facebookresearch/sam3.git'
+
+# 5. Patch SAM3 for macOS compatibility
 python patch_sam3.py
 
-# 5. Download SAM3 model weights (see SAM3_SETUP.md)
+# 6. Download SAM3 model weights (see SAM3_SETUP.md)
 
-# 6. Configure R2 credentials
+# 7. Configure R2 credentials
 cp .env.example .env
 # Edit .env with your Cloudflare R2 credentials
 
-# 7. Run the server
+# 8. Run the server
 python main.py
 ```
 
@@ -59,14 +63,19 @@ source venv/bin/activate  # On macOS/Linux
 pip install -r requirements.txt
 ```
 
-### 2. Install SAM3 for club/ball tracking (optional)
+### 2. Download MediaPipe model
+
+```bash
+mkdir -p models
+curl -L -o models/pose_landmarker_heavy.task \
+  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task"
+```
+
+### 3. Install SAM3 for club/ball tracking (optional)
 
 ```bash
 # Install SAM3 from GitHub
 pip install 'git+https://github.com/facebookresearch/sam3.git'
-
-# Install additional dependencies
-pip install einops scipy pycocotools psutil
 
 # Patch for macOS compatibility
 python patch_sam3.py
@@ -74,7 +83,7 @@ python patch_sam3.py
 # Download model weights - see SAM3_SETUP.md
 ```
 
-### 3. Configure R2 credentials
+### 4. Configure R2 credentials
 
 ```bash
 cp .env.example .env
@@ -83,7 +92,7 @@ cp .env.example .env
 
 Get credentials from: https://dash.cloudflare.com → R2 → Manage R2 API Tokens
 
-### 4. Run the server
+### 5. Run the server
 
 ```bash
 python main.py
@@ -91,7 +100,7 @@ python main.py
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 5. Test the API
+### 6. Test the API
 
 ```bash
 # Health check
