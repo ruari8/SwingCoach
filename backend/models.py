@@ -23,24 +23,49 @@ class AnalyzeRequest(BaseModel):
     """Request to analyze a swing video."""
     video_key: str = Field(..., description="Key of the video in R2 storage")
     vantage: Vantage = Field(..., description="Camera vantage point (DTL or Face-On)")
+    fps: Optional[float] = Field(None, description="Video FPS (auto-detected if not provided)")
 
 
 class DrillLink(BaseModel):
     """A recommended drill with link."""
+    id: str
     title: str
-    url: str
-    platform: str  # "youtube", "instagram", etc.
+    description: str
+    url: Optional[str] = None
+    platform: str = "youtube"
+
+
+class SwingEventData(BaseModel):
+    """Data for a single swing event."""
+    frame: int
+    timestamp: float
+    confidence: float
+
+
+class SwingEventsResponse(BaseModel):
+    """All detected swing events."""
+    address: Optional[SwingEventData] = None
+    top: Optional[SwingEventData] = None
+    impact: Optional[SwingEventData] = None
+    finish: Optional[SwingEventData] = None
 
 
 class AnalysisResult(BaseModel):
     """Result of swing analysis."""
+    swing_id: str = Field(..., description="Unique ID for this analysis")
     summary: str = Field(..., description="Brief summary of the analysis")
-    metrics: Dict[str, str] = Field(..., description="Calculated metrics with descriptions")
+    diagnosis: str = Field(..., description="Detailed coaching diagnosis")
+    events: SwingEventsResponse = Field(..., description="Detected swing events")
+    metrics: Dict[str, Optional[float]] = Field(..., description="Raw calculated metrics")
+    metrics_display: Dict[str, str] = Field(..., description="Formatted metrics for display")
+    key_issues: List[str] = Field(default_factory=list, description="Identified swing issues")
+    positives: List[str] = Field(default_factory=list, description="Positive aspects of swing")
     drill_links: List[DrillLink] = Field(default_factory=list, description="Recommended drills")
-    raw_response: Optional[str] = Field(None, description="Raw analysis data for debugging")
+    video_info: Optional[Dict] = Field(None, description="Video metadata")
 
 
 class HealthResponse(BaseModel):
     """Health check response."""
     status: str
     r2_configured: bool
+    analysis_ready: bool = False

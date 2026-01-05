@@ -3,34 +3,51 @@ FastAPI backend for SwingCoach.
 Handles video upload orchestration and swing analysis.
 """
 
+import uuid
+import logging
+from typing import Dict, Optional
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-import logging
 
 from models import (
     UploadURLResponse,
     AnalyzeRequest,
     AnalysisResult,
     DrillLink,
-    HealthResponse
+    HealthResponse,
+    SwingEventsResponse,
+    SwingEventData,
 )
 from r2_client import get_r2_client
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create FastAPI app
+ANALYSIS_AVAILABLE = False
+try:
+    from analysis import (
+        FrameExtractor,
+        PoseDetector,
+        EventDetector,
+        MetricsCalculator,
+        SwingCoach,
+    )
+    ANALYSIS_AVAILABLE = True
+    logger.info("Analysis modules loaded successfully")
+except ImportError as e:
+    logger.warning(f"Analysis modules not available: {e}")
+    logger.warning("Install dependencies: pip install mediapipe numpy pillow")
+
 app = FastAPI(
     title="SwingCoach API",
     description="Backend for golf swing analysis",
-    version="0.1.0"
+    version="0.2.0"
 )
 
-# CORS configuration (allow iOS app to call API)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your iOS app's domain
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,7 +59,8 @@ async def root():
     """Root endpoint - API info."""
     return {
         "name": "SwingCoach API",
-        "version": "0.1.0",
+        "version": "0.2.0",
+        "analysis_available": ANALYSIS_AVAILABLE,
         "endpoints": {
             "health": "/health",
             "upload_url": "/upload-url",
@@ -53,10 +71,7 @@ async def root():
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
-    """
-    Health check endpoint.
-    Verifies R2 connection is configured.
-    """
+    """Health check endpoint."""
     try:
         r2 = get_r2_client()
         r2_configured = True
@@ -66,20 +81,14 @@ async def health_check():
     
     return HealthResponse(
         status="healthy" if r2_configured else "degraded",
-        r2_configured=r2_configured
+        r2_configured=r2_configured,
+        analysis_ready=ANALYSIS_AVAILABLE
     )
 
 
 @app.get("/upload-url", response_model=UploadURLResponse)
 async def get_upload_url():
-    """
-    Generate a pre-signed URL for uploading a swing video.
-    
-    The iOS app will:
-    1. Call this endpoint to get an upload URL
-    2. PUT the video file directly to that URL (bypassing this backend)
-    3. Call /analyze with the returned video_key
-    """
+    """Generate a pre-signed URL for uploading a swing video."""
     try:
         r2 = get_r2_client()
         result = r2.generate_upload_url()
@@ -100,64 +109,138 @@ async def analyze_swing(request: AnalyzeRequest):
     """
     Analyze a swing video that has been uploaded to R2.
     
-    This is the main analysis endpoint. It will:
-    1. Download the video from R2
-    2. Extract frames
-    3. Run pose detection
-    4. Calculate metrics
-    5. Generate recommendations
-    
-    Currently returns mock data - analysis pipeline to be implemented.
+    Pipeline:
+    1. Download video from R2
+    2. Extract frames (sampled)
+    3. Run pose detection on frames
+    4. Detect swing events (address, top, impact, finish)
+    5. Calculate metrics at key positions
+    6. Generate coaching feedback and drill recommendations
     """
+    if not ANALYSIS_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="Analysis not available. Install dependencies: pip install mediapipe numpy pillow"
+        )
+    
     try:
         r2 = get_r2_client()
         
-        # Verify video exists
         if not r2.video_exists(request.video_key):
             raise HTTPException(status_code=404, detail="Video not found in storage")
         
         logger.info(f"Analyzing swing: {request.video_key} (vantage: {request.vantage})")
         
-        # TODO: Implement actual analysis pipeline
-        # For now, return mock data
+        swing_id = str(uuid.uuid4())[:8]
         
-        # Download video (will be used for analysis)
-        # video_bytes = r2.download_video(request.video_key)
-        # ... process video ...
+        logger.info("Downloading video from R2...")
+        video_bytes = r2.download_video(request.video_key)
+        logger.info(f"Downloaded {len(video_bytes) / 1024 / 1024:.1f} MB")
         
-        # Mock response
-        result = AnalysisResult(
-            summary="Your swing is trash",
-            metrics={
-                "Head Sway": "4.2 inches (too much)",
-                "Hip Slide": "2.1 inches",
-                "Shaft Lean": "-3° (flipping)",
-                "Tempo": "2.8:1 (rushed)"
-            },
-            drill_links=[
-                DrillLink(
-                    title="Fix Your Early Extension",
-                    url="https://youtube.com/watch?v=example1",
-                    platform="youtube"
-                ),
-                DrillLink(
-                    title="Stop Flipping - Shaft Lean Drill",
-                    url="https://youtube.com/watch?v=example2",
-                    platform="youtube"
-                )
-            ],
-            raw_response='{"status": "mock", "vantage": "' + request.vantage + '"}'
+        frame_extractor = FrameExtractor()
+        video_info = frame_extractor.get_video_info(video_bytes)
+        logger.info(f"Video info: {video_info}")
+        
+        fps = request.fps or video_info.get("fps", 30.0)
+        frame_count = video_info.get("frame_count", 300)
+        
+        sample_rate = max(1, frame_count // 30)
+        logger.info(f"Extracting frames (sample_rate={sample_rate})...")
+        frames = frame_extractor.extract_frames(video_bytes, sample_rate=sample_rate, max_frames=40)
+        logger.info(f"Extracted {len(frames)} frames")
+        
+        logger.info("Running pose detection...")
+        with PoseDetector() as pose_detector:
+            poses = pose_detector.detect_poses_batch(frames)
+        
+        logger.info("Detecting swing events...")
+        event_detector = EventDetector(fps=fps / sample_rate)
+        events = event_detector.detect_events(poses, vantage=request.vantage.value)
+        
+        key_poses: Dict[str, Optional[object]] = {}
+        for event_name, event in [
+            ("address", events.address),
+            ("top", events.top),
+            ("impact", events.impact),
+            ("finish", events.finish)
+        ]:
+            if event:
+                pose_idx = None
+                for i, p in enumerate(poses):
+                    if p and p.frame_index == event.frame_index:
+                        pose_idx = i
+                        break
+                if pose_idx is not None:
+                    key_poses[event_name] = poses[pose_idx]
+                else:
+                    key_poses[event_name] = None
+            else:
+                key_poses[event_name] = None
+        
+        logger.info("Calculating metrics...")
+        metrics_calculator = MetricsCalculator(
+            frame_width=video_info.get("width", 1920),
+            frame_height=video_info.get("height", 1080)
+        )
+        metrics = metrics_calculator.calculate_metrics(
+            key_poses, events, vantage=request.vantage.value
         )
         
-        logger.info(f"Analysis complete for {request.video_key}")
+        logger.info("Generating coaching feedback...")
+        coach = SwingCoach(use_llm=True)
+        feedback = coach.generate_feedback(metrics, events, vantage=request.vantage.value)
+        
+        events_response = SwingEventsResponse(
+            address=_event_to_response(events.address),
+            top=_event_to_response(events.top),
+            impact=_event_to_response(events.impact),
+            finish=_event_to_response(events.finish)
+        )
+        
+        drill_links = [
+            DrillLink(
+                id=d.id,
+                title=d.title,
+                description=d.description,
+                url=d.url,
+                platform=d.platform
+            )
+            for d in feedback.drills
+        ]
+        
+        result = AnalysisResult(
+            swing_id=swing_id,
+            summary=feedback.summary,
+            diagnosis=feedback.diagnosis,
+            events=events_response,
+            metrics=metrics.to_dict(),
+            metrics_display=metrics.to_display_dict(),
+            key_issues=feedback.key_issues,
+            positives=feedback.positives,
+            drill_links=drill_links,
+            video_info=video_info
+        )
+        
+        logger.info(f"Analysis complete for {request.video_key} (swing_id={swing_id})")
         
         return result
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Analysis failed: {e}")
+        logger.exception(f"Analysis failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def _event_to_response(event) -> Optional[SwingEventData]:
+    """Convert SwingEvent to response model."""
+    if event is None:
+        return None
+    return SwingEventData(
+        frame=event.frame_index,
+        timestamp=event.timestamp,
+        confidence=event.confidence
+    )
 
 
 if __name__ == "__main__":

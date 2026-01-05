@@ -1,0 +1,84 @@
+{
+  "video_info": {
+    "fps": 30.0,
+    "duration": 16.8,
+    "frame_count": 504,
+    "width": 1920,
+    "height": 1080
+  },
+  "events": {
+    "address": {
+      "frame": 0,
+      "timestamp": 0.0,
+      "confidence": 0.7966070904424696
+    },
+    "top": {
+      "frame": 10,
+      "timestamp": 5.333333333333333,
+      "confidence": 0.9820301586931403
+    },
+    "impact": {
+      "frame": 15,
+      "timestamp": 8.0,
+      "confidence": 0.8059400162010482
+    },
+    "finish": {
+      "frame": 27,
+      "timestamp": 14.4,
+      "confidence": 0.7607974026239279
+    }
+  },
+  "metrics": {
+    "head_sway_inches": -12.29374895393233,
+    "head_dip_inches": 24.858134618688474,
+    "hip_slide_inches": 17.739326126557422,
+    "hip_turn_degrees": null,
+    "shoulder_turn_degrees": 35.98093574999422,
+    "spine_angle_address": 48.276943266002895,
+    "spine_angle_impact": 42.4683217586854,
+    "spine_angle_change": -5.808621507317497,
+    "shaft_lean_degrees": null,
+    "lead_arm_extension": null,
+    "x_factor": -17.475318113244924,
+    "tempo_ratio": 1.9999999999999998
+  },
+  "metrics_display": {
+    "Head Sway": "-12.3 inches (too much)",
+    "Head Dip": "24.9 inches (excessive)",
+    "Hip Slide": "17.7 inches (check this)",
+    "Spine Angle Change": "-5.8\u00b0 (loss of posture)",
+    "Shoulder Turn": "36\u00b0 (limited)",
+    "X-Factor": "-17\u00b0",
+    "Tempo": "2.0:1 (rushed)"
+  },
+  "feedback": {
+    "summary": "Priority: Excessive head sway (12.3\" away from target). Also address: Head moving down through impact",
+    "diagnosis": "Your head is moving too much during the swing, which affects your ability to make consistent contact. Focus on keeping your eyes fixed on a spot behind the ball.",
+    "key_issues": [
+      "Excessive head sway (12.3\" away from target)",
+      "Head moving down through impact",
+      "Loss of posture (spine angle decreasing)",
+      "Excessive hip slide toward target",
+      "Limited shoulder turn in backswing",
+      "Rushing the transition (tempo too quick)"
+    ],
+    "positives": [],
+    "drills": [
+      {
+        "id": "head_stability",
+        "title": "Headcover Drill",
+        "description": "Place a headcover on your head during practice swings. Focus on keeping it balanced."
+      },
+      {
+        "id": "early_extension",
+        "title": "Wall Drill for Early Extension",
+        "description": "Set up with your glutes against a wall. Maintain contact through the swing."
+      },
+      {
+        "id": "hip_slide",
+        "title": "Hip Rotation Drill",
+        "description": "Focus on rotating hips rather than sliding. Use alignment stick at lead hip."
+      }
+    ]
+  }
+}
