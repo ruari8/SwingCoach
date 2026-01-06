@@ -8,12 +8,30 @@ from .event_detector import EventDetector
 from .metrics import MetricsCalculator
 from .coach import SwingCoach
 from .visualizer import SwingVisualizer
+from .visualization_config import (
+    VisualizationConfig,
+    LayerInfo,
+    VisualizationMetadata,
+    LAYER_DEFINITIONS,
+)
+from .club_analyzer import ClubAnalyzer, ClubPlane
+from .swing_path_tracker import SwingPathTracker, SwingPath
+from .video_exporter import VideoExporter
 
 __all__ = [
     "FrameExtractor",
-    "PoseDetector", 
+    "PoseDetector",
     "EventDetector",
     "MetricsCalculator",
     "SwingCoach",
     "SwingVisualizer",
+    "VisualizationConfig",
+    "LayerInfo",
+    "VisualizationMetadata",
+    "LAYER_DEFINITIONS",
+    "ClubAnalyzer",
+    "ClubPlane",
+    "SwingPathTracker",
+    "SwingPath",
+    "VideoExporter",
 ]

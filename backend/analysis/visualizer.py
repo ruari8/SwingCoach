@@ -89,6 +89,9 @@ COLORS = {
     "right_leg": (0, 255, 255),  # Cyan
     "reference": (255, 255, 0),  # Yellow - reference lines
     "text": (255, 255, 255),     # White
+    "club_plane": (255, 165, 0), # Orange - club plane line
+    "swing_path": (255, 0, 0),   # Red - swing path trajectory
+    "club_mask": (0, 255, 0),    # Green - club mask overlay
 }
 
 # Map connections to body parts for coloring
@@ -426,19 +429,19 @@ class SwingVisualizer:
     ) -> List[bytes]:
         """
         Draw complete analysis overlays on multiple frames.
-        
+
         Args:
             frames: List of PNG image bytes
             poses: List of PoseResult (or None for frames without poses)
             draw_skeleton: Whether to draw skeleton
             draw_reference_lines: Whether to draw reference lines
             min_visibility: Minimum visibility threshold
-            
+
         Returns:
             List of PNG bytes with full analysis overlays
         """
         result_frames = []
-        
+
         for i, (frame, pose) in enumerate(zip(frames, poses)):
             if pose is None:
                 result_frames.append(frame)
@@ -450,8 +453,296 @@ class SwingVisualizer:
                     min_visibility=min_visibility
                 )
                 result_frames.append(annotated)
-            
+
             if (i + 1) % 10 == 0:
                 logger.info(f"Annotated {i + 1}/{len(frames)} frames")
-        
+
+        return result_frames
+
+    def draw_club_plane(
+        self,
+        frame_bytes: bytes,
+        line_start: Tuple[int, int],
+        line_end: Tuple[int, int],
+        color: Tuple[int, int, int] = None
+    ) -> bytes:
+        """
+        Draw club plane line on a frame.
+
+        Args:
+            frame_bytes: PNG image bytes
+            line_start: Start point (x, y) in pixels
+            line_end: End point (x, y) in pixels
+            color: RGB color (default: orange)
+
+        Returns:
+            PNG bytes with club plane line overlay
+        """
+        if color is None:
+            color = COLORS["club_plane"]
+
+        image = Image.open(io.BytesIO(frame_bytes)).convert("RGBA")
+        overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(overlay)
+
+        # Draw club plane line (thicker for visibility)
+        plane_line_width = max(4, self.line_width + 2)
+        draw.line([line_start, line_end], fill=color, width=plane_line_width)
+
+        result = Image.alpha_composite(image, overlay)
+        result_rgb = result.convert("RGB")
+        output = io.BytesIO()
+        result_rgb.save(output, format="PNG")
+        return output.getvalue()
+
+    def draw_swing_path(
+        self,
+        frame_bytes: bytes,
+        path_points: List[Tuple[int, int]],
+        fade_trail: bool = True,
+        color: Tuple[int, int, int] = None
+    ) -> bytes:
+        """
+        Draw swing path trajectory on a frame.
+
+        Args:
+            frame_bytes: PNG image bytes
+            path_points: List of (x, y) pixel coordinates up to current frame
+            fade_trail: Whether to fade older points
+            color: RGB color (default: red)
+
+        Returns:
+            PNG bytes with swing path overlay
+        """
+        if color is None:
+            color = COLORS["swing_path"]
+
+        if len(path_points) < 2:
+            return frame_bytes
+
+        image = Image.open(io.BytesIO(frame_bytes)).convert("RGBA")
+        overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(overlay)
+
+        path_line_width = max(3, self.line_width)
+
+        if fade_trail and len(path_points) > 2:
+            # Draw segments with fading alpha
+            for i in range(len(path_points) - 1):
+                # Calculate alpha based on position in path
+                progress = i / (len(path_points) - 1)
+                alpha = int(80 + 175 * progress)  # 80 to 255
+
+                segment_color = (*color, alpha)
+                draw.line(
+                    [path_points[i], path_points[i + 1]],
+                    fill=segment_color,
+                    width=path_line_width
+                )
+        else:
+            # Draw solid path
+            draw.line(path_points, fill=(*color, 255), width=path_line_width)
+
+        # Draw current position indicator (larger dot at end)
+        if path_points:
+            end_point = path_points[-1]
+            indicator_radius = max(6, self.point_radius + 2)
+            draw.ellipse(
+                [(end_point[0] - indicator_radius, end_point[1] - indicator_radius),
+                 (end_point[0] + indicator_radius, end_point[1] + indicator_radius)],
+                fill=(*color, 255),
+                outline=(255, 255, 255, 255)
+            )
+
+        result = Image.alpha_composite(image, overlay)
+        result_rgb = result.convert("RGB")
+        output = io.BytesIO()
+        result_rgb.save(output, format="PNG")
+        return output.getvalue()
+
+    def draw_club_mask_overlay(
+        self,
+        frame_bytes: bytes,
+        mask: Any,
+        color: Tuple[int, int, int] = None,
+        alpha: int = 100
+    ) -> bytes:
+        """
+        Draw semi-transparent club mask overlay on a frame.
+
+        Args:
+            frame_bytes: PNG image bytes
+            mask: Binary mask (numpy array) of club segmentation
+            color: RGB color (default: green)
+            alpha: Transparency level (0-255)
+
+        Returns:
+            PNG bytes with mask overlay
+        """
+        if color is None:
+            color = COLORS["club_mask"]
+
+        if mask is None:
+            return frame_bytes
+
+        image = Image.open(io.BytesIO(frame_bytes)).convert("RGBA")
+        width, height = image.size
+
+        # Ensure mask is numpy array
+        if hasattr(mask, 'cpu'):
+            mask = mask.cpu().numpy()
+
+        if len(mask.shape) > 2:
+            mask = mask.squeeze()
+
+        # Resize mask if needed
+        mask_h, mask_w = mask.shape
+        if mask_w != width or mask_h != height:
+            from PIL import Image as PILImage
+            mask_img = PILImage.fromarray((mask * 255).astype(np.uint8))
+            mask_img = mask_img.resize((width, height), PILImage.NEAREST)
+            mask = np.array(mask_img) > 127
+
+        # Create colored overlay where mask is True
+        overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))
+        overlay_data = np.array(overlay)
+
+        # Apply color where mask is True
+        overlay_data[mask, 0] = color[0]
+        overlay_data[mask, 1] = color[1]
+        overlay_data[mask, 2] = color[2]
+        overlay_data[mask, 3] = alpha
+
+        overlay = Image.fromarray(overlay_data, "RGBA")
+
+        result = Image.alpha_composite(image, overlay)
+        result_rgb = result.convert("RGB")
+        output = io.BytesIO()
+        result_rgb.save(output, format="PNG")
+        return output.getvalue()
+
+    def draw_complete_analysis(
+        self,
+        frame_bytes: bytes,
+        pose: Optional[PoseResult],
+        club_plane_line: Optional[Tuple[Tuple[int, int], Tuple[int, int]]] = None,
+        swing_path_points: Optional[List[Tuple[int, int]]] = None,
+        club_mask: Optional[Any] = None,
+        draw_skeleton: bool = True,
+        draw_reference_lines: bool = True,
+        draw_club_plane: bool = True,
+        draw_swing_path: bool = True,
+        draw_club_mask: bool = False,
+        min_visibility: float = 0.5
+    ) -> bytes:
+        """
+        Draw complete analysis overlay with all visualization layers.
+
+        Args:
+            frame_bytes: PNG image bytes
+            pose: PoseResult with keypoints (or None)
+            club_plane_line: (start, end) tuple for club plane
+            swing_path_points: List of (x, y) points for swing path
+            club_mask: Binary mask for club overlay
+            draw_skeleton: Whether to draw skeleton
+            draw_reference_lines: Whether to draw reference lines
+            draw_club_plane: Whether to draw club plane line
+            draw_swing_path: Whether to draw swing path
+            draw_club_mask: Whether to draw club mask
+            min_visibility: Minimum visibility threshold
+
+        Returns:
+            PNG bytes with all overlays
+        """
+        result = frame_bytes
+
+        # Layer order: mask (bottom) -> skeleton -> reference -> club plane -> swing path (top)
+
+        # 1. Club mask overlay (if enabled and available)
+        if draw_club_mask and club_mask is not None:
+            result = self.draw_club_mask_overlay(result, club_mask)
+
+        # 2. Skeleton
+        if draw_skeleton and pose is not None:
+            result = self.draw_skeleton(result, pose, min_visibility)
+
+        # 3. Reference lines
+        if draw_reference_lines and pose is not None:
+            result = self.draw_reference_lines(result, pose, min_visibility=min_visibility)
+
+        # 4. Club plane line
+        if draw_club_plane and club_plane_line is not None:
+            result = self.draw_club_plane(result, club_plane_line[0], club_plane_line[1])
+
+        # 5. Swing path
+        if draw_swing_path and swing_path_points and len(swing_path_points) >= 2:
+            result = self.draw_swing_path(result, swing_path_points)
+
+        return result
+
+    def draw_complete_analysis_batch(
+        self,
+        frames: List[bytes],
+        poses: List[Optional[PoseResult]],
+        club_plane_line: Optional[Tuple[Tuple[int, int], Tuple[int, int]]] = None,
+        swing_path: Optional[Any] = None,  # SwingPath object
+        club_masks: Optional[List[Any]] = None,
+        draw_skeleton: bool = True,
+        draw_reference_lines: bool = True,
+        draw_club_plane: bool = True,
+        draw_swing_path: bool = True,
+        draw_club_mask: bool = False,
+        min_visibility: float = 0.5
+    ) -> List[bytes]:
+        """
+        Draw complete analysis overlays on multiple frames.
+
+        Args:
+            frames: List of PNG image bytes
+            poses: List of PoseResult (or None)
+            club_plane_line: (start, end) tuple for persistent club plane
+            swing_path: SwingPath object with trajectory data
+            club_masks: List of masks (or None) for each frame
+            draw_skeleton: Whether to draw skeleton
+            draw_reference_lines: Whether to draw reference lines
+            draw_club_plane: Whether to draw club plane line
+            draw_swing_path: Whether to draw swing path
+            draw_club_mask: Whether to draw club mask
+            min_visibility: Minimum visibility threshold
+
+        Returns:
+            List of PNG bytes with all overlays
+        """
+        result_frames = []
+
+        for i, (frame, pose) in enumerate(zip(frames, poses)):
+            # Get swing path points up to this frame
+            path_points = None
+            if swing_path is not None and hasattr(swing_path, 'get_pixel_points_up_to_frame'):
+                # Assuming frame indices match array indices (may need adjustment)
+                path_points = swing_path.get_pixel_points_up_to_frame(i)
+
+            # Get club mask for this frame
+            mask = None
+            if club_masks is not None and i < len(club_masks):
+                mask = club_masks[i]
+
+            annotated = self.draw_complete_analysis(
+                frame,
+                pose,
+                club_plane_line=club_plane_line,
+                swing_path_points=path_points,
+                club_mask=mask,
+                draw_skeleton=draw_skeleton,
+                draw_reference_lines=draw_reference_lines,
+                draw_club_plane=draw_club_plane,
+                draw_swing_path=draw_swing_path,
+                draw_club_mask=draw_club_mask,
+                min_visibility=min_visibility
+            )
+            result_frames.append(annotated)
+
+            if (i + 1) % 10 == 0:
+                logger.info(f"Complete analysis annotated {i + 1}/{len(frames)} frames")
+
         return result_frames

@@ -76,6 +76,24 @@ class ClubDetection:
 
 
 @dataclass
+class ShaftDetection:
+    """Detection result for club shaft in a single frame."""
+    mask: Any  # np.ndarray - Binary mask of shaft
+    confidence: float  # Detection confidence
+    frame_index: int  # Which frame this is from
+
+
+@dataclass
+class ClubheadDetection:
+    """Detection result for clubhead in a single frame."""
+    mask: Any  # np.ndarray - Binary mask of clubhead
+    centroid: Tuple[float, float]  # Center of clubhead (normalized 0-1)
+    centroid_pixels: Tuple[int, int]  # Center in pixel coordinates
+    confidence: float  # Detection confidence
+    frame_index: int  # Which frame this is from
+
+
+@dataclass
 class BallDetection:
     """Detection result for golf ball in a single frame."""
     mask: Any  # np.ndarray - Binary mask of ball
@@ -371,6 +389,175 @@ class EquipmentTracker:
 
         detected_count = sum(1 for r in results if r is not None)
         logger.info(f"Club detection complete: {detected_count}/{len(frames)} frames with club")
+
+        return results
+
+    def detect_shaft(
+        self,
+        frame_bytes: bytes,
+        frame_index: int = 0
+    ) -> Optional[ShaftDetection]:
+        """
+        Detect club shaft in a single frame using text prompt "club shaft".
+
+        Use this for calculating the club plane line.
+
+        Args:
+            frame_bytes: PNG/JPG image bytes
+            frame_index: Index of this frame in the video
+
+        Returns:
+            ShaftDetection or None if no shaft detected
+        """
+        try:
+            image = self._bytes_to_pil(frame_bytes)
+
+            inference_state = self.processor.set_image(image)
+            output = self.processor.set_text_prompt(
+                state=inference_state,
+                prompt="club shaft"
+            )
+
+            masks = output.get("masks", [])
+            scores = output.get("scores", [])
+
+            if len(masks) == 0:
+                logger.debug(f"No shaft detected in frame {frame_index}")
+                return None
+
+            # Get best detection
+            best_idx = 0
+            if len(scores) > 0:
+                if hasattr(scores, 'cpu'):
+                    scores_np = scores.cpu().numpy()
+                else:
+                    scores_np = np.array(scores)
+                best_idx = int(np.argmax(scores_np))
+
+            mask = masks[best_idx]
+            confidence = float(scores_np[best_idx]) if len(scores_np) > best_idx else 0.5
+
+            if confidence < self.confidence_threshold:
+                logger.debug(f"Shaft detection below threshold: {confidence:.2f}")
+                return None
+
+            if hasattr(mask, 'cpu'):
+                mask = mask.cpu().numpy()
+
+            if len(mask.shape) > 2:
+                mask = mask.squeeze()
+
+            return ShaftDetection(
+                mask=mask,
+                confidence=confidence,
+                frame_index=frame_index
+            )
+
+        except Exception as e:
+            logger.error(f"Error detecting shaft in frame {frame_index}: {e}")
+            return None
+
+    def detect_clubhead(
+        self,
+        frame_bytes: bytes,
+        frame_index: int = 0
+    ) -> Optional[ClubheadDetection]:
+        """
+        Detect clubhead in a single frame using text prompt "clubhead".
+
+        Use this for tracking the clubhead path through the swing.
+
+        Args:
+            frame_bytes: PNG/JPG image bytes
+            frame_index: Index of this frame in the video
+
+        Returns:
+            ClubheadDetection or None if no clubhead detected
+        """
+        try:
+            image = self._bytes_to_pil(frame_bytes)
+            width, height = image.size
+
+            inference_state = self.processor.set_image(image)
+            output = self.processor.set_text_prompt(
+                state=inference_state,
+                prompt="clubhead"
+            )
+
+            masks = output.get("masks", [])
+            scores = output.get("scores", [])
+
+            if len(masks) == 0:
+                logger.debug(f"No clubhead detected in frame {frame_index}")
+                return None
+
+            # Get best detection
+            best_idx = 0
+            if len(scores) > 0:
+                if hasattr(scores, 'cpu'):
+                    scores_np = scores.cpu().numpy()
+                else:
+                    scores_np = np.array(scores)
+                best_idx = int(np.argmax(scores_np))
+
+            mask = masks[best_idx]
+            confidence = float(scores_np[best_idx]) if len(scores_np) > best_idx else 0.5
+
+            if confidence < self.confidence_threshold:
+                logger.debug(f"Clubhead detection below threshold: {confidence:.2f}")
+                return None
+
+            if hasattr(mask, 'cpu'):
+                mask = mask.cpu().numpy()
+
+            if len(mask.shape) > 2:
+                mask = mask.squeeze()
+
+            # Calculate centroid
+            centroid_norm = self._mask_centroid(mask, width, height)
+            coords = np.argwhere(mask > 0)
+            if len(coords) > 0:
+                centroid_px = (int(coords[:, 1].mean()), int(coords[:, 0].mean()))
+            else:
+                centroid_px = (width // 2, height // 2)
+
+            return ClubheadDetection(
+                mask=mask,
+                centroid=centroid_norm,
+                centroid_pixels=centroid_px,
+                confidence=confidence,
+                frame_index=frame_index
+            )
+
+        except Exception as e:
+            logger.error(f"Error detecting clubhead in frame {frame_index}: {e}")
+            return None
+
+    def detect_clubhead_batch(
+        self,
+        frames: List[bytes],
+        start_index: int = 0
+    ) -> List[Optional[ClubheadDetection]]:
+        """
+        Detect clubhead in multiple frames.
+
+        Args:
+            frames: List of PNG/JPG image bytes
+            start_index: Starting frame index for numbering
+
+        Returns:
+            List of ClubheadDetection (or None for failed detections)
+        """
+        results = []
+        for i, frame in enumerate(frames):
+            result = self.detect_clubhead(frame, frame_index=start_index + i)
+            results.append(result)
+
+            if (i + 1) % 5 == 0:
+                logger.info(f"Clubhead detection: {i + 1}/{len(frames)} frames processed")
+
+        detected_count = sum(1 for r in results if r is not None)
+        logger.info(f"Clubhead detection complete: {detected_count}/{len(frames)} frames with clubhead")
 
         return results
 

@@ -69,3 +69,61 @@ class HealthResponse(BaseModel):
     status: str
     r2_configured: bool
     analysis_ready: bool = False
+
+
+class VisualizationLayerInfo(BaseModel):
+    """Information about a visualization layer."""
+    name: str = Field(..., description="Layer identifier (skeleton, club_plane, etc.)")
+    color: str = Field(..., description="Hex color code for the layer")
+    description: str = Field(..., description="Human-readable description")
+    enabled: bool = Field(..., description="Whether this layer is rendered")
+
+
+class VisualizationOptions(BaseModel):
+    """Options for video annotation."""
+    draw_skeleton: bool = Field(True, description="Draw body pose skeleton")
+    draw_reference_lines: bool = Field(True, description="Draw shoulder plane and spine angle")
+    draw_club_plane: bool = Field(True, description="Draw club plane line from address")
+    draw_swing_path: bool = Field(True, description="Draw club head trajectory")
+    draw_club_mask: bool = Field(False, description="Draw club segmentation mask overlay")
+    min_visibility: float = Field(0.5, description="Minimum keypoint visibility threshold")
+
+
+class AnnotatedVideoMetadata(BaseModel):
+    """Metadata about the annotated video for UI consumption."""
+    layers: List[VisualizationLayerInfo] = Field(default_factory=list, description="Active visualization layers")
+    club_plane_angle_degrees: Optional[float] = Field(None, description="Club shaft angle at address")
+    swing_path_point_count: int = Field(0, description="Number of points in swing path")
+    video_fps: Optional[float] = Field(None, description="Video frames per second")
+    frame_count: int = Field(0, description="Total frames in video")
+
+
+class AnnotatedVideoResult(BaseModel):
+    """Result containing annotated video and metadata."""
+    video_url: Optional[str] = Field(None, description="URL to download annotated video")
+    video_key: Optional[str] = Field(None, description="Storage key for annotated video")
+    metadata: AnnotatedVideoMetadata = Field(..., description="Visualization metadata for UI")
+
+
+class AnalyzeRequestWithVideo(BaseModel):
+    """Extended request to analyze a swing video with video output."""
+    video_key: str = Field(..., description="Key of the video in R2 storage")
+    vantage: Vantage = Field(..., description="Camera vantage point (DTL or Face-On)")
+    fps: Optional[float] = Field(None, description="Video FPS (auto-detected if not provided)")
+    generate_video: bool = Field(False, description="Whether to generate annotated video")
+    visualization: Optional[VisualizationOptions] = Field(None, description="Video annotation options")
+
+
+class FullAnalysisResult(BaseModel):
+    """Full analysis result including optional annotated video."""
+    swing_id: str = Field(..., description="Unique ID for this analysis")
+    summary: str = Field(..., description="Brief summary of the analysis")
+    diagnosis: str = Field(..., description="Detailed coaching diagnosis")
+    events: SwingEventsResponse = Field(..., description="Detected swing events")
+    metrics: Dict[str, Optional[float]] = Field(..., description="Raw calculated metrics")
+    metrics_display: Dict[str, str] = Field(..., description="Formatted metrics for display")
+    key_issues: List[str] = Field(default_factory=list, description="Identified swing issues")
+    positives: List[str] = Field(default_factory=list, description="Positive aspects of swing")
+    drill_links: List[DrillLink] = Field(default_factory=list, description="Recommended drills")
+    video_info: Optional[Dict] = Field(None, description="Video metadata")
+    annotated_video: Optional[AnnotatedVideoResult] = Field(None, description="Annotated video if requested")
