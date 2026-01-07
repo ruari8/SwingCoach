@@ -30,6 +30,9 @@ logger = logging.getLogger(__name__)
 # Environment variable for local model path (optional)
 SAM3_MODEL_PATH_ENV = "SAM3_MODEL_PATH"
 
+# Default local model path relative to backend directory
+DEFAULT_LOCAL_MODEL_PATH = Path(__file__).parent.parent / "models" / "models--facebook--sam3"
+
 # Lazy imports for optional SAM3 dependency
 SAM3_AVAILABLE = False
 torch: Any = None
@@ -144,27 +147,34 @@ class EquipmentTracker:
         self.device = device or get_device()
         self.confidence_threshold = confidence_threshold
 
-        # Check for env var if no explicit path provided
-        if model_path is None:
-            model_path = os.environ.get(SAM3_MODEL_PATH_ENV)
+        # Resolve model path: explicit arg > env var > default local path > HuggingFace
+        resolved_path: Optional[Path] = None
+        
+        if model_path is not None:
+            resolved_path = Path(model_path)
+        elif os.environ.get(SAM3_MODEL_PATH_ENV):
+            resolved_path = Path(os.environ[SAM3_MODEL_PATH_ENV])
+        elif DEFAULT_LOCAL_MODEL_PATH.exists():
+            resolved_path = DEFAULT_LOCAL_MODEL_PATH
+            logger.info(f"Found local SAM3 model at default location: {resolved_path}")
 
         logger.info(f"Initializing EquipmentTracker on device: {self.device}")
 
         # Build SAM3 model
-        if model_path:
-            # Load from local path (e.g., backend/models/sam3/)
-            model_path = Path(model_path)
-            if not model_path.exists():
+        if resolved_path:
+            # Handle HuggingFace cache folder structure (models--org--name/snapshots/hash/)
+            checkpoint_path = self._resolve_checkpoint_path(resolved_path)
+            if checkpoint_path is None:
                 raise FileNotFoundError(
-                    f"SAM3 model not found at: {model_path}\n"
+                    f"SAM3 model not found at: {resolved_path}\n"
                     "Either download the model to this location, or set model_path=None "
                     "to use HuggingFace cache (~/.cache/huggingface/)."
                 )
-            logger.info(f"Loading SAM3 model from local path: {model_path}")
+            logger.info(f"Loading SAM3 model from: {checkpoint_path}")
             self.model = build_sam3_image_model(
                 device=self.device,
                 load_from_HF=False,
-                ckpt_path=str(model_path / "sam3.pt") if (model_path / "sam3.pt").exists() else str(model_path)
+                checkpoint_path=str(checkpoint_path)
             )
         else:
             # Load from HuggingFace cache (default)
@@ -179,9 +189,69 @@ class EquipmentTracker:
 
         logger.info("EquipmentTracker initialized successfully")
 
+    def _resolve_checkpoint_path(self, model_path: Path) -> Optional[Path]:
+        """
+        Resolve the actual checkpoint path from various folder structures.
+        
+        Handles:
+        - Direct path to sam3.pt file
+        - Folder containing sam3.pt
+        - HuggingFace cache structure (models--org--name/snapshots/hash/)
+        
+        Returns:
+            Path to the checkpoint file, or None if not found.
+        """
+        # If it's already a file, return it directly
+        if model_path.is_file():
+            return model_path
+        
+        # Check for sam3.pt directly in the folder
+        direct_checkpoint = model_path / "sam3.pt"
+        if direct_checkpoint.exists():
+            return direct_checkpoint
+        
+        # Handle HuggingFace cache structure: models--org--name/snapshots/hash/
+        snapshots_dir = model_path / "snapshots"
+        if snapshots_dir.exists():
+            # Get the latest snapshot (there's usually only one)
+            snapshot_dirs = [d for d in snapshots_dir.iterdir() if d.is_dir() and not d.name.startswith('.')]
+            if snapshot_dirs:
+                # Use the first (or only) snapshot directory
+                snapshot_path = snapshot_dirs[0]
+                checkpoint = snapshot_path / "sam3.pt"
+                if checkpoint.exists():
+                    logger.info(f"Resolved HuggingFace cache structure: {checkpoint}")
+                    return checkpoint
+        
+        # Try treating the path itself as a checkpoint
+        if model_path.exists():
+            return model_path
+        
+        return None
+
     def _bytes_to_pil(self, frame_bytes: bytes) -> Any:
         """Convert frame bytes to PIL Image."""
         return Image.open(io.BytesIO(frame_bytes)).convert("RGB")
+
+    def _normalize_mask(self, mask: Any, image_width: int, image_height: int) -> Any:
+        """
+        Normalize mask to correct (height, width) format.
+        
+        SAM3 sometimes returns masks in (width, height) format, but numpy/image 
+        convention expects (height, width). This method detects and fixes the issue.
+        """
+        if hasattr(mask, 'cpu'):
+            mask = mask.cpu().numpy()
+
+        if len(mask.shape) > 2:
+            mask = mask.squeeze()
+
+        # Check if dimensions are swapped: (width, height) vs expected (height, width)
+        # For a 1920x1080 image, mask should be (1080, 1920) not (1920, 1080)
+        if mask.shape == (image_width, image_height) and image_width != image_height:
+            mask = mask.T  # Transpose to (height, width)
+
+        return mask
 
     def _mask_to_bbox(self, mask: Any) -> Tuple[int, int, int, int]:
         """Convert binary mask to bounding box."""
@@ -270,13 +340,8 @@ class EquipmentTracker:
                 logger.debug(f"Club detection below threshold in frame {frame_index}: {confidence:.2f}")
                 return None
 
-            # Convert mask to numpy if needed
-            if hasattr(mask, 'cpu'):
-                mask = mask.cpu().numpy()
-
-            # Ensure 2D mask
-            if len(mask.shape) > 2:
-                mask = mask.squeeze()
+            # Normalize mask to (height, width) format
+            mask = self._normalize_mask(mask, width, height)
 
             bbox = self._mask_to_bbox(mask)
             centroid = self._mask_centroid(mask, width, height)
@@ -343,11 +408,8 @@ class EquipmentTracker:
             if confidence < self.confidence_threshold:
                 return None
 
-            if hasattr(mask, 'cpu'):
-                mask = mask.cpu().numpy()
-
-            if len(mask.shape) > 2:
-                mask = mask.squeeze()
+            # Normalize mask to (height, width) format
+            mask = self._normalize_mask(mask, width, height)
 
             bbox = self._mask_to_bbox(mask)
             centroid = self._mask_centroid(mask, width, height)
@@ -441,11 +503,12 @@ class EquipmentTracker:
                 logger.debug(f"Shaft detection below threshold: {confidence:.2f}")
                 return None
 
-            if hasattr(mask, 'cpu'):
-                mask = mask.cpu().numpy()
+            # Get image dimensions for mask normalization
+            image = self._bytes_to_pil(frame_bytes)
+            width, height = image.size
 
-            if len(mask.shape) > 2:
-                mask = mask.squeeze()
+            # Normalize mask to (height, width) format
+            mask = self._normalize_mask(mask, width, height)
 
             return ShaftDetection(
                 mask=mask,
@@ -507,11 +570,8 @@ class EquipmentTracker:
                 logger.debug(f"Clubhead detection below threshold: {confidence:.2f}")
                 return None
 
-            if hasattr(mask, 'cpu'):
-                mask = mask.cpu().numpy()
-
-            if len(mask.shape) > 2:
-                mask = mask.squeeze()
+            # Normalize mask to (height, width) format
+            mask = self._normalize_mask(mask, width, height)
 
             # Calculate centroid
             centroid_norm = self._mask_centroid(mask, width, height)

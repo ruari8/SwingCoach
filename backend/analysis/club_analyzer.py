@@ -101,11 +101,29 @@ class ClubAnalyzer:
 
         # PCA: compute covariance matrix and find eigenvectors
         cov_matrix = np.cov(centered.T)
+        
+        # Check for valid covariance matrix
+        if np.any(np.isnan(cov_matrix)) or np.any(np.isinf(cov_matrix)):
+            logger.warning("Invalid covariance matrix in PCA")
+            return None
+        
         eigenvalues, eigenvectors = np.linalg.eigh(cov_matrix)
 
         # The eigenvector with largest eigenvalue is the principal direction
         # eigh returns eigenvalues in ascending order, so take the last one
         principal_direction = eigenvectors[:, -1]
+        
+        # Validate the direction vector
+        if np.any(np.isnan(principal_direction)) or np.any(np.isinf(principal_direction)):
+            logger.warning("Invalid principal direction from PCA")
+            return None
+        
+        # Ensure it's a proper unit vector (should be from eigh, but double-check)
+        norm = np.linalg.norm(principal_direction)
+        if norm < 1e-10:
+            logger.warning("Principal direction has near-zero norm")
+            return None
+        principal_direction = principal_direction / norm
 
         # principal_direction is (dx, dy) - the direction of the shaft
         dx, dy = principal_direction
@@ -146,7 +164,20 @@ class ClubAnalyzer:
 
         # Project all points onto the principal axis
         centered = points - centroid
-        projections = centered @ direction  # Dot product with direction vector
+        
+        # Validate centered points before matrix multiplication
+        if np.any(np.isnan(centered)) or np.any(np.isinf(centered)):
+            logger.warning("Invalid centered points in shaft endpoint calculation")
+            return None
+        
+        # Suppress numerical warnings - we handle invalid results below
+        with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
+            projections = centered @ direction  # Dot product with direction vector
+        
+        # Validate projections
+        if np.any(np.isnan(projections)) or np.any(np.isinf(projections)):
+            logger.warning("Invalid projections in shaft endpoint calculation")
+            return None
 
         # Find the points with min and max projection (the endpoints)
         min_idx = np.argmin(projections)
@@ -174,16 +205,16 @@ class ClubAnalyzer:
         extend_length: int = 500
     ) -> Optional[ClubPlane]:
         """
-        Calculate the club plane line, extended from the shaft.
+        Calculate the club plane line, starting at clubhead and extending past hands.
 
-        The line starts at the shaft and extends upward/leftward
-        (in the direction toward the hands and beyond).
+        The line starts at the clubhead end of the shaft and extends through
+        the shaft and beyond the hands end.
 
         Args:
             mask: Binary mask of the club SHAFT (use "club shaft" prompt)
             frame_width: Width of the video frame in pixels
             frame_height: Height of the video frame in pixels
-            extend_length: How far to extend the line in pixels
+            extend_length: How far to extend the line beyond the hands end in pixels
 
         Returns:
             ClubPlane with angle and line endpoints, or None if invalid
@@ -210,19 +241,19 @@ class ClubAnalyzer:
         if length < 1:
             return None
 
-        # Normalize
+        # Normalize direction vector
         dx /= length
         dy /= length
 
-        # Line starts at the top end of the shaft (near hands)
-        # and extends further in the same direction (up and left typically)
-        line_start = top_end
+        # Line starts at the clubhead (bottom_end) - NO extension past clubhead
+        # Line extends beyond the hands (top_end) by extend_length
+        line_start = bottom_end
         line_end = (
             int(top_end[0] + dx * extend_length),
             int(top_end[1] + dy * extend_length)
         )
 
-        # Clip to frame bounds
+        # Clip line_end to frame bounds
         line_end = (
             max(0, min(frame_width - 1, line_end[0])),
             max(0, min(frame_height - 1, line_end[1]))

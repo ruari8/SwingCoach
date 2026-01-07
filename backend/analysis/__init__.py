@@ -15,7 +15,6 @@ from .visualization_config import (
     LAYER_DEFINITIONS,
 )
 from .club_analyzer import ClubAnalyzer, ClubPlane
-from .swing_path_tracker import SwingPathTracker, SwingPath
 from .video_exporter import VideoExporter
 
 __all__ = [
@@ -31,7 +30,5 @@ __all__ = [
     "LAYER_DEFINITIONS",
     "ClubAnalyzer",
     "ClubPlane",
-    "SwingPathTracker",
-    "SwingPath",
     "VideoExporter",
 ]

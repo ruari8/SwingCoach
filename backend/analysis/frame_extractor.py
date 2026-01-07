@@ -176,7 +176,7 @@ class FrameExtractor:
                 "ffprobe",
                 "-v", "error",
                 "-select_streams", "v:0",
-                "-show_entries", "stream=width,height,r_frame_rate,nb_frames,duration",
+                "-show_entries", "stream=width,height,r_frame_rate,nb_frames,duration:stream_side_data=rotation",
                 "-of", "json",
                 str(video_path)
             ]
@@ -196,12 +196,26 @@ class FrameExtractor:
                 if frame_count == 0 and duration > 0:
                     frame_count = int(duration * fps)
                 
+                width = int(stream.get("width", 0))
+                height = int(stream.get("height", 0))
+                
+                # Check for rotation metadata (common in phone videos)
+                # If rotation is 90 or -90 degrees, swap width and height
+                side_data = stream.get("side_data_list", [])
+                for sd in side_data:
+                    if "rotation" in sd:
+                        rotation = int(sd["rotation"])
+                        if rotation in (90, -90, 270, -270):
+                            width, height = height, width
+                            logger.debug(f"Video has rotation {rotation}, swapped dimensions to {width}x{height}")
+                            break
+                
                 return {
                     "fps": fps,
                     "duration": duration,
                     "frame_count": frame_count,
-                    "width": int(stream.get("width", 0)),
-                    "height": int(stream.get("height", 0))
+                    "width": width,
+                    "height": height
                 }
             except subprocess.CalledProcessError as e:
                 logger.error(f"ffprobe failed: {e.stderr.decode()}")
