@@ -23,10 +23,38 @@ struct ThumbnailTimeline: View {
     // Drag state for moving the selection box
     @State private var dragStartPositions: (start: CMTime, end: CMTime)?
     
-    // Layout: scale timeline width based on duration
-    private let pixelsPerSecond: CGFloat = 15
+    // Zoom level
+    enum ZoomLevel: String, CaseIterable {
+        case overview = "Overview"
+        case medium = "Medium"
+        case detail = "Detail"
+        
+        var pixelsPerSecond: CGFloat {
+            switch self {
+            case .overview: return 1.5   // ~260s visible (4+ min) - whole video scannable quickly
+            case .medium: return 6       // ~65s visible - good for finding swings
+            case .detail: return 15      // ~26s visible - current, for precise trimming
+            }
+        }
+        
+        var icon: String {
+            switch self {
+            case .overview: return "rectangle.arrowtriangle.2.outward"
+            case .medium: return "rectangle.split.3x1"
+            case .detail: return "rectangle.arrowtriangle.2.inward"
+            }
+        }
+    }
+    
+    @State private var zoomLevel: ZoomLevel = .medium
+    
+    // Layout
     private let thumbnailHeight: CGFloat = 50
     private let handleWidth: CGFloat = 14
+    
+    private var pixelsPerSecond: CGFloat {
+        zoomLevel.pixelsPerSecond
+    }
     
     private var durationSeconds: CGFloat {
         CGFloat(CMTimeGetSeconds(duration))
@@ -44,6 +72,9 @@ struct ThumbnailTimeline: View {
     
     var body: some View {
         VStack(spacing: 4) {
+            // Zoom control bar
+            zoomControlBar
+            
             // Scrollable timeline
             ScrollView(.horizontal, showsIndicators: true) {
                     ZStack(alignment: .topLeading) {
@@ -116,6 +147,52 @@ struct ThumbnailTimeline: View {
         .cornerRadius(8)
     }
     
+    // MARK: - Zoom Control Bar
+    
+    private var zoomControlBar: some View {
+        HStack(spacing: 8) {
+            ForEach(ZoomLevel.allCases, id: \.self) { level in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        zoomLevel = level
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: level.icon)
+                            .font(.system(size: 11))
+                        Text(level.rawValue)
+                            .font(.system(size: 11, weight: zoomLevel == level ? .semibold : .regular))
+                    }
+                    .foregroundColor(zoomLevel == level ? .black : .white.opacity(0.7))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(zoomLevel == level ? Color.yellow : Color.white.opacity(0.15))
+                    )
+                }
+            }
+            
+            Spacer()
+            
+            // Show what's visible at current zoom
+            Text(visibleTimeDescription)
+                .font(.system(size: 10))
+                .foregroundColor(.white.opacity(0.5))
+        }
+        .padding(.horizontal, 4)
+        .padding(.bottom, 4)
+    }
+    
+    private var visibleTimeDescription: String {
+        let screenWidth: CGFloat = UIScreen.main.bounds.width - 48
+        let visibleSeconds = Int(screenWidth / pixelsPerSecond)
+        if visibleSeconds >= 60 {
+            return "~\(visibleSeconds / 60)m visible"
+        }
+        return "~\(visibleSeconds)s visible"
+    }
+    
     // MARK: - Time Labels (inline, not separate ScrollView)
     
     private var timeLabels: some View {
@@ -138,11 +215,28 @@ struct ThumbnailTimeline: View {
     }
     
     private func calculateLabelInterval(_ durationSeconds: Double) -> Double {
-        if durationSeconds <= 30 { return 5 }
-        if durationSeconds <= 60 { return 10 }
-        if durationSeconds <= 180 { return 15 }
-        if durationSeconds <= 300 { return 30 }
-        return 60
+        // Adjust label density based on zoom level
+        // At lower zoom (more zoomed out), need larger intervals
+        switch zoomLevel {
+        case .overview:
+            // Very zoomed out - show labels every 2-5 minutes
+            if durationSeconds <= 300 { return 60 }
+            if durationSeconds <= 900 { return 120 }
+            return 300
+        case .medium:
+            // Medium zoom - show labels every 30s-2min
+            if durationSeconds <= 120 { return 15 }
+            if durationSeconds <= 300 { return 30 }
+            if durationSeconds <= 900 { return 60 }
+            return 120
+        case .detail:
+            // Zoomed in - original behavior
+            if durationSeconds <= 30 { return 5 }
+            if durationSeconds <= 60 { return 10 }
+            if durationSeconds <= 180 { return 15 }
+            if durationSeconds <= 300 { return 30 }
+            return 60
+        }
     }
     
     private func formatLabelTime(_ seconds: Double) -> String {
