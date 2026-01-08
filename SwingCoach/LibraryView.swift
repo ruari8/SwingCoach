@@ -17,12 +17,13 @@ struct LibraryView: View {
     @StateObject private var library = SwingLibrary.shared
     
     // Import flow
-    @State private var selectedItem: PhotosPickerItem? = nil
     @State private var importedVideoURL: URL? = nil
     @State private var showTrimView = false
     @State private var isImporting = false
     @State private var importTask: Task<Void, Never>? = nil
     @State private var importStatusText: String = "Preparing import..."
+    @State private var importProgress: Double? = nil  // 0.0-1.0, nil = indeterminate
+    @State private var showVideoPicker = false
     
     // Playback
     @State private var selectedSwing: SavedSwing? = nil
@@ -116,8 +117,35 @@ struct LibraryView: View {
                     await library.loadThumbnails()
                 }
             }
-            .onChange(of: selectedItem) { _, newItem in
-                handleImport(newItem)
+            .sheet(isPresented: $showVideoPicker) {
+                VideoPickerWithProgress(
+                    onVideoSelected: { url in
+                        importedVideoURL = url
+                        isImporting = false
+                        importProgress = nil
+                        showTrimView = true
+                    },
+                    onProgress: { fraction, completed, total in
+                        isImporting = true
+                        importProgress = fraction
+                        // Progress uses arbitrary units (0-10000), not bytes
+                        // Just show the percentage
+                        if fraction > 0 {
+                            importStatusText = "Importing video..."
+                        } else {
+                            importStatusText = "Preparing import..."
+                        }
+                    },
+                    onCancel: {
+                        isImporting = false
+                        importProgress = nil
+                    },
+                    onError: { error in
+                        print("❌ Import failed: \(error)")
+                        isImporting = false
+                        importProgress = nil
+                    }
+                )
             }
             .fullScreenCover(isPresented: $showTrimView) {
                 if let url = importedVideoURL {
@@ -169,9 +197,27 @@ struct LibraryView: View {
                         Color.black.opacity(0.5)
                             .ignoresSafeArea()
                         VStack(spacing: 16) {
-                            ProgressView()
-                                .scaleEffect(1.5)
-                                .tint(.white)
+                            // Show determinate progress if available, otherwise spinner
+                            if let progress = importProgress {
+                                ZStack {
+                                    Circle()
+                                        .stroke(Color.white.opacity(0.3), lineWidth: 4)
+                                        .frame(width: 56, height: 56)
+                                    Circle()
+                                        .trim(from: 0, to: progress)
+                                        .stroke(Color.white, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                                        .frame(width: 56, height: 56)
+                                        .rotationEffect(.degrees(-90))
+                                    Text("\(Int(progress * 100))%")
+                                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                                        .foregroundColor(.white)
+                                }
+                            } else {
+                                ProgressView()
+                                    .scaleEffect(1.5)
+                                    .tint(.white)
+                            }
+                            
                             Text(importStatusText)
                                 .foregroundColor(.white)
                                 .font(.subheadline)
@@ -232,7 +278,9 @@ struct LibraryView: View {
                         .cornerRadius(10)
                 }
                 
-                PhotosPicker(selection: $selectedItem, matching: .videos) {
+                Button {
+                    showVideoPicker = true
+                } label: {
                     Label("Import", systemImage: "photo.on.rectangle")
                         .font(.headline)
                         .foregroundColor(.blue)
@@ -481,7 +529,9 @@ struct LibraryView: View {
     }
     
     private var importButton: some View {
-        PhotosPicker(selection: $selectedItem, matching: .videos) {
+        Button {
+            showVideoPicker = true
+        } label: {
             Image(systemName: "plus.circle.fill")
                 .font(.title2)
         }
@@ -519,66 +569,14 @@ struct LibraryView: View {
         onAnalyzeSwings?(swings)
     }
     
-    // MARK: - Actions
-    
-    private func handleImport(_ item: PhotosPickerItem?) {
-        guard let item else { return }
-        
-        // Cancel any existing import
-        importTask?.cancel()
-        
-        isImporting = true
-        importStatusText = "Importing video..."
-        
-        importTask = Task {
-            do {
-                // Use VideoFileTransferable which streams to disk instead of loading into memory
-                // This is much more memory-efficient for large videos
-                guard let video = try await item.loadTransferable(type: VideoFileTransferable.self) else {
-                    throw ImportError.noData
-                }
-                
-                // Check for cancellation before proceeding
-                try Task.checkCancellation()
-                
-                await MainActor.run {
-                    importStatusText = "Preparing editor..."
-                }
-                
-                // Small delay to let UI update
-                try await Task.sleep(nanoseconds: 100_000_000) // 0.1s
-                try Task.checkCancellation()
-                
-                await MainActor.run {
-                    importedVideoURL = video.url
-                    isImporting = false
-                    importTask = nil
-                    showTrimView = true
-                    selectedItem = nil
-                }
-            } catch is CancellationError {
-                print("📥 Import cancelled by user")
-                await MainActor.run {
-                    isImporting = false
-                    importTask = nil
-                    selectedItem = nil
-                }
-            } catch {
-                print("❌ Import failed: \(error)")
-                await MainActor.run {
-                    isImporting = false
-                    importTask = nil
-                    selectedItem = nil
-                }
-            }
-        }
-    }
+    // MARK: - Import Actions
     
     private func cancelImport() {
         importTask?.cancel()
         importTask = nil
         isImporting = false
-        selectedItem = nil
+        importProgress = nil
+        showVideoPicker = false
         
         // Clean up any partial import
         if let url = importedVideoURL {
@@ -592,7 +590,7 @@ struct LibraryView: View {
             try? FileManager.default.removeItem(at: url)
         }
         importedVideoURL = nil
-        selectedItem = nil
+        importProgress = nil
     }
     
     private func loadAndPlay(_ swing: SavedSwing) {
@@ -1266,6 +1264,259 @@ struct VideoFileTransferable: Transferable {
             try FileManager.default.copyItem(at: received.file, to: destURL)
             
             return VideoFileTransferable(url: destURL)
+        }
+    }
+}
+
+// MARK: - PHPicker with Progress Support
+
+/// A UIViewControllerRepresentable that wraps PHPickerViewController and provides progress tracking
+/// Uses PHImageManager for reliable large video export instead of NSItemProvider
+struct VideoPickerWithProgress: UIViewControllerRepresentable {
+    let onVideoSelected: (URL) -> Void
+    let onProgress: (Double, Int64, Int64) -> Void  // (fraction, completedBytes, totalBytes)
+    let onCancel: () -> Void
+    let onError: (Error) -> Void
+    
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration(photoLibrary: .shared())
+        config.filter = .videos
+        config.selectionLimit = 1
+        
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        let parent: VideoPickerWithProgress
+        private var exportSession: AVAssetExportSession?
+        private var progressTimer: Timer?
+        private var phImageRequestID: PHImageRequestID?
+        
+        init(_ parent: VideoPickerWithProgress) {
+            self.parent = parent
+        }
+        
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            // Dismiss picker immediately
+            picker.dismiss(animated: true)
+            
+            guard let result = results.first else {
+                print("📹 Import: User cancelled picker")
+                parent.onCancel()
+                return
+            }
+            
+            // Get the PHAsset identifier
+            guard let assetIdentifier = result.assetIdentifier else {
+                print("❌ Import: No asset identifier - falling back to itemProvider")
+                fallbackToItemProvider(result: result)
+                return
+            }
+            
+            print("📹 Import: Got asset identifier: \(assetIdentifier)")
+            
+            // Fetch the PHAsset
+            let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [assetIdentifier], options: nil)
+            guard let asset = fetchResult.firstObject else {
+                print("❌ Import: Could not fetch PHAsset - falling back to itemProvider")
+                fallbackToItemProvider(result: result)
+                return
+            }
+            
+            print("📹 Import: Got PHAsset - duration: \(asset.duration)s, mediaType: \(asset.mediaType.rawValue)")
+            
+            // Request the video using PHImageManager
+            let options = PHVideoRequestOptions()
+            options.version = .current  // Get the edited version if available
+            options.deliveryMode = .highQualityFormat
+            options.isNetworkAccessAllowed = true  // Allow downloading from iCloud
+            
+            // Progress handler for iCloud downloads
+            options.progressHandler = { [weak self] progress, error, stop, info in
+                print("📹 iCloud download progress: \(Int(progress * 100))%")
+                DispatchQueue.main.async {
+                    self?.parent.onProgress(progress, Int64(progress * 100), 100)
+                }
+                if let error = error {
+                    print("❌ iCloud download error: \(error.localizedDescription)")
+                }
+            }
+            
+            print("📹 Import: Requesting AVAsset from PHImageManager...")
+            
+            // Signal that import has started
+            DispatchQueue.main.async {
+                self.parent.onProgress(0.01, 0, 0)  // Show we're starting
+            }
+            
+            phImageRequestID = PHImageManager.default().requestAVAsset(forVideo: asset, options: options) { [weak self] avAsset, audioMix, info in
+                guard let self = self else { return }
+                
+                if let error = info?[PHImageErrorKey] as? Error {
+                    print("❌ Import: PHImageManager error - \(error.localizedDescription)")
+                    DispatchQueue.main.async {
+                        self.parent.onError(error)
+                    }
+                    return
+                }
+                
+                guard let avAsset = avAsset else {
+                    print("❌ Import: No AVAsset received")
+                    DispatchQueue.main.async {
+                        self.parent.onError(ImportError.noData)
+                    }
+                    return
+                }
+                
+                print("📹 Import: Got AVAsset, type: \(type(of: avAsset))")
+                
+                // If it's a URL asset, we can just copy the file
+                if let urlAsset = avAsset as? AVURLAsset {
+                    print("📹 Import: AVURLAsset with URL: \(urlAsset.url.lastPathComponent)")
+                    self.copyVideoFile(from: urlAsset.url)
+                } else {
+                    // Need to export the asset (e.g., composition from slo-mo)
+                    print("📹 Import: Need to export asset (not a URL asset)")
+                    self.exportAsset(avAsset)
+                }
+            }
+        }
+        
+        private func copyVideoFile(from sourceURL: URL) {
+            // Get file size for logging
+            if let attrs = try? FileManager.default.attributesOfItem(atPath: sourceURL.path),
+               let size = attrs[.size] as? Int64 {
+                print("📹 Import: Source file size: \(Double(size) / 1_000_000) MB")
+            }
+            
+            do {
+                let tempDir = FileManager.default.temporaryDirectory
+                let filename = "\(UUID().uuidString).mov"
+                let destURL = tempDir.appendingPathComponent(filename)
+                
+                print("📹 Import: Copying to \(destURL.lastPathComponent)...")
+                
+                // For large files, copy with progress
+                DispatchQueue.main.async {
+                    self.parent.onProgress(0.5, 0, 0)  // Indicate copying
+                }
+                
+                try FileManager.default.copyItem(at: sourceURL, to: destURL)
+                print("✅ Import: Copy complete!")
+                
+                DispatchQueue.main.async {
+                    self.parent.onVideoSelected(destURL)
+                }
+            } catch {
+                print("❌ Import: Copy failed - \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self.parent.onError(ImportError.copyFailed)
+                }
+            }
+        }
+        
+        private func exportAsset(_ asset: AVAsset) {
+            let tempDir = FileManager.default.temporaryDirectory
+            let filename = "\(UUID().uuidString).mov"
+            let destURL = tempDir.appendingPathComponent(filename)
+            
+            guard let exportSession = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetPassthrough) else {
+                print("❌ Import: Could not create export session")
+                DispatchQueue.main.async {
+                    self.parent.onError(ImportError.noData)
+                }
+                return
+            }
+            
+            self.exportSession = exportSession
+            exportSession.outputURL = destURL
+            exportSession.outputFileType = .mov
+            
+            print("📹 Import: Starting export session...")
+            
+            // Start progress timer
+            progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+                guard let self = self, let session = self.exportSession else { return }
+                let progress = Double(session.progress)
+                print("📹 Export progress: \(Int(progress * 100))%")
+                DispatchQueue.main.async {
+                    self.parent.onProgress(progress, Int64(progress * 100), 100)
+                }
+            }
+            
+            exportSession.exportAsynchronously { [weak self] in
+                guard let self = self else { return }
+                
+                self.progressTimer?.invalidate()
+                self.progressTimer = nil
+                
+                switch exportSession.status {
+                case .completed:
+                    print("✅ Import: Export complete!")
+                    DispatchQueue.main.async {
+                        self.parent.onVideoSelected(destURL)
+                    }
+                case .failed:
+                    print("❌ Import: Export failed - \(exportSession.error?.localizedDescription ?? "unknown")")
+                    DispatchQueue.main.async {
+                        self.parent.onError(exportSession.error ?? ImportError.noData)
+                    }
+                case .cancelled:
+                    print("📹 Import: Export cancelled")
+                    DispatchQueue.main.async {
+                        self.parent.onCancel()
+                    }
+                default:
+                    print("📹 Import: Export status: \(exportSession.status.rawValue)")
+                }
+            }
+        }
+        
+        private func fallbackToItemProvider(result: PHPickerResult) {
+            let itemProvider = result.itemProvider
+            print("📹 Import: Fallback - using itemProvider")
+            print("📹 Import: Registered types: \(itemProvider.registeredTypeIdentifiers)")
+            
+            guard itemProvider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) else {
+                print("❌ Import: Item does not conform to movie type")
+                parent.onError(ImportError.noData)
+                return
+            }
+            
+            // Signal start
+            DispatchQueue.main.async {
+                self.parent.onProgress(0.01, 0, 0)
+            }
+            
+            _ = itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { [weak self] url, error in
+                guard let self = self else { return }
+                
+                if let error = error {
+                    print("❌ Import: itemProvider error - \(error.localizedDescription)")
+                    DispatchQueue.main.async {
+                        self.parent.onError(error)
+                    }
+                    return
+                }
+                
+                guard let sourceURL = url else {
+                    print("❌ Import: No URL from itemProvider")
+                    DispatchQueue.main.async {
+                        self.parent.onError(ImportError.noData)
+                    }
+                    return
+                }
+                
+                self.copyVideoFile(from: sourceURL)
+            }
         }
     }
 }
