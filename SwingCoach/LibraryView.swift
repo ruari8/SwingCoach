@@ -8,6 +8,7 @@
 import SwiftUI
 import PhotosUI
 import AVKit
+import UniformTypeIdentifiers
 
 struct LibraryView: View {
     let onNavigateToCapture: () -> Void
@@ -20,6 +21,8 @@ struct LibraryView: View {
     @State private var importedVideoURL: URL? = nil
     @State private var showTrimView = false
     @State private var isImporting = false
+    @State private var importTask: Task<Void, Never>? = nil
+    @State private var importStatusText: String = "Preparing import..."
     
     // Playback
     @State private var selectedSwing: SavedSwing? = nil
@@ -157,6 +160,38 @@ struct LibraryView: View {
                         .padding(24)
                         .background(Color.black.opacity(0.7))
                         .cornerRadius(12)
+                    }
+                }
+            }
+            .overlay {
+                if isImporting {
+                    ZStack {
+                        Color.black.opacity(0.5)
+                            .ignoresSafeArea()
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .tint(.white)
+                            Text(importStatusText)
+                                .foregroundColor(.white)
+                                .font(.subheadline)
+                                .multilineTextAlignment(.center)
+                            
+                            Button {
+                                cancelImport()
+                            } label: {
+                                Text("Cancel")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 8)
+                                    .background(Color.white.opacity(0.2))
+                                    .cornerRadius(8)
+                            }
+                        }
+                        .padding(28)
+                        .background(Color.black.opacity(0.8))
+                        .cornerRadius(16)
                     }
                 }
             }
@@ -489,34 +524,66 @@ struct LibraryView: View {
     private func handleImport(_ item: PhotosPickerItem?) {
         guard let item else { return }
         
-        isImporting = true
+        // Cancel any existing import
+        importTask?.cancel()
         
-        Task {
+        isImporting = true
+        importStatusText = "Importing video..."
+        
+        importTask = Task {
             do {
-                guard let data = try await item.loadTransferable(type: Data.self) else {
-                    isImporting = false
-                    return
+                // Use VideoFileTransferable which streams to disk instead of loading into memory
+                // This is much more memory-efficient for large videos
+                guard let video = try await item.loadTransferable(type: VideoFileTransferable.self) else {
+                    throw ImportError.noData
                 }
                 
-                let tmpURL = FileManager.default.temporaryDirectory
-                    .appendingPathComponent(UUID().uuidString)
-                    .appendingPathExtension("mov")
-                
-                try data.write(to: tmpURL)
+                // Check for cancellation before proceeding
+                try Task.checkCancellation()
                 
                 await MainActor.run {
-                    importedVideoURL = tmpURL
+                    importStatusText = "Preparing editor..."
+                }
+                
+                // Small delay to let UI update
+                try await Task.sleep(nanoseconds: 100_000_000) // 0.1s
+                try Task.checkCancellation()
+                
+                await MainActor.run {
+                    importedVideoURL = video.url
                     isImporting = false
+                    importTask = nil
                     showTrimView = true
+                    selectedItem = nil
+                }
+            } catch is CancellationError {
+                print("📥 Import cancelled by user")
+                await MainActor.run {
+                    isImporting = false
+                    importTask = nil
                     selectedItem = nil
                 }
             } catch {
                 print("❌ Import failed: \(error)")
                 await MainActor.run {
                     isImporting = false
+                    importTask = nil
                     selectedItem = nil
                 }
             }
+        }
+    }
+    
+    private func cancelImport() {
+        importTask?.cancel()
+        importTask = nil
+        isImporting = false
+        selectedItem = nil
+        
+        // Clean up any partial import
+        if let url = importedVideoURL {
+            try? FileManager.default.removeItem(at: url)
+            importedVideoURL = nil
         }
     }
     
@@ -1163,4 +1230,42 @@ struct FPSExportSheet: View {
 
 #Preview {
     LibraryView(onNavigateToCapture: {})
+}
+
+// MARK: - Video Import Helpers
+
+/// Error type for import failures
+enum ImportError: Error, LocalizedError {
+    case noData
+    case copyFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .noData:
+            return "No video data received"
+        case .copyFailed:
+            return "Failed to copy video file"
+        }
+    }
+}
+
+/// Transferable wrapper for video files that copies to a temp location
+struct VideoFileTransferable: Transferable {
+    let url: URL
+    
+    static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(contentType: .movie) { video in
+            SentTransferredFile(video.url)
+        } importing: { received in
+            // Copy the received file to our own temp location
+            // This is important because the system may delete the original
+            let tempDir = FileManager.default.temporaryDirectory
+            let filename = "\(UUID().uuidString).mov"
+            let destURL = tempDir.appendingPathComponent(filename)
+            
+            try FileManager.default.copyItem(at: received.file, to: destURL)
+            
+            return VideoFileTransferable(url: destURL)
+        }
+    }
 }
