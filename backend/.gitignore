@@ -25,6 +25,10 @@ models/
 *.pth
 *.bin
 *.safetensors
+*.ckpt
+
+# Cloned repos (install as packages, don't version control)
+sam_3d_body/
 
 # Output files
 output/

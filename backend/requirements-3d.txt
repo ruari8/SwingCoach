@@ -1,0 +1,51 @@
+# SAM 3D Body dependencies
+# Install with: pip install -r requirements-3d.txt
+#
+# Prerequisites:
+# 1. Base requirements already installed: pip install -r requirements.txt
+# 2. SAM3 already installed: pip install 'git+https://github.com/facebookresearch/sam3.git'
+# 3. SAM 3D Body cloned: git clone https://github.com/facebookresearch/sam-3d-body.git sam_3d_body
+
+# Core ML dependencies (some may already be installed)
+pytorch-lightning>=2.0.0
+timm>=0.9.0
+einops>=0.7.0
+
+# Visualization and rendering
+pyrender>=0.1.45
+trimesh>=4.0.0
+
+# Config and utilities
+yacs>=0.1.8
+hydra-core>=1.3.0
+pyrootutils>=1.0.4
+rich>=13.0.0
+dill>=0.3.7
+roma>=1.4.0
+loguru>=0.7.0
+fvcore>=0.1.5
+
+# HuggingFace for model download
+huggingface_hub>=0.20.0
+
+# MHR body model - NOT NEEDED
+# The TorchScript fallback (mhr_model.pt in checkpoint) is used when mhr is not installed.
+# This is preferred on Mac since pymomentum doesn't have macOS wheels.
+# If you want the full MHR package (Linux/CUDA only):
+#   pip install pymomentum-gpu mhr
+
+# Additional dependencies from sam-3d-body INSTALL.md
+scikit-image>=0.21.0
+pandas>=2.0.0
+seaborn>=0.12.0
+joblib>=1.3.0
+networkx==3.2.1
+webdataset>=0.2.0
+jsonlines>=3.1.0
+xtcocotools>=1.14.0
+
+# Optional: MoGe for FOV estimation
+# pip install git+https://github.com/microsoft/MoGe.git
+
+# Note: Detectron2 must be installed separately:
+# pip install 'git+https://github.com/facebookresearch/detectron2.git@a1ce2f9' --no-build-isolation --no-deps
