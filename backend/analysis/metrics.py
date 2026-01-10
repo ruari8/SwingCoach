@@ -29,7 +29,12 @@ class SwingMetrics:
     lead_arm_extension: Optional[float] = None
     x_factor: Optional[float] = None
     tempo_ratio: Optional[float] = None
-    
+
+    # Clubhead velocity metrics
+    clubhead_peak_speed_mph: Optional[float] = None
+    clubhead_impact_speed_mph: Optional[float] = None
+    clubhead_speed_confidence: Optional[float] = None
+
     raw_values: Dict = field(default_factory=dict)
     
     def to_dict(self) -> Dict[str, Optional[float]]:
@@ -46,6 +51,9 @@ class SwingMetrics:
             "lead_arm_extension": self.lead_arm_extension,
             "x_factor": self.x_factor,
             "tempo_ratio": self.tempo_ratio,
+            "clubhead_peak_speed_mph": self.clubhead_peak_speed_mph,
+            "clubhead_impact_speed_mph": self.clubhead_impact_speed_mph,
+            "clubhead_speed_confidence": self.clubhead_speed_confidence,
         }
     
     def to_display_dict(self) -> Dict[str, str]:
@@ -82,7 +90,19 @@ class SwingMetrics:
         if self.tempo_ratio is not None:
             status = "good" if 2.5 <= self.tempo_ratio <= 3.5 else "rushed" if self.tempo_ratio < 2.5 else "slow"
             display["Tempo"] = f"{self.tempo_ratio:.1f}:1 ({status})"
-        
+
+        if self.clubhead_peak_speed_mph is not None:
+            # Amateur: 70-100 mph, Pro: 100-130 mph
+            if self.clubhead_peak_speed_mph >= 110:
+                status = "tour-level"
+            elif self.clubhead_peak_speed_mph >= 95:
+                status = "good"
+            elif self.clubhead_peak_speed_mph >= 80:
+                status = "average"
+            else:
+                status = "below average"
+            display["Club Speed"] = f"{self.clubhead_peak_speed_mph:.0f} mph ({status})"
+
         return display
 
 

@@ -18,12 +18,16 @@ from models import (
     HealthResponse,
     SwingEventsResponse,
     SwingEventData,
+    SwingPhaseData,
+    SwingPhasesResponse,
     AnalyzeRequestWithVideo,
     FullAnalysisResult,
     AnnotatedVideoResult,
     AnnotatedVideoMetadata,
     VisualizationLayerInfo,
     VisualizationOptions,
+    VelocityData,
+    VelocityDataPoint,
 )
 from r2_client import get_r2_client
 
@@ -47,6 +51,7 @@ try:
         ClubAnalyzer,
         SwingPathTracker,
         VideoExporter,
+        VelocityEstimator,
     )
     ANALYSIS_AVAILABLE = True
     logger.info("Analysis modules loaded successfully")
@@ -178,10 +183,11 @@ async def analyze_swing(request: AnalyzeRequest):
         with PoseDetector() as pose_detector:
             poses = pose_detector.detect_poses_batch(frames)
         
-        logger.info("Detecting swing events...")
+        logger.info("Detecting swing phases...")
         event_detector = EventDetector(fps=fps / sample_rate)
-        events = event_detector.detect_events(poses, vantage=request.vantage.value)
-        
+        swing_phases = event_detector.detect_phases(poses, vantage=request.vantage.value)
+        events = swing_phases.to_events()  # Convert to legacy events for backward compatibility
+
         key_poses: Dict[str, Optional[object]] = {}
         for event_name, event in [
             ("address", events.address),
@@ -221,7 +227,22 @@ async def analyze_swing(request: AnalyzeRequest):
             impact=_event_to_response(events.impact),
             finish=_event_to_response(events.finish)
         )
-        
+
+        phases_response = SwingPhasesResponse(
+            phases=[
+                SwingPhaseData(
+                    phase=p.phase_number,
+                    name=p.name,
+                    frame=p.frame_index,
+                    timestamp=p.timestamp,
+                    confidence=p.confidence,
+                    description=p.description
+                )
+                for p in swing_phases.phases
+            ],
+            phase_count=len(swing_phases.phases)
+        )
+
         drill_links = [
             DrillLink(
                 id=d.id,
@@ -232,12 +253,13 @@ async def analyze_swing(request: AnalyzeRequest):
             )
             for d in feedback.drills
         ]
-        
+
         result = AnalysisResult(
             swing_id=swing_id,
             summary=feedback.summary,
             diagnosis=feedback.diagnosis,
             events=events_response,
+            phases=phases_response,
             metrics=metrics.to_dict(),
             metrics_display=metrics.to_display_dict(),
             key_issues=feedback.key_issues,
@@ -322,10 +344,11 @@ async def analyze_swing_with_video(request: AnalyzeRequestWithVideo):
         with PoseDetector() as pose_detector:
             poses = pose_detector.detect_poses_batch(frames)
 
-        # Event detection
-        logger.info("Detecting swing events...")
+        # Phase detection (P1-P10)
+        logger.info("Detecting swing phases...")
         event_detector = EventDetector(fps=fps / sample_rate)
-        events = event_detector.detect_events(poses, vantage=request.vantage.value)
+        swing_phases = event_detector.detect_phases(poses, vantage=request.vantage.value)
+        events = swing_phases.to_events()  # Convert to legacy events for backward compatibility
 
         # Get key poses
         key_poses: Dict[str, Optional[object]] = {}
@@ -374,6 +397,21 @@ async def analyze_swing_with_video(request: AnalyzeRequestWithVideo):
             finish=_event_to_response(events.finish)
         )
 
+        phases_response = SwingPhasesResponse(
+            phases=[
+                SwingPhaseData(
+                    phase=p.phase_number,
+                    name=p.name,
+                    frame=p.frame_index,
+                    timestamp=p.timestamp,
+                    confidence=p.confidence,
+                    description=p.description
+                )
+                for p in swing_phases.phases
+            ],
+            phase_count=len(swing_phases.phases)
+        )
+
         drill_links = [
             DrillLink(
                 id=d.id,
@@ -397,7 +435,8 @@ async def analyze_swing_with_video(request: AnalyzeRequestWithVideo):
                 fps=fps / sample_rate,
                 swing_id=swing_id,
                 r2=r2,
-                visualization_options=request.visualization
+                visualization_options=request.visualization,
+                scale_factor=metrics_calculator._scale_factor
             )
 
         result = FullAnalysisResult(
@@ -405,6 +444,7 @@ async def analyze_swing_with_video(request: AnalyzeRequestWithVideo):
             summary=feedback.summary,
             diagnosis=feedback.diagnosis,
             events=events_response,
+            phases=phases_response,
             metrics=metrics.to_dict(),
             metrics_display=metrics.to_display_dict(),
             key_issues=feedback.key_issues,
@@ -434,7 +474,8 @@ async def _generate_annotated_video(
     fps: float,
     swing_id: str,
     r2,
-    visualization_options: Optional[VisualizationOptions] = None
+    visualization_options: Optional[VisualizationOptions] = None,
+    scale_factor: Optional[float] = None
 ) -> Optional[AnnotatedVideoResult]:
     """Generate annotated video with visualization overlays."""
     try:
@@ -463,6 +504,7 @@ async def _generate_annotated_video(
         swing_path = None
         club_masks = None
         club_plane_angle = None
+        velocity_data = None
 
         # Run SAM3 club detection if available and needed
         if SAM3_AVAILABLE and (vis_config.draw_club_plane or vis_config.draw_swing_path or vis_config.draw_club_mask):
@@ -511,8 +553,70 @@ async def _generate_annotated_video(
                     if vis_config.draw_club_mask:
                         club_masks = [det.mask if det else None for det in club_detections]
 
+                    # Run clubhead velocity estimation
+                    if scale_factor is not None:
+                        logger.info("Running clubhead velocity estimation...")
+                        try:
+                            clubhead_detections = tracker.detect_clubhead_batch(frames)
+
+                            # Get impact frame
+                            impact_frame = events.impact.frame_index if events.impact else None
+                            top_frame = events.top.frame_index if events.top else None
+
+                            velocity_estimator = VelocityEstimator(
+                                fps=fps,
+                                scale_factor=scale_factor,
+                                frame_width=frame_width,
+                                frame_height=frame_height
+                            )
+
+                            velocity_metrics = velocity_estimator.estimate_from_detections(
+                                clubhead_detections,
+                                impact_frame=impact_frame,
+                                top_frame=top_frame
+                            )
+
+                            # Convert to API model
+                            speed_profile = [
+                                VelocityDataPoint(
+                                    frame_index=p.frame_index,
+                                    speed_mph=round(p.velocity_mph, 1) if p.velocity_mph else None
+                                )
+                                for p in velocity_metrics.speed_profile
+                            ]
+
+                            velocity_data = VelocityData(
+                                peak_speed_mph=velocity_metrics.peak_speed_mph,
+                                peak_speed_frame=velocity_metrics.peak_speed_frame,
+                                impact_speed_mph=velocity_metrics.impact_speed_mph,
+                                confidence=velocity_metrics.confidence,
+                                speed_profile=speed_profile
+                            )
+
+                            logger.info(
+                                f"Velocity estimation: peak={velocity_metrics.peak_speed_mph:.1f if velocity_metrics.peak_speed_mph else 0} mph, "
+                                f"impact={velocity_metrics.impact_speed_mph:.1f if velocity_metrics.impact_speed_mph else 0} mph, "
+                                f"confidence={velocity_metrics.confidence:.2f}"
+                            )
+
+                        except Exception as e:
+                            logger.warning(f"Velocity estimation failed: {e}")
+
             except Exception as e:
                 logger.warning(f"SAM3 detection failed, continuing without club tracking: {e}")
+
+        # Build speed data dict for visualization
+        speed_data_dict = None
+        peak_speed_value = None
+        peak_speed_frame_idx = None
+        if velocity_data is not None:
+            speed_data_dict = {
+                p.frame_index: p.speed_mph
+                for p in velocity_data.speed_profile
+                if p.speed_mph is not None
+            }
+            peak_speed_value = velocity_data.peak_speed_mph
+            peak_speed_frame_idx = velocity_data.peak_speed_frame
 
         # Generate annotated frames
         logger.info("Generating annotated frames...")
@@ -527,7 +631,11 @@ async def _generate_annotated_video(
             draw_club_plane=vis_config.draw_club_plane,
             draw_swing_path=vis_config.draw_swing_path,
             draw_club_mask=vis_config.draw_club_mask,
-            min_visibility=vis_config.min_visibility
+            min_visibility=vis_config.min_visibility,
+            speed_data=speed_data_dict,
+            peak_speed=peak_speed_value,
+            peak_speed_frame=peak_speed_frame_idx,
+            draw_speed=(velocity_data is not None)
         )
 
         # Export to video
@@ -591,7 +699,8 @@ async def _generate_annotated_video(
             club_plane_angle_degrees=club_plane_angle,
             swing_path_point_count=len(swing_path.points) if swing_path else 0,
             video_fps=fps,
-            frame_count=len(annotated_frames)
+            frame_count=len(annotated_frames),
+            velocity=velocity_data
         )
 
         return AnnotatedVideoResult(

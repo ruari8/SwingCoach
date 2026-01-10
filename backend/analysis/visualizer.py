@@ -92,6 +92,8 @@ COLORS = {
     "club_plane": (255, 165, 0), # Orange - club plane line
     "swing_path": (255, 0, 0),   # Red - swing path trajectory
     "club_mask": (0, 255, 0),    # Green - club mask overlay
+    "speed": (0, 255, 128),      # Green-cyan - speed display
+    "speed_peak": (255, 215, 0), # Gold - peak speed highlight
 }
 
 # Map connections to body parts for coloring
@@ -621,6 +623,91 @@ class SwingVisualizer:
         result_rgb.save(output, format="PNG")
         return output.getvalue()
 
+    def draw_speed_overlay(
+        self,
+        frame_bytes: bytes,
+        current_speed: Optional[float],
+        peak_speed: Optional[float] = None,
+        is_peak_frame: bool = False
+    ) -> bytes:
+        """
+        Draw speed indicator overlay on frame.
+
+        Args:
+            frame_bytes: PNG image bytes
+            current_speed: Current clubhead speed in mph (or None)
+            peak_speed: Peak speed for reference (or None)
+            is_peak_frame: Whether this frame is at/near peak speed
+
+        Returns:
+            PNG bytes with speed overlay
+        """
+        if not PIL_AVAILABLE:
+            return frame_bytes
+
+        if current_speed is None:
+            return frame_bytes
+
+        image = Image.open(io.BytesIO(frame_bytes)).convert("RGBA")
+        draw = ImageDraw.Draw(image)
+
+        # Choose color based on whether this is peak
+        if is_peak_frame:
+            color = COLORS["speed_peak"]
+        else:
+            color = COLORS["speed"]
+
+        # Try to load a font, fall back to default
+        try:
+            font_size = max(24, self.frame_height // 30)
+            font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", font_size)
+        except (OSError, IOError):
+            try:
+                font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24)
+            except (OSError, IOError):
+                font = ImageFont.load_default()
+
+        # Format speed text
+        speed_text = f"{current_speed:.0f} mph"
+
+        # Position in top-left corner with padding
+        padding = 20
+        x = padding
+        y = padding
+
+        # Draw background rectangle for better visibility
+        bbox = draw.textbbox((x, y), speed_text, font=font)
+        bg_padding = 8
+        draw.rectangle(
+            [
+                bbox[0] - bg_padding,
+                bbox[1] - bg_padding,
+                bbox[2] + bg_padding,
+                bbox[3] + bg_padding
+            ],
+            fill=(0, 0, 0, 180)
+        )
+
+        # Draw the speed text
+        draw.text((x, y), speed_text, fill=color, font=font)
+
+        # If peak speed provided, show it below
+        if peak_speed is not None and not is_peak_frame:
+            peak_text = f"Peak: {peak_speed:.0f} mph"
+            try:
+                small_font_size = max(16, self.frame_height // 45)
+                small_font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", small_font_size)
+            except (OSError, IOError):
+                small_font = font
+
+            y2 = bbox[3] + bg_padding + 5
+            draw.text((x, y2), peak_text, fill=COLORS["text"], font=small_font)
+
+        result_rgb = image.convert("RGB")
+        output = io.BytesIO()
+        result_rgb.save(output, format="PNG")
+        return output.getvalue()
+
     def draw_complete_analysis(
         self,
         frame_bytes: bytes,
@@ -633,7 +720,11 @@ class SwingVisualizer:
         draw_club_plane: bool = True,
         draw_swing_path: bool = True,
         draw_club_mask: bool = False,
-        min_visibility: float = 0.5
+        min_visibility: float = 0.5,
+        current_speed: Optional[float] = None,
+        peak_speed: Optional[float] = None,
+        is_peak_frame: bool = False,
+        draw_speed: bool = True
     ) -> bytes:
         """
         Draw complete analysis overlay with all visualization layers.
@@ -650,13 +741,17 @@ class SwingVisualizer:
             draw_swing_path: Whether to draw swing path
             draw_club_mask: Whether to draw club mask
             min_visibility: Minimum visibility threshold
+            current_speed: Current clubhead speed in mph
+            peak_speed: Peak speed for reference display
+            is_peak_frame: Whether this is the peak speed frame
+            draw_speed: Whether to draw speed overlay
 
         Returns:
             PNG bytes with all overlays
         """
         result = frame_bytes
 
-        # Layer order: mask (bottom) -> skeleton -> reference -> club plane -> swing path (top)
+        # Layer order: mask (bottom) -> skeleton -> reference -> club plane -> swing path -> speed (top)
 
         # 1. Club mask overlay (if enabled and available)
         if draw_club_mask and club_mask is not None:
@@ -678,6 +773,10 @@ class SwingVisualizer:
         if draw_swing_path and swing_path_points and len(swing_path_points) >= 2:
             result = self.draw_swing_path(result, swing_path_points)
 
+        # 6. Speed overlay
+        if draw_speed and current_speed is not None:
+            result = self.draw_speed_overlay(result, current_speed, peak_speed, is_peak_frame)
+
         return result
 
     def draw_complete_analysis_batch(
@@ -692,7 +791,11 @@ class SwingVisualizer:
         draw_club_plane: bool = True,
         draw_swing_path: bool = True,
         draw_club_mask: bool = False,
-        min_visibility: float = 0.5
+        min_visibility: float = 0.5,
+        speed_data: Optional[Dict[int, float]] = None,
+        peak_speed: Optional[float] = None,
+        peak_speed_frame: Optional[int] = None,
+        draw_speed: bool = True
     ) -> List[bytes]:
         """
         Draw complete analysis overlays on multiple frames.
@@ -709,6 +812,10 @@ class SwingVisualizer:
             draw_swing_path: Whether to draw swing path
             draw_club_mask: Whether to draw club mask
             min_visibility: Minimum visibility threshold
+            speed_data: Dict mapping frame index to speed in mph
+            peak_speed: Peak speed for display reference
+            peak_speed_frame: Frame index where peak speed occurred
+            draw_speed: Whether to draw speed overlay
 
         Returns:
             List of PNG bytes with all overlays
@@ -727,6 +834,13 @@ class SwingVisualizer:
             if club_masks is not None and i < len(club_masks):
                 mask = club_masks[i]
 
+            # Get speed for this frame
+            current_speed = None
+            is_peak_frame = False
+            if speed_data is not None and i in speed_data:
+                current_speed = speed_data[i]
+                is_peak_frame = (peak_speed_frame is not None and i == peak_speed_frame)
+
             annotated = self.draw_complete_analysis(
                 frame,
                 pose,
@@ -738,7 +852,11 @@ class SwingVisualizer:
                 draw_club_plane=draw_club_plane,
                 draw_swing_path=draw_swing_path,
                 draw_club_mask=draw_club_mask,
-                min_visibility=min_visibility
+                min_visibility=min_visibility,
+                current_speed=current_speed,
+                peak_speed=peak_speed,
+                is_peak_frame=is_peak_frame,
+                draw_speed=draw_speed
             )
             result_frames.append(annotated)
 

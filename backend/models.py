@@ -43,11 +43,27 @@ class SwingEventData(BaseModel):
 
 
 class SwingEventsResponse(BaseModel):
-    """All detected swing events."""
+    """All detected swing events (legacy 4-event system)."""
     address: Optional[SwingEventData] = None
     top: Optional[SwingEventData] = None
     impact: Optional[SwingEventData] = None
     finish: Optional[SwingEventData] = None
+
+
+class SwingPhaseData(BaseModel):
+    """Data for a single swing phase (P1-P10)."""
+    phase: int = Field(..., description="Phase number (1-10)")
+    name: str = Field(..., description="Phase name (address, takeaway, etc.)")
+    frame: int = Field(..., description="Frame index")
+    timestamp: float = Field(..., description="Time in seconds")
+    confidence: float = Field(..., description="Detection confidence")
+    description: str = Field("", description="Human-readable description")
+
+
+class SwingPhasesResponse(BaseModel):
+    """All 10 swing phases (P1-P10)."""
+    phases: List[SwingPhaseData] = Field(default_factory=list, description="List of detected phases")
+    phase_count: int = Field(0, description="Number of phases detected")
 
 
 class AnalysisResult(BaseModel):
@@ -55,7 +71,8 @@ class AnalysisResult(BaseModel):
     swing_id: str = Field(..., description="Unique ID for this analysis")
     summary: str = Field(..., description="Brief summary of the analysis")
     diagnosis: str = Field(..., description="Detailed coaching diagnosis")
-    events: SwingEventsResponse = Field(..., description="Detected swing events")
+    events: SwingEventsResponse = Field(..., description="Detected swing events (legacy)")
+    phases: Optional[SwingPhasesResponse] = Field(None, description="All 10 swing phases (P1-P10)")
     metrics: Dict[str, Optional[float]] = Field(..., description="Raw calculated metrics")
     metrics_display: Dict[str, str] = Field(..., description="Formatted metrics for display")
     key_issues: List[str] = Field(default_factory=list, description="Identified swing issues")
@@ -89,6 +106,21 @@ class VisualizationOptions(BaseModel):
     min_visibility: float = Field(0.5, description="Minimum keypoint visibility threshold")
 
 
+class VelocityDataPoint(BaseModel):
+    """Velocity data at a specific frame for UI playback."""
+    frame_index: int = Field(..., description="Frame number")
+    speed_mph: Optional[float] = Field(None, description="Club speed at this frame")
+
+
+class VelocityData(BaseModel):
+    """Clubhead velocity data for UI display."""
+    peak_speed_mph: Optional[float] = Field(None, description="Maximum club speed")
+    peak_speed_frame: Optional[int] = Field(None, description="Frame where peak speed occurred")
+    impact_speed_mph: Optional[float] = Field(None, description="Club speed at impact")
+    confidence: float = Field(0.0, description="Detection confidence (0-1)")
+    speed_profile: List[VelocityDataPoint] = Field(default_factory=list, description="Speed at each frame for playback")
+
+
 class AnnotatedVideoMetadata(BaseModel):
     """Metadata about the annotated video for UI consumption."""
     layers: List[VisualizationLayerInfo] = Field(default_factory=list, description="Active visualization layers")
@@ -96,6 +128,7 @@ class AnnotatedVideoMetadata(BaseModel):
     swing_path_point_count: int = Field(0, description="Number of points in swing path")
     video_fps: Optional[float] = Field(None, description="Video frames per second")
     frame_count: int = Field(0, description="Total frames in video")
+    velocity: Optional[VelocityData] = Field(None, description="Clubhead velocity data")
 
 
 class AnnotatedVideoResult(BaseModel):
@@ -119,7 +152,8 @@ class FullAnalysisResult(BaseModel):
     swing_id: str = Field(..., description="Unique ID for this analysis")
     summary: str = Field(..., description="Brief summary of the analysis")
     diagnosis: str = Field(..., description="Detailed coaching diagnosis")
-    events: SwingEventsResponse = Field(..., description="Detected swing events")
+    events: SwingEventsResponse = Field(..., description="Detected swing events (legacy)")
+    phases: Optional[SwingPhasesResponse] = Field(None, description="All 10 swing phases (P1-P10)")
     metrics: Dict[str, Optional[float]] = Field(..., description="Raw calculated metrics")
     metrics_display: Dict[str, str] = Field(..., description="Formatted metrics for display")
     key_issues: List[str] = Field(default_factory=list, description="Identified swing issues")
