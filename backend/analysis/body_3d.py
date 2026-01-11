@@ -101,7 +101,7 @@ class Keypoint3D:
         return np.array([self.x, self.y, self.z])
 
 
-@dataclass 
+@dataclass
 class Pose3DResult:
     """3D pose detection result for a single frame."""
     keypoints_3d: Dict[str, Keypoint3D]  # 70 MHR keypoints
@@ -110,9 +110,10 @@ class Pose3DResult:
     bbox: np.ndarray  # Detection bounding box
     focal_length: float
     camera_translation: np.ndarray  # Camera translation vector
-    
+
     # Raw outputs for advanced use
     vertices: Optional[np.ndarray] = None  # Full mesh vertices
+    faces: Optional[np.ndarray] = None  # Mesh face indices (triangles)
     joint_coords: Optional[np.ndarray] = None  # Joint coordinates
     global_rotations: Optional[np.ndarray] = None  # Per-joint rotation matrices
     
@@ -244,9 +245,41 @@ class Body3DDetector:
             human_segmentor=None,
             fov_estimator=None,
         )
-        
+
+        # Extract base mesh faces from MHR model (used for all detections)
+        self.base_mesh_faces = self._extract_base_mesh_faces()
         logger.info("SAM 3D Body model loaded successfully")
-    
+
+    def _extract_base_mesh_faces(self) -> Optional[np.ndarray]:
+        """Extract mesh face indices from the loaded MHR model.
+
+        Returns:
+            Face indices array (N, 3) or None if extraction fails
+        """
+        try:
+            # Access faces from MHR's TorchScript model: head_pose.mhr.character_torch.mesh.faces
+            if hasattr(self.model, 'head_pose'):
+                head_pose = self.model.head_pose
+                if hasattr(head_pose, 'mhr'):
+                    mhr = head_pose.mhr
+                    if hasattr(mhr, 'character_torch'):
+                        char = mhr.character_torch
+                        if hasattr(char, 'mesh'):
+                            mesh = char.mesh
+                            if hasattr(mesh, 'faces'):
+                                faces = mesh.faces
+                                # Convert from torch tensor to numpy
+                                if hasattr(faces, 'cpu'):
+                                    faces_np = faces.cpu().numpy().astype(np.uint32)
+                                else:
+                                    faces_np = np.array(faces, dtype=np.uint32)
+                                logger.info(f"Extracted base mesh faces: {faces_np.shape}")
+                                return faces_np
+        except Exception as e:
+            logger.warning(f"Could not extract base mesh faces: {e}")
+
+        return None
+
     def detect(
         self,
         image: np.ndarray,
@@ -324,6 +357,7 @@ class Body3DDetector:
                 focal_length=float(out['focal_length']),
                 camera_translation=cam_t,
                 vertices=out.get('pred_vertices'),
+                faces=self.base_mesh_faces,  # Use extracted base mesh faces
                 joint_coords=out.get('pred_joint_coords'),
                 global_rotations=out.get('pred_global_rots'),
             )
