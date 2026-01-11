@@ -255,88 +255,128 @@ class Body3DDetector:
     ) -> Optional[Pose3DResult]:
         """
         Detect 3D body pose in an image.
-        
+
         Args:
             image: RGB image as numpy array (H, W, 3)
             bbox: Optional bounding box [x1, y1, x2, y2]. If None, uses full image.
             frame_index: Frame index for tracking
-            
+
         Returns:
             Pose3DResult or None if no person detected
         """
-        height, width = image.shape[:2]
-        
-        # Default bbox is full image
-        if bbox is None:
-            bbox = np.array([[0, 0, width, height]])
-        else:
-            bbox = np.array(bbox).reshape(-1, 4)
-        
-        # Run inference
-        outputs = self.estimator.process_one_image(
-            img=image,
-            bboxes=bbox,
-            inference_type="body",  # Full body, no separate hand inference
-        )
-        
-        if not outputs:
-            return None
-        
-        # Take first detection
-        out = outputs[0]
-        
-        # Build keypoints dict
-        keypoints_3d = {}
-        keypoints_2d = {}
-        
-        kp3d = out['pred_keypoints_3d']  # (70, 3)
-        kp2d = out['pred_keypoints_2d']  # (70, 2)
-        
-        for i, name in enumerate(MHR70_NAMES):
-            keypoints_3d[name] = Keypoint3D(
-                x=float(kp3d[i, 0]),
-                y=float(kp3d[i, 1]),
-                z=float(kp3d[i, 2]),
-                name=name,
+        try:
+            height, width = image.shape[:2]
+
+            # Default bbox is full image
+            if bbox is None:
+                bbox = np.array([[0, 0, width, height]])
+            else:
+                bbox = np.array(bbox).reshape(-1, 4)
+
+            # Run inference
+            outputs = self.estimator.process_one_image(
+                img=image,
+                bboxes=bbox,
+                inference_type="body",  # Full body, no separate hand inference
             )
-            keypoints_2d[name] = (float(kp2d[i, 0]), float(kp2d[i, 1]))
-        
-        return Pose3DResult(
-            keypoints_3d=keypoints_3d,
-            keypoints_2d=keypoints_2d,
-            frame_index=frame_index,
-            bbox=out['bbox'],
-            focal_length=float(out['focal_length']),
-            camera_translation=out['pred_cam_t'],
-            vertices=out.get('pred_vertices'),
-            joint_coords=out.get('pred_joint_coords'),
-            global_rotations=out.get('pred_global_rots'),
-        )
+
+            if not outputs:
+                logger.debug("No detections found in image")
+                return None
+
+            # Take first detection
+            out = outputs[0]
+
+            # Build keypoints dict
+            keypoints_3d = {}
+            keypoints_2d = {}
+
+            kp3d = out['pred_keypoints_3d']  # (70, 3)
+            kp2d = out['pred_keypoints_2d']  # (70, 2)
+
+            # Extract confidence scores if available
+            confidences = out.get('pred_keypoint_confidences', None)
+
+            for i, name in enumerate(MHR70_NAMES):
+                confidence = 1.0
+                if confidences is not None:
+                    confidence = float(confidences[i])
+
+                keypoints_3d[name] = Keypoint3D(
+                    x=float(kp3d[i, 0]),
+                    y=float(kp3d[i, 1]),
+                    z=float(kp3d[i, 2]),
+                    name=name,
+                    confidence=confidence,
+                )
+                keypoints_2d[name] = (float(kp2d[i, 0]), float(kp2d[i, 1]))
+
+            # Ensure camera_translation is numpy array
+            cam_t = out['pred_cam_t']
+            if not isinstance(cam_t, np.ndarray):
+                cam_t = np.array(cam_t)
+
+            return Pose3DResult(
+                keypoints_3d=keypoints_3d,
+                keypoints_2d=keypoints_2d,
+                frame_index=frame_index,
+                bbox=out['bbox'],
+                focal_length=float(out['focal_length']),
+                camera_translation=cam_t,
+                vertices=out.get('pred_vertices'),
+                joint_coords=out.get('pred_joint_coords'),
+                global_rotations=out.get('pred_global_rots'),
+            )
+
+        except Exception as e:
+            logger.error(f"Inference failed: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
     
     def detect_batch(
         self,
         images: List[np.ndarray],
         bboxes: Optional[List[np.ndarray]] = None,
+        clear_cache: bool = False,
     ) -> List[Optional[Pose3DResult]]:
         """
         Detect 3D poses in multiple images.
-        
-        For efficiency, processes images one at a time but reuses the model.
+
+        Processes images one at a time but reuses the model for efficiency.
+
+        Args:
+            images: List of RGB numpy arrays
+            bboxes: Optional list of bboxes for each image
+            clear_cache: If True, clears GPU cache between frames (slower but saves memory)
+
+        Returns:
+            List of Pose3DResult or None for each image
         """
         results = []
         for i, image in enumerate(images):
             bbox = bboxes[i] if bboxes else None
             result = self.detect(image, bbox=bbox, frame_index=i)
             results.append(result)
+
+            # Optionally clear cache between frames for memory efficiency
+            if clear_cache:
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+                    torch.mps.empty_cache()
+
         return results
     
     def __enter__(self):
         return self
     
     def __exit__(self, *args):
-        # Clean up GPU memory
+        # Clean up GPU/MPS memory
         if hasattr(self, 'model'):
             del self.model
             del self.estimator
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
+            if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+                torch.mps.empty_cache()
