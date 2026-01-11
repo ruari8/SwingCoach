@@ -55,25 +55,115 @@ class Mesh3DVisualizer:
         Returns:
             Combined trimesh of skeleton
         """
-        # Define skeleton connections (pairs of joint names)
+        # Define anatomically correct skeleton connections
         connections = [
-            ("left_shoulder", "right_shoulder"),
-            ("left_shoulder", "left_elbow"),
-            ("right_shoulder", "right_elbow"),
-            ("left_elbow", "left_wrist"),
-            ("right_elbow", "right_wrist"),
-            ("left_hip", "right_hip"),
-            ("left_shoulder", "left_hip"),
-            ("right_shoulder", "right_hip"),
-            ("left_hip", "left_knee"),
-            ("right_hip", "right_knee"),
-            ("left_knee", "left_ankle"),
-            ("right_knee", "right_ankle"),
+            # Spine and neck
             ("neck", "left_shoulder"),
             ("neck", "right_shoulder"),
+
+            # Shoulders and torso
+            ("left_shoulder", "right_shoulder"),
+            ("left_shoulder", "left_hip"),
+            ("right_shoulder", "right_hip"),
+            ("left_hip", "right_hip"),
+
+            # Left arm chain
+            ("left_shoulder", "left_elbow"),
+            ("left_elbow", "left_wrist"),
+
+            # Left hand fingers
+            ("left_wrist", "left_thumb_tip"),
+            ("left_thumb_tip", "left_thumb_first"),
+            ("left_thumb_first", "left_thumb_second"),
+            ("left_thumb_second", "left_thumb_third"),
+
+            ("left_wrist", "left_index_tip"),
+            ("left_index_tip", "left_index_first"),
+            ("left_index_first", "left_index_second"),
+            ("left_index_second", "left_index_third"),
+
+            ("left_wrist", "left_middle_tip"),
+            ("left_middle_tip", "left_middle_first"),
+            ("left_middle_first", "left_middle_second"),
+            ("left_middle_second", "left_middle_third"),
+
+            ("left_wrist", "left_ring_tip"),
+            ("left_ring_tip", "left_ring_first"),
+            ("left_ring_first", "left_ring_second"),
+            ("left_ring_second", "left_ring_third"),
+
+            ("left_wrist", "left_pinky_tip"),
+            ("left_pinky_tip", "left_pinky_first"),
+            ("left_pinky_first", "left_pinky_second"),
+            ("left_pinky_second", "left_pinky_third"),
+
+            # Right arm chain
+            ("right_shoulder", "right_elbow"),
+            ("right_elbow", "right_wrist"),
+
+            # Right hand fingers
+            ("right_wrist", "right_thumb_tip"),
+            ("right_thumb_tip", "right_thumb_first"),
+            ("right_thumb_first", "right_thumb_second"),
+            ("right_thumb_second", "right_thumb_third"),
+
+            ("right_wrist", "right_index_tip"),
+            ("right_index_tip", "right_index_first"),
+            ("right_index_first", "right_index_second"),
+            ("right_index_second", "right_index_third"),
+
+            ("right_wrist", "right_middle_tip"),
+            ("right_middle_tip", "right_middle_first"),
+            ("right_middle_first", "right_middle_second"),
+            ("right_middle_second", "right_middle_third"),
+
+            ("right_wrist", "right_ring_tip"),
+            ("right_ring_tip", "right_ring_first"),
+            ("right_ring_first", "right_ring_second"),
+            ("right_ring_second", "right_ring_third"),
+
+            ("right_wrist", "right_pinky_tip"),
+            ("right_pinky_tip", "right_pinky_first"),
+            ("right_pinky_first", "right_pinky_second"),
+            ("right_pinky_second", "right_pinky_third"),
+
+            # Left leg chain
+            ("left_hip", "left_knee"),
+            ("left_knee", "left_ankle"),
+            ("left_ankle", "left_heel"),
+            ("left_ankle", "left_big_toe"),
+            ("left_ankle", "left_small_toe"),
+
+            # Right leg chain
+            ("right_hip", "right_knee"),
+            ("right_knee", "right_ankle"),
+            ("right_ankle", "right_heel"),
+            ("right_ankle", "right_big_toe"),
+            ("right_ankle", "right_small_toe"),
         ]
 
         meshes = []
+
+        # Calculate synthetic spine center points for anatomical correctness
+        # MHR70 doesn't have vertebrae, so we create a virtual spine axis
+        spine_points = {}
+        if all(k in pose_result.keypoints_3d for k in ['neck', 'left_hip', 'right_hip']):
+            neck = pose_result.keypoints_3d['neck'].to_array()
+            left_hip = pose_result.keypoints_3d['left_hip'].to_array()
+            right_hip = pose_result.keypoints_3d['right_hip'].to_array()
+
+            if flip_y:
+                neck[1] = -neck[1]
+                left_hip[1] = -left_hip[1]
+                right_hip[1] = -right_hip[1]
+
+            # Pelvis center
+            pelvis_center = (left_hip + right_hip) / 2
+            spine_points['pelvis_center'] = pelvis_center
+
+            # Mid-torso (between neck and pelvis)
+            torso_mid = (neck + pelvis_center) / 2
+            spine_points['torso_mid'] = torso_mid
 
         # Add joint spheres
         for name, keypoint in pose_result.keypoints_3d.items():
@@ -91,6 +181,44 @@ class Mesh3DVisualizer:
                 ] + [255]
                 meshes.append(sphere)
 
+        # Add synthetic spine bones if we have the necessary points
+        if spine_points:
+            # Neck to mid-torso
+            if 'neck' in pose_result.keypoints_3d and pose_result.keypoints_3d['neck'].confidence > 0.3:
+                neck_pos = pose_result.keypoints_3d['neck'].to_array()
+                if flip_y:
+                    neck_pos = neck_pos.copy()
+                    neck_pos[1] = -neck_pos[1]
+                self._add_bone_cylinder(
+                    meshes, neck_pos, spine_points['torso_mid'],
+                    bone_radius, bone_color
+                )
+
+            # Mid-torso to pelvis
+            self._add_bone_cylinder(
+                meshes, spine_points['torso_mid'], spine_points['pelvis_center'],
+                bone_radius, bone_color
+            )
+
+            # Pelvis center to hips
+            if all(k in pose_result.keypoints_3d for k in ['left_hip', 'right_hip']):
+                left_hip = pose_result.keypoints_3d['left_hip'].to_array()
+                right_hip = pose_result.keypoints_3d['right_hip'].to_array()
+                if flip_y:
+                    left_hip = left_hip.copy()
+                    right_hip = right_hip.copy()
+                    left_hip[1] = -left_hip[1]
+                    right_hip[1] = -right_hip[1]
+
+                self._add_bone_cylinder(
+                    meshes, spine_points['pelvis_center'], left_hip,
+                    bone_radius, bone_color
+                )
+                self._add_bone_cylinder(
+                    meshes, spine_points['pelvis_center'], right_hip,
+                    bone_radius, bone_color
+                )
+
         # Add bone cylinders
         for joint1_name, joint2_name in connections:
             j1 = pose_result.keypoints_3d.get(joint1_name)
@@ -101,38 +229,45 @@ class Mesh3DVisualizer:
                 p2 = j2.to_array()
                 # Convert from camera coords to graphics coords
                 if flip_y:
+                    p1 = p1.copy()
+                    p2 = p2.copy()
                     p1[1] = -p1[1]
                     p2[1] = -p2[1]
-                length = np.linalg.norm(p2 - p1)
-
-                if length > 0:
-                    cyl = trimesh.creation.cylinder(
-                        radius=bone_radius, height=length
-                    )
-                    # Position cylinder between joints
-                    midpoint = (p1 + p2) / 2
-                    direction = (p2 - p1) / length
-                    # Rotate cylinder to align with direction
-                    z_axis = np.array([0, 0, 1])
-                    rotation = Rotation.align_vectors(
-                        [direction], [z_axis]
-                    )[0]
-                    # Create 4x4 transformation matrix
-                    rot_matrix = rotation.as_matrix()
-                    transform = np.eye(4)
-                    transform[:3, :3] = rot_matrix
-                    transform[:3, 3] = midpoint
-                    cyl.apply_transform(transform)
-                    cyl.visual.face_colors = [
-                        int(c * 255) for c in bone_color
-                    ] + [200]
-                    meshes.append(cyl)
+                self._add_bone_cylinder(meshes, p1, p2, bone_radius, bone_color)
 
         if meshes:
             return trimesh.util.concatenate(meshes)
         else:
             # Return empty mesh if no valid skeleton
             return trimesh.Trimesh()
+
+    def _add_bone_cylinder(
+        self,
+        meshes: list,
+        p1: np.ndarray,
+        p2: np.ndarray,
+        bone_radius: float,
+        bone_color: Tuple,
+    ) -> None:
+        """Helper to add a cylinder bone between two points."""
+        length = np.linalg.norm(p2 - p1)
+        if length > 0:
+            cyl = trimesh.creation.cylinder(
+                radius=bone_radius, height=length
+            )
+            midpoint = (p1 + p2) / 2
+            direction = (p2 - p1) / length
+            z_axis = np.array([0, 0, 1])
+            rotation = Rotation.align_vectors([direction], [z_axis])[0]
+            rot_matrix = rotation.as_matrix()
+            transform = np.eye(4)
+            transform[:3, :3] = rot_matrix
+            transform[:3, 3] = midpoint
+            cyl.apply_transform(transform)
+            cyl.visual.face_colors = [
+                int(c * 255) for c in bone_color
+            ] + [200]
+            meshes.append(cyl)
 
     def create_body_mesh(
         self,
