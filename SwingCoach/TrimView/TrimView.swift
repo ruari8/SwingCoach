@@ -13,6 +13,7 @@ import Photos
 /// Main view for trimming a long video into individual swing clips
 struct TrimView: View {
     let sourceURL: URL
+    let playbackRate: Float  // Slow-mo playback rate (e.g., 0.125 for 240fps)
     let onComplete: ([SwingClip], [URL]) -> Void
     let onCancel: () -> Void
     var onExportAndAnalyze: (([SwingClip]) -> Void)? = nil
@@ -435,6 +436,9 @@ struct TrimView: View {
         let playerItem = AVPlayerItem(asset: asset)
         player = AVPlayer(playerItem: playerItem)
         
+        // Set slow-mo playback rate
+        player?.rate = playbackRate
+        
         // Load duration
         Task {
             do {
@@ -503,7 +507,7 @@ struct TrimView: View {
                CMTimeCompare(currentTime, dur) >= 0 {
                 seek(to: .zero)
             }
-            player?.play()
+            player?.rate = playbackRate  // Use slow-mo rate
         }
         isPlaying.toggle()
     }
@@ -649,6 +653,7 @@ struct TrimView: View {
 #Preview {
     TrimView(
         sourceURL: URL(fileURLWithPath: "/tmp/test.mov"),
+        playbackRate: 0.125,  // 240fps slow-mo
         onComplete: { _, _ in },
         onCancel: { }
     )

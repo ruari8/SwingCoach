@@ -151,6 +151,7 @@ struct LibraryView: View {
                 if let url = importedVideoURL {
                     TrimView(
                         sourceURL: url,
+                        playbackRate: 1.0,  // Normal speed for imported videos
                         onComplete: { clips, _ in
                             print("✅ Added \(clips.count) swings to library")
                             showTrimView = false
