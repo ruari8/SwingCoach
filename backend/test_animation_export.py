@@ -173,23 +173,28 @@ def test_animation_export_real_video(sample_rate: int = 8):
             logger.error("Not enough valid poses")
             return False
 
-        # Smooth
-        logger.info("Smoothing poses...")
-        smoother = TemporalSmoother(fps=240, process_noise=0.01, measurement_noise=0.5)
-        poses_smooth = smoother.smooth_poses(poses)
+        # Check if we have mesh data - if so, skip smoothing to keep joints synced with mesh
+        has_mesh = poses[0].vertices is not None
+        if has_mesh:
+            logger.info("Mesh data detected - skipping temporal smoothing to keep joints synced")
+            poses_to_export = poses
+        else:
+            logger.info("Smoothing poses (no mesh data)...")
+            smoother = TemporalSmoother(fps=240, process_noise=0.01, measurement_noise=0.5)
+            poses_to_export = smoother.smooth_poses(poses)
 
         # Export
         logger.info("Exporting to animated GLTF...")
         filename = f"swing_animation_real_sr{sample_rate}.gltf"
         fps_effective = 240 // sample_rate
-        success = export_swing_animation(poses_smooth, filename, fps=fps_effective)
+        success = export_swing_animation(poses_to_export, filename, fps=fps_effective)
 
         if success:
             output_path = Path(__file__).parent / "output" / filename
             if output_path.exists():
                 file_size = output_path.stat().st_size
                 logger.info(f"✓ Animation exported: {output_path} ({file_size / 1024:.1f} KB)")
-            logger.info(f"✓ Duration: {len(poses_smooth) / 240:.2f}s")
+            logger.info(f"✓ Duration: {len(poses_to_export) / fps_effective:.2f}s")
             logger.info(f"✓ File can be viewed in: https://gltf-viewer.donmccurdy.com/")
             return True
         else:

@@ -3,8 +3,8 @@
     "fps": 30.0,
     "duration": 16.8,
     "frame_count": 504,
-    "width": 1920,
-    "height": 1080
+    "width": 1080,
+    "height": 1920
   },
   "events": {
     "address": {
@@ -30,8 +30,8 @@
   },
   "metrics": {
     "head_sway_inches": -12.29374895393233,
-    "head_dip_inches": 24.858134618688474,
-    "hip_slide_inches": 17.739326126557422,
+    "head_dip_inches": 24.858134618688478,
+    "hip_slide_inches": 17.739326126557426,
     "hip_turn_degrees": null,
     "shoulder_turn_degrees": 35.98093574999422,
     "spine_angle_address": 48.276943266002895,
@@ -40,7 +40,10 @@
     "shaft_lean_degrees": null,
     "lead_arm_extension": null,
     "x_factor": -17.475318113244924,
-    "tempo_ratio": 1.9999999999999998
+    "tempo_ratio": 1.9999999999999998,
+    "clubhead_peak_speed_mph": null,
+    "clubhead_impact_speed_mph": null,
+    "clubhead_speed_confidence": null
   },
   "metrics_display": {
     "Head Sway": "-12.3 inches (too much)",

@@ -443,6 +443,26 @@ Instead of traditional 2D video overlays, create **full 3D reconstructions** of 
 filterpy>=1.4.5  # Kalman filter library
 ```
 
+> **⚠️ IMPORTANT: Temporal Smoothing + Mesh Animation Incompatibility (January 2026)**
+>
+> When exporting **animated 3D mesh** (morph targets), temporal smoothing must be **disabled**.
+>
+> **Why:** Temporal smoothing (Kalman filter) only processes joint keypoints, not mesh vertices.
+> This causes joints to lag behind the mesh during fast motion (e.g., downswing), making
+> hands appear detached from the body.
+>
+> **Solution:** Skip temporal smoothing when mesh data is present. The mesh vertices are
+> already frame-accurate from SAM 3D Body output. Joint positions should use raw (unsmoothed)
+> keypoints to stay synchronized with the mesh.
+>
+> **When to use temporal smoothing:**
+> - Joint-only animation (no mesh) where jitter is visible
+> - 2D overlay visualizations
+>
+> **When to skip temporal smoothing:**
+> - Full 3D mesh animation (morph targets)
+> - Any export where joints must match mesh positions
+
 ---
 
 #### Stage 2: Animation Export Pipeline (2-3 weeks)
