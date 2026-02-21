@@ -1,0 +1,38 @@
+[
+  {
+    "id": "drill_head_stability",
+    "title": "Headcover Head Stability Drill",
+    "fault_tags": ["head_sway", "head_dip"],
+    "skill_level": "all",
+    "constraints": ["range", "home"],
+    "summary": "Keep your head centered while rotating. This improves strike consistency.",
+    "source": "https://www.youtube.com/watch?v=example-head-stability"
+  },
+  {
+    "id": "drill_wall_posture",
+    "title": "Wall Posture Drill",
+    "fault_tags": ["spine_angle_change", "early_extension"],
+    "skill_level": "all",
+    "constraints": ["home", "range"],
+    "summary": "Maintain posture through impact by feeling glute contact and rotation.",
+    "source": "https://www.youtube.com/watch?v=example-wall-drill"
+  },
+  {
+    "id": "drill_path_gate",
+    "title": "Club Path Gate Drill",
+    "fault_tags": ["club_path", "swing_plane_deviation", "attack_angle"],
+    "skill_level": "intermediate",
+    "constraints": ["range"],
+    "summary": "Use gate rods to train in-to-out delivery and strike window control.",
+    "source": "https://www.youtube.com/watch?v=example-path-gate"
+  },
+  {
+    "id": "drill_tempo_3to1",
+    "title": "3-to-1 Tempo Count Drill",
+    "fault_tags": ["tempo_ratio"],
+    "skill_level": "all",
+    "constraints": ["range", "home"],
+    "summary": "Count backswing to downswing ratio to improve sequencing and contact.",
+    "source": "https://www.youtube.com/watch?v=example-tempo"
+  }
+]

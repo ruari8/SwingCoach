@@ -25,6 +25,9 @@ from .visualization_config import (
 from .club_analyzer import ClubAnalyzer, ClubPlane
 from .video_exporter import VideoExporter
 from .velocity_estimator import VelocityEstimator, VelocityMetrics, VelocityPoint
+from .pipeline_3d import SwingCoachPipeline3D, Pipeline3DResult
+from .metrics_engine import CoachMetricsEngine, MetricCard, MetricsEngineResult
+from .coach_response_builder import CoachResponseBuilder, CoachingBundle, DrillSuggestion
 
 __all__ = [
     "FrameExtractor",
@@ -49,4 +52,12 @@ __all__ = [
     "VelocityEstimator",
     "VelocityMetrics",
     "VelocityPoint",
+    "SwingCoachPipeline3D",
+    "Pipeline3DResult",
+    "CoachMetricsEngine",
+    "MetricCard",
+    "MetricsEngineResult",
+    "CoachResponseBuilder",
+    "CoachingBundle",
+    "DrillSuggestion",
 ]

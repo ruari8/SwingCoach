@@ -161,3 +161,67 @@ class FullAnalysisResult(BaseModel):
     drill_links: List[DrillLink] = Field(default_factory=list, description="Recommended drills")
     video_info: Optional[Dict] = Field(None, description="Video metadata")
     annotated_video: Optional[AnnotatedVideoResult] = Field(None, description="Annotated video if requested")
+
+
+class CoachableMetricCard(BaseModel):
+    """Coachable metric card returned by the unified pipeline."""
+    key: str
+    name: str
+    value: Optional[float] = None
+    unit: str
+    confidence: float = Field(..., ge=0.0, le=1.0)
+    explanation: str
+    fix_hint: str
+
+
+class CoachableDrill(BaseModel):
+    """Grounded drill suggestion."""
+    id: str
+    title: str
+    source: str
+    summary: str
+
+
+class CoachingBundleResponse(BaseModel):
+    """Top-level coaching guidance payload."""
+    summary: str
+    top_priorities: List[str] = Field(default_factory=list)
+    drills: List[CoachableDrill] = Field(default_factory=list)
+
+
+class ArtifactBundleResponse(BaseModel):
+    """Artifact URLs and local keys for run outputs."""
+    annotated_video_url: Optional[str] = None
+    annotated_video_key: Optional[str] = None
+    swing_3d_url: Optional[str] = None
+    swing_3d_key: Optional[str] = None
+    debug_urls: List[str] = Field(default_factory=list)
+
+
+class QualityBundleResponse(BaseModel):
+    """Quality and traceability metadata."""
+    warnings: List[str] = Field(default_factory=list)
+    missing_data: List[str] = Field(default_factory=list)
+    timings: Dict[str, Dict] = Field(default_factory=dict)
+
+
+class CoachableAnalysisResponse(BaseModel):
+    """Unified backend response used by /analyze."""
+    run_id: str
+    metrics: List[CoachableMetricCard] = Field(default_factory=list)
+    coaching: CoachingBundleResponse
+    artifacts: ArtifactBundleResponse
+    quality: QualityBundleResponse
+
+
+class CoachChatRequest(BaseModel):
+    """Follow-up coaching chat request grounded in a prior run."""
+    run_id: str
+    question: str
+    student_goal: Optional[str] = None
+
+
+class CoachChatResponse(BaseModel):
+    """Grounded coaching chat response."""
+    run_id: str
+    answer: str

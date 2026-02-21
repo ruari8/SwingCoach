@@ -196,6 +196,7 @@ class AnimationExporter:
         output_path: str,
         fps: float = 30.0,
         joint_subset: Optional[List[str]] = None,
+        club_frames: Optional[List] = None,
         output_dir: Optional[str] = None,
     ) -> bool:
         """
@@ -233,7 +234,7 @@ class AnimationExporter:
             self.buffer_views = []
 
             # Build GLTF structure
-            gltf = self._build_gltf(poses, fps, joint_subset)
+            gltf = self._build_gltf(poses, fps, joint_subset, club_frames)
 
             # Convert buffer data to base64 data URI
             buffer_b64 = base64.b64encode(self.buffer_data).decode("utf-8")
@@ -256,7 +257,7 @@ class AnimationExporter:
             logger.error(f"Failed to export animation: {e}", exc_info=True)
             return False
 
-    def _build_gltf(self, poses: List, fps: float, joint_subset: Optional[List[str]]) -> dict:
+    def _build_gltf(self, poses: List, fps: float, joint_subset: Optional[List[str]], club_frames: Optional[List]) -> dict:
         """Build GLTF JSON structure with visible geometry."""
         dt = 1.0 / fps
         num_frames = len(poses)
@@ -412,6 +413,82 @@ class AnimationExporter:
                 "target": {"node": node_idx, "path": "translation"},
             }
             channels.append(channel)
+
+        # Optional club nodes (grip + clubhead) animated with fused club track
+        club_grip_node_idx = None
+        club_head_node_idx = None
+        if club_frames:
+            club_frame_map = {getattr(frame, "frame_index", -1): frame for frame in club_frames}
+
+            grip_positions = []
+            head_positions = []
+            last_grip = [0.0, 0.0, 0.0]
+            last_head = [0.0, 0.0, 0.0]
+
+            for pose in poses:
+                frame_idx = getattr(pose, "frame_index", -1)
+                club_frame = club_frame_map.get(frame_idx)
+                if club_frame is not None:
+                    grip = list(club_frame.grip_point)
+                    head = list(club_frame.clubhead_point)
+                    grip[1] = -grip[1]
+                    head[1] = -head[1]
+                    last_grip = grip
+                    last_head = head
+                grip_positions.append(last_grip)
+                head_positions.append(last_head)
+
+            club_grip_node_idx = len(nodes)
+            nodes.append(
+                {
+                    "name": "club_grip",
+                    "translation": [float(v) for v in grip_positions[0]],
+                    "rotation": [0.0, 0.0, 0.0, 1.0],
+                    "scale": [1.0, 1.0, 1.0],
+                    "mesh": 0,
+                }
+            )
+
+            club_head_node_idx = len(nodes)
+            nodes.append(
+                {
+                    "name": "clubhead",
+                    "translation": [float(v) for v in head_positions[0]],
+                    "rotation": [0.0, 0.0, 0.0, 1.0],
+                    "scale": [1.0, 1.0, 1.0],
+                    "mesh": 0,
+                }
+            )
+
+            for node_idx, positions in [
+                (club_grip_node_idx, grip_positions),
+                (club_head_node_idx, head_positions),
+            ]:
+                flat_positions = np.array(positions, dtype=np.float32).flatten()
+                pos_data = flat_positions.tobytes()
+                self._add_accessor(
+                    pos_data,
+                    "VEC3",
+                    "FLOAT",
+                    num_frames,
+                    flat_positions.tolist(),
+                    is_animation=True,
+                )
+                pos_accessor = len(self.accessors) - 1
+
+                sampler = {
+                    "input": times_accessor,
+                    "interpolation": "LINEAR",
+                    "output": pos_accessor,
+                }
+                samplers.append(sampler)
+                sampler_idx = len(samplers) - 1
+                channels.append(
+                    {
+                        "sampler": sampler_idx,
+                        "target": {"node": node_idx, "path": "translation"},
+                    }
+                )
 
         # Build meshes array
         meshes = [
@@ -666,6 +743,7 @@ def export_swing_animation(
     filename: str,
     fps: float = 30.0,
     output_dir: Optional[str] = None,
+    club_frames: Optional[List] = None,
 ) -> bool:
     """
     Convenience function to export swing animation.
@@ -680,4 +758,10 @@ def export_swing_animation(
         True if successful
     """
     exporter = AnimationExporter()
-    return exporter.export_animation(poses, filename, fps=fps, output_dir=output_dir)
+    return exporter.export_animation(
+        poses,
+        filename,
+        fps=fps,
+        output_dir=output_dir,
+        club_frames=club_frames,
+    )

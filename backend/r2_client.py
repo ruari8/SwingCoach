@@ -90,6 +90,39 @@ class R2Client:
             video_key: The key of the video to delete
         """
         self.s3.delete_object(Bucket=self.bucket_name, Key=video_key)
+
+    def upload_video(self, video_key: str, video_bytes: bytes, content_type: str = "video/mp4") -> None:
+        """
+        Upload a video artifact to R2.
+
+        Args:
+            video_key: Destination key in bucket
+            video_bytes: File bytes
+            content_type: MIME type
+        """
+        self.s3.put_object(
+            Bucket=self.bucket_name,
+            Key=video_key,
+            Body=video_bytes,
+            ContentType=content_type,
+        )
+
+    def upload_bytes(self, key: str, payload: bytes, content_type: str = "application/octet-stream") -> None:
+        """Upload arbitrary bytes to R2."""
+        self.s3.put_object(
+            Bucket=self.bucket_name,
+            Key=key,
+            Body=payload,
+            ContentType=content_type,
+        )
+
+    def generate_download_url(self, key: str, expiration: int = 3600) -> str:
+        """Generate a pre-signed download URL for an object."""
+        return self.s3.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": self.bucket_name, "Key": key},
+            ExpiresIn=expiration,
+        )
     
     def video_exists(self, video_key: str) -> bool:
         """
