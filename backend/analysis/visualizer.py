@@ -27,6 +27,30 @@ except ImportError:
 
 from .pose_detector import PoseResult, Keypoint
 
+# Landmarks hidden in coaching overlays to reduce clutter.
+# Detection still runs on full MediaPipe output; this affects rendering only.
+HIDDEN_SKELETON_LANDMARKS = {
+    # Face
+    "nose",
+    "left_eye_inner",
+    "left_eye",
+    "left_eye_outer",
+    "right_eye_inner",
+    "right_eye",
+    "right_eye_outer",
+    "left_ear",
+    "right_ear",
+    "mouth_left",
+    "mouth_right",
+    # Fingers
+    "left_pinky",
+    "left_index",
+    "left_thumb",
+    "right_pinky",
+    "right_index",
+    "right_thumb",
+}
+
 
 # MediaPipe pose connections for skeleton drawing
 # Each tuple is (start_landmark, end_landmark)
@@ -166,6 +190,9 @@ class SwingVisualizer:
         
         # Draw connections (bones)
         for start_name, end_name in POSE_CONNECTIONS:
+            if start_name in HIDDEN_SKELETON_LANDMARKS or end_name in HIDDEN_SKELETON_LANDMARKS:
+                continue
+
             start_kp = pose.keypoints.get(start_name)
             end_kp = pose.keypoints.get(end_name)
             
@@ -190,6 +217,9 @@ class SwingVisualizer:
         
         # Draw keypoints (joints)
         for name, kp in pose.keypoints.items():
+            if name in HIDDEN_SKELETON_LANDMARKS:
+                continue
+
             if kp.visibility < min_visibility:
                 continue
             

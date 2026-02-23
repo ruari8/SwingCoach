@@ -13,7 +13,7 @@ Generate visual proof for coaching by rendering analysis overlays and replay art
 - Exporter: [video_exporter.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/video_exporter.py)
 
 Current overlay layers available:
-- Skeleton
+- Skeleton (coaching-focused; face and finger landmarks are suppressed)
 - Reference lines
 - Swing path
 - Speed overlay
