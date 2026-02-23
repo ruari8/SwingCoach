@@ -25,7 +25,7 @@ import sys
 import argparse
 import logging
 from pathlib import Path
-from typing import Optional, List, Tuple
+from typing import Optional, Tuple
 
 logging.basicConfig(
     level=logging.INFO,
@@ -52,13 +52,11 @@ def annotate_video(
     Returns:
         True if successful
     """
-    from analysis import (
-        FrameExtractor,
-        PoseDetector,
-        ClubAnalyzer,
-        SwingVisualizer,
-        VideoExporter,
-    )
+    from analysis.frame_extractor import FrameExtractor
+    from analysis.pose_detector import PoseDetector
+    from analysis.club_analyzer import ClubAnalyzer
+    from analysis.visualizer import SwingVisualizer
+    from analysis.video_exporter import VideoExporter
     from analysis.equipment_tracker import EquipmentTracker
 
     # Step 1: Get video info
@@ -112,50 +110,45 @@ def annotate_video(
     else:
         logger.warning("No shaft detected in frame 0 - plane line will not be drawn")
 
-    # Step 4: Run pose detection on all frames
-    logger.info("Running pose detection...")
+    # Step 4: Run pose detection and draw overlays in one pass
+    logger.info("Running pose detection + annotation...")
     with PoseDetector() as detector:
-        poses = []
+        visualizer = SwingVisualizer(frame_width=width, frame_height=height)
+        annotated_frames = []
+        detected_count = 0
+
         for i, frame in enumerate(frames):
-            pose = detector.detect_pose(frame)
-            poses.append(pose)
-            
+            frame_index = i * sample_rate
+            pose = detector.detect_pose(frame, frame_index=frame_index)
+            if pose is not None:
+                detected_count += 1
+
+            result = frame
+
+            # Layer 1: Skeleton
+            if pose is not None:
+                result = visualizer.draw_skeleton(result, pose)
+
+            # Layer 2: Reference lines (shoulder plane, spine)
+            if pose is not None:
+                result = visualizer.draw_reference_lines(result, pose)
+
+            # Layer 3: Plane line (fixed from frame 0)
+            if plane_line is not None:
+                result = visualizer.draw_club_plane(result, plane_line[0], plane_line[1])
+
+            annotated_frames.append(result)
+
             # Progress every 30 frames
             if (i + 1) % 30 == 0 or (i + 1) == len(frames):
-                detected = sum(1 for p in poses if p is not None)
-                logger.info(f"Pose detection: {i + 1}/{len(frames)} frames ({detected} poses detected)")
-    
-    detected_count = sum(1 for p in poses if p is not None)
-    logger.info(f"Pose detection complete: {detected_count}/{len(frames)} frames with poses")
+                logger.info(
+                    f"Pose+annotation: {i + 1}/{len(frames)} frames "
+                    f"({detected_count} poses detected)"
+                )
 
-    # Step 5: Draw overlays on each frame
-    logger.info("Drawing annotations...")
-    visualizer = SwingVisualizer(frame_width=width, frame_height=height)
-    annotated_frames: List[bytes] = []
-    
-    for i, (frame, pose) in enumerate(zip(frames, poses)):
-        # Draw all layers
-        result = frame
-        
-        # Layer 1: Skeleton
-        if pose is not None:
-            result = visualizer.draw_skeleton(result, pose)
-        
-        # Layer 2: Reference lines (shoulder plane, spine)
-        if pose is not None:
-            result = visualizer.draw_reference_lines(result, pose)
-        
-        # Layer 3: Plane line (fixed from frame 0)
-        if plane_line is not None:
-            result = visualizer.draw_club_plane(result, plane_line[0], plane_line[1])
-        
-        annotated_frames.append(result)
-        
-        # Progress every 30 frames
-        if (i + 1) % 30 == 0 or (i + 1) == len(frames):
-            logger.info(f"Annotation: {i + 1}/{len(frames)} frames")
+    logger.info(f"Pose+annotation complete: {detected_count}/{len(frames)} frames with poses")
 
-    # Step 6: Export to MP4
+    # Step 5: Export to MP4
     logger.info("Exporting video...")
     exporter = VideoExporter()
     
@@ -207,7 +200,7 @@ def main():
         sys.exit(1)
     
     # Get frame count to determine sample rate
-    from analysis import FrameExtractor
+    from analysis.frame_extractor import FrameExtractor
     extractor = FrameExtractor()
     video_info = extractor.get_video_info_from_file(video_path)
     total_frames = video_info['frame_count']

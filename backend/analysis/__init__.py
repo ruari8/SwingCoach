@@ -25,9 +25,6 @@ from .visualization_config import (
 from .club_analyzer import ClubAnalyzer, ClubPlane
 from .video_exporter import VideoExporter
 from .velocity_estimator import VelocityEstimator, VelocityMetrics, VelocityPoint
-from .pipeline_3d import SwingCoachPipeline3D, Pipeline3DResult
-from .metrics_engine import CoachMetricsEngine, MetricCard, MetricsEngineResult
-from .coach_response_builder import CoachResponseBuilder, CoachingBundle, DrillSuggestion
 
 __all__ = [
     "FrameExtractor",
@@ -61,3 +58,39 @@ __all__ = [
     "CoachingBundle",
     "DrillSuggestion",
 ]
+
+
+def __getattr__(name):
+    """
+    Lazily import heavyweight modules.
+
+    This avoids importing optional 3D-related dependencies when callers only
+    need lightweight utilities (e.g., frame extraction or 2D annotation tests).
+    """
+    if name in {"SwingCoachPipeline3D", "Pipeline3DResult"}:
+        from .pipeline_3d import Pipeline3DResult, SwingCoachPipeline3D
+
+        return {
+            "SwingCoachPipeline3D": SwingCoachPipeline3D,
+            "Pipeline3DResult": Pipeline3DResult,
+        }[name]
+
+    if name in {"CoachMetricsEngine", "MetricCard", "MetricsEngineResult"}:
+        from .metrics_engine import CoachMetricsEngine, MetricCard, MetricsEngineResult
+
+        return {
+            "CoachMetricsEngine": CoachMetricsEngine,
+            "MetricCard": MetricCard,
+            "MetricsEngineResult": MetricsEngineResult,
+        }[name]
+
+    if name in {"CoachResponseBuilder", "CoachingBundle", "DrillSuggestion"}:
+        from .coach_response_builder import CoachResponseBuilder, CoachingBundle, DrillSuggestion
+
+        return {
+            "CoachResponseBuilder": CoachResponseBuilder,
+            "CoachingBundle": CoachingBundle,
+            "DrillSuggestion": DrillSuggestion,
+        }[name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

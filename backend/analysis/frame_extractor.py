@@ -6,7 +6,7 @@ Supports multiple video formats: .mp4, .mov, .m4v, etc.
 
 import subprocess
 import tempfile
-import os
+import re
 from pathlib import Path
 from typing import List, Optional, Union
 import logging
@@ -45,6 +45,19 @@ class FrameExtractor:
     
     def __init__(self, temp_dir: Optional[str] = None):
         self.temp_dir = temp_dir or tempfile.gettempdir()
+
+    @staticmethod
+    def _frame_file_sort_key(path: Path) -> int:
+        """
+        Sort frame files by numeric suffix.
+
+        ffmpeg can emit variable-length numbers (e.g. frame_1040.png, frame_10000.png).
+        Numeric sorting is required to preserve chronological frame order.
+        """
+        match = re.search(r"(\d+)$", path.stem)
+        if not match:
+            return -1
+        return int(match.group(1))
     
     def extract_frames(
         self,
@@ -79,15 +92,13 @@ class FrameExtractor:
                 "-i", str(video_path),
                 "-vf", f"select=not(mod(n\\,{sample_rate})),setpts=N/FRAME_RATE/TB",
                 "-vsync", "vfr",
-                "-frame_pts", "1",
-                str(frames_dir / "frame_%04d.png"),
+                str(frames_dir / "frame_%08d.png"),
                 "-y",
                 "-loglevel", "error"
             ]
             
             if max_frames:
-                cmd.insert(-4, "-frames:v")
-                cmd.insert(-4, str(max_frames))
+                cmd[5:5] = ["-frames:v", str(max_frames)]
             
             try:
                 subprocess.run(cmd, check=True, capture_output=True)
@@ -95,7 +106,7 @@ class FrameExtractor:
                 logger.error(f"ffmpeg failed: {e.stderr.decode()}")
                 raise RuntimeError(f"Frame extraction failed: {e.stderr.decode()}")
             
-            frame_files = sorted(frames_dir.glob("frame_*.png"))
+            frame_files = sorted(frames_dir.glob("frame_*.png"), key=self._frame_file_sort_key)
             frames = [f.read_bytes() for f in frame_files]
             
             logger.info(f"Extracted {len(frames)} frames (sample_rate={sample_rate})")
@@ -118,6 +129,9 @@ class FrameExtractor:
         Returns:
             List of frame images as PNG bytes
         """
+        if not frame_indices:
+            return []
+
         ext = file_extension or detect_video_extension(video_bytes)
         
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -134,7 +148,7 @@ class FrameExtractor:
                 "-i", str(video_path),
                 "-vf", f"select={select_expr},setpts=N/FRAME_RATE/TB",
                 "-vsync", "vfr",
-                str(frames_dir / "frame_%04d.png"),
+                str(frames_dir / "frame_%08d.png"),
                 "-y",
                 "-loglevel", "error"
             ]
@@ -145,7 +159,7 @@ class FrameExtractor:
                 logger.error(f"ffmpeg failed: {e.stderr.decode()}")
                 raise RuntimeError(f"Frame extraction failed: {e.stderr.decode()}")
             
-            frame_files = sorted(frames_dir.glob("frame_*.png"))
+            frame_files = sorted(frames_dir.glob("frame_*.png"), key=self._frame_file_sort_key)
             frames = [f.read_bytes() for f in frame_files]
             
             logger.info(f"Extracted {len(frames)} specific frames")

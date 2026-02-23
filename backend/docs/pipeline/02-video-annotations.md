@@ -19,6 +19,9 @@ Current overlay layers available:
 - Speed overlay
 - Club plane API exists but is not fully wired in unified render path
 
+Frame extraction hardening:
+- `FrameExtractor` now uses sequential frame numbering (not PTS-based naming) with numeric file sorting to preserve chronological order during PNG extraction.
+
 ### 3D replay artifact
 
 - Body 3D detection: [body_3d.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/body_3d.py)
@@ -47,6 +50,6 @@ Output files:
 
 - [analysis/artifact_renderer.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/artifact_renderer.py)
 - [analysis/visualizer.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/visualizer.py)
+- [analysis/frame_extractor.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/frame_extractor.py)
 - [analysis/animation_exporter.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/animation_exporter.py)
 - [test_full_annotation.py](/Users/ruari/Documents/Startups/SwingCoach/backend/test_full_annotation.py)
-
