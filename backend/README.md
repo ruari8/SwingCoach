@@ -1,276 +1,149 @@
 # SwingCoach Backend
 
-Backend API for golf swing analysis using Cloudflare R2 storage, MediaPipe pose detection, and SAM3 object segmentation.
+Python FastAPI backend for the SwingCoach coaching pipeline.
 
-## Quick Start (macOS Apple Silicon)
+## Purpose
+
+Given one uploaded swing video, the backend returns:
+1. Coachable metric cards with confidence
+2. Visual artifacts (annotated video and optional 3D replay)
+3. Coaching seed output (summary, priorities, drills)
+4. Run-quality metadata (warnings, missing data, timings)
+
+Primary orchestrator: [analysis/pipeline_3d.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/pipeline_3d.py)
+
+## Canonical Backend Docs
+
+- [Backend Docs Index](/Users/ruari/Documents/Startups/SwingCoach/backend/docs/README.md)
+- [Pipeline Stage: Metrics](/Users/ruari/Documents/Startups/SwingCoach/backend/docs/pipeline/01-metrics.md)
+- [Pipeline Stage: Video Annotations](/Users/ruari/Documents/Startups/SwingCoach/backend/docs/pipeline/02-video-annotations.md)
+- [Pipeline Stage: Drills and Feels](/Users/ruari/Documents/Startups/SwingCoach/backend/docs/pipeline/03-drills-feels.md)
+- [Pipeline Stage: Teaching Voice](/Users/ruari/Documents/Startups/SwingCoach/backend/docs/pipeline/04-teaching-voice.md)
+
+## Quick Start
 
 ```bash
 cd backend
-
-# 1. Create virtual environment
 python3 -m venv venv
 source venv/bin/activate
-
-# 2. Install dependencies
 pip install -r requirements.txt
-
-# 3. Download MediaPipe model
-mkdir -p models
-curl -L -o models/pose_landmarker_heavy.task \
-  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task"
-
-# 4. Install SAM3 (for club/ball tracking - optional)
-pip install 'git+https://github.com/facebookresearch/sam3.git'
-
-# 5. Patch SAM3 for macOS compatibility
-python patch_sam3.py
-
-# 6. Download SAM3 model weights (see SAM3_SETUP.md)
-
-# 7. Configure R2 credentials
-cp .env.example .env
-# Edit .env with your Cloudflare R2 credentials
-
-# 8. Run the server
 python main.py
 ```
 
-## SAM3 Setup (macOS)
-
-SAM3 requires patching to work on macOS (no CUDA/Triton). After installing:
-
-```bash
-python patch_sam3.py
-```
-
-This patches 7 files to:
-- Replace Triton GPU kernels with scipy CPU fallback
-- Auto-detect device (MPS/CPU) instead of hardcoding CUDA
-- Fix `pin_memory()` calls that fail on non-CUDA devices
-
-See [SAM3_SETUP.md](SAM3_SETUP.md) for detailed instructions including model weight download.
-
----
-
-## Setup (Full Instructions)
-
-### 1. Install Python dependencies
+Optional 3D dependencies:
 
 ```bash
 cd backend
-python3 -m venv venv
-source venv/bin/activate  # On macOS/Linux
-pip install -r requirements.txt
+source venv/bin/activate
+pip install -r requirements-3d.txt
 ```
 
-### 2. Download MediaPipe model
+## Environment
+
+Create `.env` from `.env.example` and configure Cloudflare R2 credentials.
 
 ```bash
-mkdir -p models
-curl -L -o models/pose_landmarker_heavy.task \
-  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task"
-```
-
-### 3. Install SAM3 for club/ball tracking (optional)
-
-```bash
-# Install SAM3 from GitHub
-pip install 'git+https://github.com/facebookresearch/sam3.git'
-
-# Patch for macOS compatibility
-python patch_sam3.py
-
-# Download model weights - see SAM3_SETUP.md
-```
-
-### 4. Configure R2 credentials
-
-```bash
+cd backend
 cp .env.example .env
-# Edit .env and add your Cloudflare R2 credentials
 ```
 
-Get credentials from: https://dash.cloudflare.com → R2 → Manage R2 API Tokens
+## API Contract
 
-### 5. Run the server
-
-```bash
-python main.py
-# Or use uvicorn directly:
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### 6. Test the API
-
-```bash
-# Health check
-curl http://localhost:8000/health
-
-# Get upload URL
-curl http://localhost:8000/upload-url
-```
-
----
-
-## API Endpoints
+Main server file: [main.py](/Users/ruari/Documents/Startups/SwingCoach/backend/main.py)
 
 ### `GET /health`
-Health check - verifies R2 is configured.
+
+Response shape:
+- `status`
+- `r2_configured`
+- `analysis_ready`
 
 ### `GET /upload-url`
-Returns a pre-signed URL for uploading a video to R2.
 
-Response:
-```json
-{
-  "upload_url": "https://...presigned-url...",
-  "video_key": "swings/abc-123.mp4"
-}
-```
+Response shape:
+- `upload_url`
+- `video_key`
 
 ### `POST /analyze`
-Analyzes a swing video that has been uploaded to R2.
 
-Request:
-```json
-{
-  "video_key": "swings/abc-123.mp4",
-  "vantage": "DTL"
-}
-```
+Request shape:
+- `video_key: str`
+- `vantage: "DTL" | "FO"`
+- `fps: Optional[float]`
 
-Response:
-```json
-{
-  "summary": "Your swing shows early extension...",
-  "metrics": {
-    "Head Sway": "4.2 inches",
-    "Hip Slide": "2.1 inches"
-  },
-  "drill_links": [
-    {
-      "title": "Fix Early Extension",
-      "url": "https://youtube.com/...",
-      "platform": "youtube"
-    }
-  ]
-}
-```
+Response shape (`CoachableAnalysisResponse`):
+- `run_id`
+- `metrics[]` (cards with `key`, `name`, `value`, `unit`, `confidence`, `explanation`, `fix_hint`)
+- `coaching` (`summary`, `top_priorities[]`, `drills[]`)
+- `artifacts` (`annotated_video_url`, `swing_3d_url`, keys)
+- `quality` (`warnings[]`, `missing_data[]`, `timings{}`)
 
----
+### `POST /chat`
 
-## Architecture
+Request shape:
+- `run_id`
+- `question`
+- `student_goal` (optional)
 
-```
-iOS App
-  ↓
-  1. GET /upload-url  →  Backend generates pre-signed URL
-  ↓
-  2. PUT <video>  →  Directly to R2 (not through backend)
-  ↓
-  3. POST /analyze  →  Backend downloads from R2, analyzes, returns results
-```
+Response shape:
+- `run_id`
+- `answer`
 
-### Analysis Pipeline
+## Pipeline Outline
 
-```
-Video → Frame Extraction → Pose Detection → Event Detection → Metrics → Coaching
-         (OpenCV)          (MediaPipe)       (P1-P10)         (angles)   (rules)
-                                ↓
-                           SAM3 (optional)
-                           Club/Ball Tracking
-```
+1. Read video metadata
+2. Sparse 2D pose scan and event estimate
+3. Dense window selection and dense 2D pose
+4. Optional 3D body recovery (SAM 3D Body)
+5. Club 2D/3D fusion
+6. Metrics build (base + club delivery)
+7. Artifact rendering (annotated MP4 + optional GLTF)
+8. Coaching bundle generation
+9. Persist run artifacts and timings
 
----
+## Run Artifacts
 
-## Project Structure
+Output location:
+- [backend/output/runs/](/Users/ruari/Documents/Startups/SwingCoach/backend/output/runs)
 
-```
-backend/
-├── analysis/
-│   ├── __init__.py
-│   ├── coach.py              # Coaching recommendations
-│   ├── event_detector.py     # Swing phase detection
-│   ├── frame_extractor.py    # Video frame extraction
-│   ├── metrics.py            # Biomechanical calculations
-│   ├── pose_detector.py      # MediaPipe pose detection
-│   └── visualizer.py         # Skeleton/reference line overlay
-├── models/
-│   ├── pose_landmarker_heavy.task  # MediaPipe model
-│   └── sam3/                       # SAM3 weights (download separately)
-├── output/                   # Generated visualizations
-├── main.py                   # FastAPI app and endpoints
-├── models.py                 # Pydantic schemas
-├── r2_client.py              # Cloudflare R2 storage client
-├── patch_sam3.py             # SAM3 macOS compatibility patches
-├── test_pipeline.py          # Full analysis pipeline test
-├── test_visualizer.py        # Visualization test
-├── requirements.txt          # Python dependencies
-├── SAM3_SETUP.md             # SAM3 setup instructions
-├── .env                      # Configuration (not committed)
-└── .env.example              # Template for .env
-```
+Typical files per successful run:
+- `input_meta.json`
+- `events.json`
+- `poses_2d.npz`
+- `poses_3d.npz` (if 3D stage available)
+- `club_2d.npz`
+- `club_3d.npz`
+- `metrics.json`
+- `coach_summary.json`
+- `annotated.mp4`
+- `swing_3d.gltf` (if 3D available)
+- `timings.json`
 
----
-
-## Development
-
-The server runs on `0.0.0.0:8000` by default. To connect from your iOS device:
-
-1. Make sure your Mac and iPhone are on the same WiFi
-2. Find your Mac's IP: `ipconfig getifaddr en0`
-3. In your iOS app, use `http://<your-mac-ip>:8000`
-
-### Running Tests
+## Local Test Commands
 
 ```bash
+cd backend
 source venv/bin/activate
 
-# Test visualization
-python test_visualizer.py
+# Unified pipeline integration test
+python test_pipeline_3d.py
 
-# Test full pipeline
+# 2D pipeline test
 python test_pipeline.py
+
+# Full annotation export test
+python test_full_annotation.py --sample
+
+# SAM3 prompt diagnostics
+python test_sam3_detection.py
+
+# Temporal smoothing tests
+python test_temporal_smoothing.py
 ```
 
----
+## Known Reliability Notes
 
-## Features Implemented
+1. Some metrics are confidence-gated and may be absent if detection confidence is low.
+2. Club and impact-related metrics depend on club tracking quality and event alignment.
+3. Frontend client currently expects an older `/analyze` response shape and needs migration.
 
-- [x] Frame extraction (OpenCV)
-- [x] Pose detection (MediaPipe)
-- [x] Event detection (address, top, impact)
-- [x] DTL metrics calculation (hip sway, shoulder tilt, spine angle)
-- [x] Skeleton overlay visualization
-- [x] Reference line visualization (shoulder plane, spine)
-- [x] SAM3 macOS compatibility patches
-- [ ] SAM3 club/ball tracking
-- [ ] Annotated video export
-- [ ] Full P1-P10 swing phases
-
----
-
-## Troubleshooting
-
-### SAM3 Import Errors
-
-If you get `ModuleNotFoundError: No module named 'triton'`:
-```bash
-python patch_sam3.py
-```
-
-### SSL Certificate Errors (HuggingFace)
-
-If downloading SAM3 weights fails with SSL errors:
-```bash
-# On macOS, install certificates:
-/Applications/Python\ 3.13/Install\ Certificates.command
-
-# Or download weights manually from browser
-```
-
-### MediaPipe Not Found
-
-```bash
-pip install mediapipe
-```
