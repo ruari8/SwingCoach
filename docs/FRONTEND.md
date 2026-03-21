@@ -34,6 +34,12 @@ File: [LibraryView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/
 
 Implemented feature set:
 - Import videos from Photos (`PHPicker` flow with progress/cancel UI).
+- Imported videos open trim immediately from the selected Photos asset identifier instead of blocking on an up-front full-video import step.
+- Library shows explicit read-access guidance for `notDetermined` / `limited` / denied states instead of relying on the system's automatic limited-library alert.
+- Full `readWrite` Photos access uses the fast `PHAsset` import path; limited access now also attempts the same path for already-authorized items before falling back.
+- Limited-access imports present an explicit “continue / choose allowed videos / open settings” decision before the picker so the user understands why some videos reopen quickly and others do not.
+- Limited-access fallback first tries an in-place picker file handoff for immediate trim editing, then copies into app temp storage only if the picker cannot provide a durable URL directly.
+- Library asset validation only runs with full Photos access so limited mode cannot incorrectly prune saved swings that are merely outside the current allowed set.
 - Launch trim flow for imported source video.
 - Persist swing metadata and thumbnails via `SwingLibrary`.
 - Grid browsing with vantage filtering.
@@ -53,7 +59,8 @@ Implemented feature set:
   - `60fps 4K` (ball-tracer future mode scaffold)
 - Runtime mode switching without full session teardown.
 - Tap-to-focus and exposure targeting.
-- Recording state handling and post-record pipeline hooks.
+- Recording state handling with immediate post-stop playback of the captured high-fps asset.
+- Slow-motion rendering is deferred until explicit clip export instead of blocking the stop-record action.
 - Integration path into library and optional analyze handoff.
 
 ## 3. Trim Workflow
@@ -64,11 +71,16 @@ Files:
 - [VideoTrimmer.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/VideoTrimmer.swift)
 
 Implemented feature set:
-- Timeline thumbnail generation.
+- Timeline opens immediately with placeholder/progressive thumbnail loading.
+- In-memory thumbnail caching for reopened trim sessions on the same source file.
+- Library imports hand trim a lightweight Photos-backed source first, then load a fast preview asset in-editor and defer high-quality asset resolution until export.
+- High-fps capture timelines display slow-playback timing while keeping selection mapped to the original source frames.
 - Start/end range selection for clip creation.
 - Multi-clip extraction from a long source video.
 - Per-clip vantage assignment and clip list management.
-- Export to MP4 clips for downstream storage/analysis.
+- Press-and-hold frame stepping with acceleration for faster long scrubs.
+- Text-only zoom controls and a single primary export action in the footer.
+- Export to MP4 clips for downstream storage/analysis, with captured high-fps sessions rendered to true slow-motion during export.
 
 ## 4. Coach Tab (Analysis)
 
@@ -122,7 +134,11 @@ Current frontend `AnalysisResponse` expectation:
 - UI currently renders summary/metrics/drills only.
 - Does not yet consume annotated video URL, 3D artifact URL, confidence/warnings.
 
-3. Environment setup
+3. Trim-to-analyze handoff
+- The capture trim footer currently shows a single primary action.
+- Automatic analyze handoff after clip export is intentionally left as future work.
+
+4. Environment setup
 - `baseURL` in [SwingCoachAPI.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingCoachAPI.swift) is still hardcoded and should be environment-configurable.
 
 ## Recommended Next Frontend Documentation Additions
@@ -130,4 +146,3 @@ Current frontend `AnalysisResponse` expectation:
 1. Add API migration checklist once `/analyze` response mapping is updated.
 2. Add screen-by-screen state diagrams for capture -> trim -> analyze.
 3. Add QA matrix (permissions, iCloud assets, missing assets, offline behavior).
-

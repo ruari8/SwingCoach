@@ -7,23 +7,28 @@
 
 import SwiftUI
 import PhotosUI
+import Photos
 import AVKit
 import UniformTypeIdentifiers
+import UIKit
 
 struct LibraryView: View {
     let onNavigateToCapture: () -> Void
     var onAnalyzeSwings: (([SavedSwing]) -> Void)? = nil
     
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var library = SwingLibrary.shared
     
     // Import flow
-    @State private var importedVideoURL: URL? = nil
+    @State private var importedVideoSource: TrimVideoSource? = nil
     @State private var showTrimView = false
     @State private var isImporting = false
     @State private var importTask: Task<Void, Never>? = nil
     @State private var importStatusText: String = "Preparing import..."
     @State private var importProgress: Double? = nil  // 0.0-1.0, nil = indeterminate
     @State private var showVideoPicker = false
+    @State private var photoLibraryAccessStatus: PHAuthorizationStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+    @State private var showLimitedPhotoAccessOptions = false
     
     // Playback
     @State private var selectedSwing: SavedSwing? = nil
@@ -52,6 +57,10 @@ struct LibraryView: View {
         GridItem(.flexible(), spacing: 12)
     ]
     
+    private var shouldShowPhotoAccessBanner: Bool {
+        photoLibraryAccessStatus != .authorized
+    }
+    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -66,6 +75,13 @@ struct LibraryView: View {
                 }
             }
             .navigationTitle("My Swings")
+            .safeAreaInset(edge: .top) {
+                if shouldShowPhotoAccessBanner {
+                    photoAccessBanner
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     if isSelecting {
@@ -112,28 +128,34 @@ struct LibraryView: View {
                 Text("This will remove the selected swings from your library. The videos will remain in your Photos library.")
             }
             .onAppear {
+                refreshPhotoLibraryAccessStatus()
                 Task {
-                    library.validateAssets()
-                    await library.loadThumbnails()
+                    await loadLibraryAssetsIfPermitted()
+                }
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                guard newPhase == .active else { return }
+                refreshPhotoLibraryAccessStatus()
+                Task {
+                    await loadLibraryAssetsIfPermitted()
                 }
             }
             .sheet(isPresented: $showVideoPicker) {
                 VideoPickerWithProgress(
-                    onVideoSelected: { url in
-                        importedVideoURL = url
+                    onVideoSelected: { source in
+                        importedVideoSource = source
                         isImporting = false
                         importProgress = nil
                         showTrimView = true
                     },
                     onProgress: { fraction, completed, total in
                         isImporting = true
-                        importProgress = fraction
-                        // Progress uses arbitrary units (0-10000), not bytes
-                        // Just show the percentage
-                        if fraction > 0 {
-                            importStatusText = "Importing video..."
+                        if total == 0 {
+                            importProgress = nil
+                            importStatusText = "Opening from Photos..."
                         } else {
-                            importStatusText = "Preparing import..."
+                            importProgress = max(0, min(1, fraction))
+                            importStatusText = "Loading video..."
                         }
                     },
                     onCancel: {
@@ -147,10 +169,24 @@ struct LibraryView: View {
                     }
                 )
             }
+            .confirmationDialog("Photos Access", isPresented: $showLimitedPhotoAccessOptions, titleVisibility: .visible) {
+                Button("Continue Import") {
+                    showVideoPicker = true
+                }
+                Button("Choose Allowed Videos") {
+                    presentLimitedLibraryPicker()
+                }
+                Button("Open Settings") {
+                    openAppSettings()
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("SwingCoach currently has limited Photos access. Continue import for the slower fallback path, choose allowed videos so PhotoKit can reopen them directly, or switch to full access in Settings.")
+            }
             .fullScreenCover(isPresented: $showTrimView) {
-                if let url = importedVideoURL {
+                if let source = importedVideoSource {
                     TrimView(
-                        sourceURL: url,
+                        source: source,
                         onComplete: { clips, _ in
                             print("✅ Added \(clips.count) swings to library")
                             showTrimView = false
@@ -249,6 +285,86 @@ struct LibraryView: View {
         }
     }
     
+    private var photoAccessBanner: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: photoLibraryAccessStatus == .limited ? "photo.stack" : "exclamationmark.triangle.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.yellow)
+                .padding(.top, 2)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(photoAccessBannerTitle)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(.white)
+                
+                Text(photoAccessBannerMessage)
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.8))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            Spacer(minLength: 8)
+            
+            Button(photoAccessBannerActionTitle) {
+                handlePhotoAccessBannerAction()
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundColor(.black)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.yellow)
+            .cornerRadius(8)
+        }
+        .padding(14)
+        .background(Color.black.opacity(0.82))
+        .cornerRadius(14)
+    }
+    
+    private var photoAccessBannerTitle: String {
+        switch photoLibraryAccessStatus {
+        case .limited:
+            return "Limited Photos Access"
+        case .authorized:
+            return ""
+        case .denied, .restricted:
+            return "Photos Access Off"
+        case .notDetermined:
+            return "Allow Photos Access"
+        @unknown default:
+            return "Photos Access Needed"
+        }
+    }
+    
+    private var photoAccessBannerMessage: String {
+        switch photoLibraryAccessStatus {
+        case .limited:
+            return "SwingCoach has limited Photos access. Full access is the fastest path; otherwise only selected videos can use the fast reopen path."
+        case .denied, .restricted:
+            return "SwingCoach needs read access to show saved swings from Photos and reliably reopen imported videos."
+        case .notDetermined:
+            return "Grant Photos access so the library can show saved swings and import videos consistently."
+        case .authorized:
+            return ""
+        @unknown default:
+            return "Photos access affects imports and saved swing playback."
+        }
+    }
+    
+    private var photoAccessBannerActionTitle: String {
+        switch photoLibraryAccessStatus {
+        case .notDetermined:
+            return "Allow"
+        case .limited:
+            return "Manage"
+        case .denied, .restricted:
+            return "Open Settings"
+        case .authorized:
+            return ""
+        @unknown default:
+            return "Open Settings"
+        }
+    }
+    
     // MARK: - Empty State
     
     private var emptyState: some View {
@@ -279,7 +395,7 @@ struct LibraryView: View {
                 }
                 
                 Button {
-                    showVideoPicker = true
+                    beginImportFlow()
                 } label: {
                     Label("Import", systemImage: "photo.on.rectangle")
                         .font(.headline)
@@ -530,7 +646,7 @@ struct LibraryView: View {
     
     private var importButton: some View {
         Button {
-            showVideoPicker = true
+            beginImportFlow()
         } label: {
             Image(systemName: "plus.circle.fill")
                 .font(.title2)
@@ -571,6 +687,105 @@ struct LibraryView: View {
     
     // MARK: - Import Actions
     
+    private func refreshPhotoLibraryAccessStatus() {
+        photoLibraryAccessStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+    }
+    
+    private func loadLibraryAssetsIfPermitted() async {
+        guard photoLibraryAccessStatus == .authorized || photoLibraryAccessStatus == .limited else {
+            return
+        }
+        
+        if photoLibraryAccessStatus == .authorized {
+            library.validateAssets()
+        }
+        await library.loadThumbnails()
+    }
+    
+    private func beginImportFlow() {
+        refreshPhotoLibraryAccessStatus()
+        
+        switch photoLibraryAccessStatus {
+        case .authorized:
+            showVideoPicker = true
+        case .limited:
+            showLimitedPhotoAccessOptions = true
+        case .notDetermined:
+            requestPhotoLibraryAccess(openPickerAfterAuthorization: true)
+        case .denied, .restricted:
+            openAppSettings()
+        @unknown default:
+            openAppSettings()
+        }
+    }
+    
+    private func handlePhotoAccessBannerAction() {
+        switch photoLibraryAccessStatus {
+        case .notDetermined:
+            requestPhotoLibraryAccess(openPickerAfterAuthorization: false)
+        case .limited:
+            showLimitedPhotoAccessOptions = true
+        case .denied, .restricted:
+            openAppSettings()
+        case .authorized:
+            break
+        @unknown default:
+            openAppSettings()
+        }
+    }
+    
+    private func requestPhotoLibraryAccess(openPickerAfterAuthorization: Bool) {
+        PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
+            Task { @MainActor in
+                photoLibraryAccessStatus = status
+                await loadLibraryAssetsIfPermitted()
+                if openPickerAfterAuthorization {
+                    switch status {
+                    case .authorized:
+                        showVideoPicker = true
+                    case .limited:
+                        showLimitedPhotoAccessOptions = true
+                    default:
+                        break
+                    }
+                }
+            }
+        }
+    }
+    
+    private func presentLimitedLibraryPicker() {
+        DispatchQueue.main.async {
+            guard let rootViewController = activeRootViewController() else {
+                openAppSettings()
+                return
+            }
+            
+            PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: rootViewController)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+                refreshPhotoLibraryAccessStatus()
+                Task {
+                    await loadLibraryAssetsIfPermitted()
+                }
+            }
+        }
+    }
+    
+    private func activeRootViewController() -> UIViewController? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let keyWindow = scenes.flatMap(\.windows).first { $0.isKeyWindow }
+        var controller = keyWindow?.rootViewController
+        while let presented = controller?.presentedViewController {
+            controller = presented
+        }
+        return controller
+    }
+    
+    private func openAppSettings() {
+        guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(settingsURL)
+    }
+    
     private func cancelImport() {
         importTask?.cancel()
         importTask = nil
@@ -579,17 +794,17 @@ struct LibraryView: View {
         showVideoPicker = false
         
         // Clean up any partial import
-        if let url = importedVideoURL {
+        if let url = importedVideoSource?.cleanupURL {
             try? FileManager.default.removeItem(at: url)
-            importedVideoURL = nil
         }
+        importedVideoSource = nil
     }
     
     private func cleanupImport() {
-        if let url = importedVideoURL {
+        if let url = importedVideoSource?.cleanupURL {
             try? FileManager.default.removeItem(at: url)
         }
-        importedVideoURL = nil
+        importedVideoSource = nil
         importProgress = nil
     }
     
@@ -1271,9 +1486,9 @@ struct VideoFileTransferable: Transferable {
 // MARK: - PHPicker with Progress Support
 
 /// A UIViewControllerRepresentable that wraps PHPickerViewController and provides progress tracking
-/// Uses PHImageManager for reliable large video export instead of NSItemProvider
+/// Uses PhotoKit to open the selected video without duplicating the full source upfront.
 struct VideoPickerWithProgress: UIViewControllerRepresentable {
-    let onVideoSelected: (URL) -> Void
+    let onVideoSelected: (TrimVideoSource) -> Void
     let onProgress: (Double, Int64, Int64) -> Void  // (fraction, completedBytes, totalBytes)
     let onCancel: () -> Void
     let onError: (Error) -> Void
@@ -1282,6 +1497,7 @@ struct VideoPickerWithProgress: UIViewControllerRepresentable {
         var config = PHPickerConfiguration(photoLibrary: .shared())
         config.filter = .videos
         config.selectionLimit = 1
+        config.preferredAssetRepresentationMode = .current
         
         let picker = PHPickerViewController(configuration: config)
         picker.delegate = context.coordinator
@@ -1296,21 +1512,29 @@ struct VideoPickerWithProgress: UIViewControllerRepresentable {
     
     class Coordinator: NSObject, PHPickerViewControllerDelegate {
         let parent: VideoPickerWithProgress
-        private var exportSession: AVAssetExportSession?
-        private var progressTimer: Timer?
-        private var phImageRequestID: PHImageRequestID?
+        private var importStartTime: Date?
         
         init(_ parent: VideoPickerWithProgress) {
             self.parent = parent
         }
         
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            importStartTime = Date()
+            
             // Dismiss picker immediately
             picker.dismiss(animated: true)
             
             guard let result = results.first else {
                 print("📹 Import: User cancelled picker")
                 parent.onCancel()
+                return
+            }
+            
+            let readWriteStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+            let canAttemptAssetFetch = readWriteStatus == .authorized || readWriteStatus == .limited
+            if !canAttemptAssetFetch {
+                print("📹 Import: Photos access is \(readWriteStatus.rawValue); using picker file handoff instead of PHAsset fast path")
+                fallbackToItemProvider(result: result)
                 return
             }
             
@@ -1331,62 +1555,17 @@ struct VideoPickerWithProgress: UIViewControllerRepresentable {
                 return
             }
             
-            print("📹 Import: Got PHAsset - duration: \(asset.duration)s, mediaType: \(asset.mediaType.rawValue)")
-            
-            // Request the video using PHImageManager
-            let options = PHVideoRequestOptions()
-            options.version = .current  // Get the edited version if available
-            options.deliveryMode = .highQualityFormat
-            options.isNetworkAccessAllowed = true  // Allow downloading from iCloud
-            
-            // Progress handler for iCloud downloads
-            options.progressHandler = { [weak self] progress, error, stop, info in
-                print("📹 iCloud download progress: \(Int(progress * 100))%")
-                DispatchQueue.main.async {
-                    self?.parent.onProgress(progress, Int64(progress * 100), 100)
-                }
-                if let error = error {
-                    print("❌ iCloud download error: \(error.localizedDescription)")
-                }
-            }
-            
-            print("📹 Import: Requesting AVAsset from PHImageManager...")
-            
-            // Signal that import has started
             DispatchQueue.main.async {
-                self.parent.onProgress(0.01, 0, 0)  // Show we're starting
-            }
-            
-            phImageRequestID = PHImageManager.default().requestAVAsset(forVideo: asset, options: options) { [weak self] avAsset, audioMix, info in
-                guard let self = self else { return }
-                
-                if let error = info?[PHImageErrorKey] as? Error {
-                    print("❌ Import: PHImageManager error - \(error.localizedDescription)")
-                    DispatchQueue.main.async {
-                        self.parent.onError(error)
-                    }
-                    return
+                print("📹 Import: Got PHAsset - duration: \(asset.duration)s, mediaType: \(asset.mediaType.rawValue)")
+                if let importStartTime = self.importStartTime {
+                    print("📹 Import: Handing off to trim after \(String(format: "%.2f", Date().timeIntervalSince(importStartTime)))s")
                 }
-                
-                guard let avAsset = avAsset else {
-                    print("❌ Import: No AVAsset received")
-                    DispatchQueue.main.async {
-                        self.parent.onError(ImportError.noData)
-                    }
-                    return
-                }
-                
-                print("📹 Import: Got AVAsset, type: \(type(of: avAsset))")
-                
-                // If it's a URL asset, we can just copy the file
-                if let urlAsset = avAsset as? AVURLAsset {
-                    print("📹 Import: AVURLAsset with URL: \(urlAsset.url.lastPathComponent)")
-                    self.copyVideoFile(from: urlAsset.url)
-                } else {
-                    // Need to export the asset (e.g., composition from slo-mo)
-                    print("📹 Import: Need to export asset (not a URL asset)")
-                    self.exportAsset(avAsset)
-                }
+                self.parent.onVideoSelected(
+                    .photoLibrary(
+                        assetIdentifier: assetIdentifier,
+                        durationSeconds: asset.duration
+                    )
+                )
             }
         }
         
@@ -1404,78 +1583,22 @@ struct VideoPickerWithProgress: UIViewControllerRepresentable {
                 
                 print("📹 Import: Copying to \(destURL.lastPathComponent)...")
                 
-                // For large files, copy with progress
+                // Copy is currently an indeterminate stage.
                 DispatchQueue.main.async {
-                    self.parent.onProgress(0.5, 0, 0)  // Indicate copying
+                    self.parent.onProgress(0, 0, 0)
                 }
                 
                 try FileManager.default.copyItem(at: sourceURL, to: destURL)
                 print("✅ Import: Copy complete!")
                 
                 DispatchQueue.main.async {
-                    self.parent.onVideoSelected(destURL)
+                    self.parent.onProgress(1.0, 100, 100)
+                    self.parent.onVideoSelected(.localFile(url: destURL))
                 }
             } catch {
                 print("❌ Import: Copy failed - \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     self.parent.onError(ImportError.copyFailed)
-                }
-            }
-        }
-        
-        private func exportAsset(_ asset: AVAsset) {
-            let tempDir = FileManager.default.temporaryDirectory
-            let filename = "\(UUID().uuidString).mov"
-            let destURL = tempDir.appendingPathComponent(filename)
-            
-            guard let exportSession = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetPassthrough) else {
-                print("❌ Import: Could not create export session")
-                DispatchQueue.main.async {
-                    self.parent.onError(ImportError.noData)
-                }
-                return
-            }
-            
-            self.exportSession = exportSession
-            exportSession.outputURL = destURL
-            exportSession.outputFileType = .mov
-            
-            print("📹 Import: Starting export session...")
-            
-            // Start progress timer
-            progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-                guard let self = self, let session = self.exportSession else { return }
-                let progress = Double(session.progress)
-                print("📹 Export progress: \(Int(progress * 100))%")
-                DispatchQueue.main.async {
-                    self.parent.onProgress(progress, Int64(progress * 100), 100)
-                }
-            }
-            
-            exportSession.exportAsynchronously { [weak self] in
-                guard let self = self else { return }
-                
-                self.progressTimer?.invalidate()
-                self.progressTimer = nil
-                
-                switch exportSession.status {
-                case .completed:
-                    print("✅ Import: Export complete!")
-                    DispatchQueue.main.async {
-                        self.parent.onVideoSelected(destURL)
-                    }
-                case .failed:
-                    print("❌ Import: Export failed - \(exportSession.error?.localizedDescription ?? "unknown")")
-                    DispatchQueue.main.async {
-                        self.parent.onError(exportSession.error ?? ImportError.noData)
-                    }
-                case .cancelled:
-                    print("📹 Import: Export cancelled")
-                    DispatchQueue.main.async {
-                        self.parent.onCancel()
-                    }
-                default:
-                    print("📹 Import: Export status: \(exportSession.status.rawValue)")
                 }
             }
         }
@@ -1493,9 +1616,40 @@ struct VideoPickerWithProgress: UIViewControllerRepresentable {
             
             // Signal start
             DispatchQueue.main.async {
-                self.parent.onProgress(0.01, 0, 0)
+                self.parent.onProgress(0, 0, 0)
             }
             
+            _ = itemProvider.loadInPlaceFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { [weak self] url, isInPlace, error in
+                guard let self = self else { return }
+                
+                if let error = error {
+                    print("❌ Import: in-place file handoff failed - \(error.localizedDescription)")
+                    self.loadCopiedFileRepresentation(from: itemProvider)
+                    return
+                }
+                
+                guard let sourceURL = url else {
+                    print("❌ Import: No in-place URL from itemProvider - falling back to copied file")
+                    self.loadCopiedFileRepresentation(from: itemProvider)
+                    return
+                }
+                
+                if isInPlace {
+                    print("📹 Import: Using in-place file URL from picker")
+                    DispatchQueue.main.async {
+                        if let importStartTime = self.importStartTime {
+                            print("📹 Import: Handing off in-place file after \(String(format: "%.2f", Date().timeIntervalSince(importStartTime)))s")
+                        }
+                        self.parent.onVideoSelected(.externalFile(url: sourceURL))
+                    }
+                } else {
+                    print("📹 Import: Picker provided a temporary copied file; promoting into app temp storage")
+                    self.copyVideoFile(from: sourceURL)
+                }
+            }
+        }
+        
+        private func loadCopiedFileRepresentation(from itemProvider: NSItemProvider) {
             _ = itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { [weak self] url, error in
                 guard let self = self else { return }
                 

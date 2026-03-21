@@ -11,6 +11,9 @@ import AVFoundation
 /// A horizontal timeline showing video thumbnails with draggable range selection
 struct ThumbnailTimeline: View {
     let thumbnails: [(time: CMTime, image: UIImage)]
+    let placeholderCount: Int
+    let isLoading: Bool
+    let displayTimeScale: Double
     let duration: CMTime
     let clips: [SwingClip]  // Show markers for existing clips
     
@@ -19,9 +22,6 @@ struct ThumbnailTimeline: View {
     @Binding var rangeEnd: CMTime?
     
     let onSeek: (CMTime) -> Void
-    
-    // Drag state for moving the selection box
-    @State private var dragStartPositions: (start: CMTime, end: CMTime)?
     
     // Zoom level
     enum ZoomLevel: String, CaseIterable {
@@ -36,34 +36,29 @@ struct ThumbnailTimeline: View {
             case .detail: return 15      // ~26s visible - current, for precise trimming
             }
         }
-        
-        var icon: String {
-            switch self {
-            case .overview: return "rectangle.arrowtriangle.2.outward"
-            case .medium: return "rectangle.split.3x1"
-            case .detail: return "rectangle.arrowtriangle.2.inward"
-            }
-        }
     }
     
     @State private var zoomLevel: ZoomLevel = .medium
     
     // Layout
     private let thumbnailHeight: CGFloat = 50
-    private let handleWidth: CGFloat = 14
     
     private var pixelsPerSecond: CGFloat {
         zoomLevel.pixelsPerSecond
     }
     
-    private var durationSeconds: CGFloat {
+    private var rawDurationSeconds: CGFloat {
         CGFloat(CMTimeGetSeconds(duration))
+    }
+    
+    private var displayDurationSeconds: CGFloat {
+        rawDurationSeconds * CGFloat(displayTimeScale)
     }
     
     private var totalWidth: CGFloat {
         // Ensure we have a reasonable minimum width
-        guard durationSeconds > 0 else { return UIScreen.main.bounds.width - 32 }
-        return max(UIScreen.main.bounds.width - 32, durationSeconds * pixelsPerSecond)
+        guard displayDurationSeconds > 0 else { return UIScreen.main.bounds.width - 32 }
+        return max(UIScreen.main.bounds.width - 32, displayDurationSeconds * pixelsPerSecond)
     }
     
     private var isScrollable: Bool {
@@ -150,6 +145,23 @@ struct ThumbnailTimeline: View {
     // MARK: - Zoom Control Bar
     
     private var zoomControlBar: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                zoomButtons
+                Spacer(minLength: 8)
+                zoomSummary
+            }
+            
+            HStack(spacing: 8) {
+                zoomButtons
+                Spacer(minLength: 0)
+            }
+        }
+        .padding(.horizontal, 4)
+        .padding(.bottom, 4)
+    }
+    
+    private var zoomButtons: some View {
         HStack(spacing: 8) {
             ForEach(ZoomLevel.allCases, id: \.self) { level in
                 Button {
@@ -157,36 +169,32 @@ struct ThumbnailTimeline: View {
                         zoomLevel = level
                     }
                 } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: level.icon)
-                            .font(.system(size: 11))
-                        Text(level.rawValue)
-                            .font(.system(size: 11, weight: zoomLevel == level ? .semibold : .regular))
-                    }
-                    .foregroundColor(zoomLevel == level ? .black : .white.opacity(0.7))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(zoomLevel == level ? Color.yellow : Color.white.opacity(0.15))
-                    )
+                    Text(level.rawValue)
+                        .font(.system(size: 11, weight: zoomLevel == level ? .semibold : .regular))
+                        .lineLimit(1)
+                        .foregroundColor(zoomLevel == level ? .black : .white.opacity(0.7))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 5)
+                        .frame(minWidth: 72)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(zoomLevel == level ? Color.yellow : Color.white.opacity(0.15))
+                        )
                 }
             }
-            
-            Spacer()
-            
-            // Show what's visible at current zoom
-            Text(visibleTimeDescription)
-                .font(.system(size: 10))
-                .foregroundColor(.white.opacity(0.5))
         }
-        .padding(.horizontal, 4)
-        .padding(.bottom, 4)
+    }
+    
+    private var zoomSummary: some View {
+        Text(visibleTimeDescription)
+            .font(.system(size: 10))
+            .lineLimit(1)
+            .foregroundColor(.white.opacity(0.5))
     }
     
     private var visibleTimeDescription: String {
         let screenWidth: CGFloat = UIScreen.main.bounds.width - 48
-        let visibleSeconds = Int(screenWidth / pixelsPerSecond)
+        let visibleSeconds = Int(isScrollable ? (screenWidth / pixelsPerSecond) : displayDurationSeconds)
         if visibleSeconds >= 60 {
             return "~\(visibleSeconds / 60)m visible"
         }
@@ -196,16 +204,17 @@ struct ThumbnailTimeline: View {
     // MARK: - Time Labels (inline, not separate ScrollView)
     
     private var timeLabels: some View {
-        let durationSeconds = CMTimeGetSeconds(duration)
-        let labelInterval = calculateLabelInterval(durationSeconds)
-        let labelCount = Int(durationSeconds / labelInterval) + 1
+        let displayDuration = Double(displayDurationSeconds)
+        let labelInterval = calculateLabelInterval(displayDuration)
+        let labelCount = Int(displayDuration / labelInterval) + 1
         
         return ZStack(alignment: .topLeading) {
             ForEach(0..<labelCount, id: \.self) { i in
-                let seconds = Double(i) * labelInterval
-                let xPosition = positionFromTime(CMTime(seconds: seconds, preferredTimescale: 600))
+                let displayedSeconds = Double(i) * labelInterval
+                let rawSeconds = displayedSeconds / max(displayTimeScale, 0.0001)
+                let xPosition = positionFromTime(CMTime(seconds: rawSeconds, preferredTimescale: 600))
                 
-                Text(formatLabelTime(seconds))
+                Text(formatLabelTime(displayedSeconds))
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                     .foregroundColor(.white.opacity(0.7))
                     .offset(x: xPosition - 15, y: 0)
@@ -220,11 +229,13 @@ struct ThumbnailTimeline: View {
         switch zoomLevel {
         case .overview:
             // Very zoomed out - show labels every 2-5 minutes
+            if durationSeconds <= 60 { return 15 }
             if durationSeconds <= 300 { return 60 }
             if durationSeconds <= 900 { return 120 }
             return 300
         case .medium:
             // Medium zoom - show labels every 30s-2min
+            if durationSeconds <= 30 { return 5 }
             if durationSeconds <= 120 { return 15 }
             if durationSeconds <= 300 { return 30 }
             if durationSeconds <= 900 { return 60 }
@@ -251,16 +262,33 @@ struct ThumbnailTimeline: View {
     // MARK: - Thumbnail Strip
     
     private var thumbnailStrip: some View {
-        // Distribute thumbnails evenly across the timeline width
-        HStack(spacing: 0) {
-            ForEach(Array(thumbnails.enumerated()), id: \.offset) { index, item in
-                let thumbWidth = totalWidth / CGFloat(max(1, thumbnails.count))
+        let displayCount = max(1, max(placeholderCount, thumbnails.count))
+        
+        return HStack(spacing: 0) {
+            ForEach(0..<displayCount, id: \.self) { index in
+                let thumbWidth = totalWidth / CGFloat(displayCount)
                 
-                Image(uiImage: item.image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: thumbWidth, height: thumbnailHeight)
-                    .clipped()
+                Group {
+                    if index < thumbnails.count {
+                        Image(uiImage: thumbnails[index].image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    } else {
+                        Rectangle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(isLoading ? 0.12 : 0.08),
+                                        Color.white.opacity(isLoading ? 0.06 : 0.04)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                    }
+                }
+                .frame(width: thumbWidth, height: thumbnailHeight)
+                .clipped()
             }
         }
         .frame(width: totalWidth, height: thumbnailHeight)
@@ -438,7 +466,7 @@ struct ThumbnailTimeline: View {
     }
     
     private func formatSeconds(_ time: CMTime) -> String {
-        let totalSeconds = CMTimeGetSeconds(time)
+        let totalSeconds = CMTimeGetSeconds(time) * displayTimeScale
         let secs = Int(totalSeconds)
         let tenths = Int((totalSeconds * 10).truncatingRemainder(dividingBy: 10))
         return String(format: "%02d.%d", secs, tenths)

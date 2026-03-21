@@ -9,8 +9,33 @@ import Foundation
 import AVFoundation
 import UIKit
 
+private struct CachedThumbnail {
+    let timeSeconds: Double
+    let image: UIImage
+}
+
+private actor ThumbnailCacheStore {
+    private var storage: [String: [CachedThumbnail]] = [:]
+    
+    func thumbnails(for key: String) -> [(time: CMTime, image: UIImage)]? {
+        storage[key]?.map {
+            (
+                time: CMTime(seconds: $0.timeSeconds, preferredTimescale: 600),
+                image: $0.image
+            )
+        }
+    }
+    
+    func store(_ thumbnails: [(time: CMTime, image: UIImage)], for key: String) {
+        storage[key] = thumbnails.map {
+            CachedThumbnail(timeSeconds: CMTimeGetSeconds($0.time), image: $0.image)
+        }
+    }
+}
+
 /// Handles video processing: thumbnail generation and clip export
 actor VideoTrimmer {
+    private static let thumbnailCache = ThumbnailCacheStore()
     
     enum TrimmerError: Error, LocalizedError {
         case assetLoadFailed
@@ -44,8 +69,13 @@ actor VideoTrimmer {
     func generateThumbnails(
         for asset: AVAsset,
         count: Int,
-        size: CGSize = CGSize(width: 80, height: 45)
+        size: CGSize = CGSize(width: 80, height: 45),
+        cacheKey: String? = nil
     ) async throws -> [(time: CMTime, image: UIImage)] {
+        if let cacheKey = thumbnailCacheKey(for: cacheKey, count: count, size: size),
+           let cached = await Self.thumbnailCache.thumbnails(for: cacheKey) {
+            return cached
+        }
         
         let duration = try await asset.load(.duration)
         let durationSeconds = CMTimeGetSeconds(duration)
@@ -80,7 +110,23 @@ actor VideoTrimmer {
             }
         }
         
+        if let cacheKey = thumbnailCacheKey(for: cacheKey, count: count, size: size) {
+            await Self.thumbnailCache.store(thumbnails, for: cacheKey)
+        }
+        
         return thumbnails
+    }
+    
+    func cachedThumbnails(
+        for sourceKey: String,
+        count: Int,
+        size: CGSize = CGSize(width: 80, height: 45)
+    ) async -> [(time: CMTime, image: UIImage)]? {
+        guard let cacheKey = thumbnailCacheKey(for: sourceKey, count: count, size: size) else {
+            return nil
+        }
+        
+        return await Self.thumbnailCache.thumbnails(for: cacheKey)
     }
     
     /// Generate a single thumbnail at a specific time
@@ -127,7 +173,8 @@ actor VideoTrimmer {
         from asset: AVAsset,
         startTime: CMTime,
         endTime: CMTime,
-        to outputURL: URL
+        to outputURL: URL,
+        slowMotionFactor: Double? = nil
     ) async throws {
         
         let duration = try await asset.load(.duration)
@@ -146,6 +193,19 @@ actor VideoTrimmer {
         
         // Remove existing file if present
         try? FileManager.default.removeItem(at: outputURL)
+        
+        if let slowMotionFactor, slowMotionFactor > 1 {
+            try await exportSlowMotionClip(
+                from: asset,
+                timeRange: timeRange,
+                to: outputURL,
+                slowMotionFactor: slowMotionFactor
+            )
+            
+            let clipDuration = CMTimeGetSeconds(timeRange.duration) * slowMotionFactor
+            print("✅ Exported slow-mo clip: \(String(format: "%.1f", clipDuration))s → \(outputURL.lastPathComponent)")
+            return
+        }
         
         guard let exportSession = AVAssetExportSession(
             asset: asset,
@@ -178,6 +238,7 @@ actor VideoTrimmer {
         from asset: AVAsset,
         clips: [SwingClip],
         outputDirectory: URL,
+        slowMotionFactor: Double? = nil,
         progressHandler: ((Int, Int) -> Void)? = nil
     ) async throws -> [URL] {
         
@@ -193,7 +254,8 @@ actor VideoTrimmer {
                 from: asset,
                 startTime: clip.startCMTime,
                 endTime: clip.endCMTime,
-                to: outputURL
+                to: outputURL,
+                slowMotionFactor: slowMotionFactor
             )
             
             exportedURLs.append(outputURL)
@@ -215,8 +277,76 @@ actor VideoTrimmer {
         
         return clipsURL
     }
+    
+    private func exportSlowMotionClip(
+        from asset: AVAsset,
+        timeRange: CMTimeRange,
+        to outputURL: URL,
+        slowMotionFactor: Double
+    ) async throws {
+        guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
+            throw TrimmerError.noVideoTrack
+        }
+        
+        let composition = AVMutableComposition()
+        
+        guard let compositionVideoTrack = composition.addMutableTrack(
+            withMediaType: .video,
+            preferredTrackID: kCMPersistentTrackID_Invalid
+        ) else {
+            throw TrimmerError.exportSessionCreationFailed
+        }
+        
+        try compositionVideoTrack.insertTimeRange(timeRange, of: videoTrack, at: .zero)
+        compositionVideoTrack.preferredTransform = try await videoTrack.load(.preferredTransform)
+        
+        let compositionRange = CMTimeRange(start: .zero, duration: timeRange.duration)
+        let scaledDuration = CMTimeMultiplyByFloat64(timeRange.duration, multiplier: slowMotionFactor)
+        compositionVideoTrack.scaleTimeRange(compositionRange, toDuration: scaledDuration)
+        
+        if let audioTrack = try? await asset.loadTracks(withMediaType: .audio).first,
+           let compositionAudioTrack = composition.addMutableTrack(
+               withMediaType: .audio,
+               preferredTrackID: kCMPersistentTrackID_Invalid
+           ) {
+            try? compositionAudioTrack.insertTimeRange(timeRange, of: audioTrack, at: .zero)
+            compositionAudioTrack.scaleTimeRange(compositionRange, toDuration: scaledDuration)
+        }
+        
+        guard let exportSession = AVAssetExportSession(
+            asset: composition,
+            presetName: AVAssetExportPresetHighestQuality
+        ) else {
+            throw TrimmerError.exportSessionCreationFailed
+        }
+        
+        exportSession.outputURL = outputURL
+        exportSession.outputFileType = .mp4
+        
+        await exportSession.export()
+        
+        switch exportSession.status {
+        case .completed:
+            return
+        case .failed:
+            throw TrimmerError.exportFailed(exportSession.error?.localizedDescription ?? "Unknown error")
+        case .cancelled:
+            throw TrimmerError.exportFailed("Export cancelled")
+        default:
+            throw TrimmerError.exportFailed("Unexpected status: \(exportSession.status.rawValue)")
+        }
+    }
+    
+    private func thumbnailCacheKey(
+        for sourceKey: String?,
+        count: Int,
+        size: CGSize
+    ) -> String? {
+        guard let sourceKey else { return nil }
+        
+        let width = Int(size.width.rounded())
+        let height = Int(size.height.rounded())
+        return "\(sourceKey)#\(count)#\(width)x\(height)"
+    }
 }
-
-
-
 

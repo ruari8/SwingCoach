@@ -52,6 +52,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private let queue = DispatchQueue(label: "camera.session.queue")
     private let movieOutput = AVCaptureMovieFileOutput()
     @Published var lastRecordingURL: URL?
+    @Published var recordingError: Error?
     @Published var captureMode: SloMoMode = .ultra  // Default to 240 fps
     
     /// The mode that was active when recording started (for correct playback rate)
@@ -197,9 +198,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         DispatchQueue.main.async {
             guard error == nil else {
+                self.recordingError = error
                 self.lastRecordingURL = nil
                 return
             }
+            self.recordingError = nil
             self.lastRecordingURL = outputFileURL
         }
     }
@@ -266,6 +269,7 @@ struct CaptureView: View {
     @State private var isRecording = false
     @State private var player: AVPlayer?
     @State private var currentRecordingURL: URL?
+    @State private var currentRecordingMode: SloMoMode?
     
     // Focus indicator state
     @State private var focusPoint: CGPoint? = nil
@@ -276,12 +280,11 @@ struct CaptureView: View {
     @State private var recordingDuration: TimeInterval = 0
     @State private var timerCancellable: AnyCancellable? = nil
     
-    // Processing state for slow-mo export
+    // Recording finalization state
     @State private var isProcessing = false
     
     // Trim view presentation
     @State private var showTrimView = false
-    @State private var analyzeAfterExport = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -364,7 +367,7 @@ struct CaptureView: View {
                         ProgressView()
                             .scaleEffect(1.5)
                             .tint(.white)
-                        Text("Creating slow-mo...")
+                        Text("Finalizing recording...")
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(.white)
                     }
@@ -446,43 +449,28 @@ struct CaptureView: View {
             
             isRecording = false
             stopRecordingTimer()
-            isProcessing = true
             
             let recordedMode = camera.recordedMode
+            let newPlayer = AVPlayer(url: url)
+            newPlayer.actionAtItemEnd = .pause
+            newPlayer.playImmediately(atRate: recordedMode.slowMotionRate)
             
-            Task {
-                do {
-                    // Export the video as true slow-motion
-                    let slowMoURL = try await exportSlowMotionVideo(from: url, mode: recordedMode)
-                    
-                    // Clean up original temp file
-                    try? FileManager.default.removeItem(at: url)
-                    
-                    await MainActor.run {
-                        // Create player with the slow-mo video (plays at normal rate = slow motion)
-                        let newPlayer = AVPlayer(url: slowMoURL)
-                        newPlayer.play()
-                        player = newPlayer
-                        currentRecordingURL = slowMoURL
-                        isProcessing = false
-                    }
-                } catch {
-                    print("❌ Slow-mo export failed: \(error)")
-                    await MainActor.run {
-                        // Fallback: play original at normal speed
-                        let newPlayer = AVPlayer(url: url)
-                        newPlayer.play()
-                        player = newPlayer
-                        currentRecordingURL = url
-                        isProcessing = false
-                    }
-                }
-            }
+            player = newPlayer
+            currentRecordingURL = url
+            currentRecordingMode = recordedMode
+            isProcessing = false
+        }
+        .onReceive(camera.$recordingError) { error in
+            guard error != nil else { return }
+            isRecording = false
+            stopRecordingTimer()
+            isProcessing = false
         }
         .fullScreenCover(isPresented: $showTrimView) {
             if let url = currentRecordingURL {
                 TrimView(
-                    sourceURL: url,
+                    source: .capturedFile(url: url),
+                    sourceCaptureMode: currentRecordingMode,
                     onComplete: { clips, exportedURLs in
                         // Handle exported clips
                         print("✅ Exported \(clips.count) clips:")
@@ -490,23 +478,12 @@ struct CaptureView: View {
                             print("   - \(clip.vantage.shortName) \(clip.durationFormatted): \(url.lastPathComponent)")
                         }
                         showTrimView = false
-                        
-                        // If analyze was requested, get the newly saved swings and send to coach
-                        if analyzeAfterExport, let onAnalyze = onAnalyzeSwings {
-                            // Get the most recent swings (the ones we just added)
-                            let recentSwings = Array(SwingLibrary.shared.swings.prefix(clips.count))
-                            onAnalyze(recentSwings)
-                        }
-                        analyzeAfterExport = false
                         clearCurrentRecording()
                     },
                     onCancel: {
                         showTrimView = false
-                        analyzeAfterExport = false
                     },
-                    onExportAndAnalyze: onAnalyzeSwings != nil ? { clips in
-                        analyzeAfterExport = true
-                    } : nil
+                    onExportAndAnalyze: onAnalyzeSwings != nil ? { _ in } : nil
                 )
             }
         }
@@ -534,10 +511,13 @@ struct CaptureView: View {
 
     private func toggleRecording() {
         if isRecording {
+            isProcessing = true
             camera.stopRecording()
             stopRecordingTimer()
         } else {
             player = nil
+            currentRecordingMode = nil
+            isProcessing = false
             camera.startRecording()
             startRecordingTimer()
         }
@@ -557,6 +537,7 @@ struct CaptureView: View {
             try? FileManager.default.removeItem(at: url)
         }
         currentRecordingURL = nil
+        currentRecordingMode = nil
         camera.lastRecordingURL = nil
     }
     
@@ -608,106 +589,6 @@ struct CaptureView: View {
         return String(format: "%02d:%02d.%d", minutes, seconds, tenths)
     }
     
-    // MARK: - Slow-Mo Export
-    
-    /// Exports a high-fps video as a true slow-motion file by time-scaling
-    /// A 5 second 240fps recording becomes a 40 second 30fps video
-    private func exportSlowMotionVideo(from sourceURL: URL, mode: SloMoMode) async throws -> URL {
-        let asset = AVURLAsset(url: sourceURL)
-        
-        // Get video track
-        guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
-            throw ExportError.noVideoTrack
-        }
-        
-        let duration = try await asset.load(.duration)
-        let timeRange = CMTimeRange(start: .zero, duration: duration)
-        
-        // DEBUG: Log actual recorded frame rate
-        let nominalFrameRate = try await videoTrack.load(.nominalFrameRate)
-        let naturalSize = try await videoTrack.load(.naturalSize)
-        let durationSeconds = CMTimeGetSeconds(duration)
-        print("📹 SOURCE VIDEO INFO:")
-        print("   Resolution: \(Int(naturalSize.width))×\(Int(naturalSize.height))")
-        print("   Frame rate: \(nominalFrameRate) fps")
-        print("   Duration: \(String(format: "%.2f", durationSeconds)) seconds")
-        print("   Expected mode: \(mode.displayName) (\(mode.targetFPS) fps)")
-        
-        // Calculate slow-motion multiplier (240fps / 30fps = 8x, 120fps / 30fps = 4x)
-        let slowMotionFactor = mode.targetFPS / 30.0
-        
-        // Create composition
-        let composition = AVMutableComposition()
-        
-        guard let compositionVideoTrack = composition.addMutableTrack(
-            withMediaType: .video,
-            preferredTrackID: kCMPersistentTrackID_Invalid
-        ) else {
-            throw ExportError.failedToCreateTrack
-        }
-        
-        // Insert video at original time range
-        try compositionVideoTrack.insertTimeRange(timeRange, of: videoTrack, at: .zero)
-        
-        // Copy the transform (orientation) from original track
-        let transform = try await videoTrack.load(.preferredTransform)
-        compositionVideoTrack.preferredTransform = transform
-        
-        // Scale the time to create slow motion
-        // scaleTimeRange stretches the content: original duration * slowMotionFactor
-        let scaledDuration = CMTimeMultiplyByFloat64(duration, multiplier: slowMotionFactor)
-        compositionVideoTrack.scaleTimeRange(timeRange, toDuration: scaledDuration)
-        
-        // Handle audio track if present (also slow it down)
-        if let audioTrack = try? await asset.loadTracks(withMediaType: .audio).first,
-           let compositionAudioTrack = composition.addMutableTrack(
-               withMediaType: .audio,
-               preferredTrackID: kCMPersistentTrackID_Invalid
-           ) {
-            try? compositionAudioTrack.insertTimeRange(timeRange, of: audioTrack, at: .zero)
-            compositionAudioTrack.scaleTimeRange(timeRange, toDuration: scaledDuration)
-        }
-        
-        // Create export session
-        guard let exportSession = AVAssetExportSession(
-            asset: composition,
-            presetName: AVAssetExportPresetHighestQuality
-        ) else {
-            throw ExportError.failedToCreateExportSession
-        }
-        
-        // Output to new temp file
-        let outputURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString + "_slomo.mov")
-        
-        exportSession.outputURL = outputURL
-        exportSession.outputFileType = .mov
-        
-        await exportSession.export()
-        
-        guard exportSession.status == .completed else {
-            throw exportSession.error ?? ExportError.exportFailed
-        }
-        
-        // DEBUG: Log output video info
-        let outputAsset = AVURLAsset(url: outputURL)
-        if let outputTrack = try? await outputAsset.loadTracks(withMediaType: .video).first {
-            let outputDuration = try await outputAsset.load(.duration)
-            let outputFrameRate = try await outputTrack.load(.nominalFrameRate)
-            print("📹 OUTPUT SLOW-MO VIDEO:")
-            print("   Duration: \(String(format: "%.2f", CMTimeGetSeconds(outputDuration))) seconds")
-            print("   Frame rate: \(outputFrameRate) fps")
-        }
-        
-        return outputURL
-    }
-    
-    enum ExportError: Error {
-        case noVideoTrack
-        case failedToCreateTrack
-        case failedToCreateExportSession
-        case exportFailed
-    }
 }
 
 // MARK: - Supporting Views
@@ -764,4 +645,3 @@ struct FocusIndicatorView: View {
 #Preview {
     CaptureView(onAnalyzeSwings: nil)
 }
-

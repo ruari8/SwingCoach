@@ -5,7 +5,11 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Record swing audio.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Upload swing videos.</string>
+	<string>Import swing videos and show saved swings from your Photos library.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Save swing clips back to your Photos library.</string>
+	<key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
+	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Record swing videos.</string>
 </dict>
