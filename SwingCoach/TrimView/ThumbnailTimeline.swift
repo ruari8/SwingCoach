@@ -24,7 +24,7 @@ struct ThumbnailTimeline: View {
     let onSeek: (CMTime) -> Void
     
     // Zoom level
-    enum ZoomLevel: String, CaseIterable {
+    enum ZoomLevel: String {
         case overview = "Overview"
         case medium = "Medium"
         case detail = "Detail"
@@ -36,12 +36,41 @@ struct ThumbnailTimeline: View {
             case .detail: return 15      // ~26s visible - current, for precise trimming
             }
         }
+        
+        var next: ZoomLevel {
+            switch self {
+            case .overview: return .medium
+            case .medium: return .detail
+            case .detail: return .overview
+            }
+        }
+        
+        var buttonFill: Color {
+            switch self {
+            case .overview:
+                return Color.white.opacity(0.14)
+            case .medium:
+                return Color.yellow.opacity(0.78)
+            case .detail:
+                return Color.orange.opacity(0.88)
+            }
+        }
+        
+        var buttonForeground: Color {
+            switch self {
+            case .overview:
+                return .white
+            case .medium, .detail:
+                return .black
+            }
+        }
     }
     
-    @State private var zoomLevel: ZoomLevel = .medium
+    @State private var zoomLevel: ZoomLevel = .overview
     
     // Layout
     private let thumbnailHeight: CGFloat = 50
+    private let playheadID = "playhead"
     
     private var pixelsPerSecond: CGFloat {
         zoomLevel.pixelsPerSecond
@@ -66,94 +95,96 @@ struct ThumbnailTimeline: View {
     }
     
     var body: some View {
-        VStack(spacing: 4) {
-            // Zoom control bar
-            zoomControlBar
-            
-            // Scrollable timeline
-            ScrollView(.horizontal, showsIndicators: true) {
-                    ZStack(alignment: .topLeading) {
-                        // Time labels at the top
-                        timeLabels
-                        
-                        // Thumbnail strip
-                        thumbnailStrip
-                            .padding(.top, 18)
-                        
-                        // Clip markers (show where clips have been marked)
-                        clipMarkers
-                            .padding(.top, 18)
-                        
-                        // Start marker (when only start is set)
-                        if let start = rangeStart, rangeEnd == nil {
-                            startMarkerLine(at: start)
-                        }
-                        
-                        // Selected range overlay (when both start and end are set)
-                        if let start = rangeStart, let end = rangeEnd {
-                            rangeOverlay(start: start, end: end)
-                        }
-                        
-                        // Current time indicator (playhead)
-                        playhead
-                            .id("playhead")
-                    }
-                    .frame(width: totalWidth, height: thumbnailHeight + 28)
-                    .coordinateSpace(name: "timeline")
-                    .contentShape(Rectangle())
-                    .onTapGesture { location in
-                        // Tap to seek - allows scrolling to work
-                        let time = timeFromPosition(location.x)
-                        onSeek(time)
-                    }
-            }
-            .frame(height: thumbnailHeight + 28)
-            
-            // Info bar below timeline
-            HStack {
-                Text(formatSeconds(currentTime))
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                    .foregroundColor(.yellow)
+        ScrollViewReader { proxy in
+            VStack(spacing: 4) {
+                // Zoom control bar
+                zoomControlBar(proxy: proxy)
                 
-                Spacer()
-                
-                // Scroll hint for long videos
-                if isScrollable {
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrow.left.arrow.right")
-                            .font(.system(size: 10))
-                        Text("Scroll")
-                            .font(.system(size: 11))
-                    }
-                    .foregroundColor(.white.opacity(0.4))
+                // Scrollable timeline
+                ScrollView(.horizontal, showsIndicators: true) {
+                        ZStack(alignment: .topLeading) {
+                            // Time labels at the top
+                            timeLabels
+                            
+                            // Thumbnail strip
+                            thumbnailStrip
+                                .padding(.top, 18)
+                            
+                            // Clip markers (show where clips have been marked)
+                            clipMarkers
+                                .padding(.top, 18)
+                            
+                            // Start marker (when only start is set)
+                            if let start = rangeStart, rangeEnd == nil {
+                                startMarkerLine(at: start)
+                            }
+                            
+                            // Selected range overlay (when both start and end are set)
+                            if let start = rangeStart, let end = rangeEnd {
+                                rangeOverlay(start: start, end: end)
+                            }
+                            
+                            // Current time indicator (playhead)
+                            playhead
+                                .id(playheadID)
+                        }
+                        .frame(width: totalWidth, height: thumbnailHeight + 28)
+                        .coordinateSpace(name: "timeline")
+                        .contentShape(Rectangle())
+                        .onTapGesture { location in
+                            // Tap to seek - allows scrolling to work
+                            let time = timeFromPosition(location.x)
+                            onSeek(time)
+                        }
                 }
+                .frame(height: thumbnailHeight + 28)
                 
-                Spacer()
-                
-                Text(formatSeconds(duration))
-                    .font(.system(size: 13, weight: .medium, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.5))
+                // Info bar below timeline
+                HStack {
+                    Text(formatSeconds(currentTime))
+                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .foregroundColor(.yellow)
+                    
+                    Spacer()
+                    
+                    // Scroll hint for long videos
+                    if isScrollable {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.left.arrow.right")
+                                .font(.system(size: 10))
+                            Text("Scroll")
+                                .font(.system(size: 11))
+                        }
+                        .foregroundColor(.white.opacity(0.4))
+                    }
+                    
+                    Spacer()
+                    
+                    Text(formatSeconds(duration))
+                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .padding(.horizontal, 4)
             }
             .padding(.horizontal, 4)
+            .padding(.vertical, 8)
+            .background(Color.black.opacity(0.4))
+            .cornerRadius(8)
         }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 8)
-        .background(Color.black.opacity(0.4))
-        .cornerRadius(8)
     }
     
     // MARK: - Zoom Control Bar
     
-    private var zoomControlBar: some View {
+    private func zoomControlBar(proxy: ScrollViewProxy) -> some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 8) {
-                zoomButtons
+                zoomCycleButton(proxy: proxy)
                 Spacer(minLength: 8)
                 zoomSummary
             }
             
             HStack(spacing: 8) {
-                zoomButtons
+                zoomCycleButton(proxy: proxy)
                 Spacer(minLength: 0)
             }
         }
@@ -161,32 +192,31 @@ struct ThumbnailTimeline: View {
         .padding(.bottom, 4)
     }
     
-    private var zoomButtons: some View {
-        HStack(spacing: 8) {
-            ForEach(ZoomLevel.allCases, id: \.self) { level in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        zoomLevel = level
-                    }
-                } label: {
-                    Text(level.rawValue)
-                        .font(.system(size: 11, weight: zoomLevel == level ? .semibold : .regular))
-                        .lineLimit(1)
-                        .foregroundColor(zoomLevel == level ? .black : .white.opacity(0.7))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 5)
-                        .frame(minWidth: 72)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(zoomLevel == level ? Color.yellow : Color.white.opacity(0.15))
-                        )
-                }
+    private func zoomCycleButton(proxy: ScrollViewProxy) -> some View {
+        Button {
+            cycleZoom(using: proxy)
+        } label: {
+            HStack(spacing: 8) {
+                Text("Precision")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(zoomLevel.buttonForeground.opacity(0.75))
+                
+                Text(zoomLevel.rawValue)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(zoomLevel.buttonForeground)
             }
+            .lineLimit(1)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 7)
+                    .fill(zoomLevel.buttonFill)
+            )
         }
     }
     
     private var zoomSummary: some View {
-        Text(visibleTimeDescription)
+        Text("\(visibleTimeDescription) · tap to cycle")
             .font(.system(size: 10))
             .lineLimit(1)
             .foregroundColor(.white.opacity(0.5))
@@ -470,6 +500,18 @@ struct ThumbnailTimeline: View {
         let secs = Int(totalSeconds)
         let tenths = Int((totalSeconds * 10).truncatingRemainder(dividingBy: 10))
         return String(format: "%02d.%d", secs, tenths)
+    }
+    
+    private func cycleZoom(using proxy: ScrollViewProxy) {
+        withAnimation(.easeInOut(duration: 0.22)) {
+            zoomLevel = zoomLevel.next
+        }
+        
+        DispatchQueue.main.async {
+            withAnimation(.easeInOut(duration: 0.22)) {
+                proxy.scrollTo(playheadID, anchor: .center)
+            }
+        }
     }
 }
 

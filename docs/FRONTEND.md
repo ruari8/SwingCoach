@@ -40,6 +40,7 @@ Implemented feature set:
 - Limited-access imports present an explicit “continue / choose allowed videos / open settings” decision before the picker so the user understands why some videos reopen quickly and others do not.
 - Limited-access fallback first tries an in-place picker file handoff for immediate trim editing, then copies into app temp storage only if the picker cannot provide a durable URL directly.
 - Library asset validation only runs with full Photos access so limited mode cannot incorrectly prune saved swings that are merely outside the current allowed set.
+- The Photos picker now fully dismisses before the trim editor is presented, avoiding a blank transition caused by overlapping sheet/full-screen presentations.
 - Launch trim flow for imported source video.
 - Persist swing metadata and thumbnails via `SwingLibrary`.
 - Grid browsing with vantage filtering.
@@ -79,7 +80,8 @@ Implemented feature set:
 - Multi-clip extraction from a long source video.
 - Per-clip vantage assignment and clip list management.
 - Press-and-hold frame stepping with acceleration for faster long scrubs.
-- Text-only zoom controls and a single primary export action in the footer.
+- Overview-default timeline plus a single cycling precision control that recenters the playhead when the zoom level changes.
+- A single primary export action in the footer.
 - Export to MP4 clips for downstream storage/analysis, with captured high-fps sessions rendered to true slow-motion during export.
 
 ## 4. Coach Tab (Analysis)

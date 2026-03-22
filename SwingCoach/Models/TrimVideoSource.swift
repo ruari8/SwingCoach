@@ -8,7 +8,7 @@
 import AVFoundation
 import Photos
 
-struct TrimVideoSource {
+struct TrimVideoSource: Identifiable {
     enum SourceError: Error, LocalizedError {
         case missingAsset
         
@@ -23,6 +23,8 @@ struct TrimVideoSource {
     let cacheKey: String
     let durationHint: CMTime?
     let cleanupURL: URL?
+    
+    var id: String { cacheKey }
     
     private let previewAssetLoader: () async throws -> AVAsset
     private let exportAssetLoader: () async throws -> AVAsset

@@ -21,7 +21,6 @@ struct LibraryView: View {
     
     // Import flow
     @State private var importedVideoSource: TrimVideoSource? = nil
-    @State private var showTrimView = false
     @State private var isImporting = false
     @State private var importTask: Task<Void, Never>? = nil
     @State private var importStatusText: String = "Preparing import..."
@@ -142,11 +141,13 @@ struct LibraryView: View {
             }
             .sheet(isPresented: $showVideoPicker) {
                 VideoPickerWithProgress(
+                    onPickerDismissed: {
+                        showVideoPicker = false
+                    },
                     onVideoSelected: { source in
                         importedVideoSource = source
                         isImporting = false
                         importProgress = nil
-                        showTrimView = true
                     },
                     onProgress: { fraction, completed, total in
                         isImporting = true
@@ -183,21 +184,17 @@ struct LibraryView: View {
             } message: {
                 Text("SwingCoach currently has limited Photos access. Continue import for the slower fallback path, choose allowed videos so PhotoKit can reopen them directly, or switch to full access in Settings.")
             }
-            .fullScreenCover(isPresented: $showTrimView) {
-                if let source = importedVideoSource {
-                    TrimView(
-                        source: source,
-                        onComplete: { clips, _ in
-                            print("✅ Added \(clips.count) swings to library")
-                            showTrimView = false
-                            cleanupImport()
-                        },
-                        onCancel: {
-                            showTrimView = false
-                            cleanupImport()
-                        }
-                    )
-                }
+            .fullScreenCover(item: $importedVideoSource) { source in
+                TrimView(
+                    source: source,
+                    onComplete: { clips, _ in
+                        print("✅ Added \(clips.count) swings to library")
+                        cleanupImport()
+                    },
+                    onCancel: {
+                        cleanupImport()
+                    }
+                )
             }
             .fullScreenCover(isPresented: $showPlayback) {
                 if let playerItem = playbackItem {
@@ -1488,6 +1485,7 @@ struct VideoFileTransferable: Transferable {
 /// A UIViewControllerRepresentable that wraps PHPickerViewController and provides progress tracking
 /// Uses PhotoKit to open the selected video without duplicating the full source upfront.
 struct VideoPickerWithProgress: UIViewControllerRepresentable {
+    let onPickerDismissed: () -> Void
     let onVideoSelected: (TrimVideoSource) -> Void
     let onProgress: (Double, Int64, Int64) -> Void  // (fraction, completedBytes, totalBytes)
     let onCancel: () -> Void
@@ -1521,12 +1519,21 @@ struct VideoPickerWithProgress: UIViewControllerRepresentable {
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
             importStartTime = Date()
             
-            // Dismiss picker immediately
-            picker.dismiss(animated: true)
-            
+            // Dismiss picker first, then begin the handoff/import work.
+            picker.dismiss(animated: true) {
+                DispatchQueue.main.async {
+                    self.parent.onPickerDismissed()
+                }
+                self.handlePickedResults(results)
+            }
+        }
+        
+        private func handlePickedResults(_ results: [PHPickerResult]) {
             guard let result = results.first else {
                 print("📹 Import: User cancelled picker")
-                parent.onCancel()
+                DispatchQueue.main.async {
+                    self.parent.onCancel()
+                }
                 return
             }
             
