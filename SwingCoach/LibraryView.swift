@@ -842,17 +842,365 @@ struct LibraryView: View {
 
 // MARK: - Playback View
 
-struct SwingPlaybackView: View {
+struct PlaybackChromeView<Header: View, Footer: View>: View {
     let playerItem: AVPlayerItem
-    let swing: SavedSwing?
-    let onDismiss: () -> Void
+    let initialPlaybackRate: Float
+    let playbackEnabled: Bool
+    let showsSpeedControls: Bool
+    
+    private let header: Header
+    private let footer: Footer
     
     @State private var player: AVPlayer?
     @State private var isPlaying = false
     @State private var currentTime: CMTime = .zero
     @State private var duration: CMTime = .zero
-    @State private var playbackSpeed: Float = 1.0
+    @State private var playbackSpeed: Float
     @State private var timeObserver: Any?
+    
+    private let speedOptions: [Float] = [0.25, 0.5, 0.75, 1.0]
+    
+    init(
+        playerItem: AVPlayerItem,
+        initialPlaybackRate: Float = 1.0,
+        playbackEnabled: Bool = true,
+        showsSpeedControls: Bool = true,
+        @ViewBuilder header: () -> Header,
+        @ViewBuilder footer: () -> Footer
+    ) {
+        self.playerItem = playerItem
+        self.initialPlaybackRate = initialPlaybackRate
+        self.playbackEnabled = playbackEnabled
+        self.showsSpeedControls = showsSpeedControls
+        self.header = header()
+        self.footer = footer()
+        _playbackSpeed = State(initialValue: max(0.1, initialPlaybackRate))
+    }
+    
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                header
+                
+                videoArea
+                    .frame(maxHeight: .infinity)
+                
+                controlsSection
+                
+                timelineSection
+                    .padding(.horizontal)
+                    .padding(.vertical, 12)
+                
+                footer
+                
+                if showsSpeedControls {
+                    speedSection
+                        .padding(.horizontal)
+                        .padding(.bottom, 16)
+                }
+            }
+        }
+        .onAppear {
+            setupPlayer()
+        }
+        .onDisappear {
+            cleanup()
+        }
+        .onChange(of: playbackEnabled) { _, enabled in
+            guard !enabled else { return }
+            player?.pause()
+            isPlaying = false
+        }
+    }
+    
+    private var videoArea: some View {
+        Group {
+            if let player {
+                VideoPlayer(player: player)
+                    .disabled(true)
+                    .overlay(
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                togglePlayback()
+                            }
+                    )
+            } else {
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .tint(.white)
+            }
+        }
+    }
+    
+    private var controlsSection: some View {
+        HStack(spacing: 24) {
+            Button {
+                stepBackward()
+            } label: {
+                Image(systemName: "backward.frame.fill")
+                    .font(.title2)
+                    .foregroundColor(.white)
+            }
+            
+            Button {
+                togglePlayback()
+            } label: {
+                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 32))
+                    .foregroundColor(.white)
+                    .frame(width: 50, height: 50)
+            }
+            
+            Button {
+                stepForward()
+            } label: {
+                Image(systemName: "forward.frame.fill")
+                    .font(.title2)
+                    .foregroundColor(.white)
+            }
+        }
+        .padding(.vertical, 12)
+    }
+    
+    private var timelineSection: some View {
+        VStack(spacing: 8) {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.white.opacity(0.3))
+                        .frame(height: 6)
+                    
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.yellow)
+                        .frame(width: progressWidth(in: geo.size.width), height: 6)
+                    
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 18, height: 18)
+                        .shadow(color: .black.opacity(0.3), radius: 2)
+                        .offset(x: playheadOffset(in: geo.size.width))
+                }
+                .frame(height: 18)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            let fraction = max(0, min(1, value.location.x / geo.size.width))
+                            let newTime = CMTimeMultiplyByFloat64(duration, multiplier: Float64(fraction))
+                            seek(to: newTime)
+                        }
+                )
+            }
+            .frame(height: 18)
+            
+            HStack {
+                Text(formatTime(currentTime))
+                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .foregroundColor(.yellow)
+                
+                Spacer()
+                
+                Text(formatTime(duration))
+                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 10)
+        .background(Color.black.opacity(0.4))
+        .cornerRadius(10)
+    }
+    
+    private var speedSection: some View {
+        VStack(spacing: 8) {
+            Text("Playback Speed")
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.6))
+            
+            HStack(spacing: 12) {
+                ForEach(speedOptions, id: \.self) { speed in
+                    Button {
+                        setSpeed(speed)
+                    } label: {
+                        Text(speedLabel(speed))
+                            .font(.system(size: 14, weight: playbackSpeed == speed ? .bold : .medium))
+                            .foregroundColor(playbackSpeed == speed ? .black : .white)
+                            .frame(width: 54, height: 34)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(playbackSpeed == speed ? Color.yellow : Color.white.opacity(0.15))
+                            )
+                    }
+                }
+            }
+            
+            HStack(spacing: 12) {
+                Text("0.1x")
+                    .font(.caption2)
+                    .foregroundColor(.white.opacity(0.5))
+                
+                Slider(
+                    value: Binding(
+                        get: { Double(playbackSpeed) },
+                        set: { setSpeed(Float($0)) }
+                    ),
+                    in: 0.1...1.0,
+                    step: 0.05
+                )
+                .tint(.yellow)
+                
+                Text("1.0x")
+                    .font(.caption2)
+                    .foregroundColor(.white.opacity(0.5))
+            }
+            .padding(.top, 4)
+        }
+        .padding()
+        .background(Color.white.opacity(0.08))
+        .cornerRadius(12)
+    }
+    
+    private func setupPlayer() {
+        let newPlayer = AVPlayer(playerItem: playerItem)
+        newPlayer.actionAtItemEnd = .pause
+        player = newPlayer
+        
+        Task {
+            if let dur = try? await playerItem.asset.load(.duration) {
+                await MainActor.run {
+                    duration = dur
+                }
+            }
+        }
+        
+        let interval = CMTime(seconds: 0.05, preferredTimescale: 600)
+        timeObserver = newPlayer.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
+            currentTime = time
+            
+            if CMTimeCompare(time, duration) >= 0 && CMTimeGetSeconds(duration) > 0 {
+                isPlaying = false
+            }
+        }
+        
+        guard playbackEnabled else { return }
+        newPlayer.playImmediately(atRate: playbackSpeed)
+        isPlaying = true
+    }
+    
+    private func cleanup() {
+        if let observer = timeObserver {
+            player?.removeTimeObserver(observer)
+        }
+        player?.pause()
+        player = nil
+    }
+    
+    private func togglePlayback() {
+        guard playbackEnabled, let player else { return }
+        
+        if isPlaying {
+            player.pause()
+        } else {
+            if CMTimeCompare(currentTime, duration) >= 0 {
+                seek(to: .zero)
+            }
+            player.rate = playbackSpeed
+        }
+        isPlaying.toggle()
+    }
+    
+    private func seek(to time: CMTime) {
+        player?.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+        currentTime = time
+    }
+    
+    private func stepForward() {
+        let frameDuration = CMTime(value: 1, timescale: 30)
+        let newTime = CMTimeAdd(currentTime, frameDuration)
+        if CMTimeCompare(newTime, duration) <= 0 {
+            seek(to: newTime)
+        }
+    }
+    
+    private func stepBackward() {
+        let frameDuration = CMTime(value: 1, timescale: 30)
+        let newTime = CMTimeSubtract(currentTime, frameDuration)
+        if CMTimeCompare(newTime, .zero) >= 0 {
+            seek(to: newTime)
+        } else {
+            seek(to: .zero)
+        }
+    }
+    
+    private func setSpeed(_ speed: Float) {
+        playbackSpeed = speed
+        if isPlaying {
+            player?.rate = speed
+        }
+    }
+    
+    private func progressWidth(in totalWidth: CGFloat) -> CGFloat {
+        guard CMTimeGetSeconds(duration) > 0 else { return 0 }
+        let fraction = CMTimeGetSeconds(currentTime) / CMTimeGetSeconds(duration)
+        return CGFloat(fraction) * totalWidth
+    }
+    
+    private func playheadOffset(in totalWidth: CGFloat) -> CGFloat {
+        guard CMTimeGetSeconds(duration) > 0 else { return 0 }
+        let fraction = CMTimeGetSeconds(currentTime) / CMTimeGetSeconds(duration)
+        return CGFloat(fraction) * totalWidth - 9
+    }
+    
+    private func formatTime(_ time: CMTime) -> String {
+        let totalSeconds = CMTimeGetSeconds(time)
+        guard totalSeconds.isFinite else { return "00.0" }
+        let secs = Int(totalSeconds)
+        let tenths = Int((totalSeconds * 10).truncatingRemainder(dividingBy: 10))
+        return String(format: "%02d.%d", secs, tenths)
+    }
+    
+    private func speedLabel(_ speed: Float) -> String {
+        if speed == 1.0 {
+            return "1x"
+        } else if speed == 0.5 {
+            return "0.5x"
+        } else if speed == 0.25 {
+            return "0.25x"
+        } else if speed == 0.75 {
+            return "0.75x"
+        }
+        return String(format: "%.2fx", speed)
+    }
+}
+
+extension PlaybackChromeView where Footer == EmptyView {
+    init(
+        playerItem: AVPlayerItem,
+        initialPlaybackRate: Float = 1.0,
+        playbackEnabled: Bool = true,
+        showsSpeedControls: Bool = true,
+        @ViewBuilder header: () -> Header
+    ) {
+        self.init(
+            playerItem: playerItem,
+            initialPlaybackRate: initialPlaybackRate,
+            playbackEnabled: playbackEnabled,
+            showsSpeedControls: showsSpeedControls,
+            header: header,
+            footer: { EmptyView() }
+        )
+    }
+}
+
+struct SwingPlaybackView: View {
+    let playerItem: AVPlayerItem
+    let swing: SavedSwing?
+    let onDismiss: () -> Void
+    
+    @State private var duration: CMTime = .zero
     
     // Export state
     @State private var showExportSheet = false
@@ -861,46 +1209,18 @@ struct SwingPlaybackView: View {
     @State private var showExportSuccess = false
     @State private var sourceFPS: Double = 30
     
-    // Speed presets
-    private let speedOptions: [Float] = [0.25, 0.5, 0.75, 1.0]
-    
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                // Top bar with dismiss and vantage
+            PlaybackChromeView(playerItem: playerItem) {
                 topBar
-                
-                // Video display area
-                videoArea
-                    .frame(maxHeight: .infinity)
-                
-                // Playback controls
-                controlsSection
-                
-                // Timeline scrubber
-                timelineSection
-                    .padding(.horizontal)
-                    .padding(.vertical, 12)
-                
-                // Speed control
-                speedSection
-                    .padding(.horizontal)
-                    .padding(.bottom, 16)
             }
             
-            // Export progress overlay
             if isExporting {
                 exportProgressOverlay
             }
         }
         .onAppear {
-            setupPlayer()
             loadVideoInfo()
-        }
-        .onDisappear {
-            cleanup()
         }
         .sheet(isPresented: $showExportSheet) {
             FPSExportSheet(
@@ -985,211 +1305,12 @@ struct SwingPlaybackView: View {
         }
     }
     
-    // MARK: - Video Area
-    
-    private var videoArea: some View {
-        Group {
-            if let player {
-                VideoPlayer(player: player)
-                    .disabled(true)  // Disable built-in controls
-                    .overlay(
-                        Color.clear
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                togglePlayback()
-                            }
-                    )
-            } else {
-                ProgressView()
-                    .scaleEffect(1.5)
-                    .tint(.white)
-            }
-        }
-    }
-    
-    // MARK: - Controls Section
-    
-    private var controlsSection: some View {
-        HStack(spacing: 24) {
-            // Frame step backward
-            Button {
-                stepBackward()
-            } label: {
-                Image(systemName: "backward.frame.fill")
-                    .font(.title2)
-                    .foregroundColor(.white)
-            }
-            
-            // Play/Pause
-            Button {
-                togglePlayback()
-            } label: {
-                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 32))
-                    .foregroundColor(.white)
-                    .frame(width: 50, height: 50)
-            }
-            
-            // Frame step forward
-            Button {
-                stepForward()
-            } label: {
-                Image(systemName: "forward.frame.fill")
-                    .font(.title2)
-                    .foregroundColor(.white)
-            }
-        }
-        .padding(.vertical, 12)
-    }
-    
-    // MARK: - Timeline Section
-    
-    private var timelineSection: some View {
-        VStack(spacing: 8) {
-            // Scrubber
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    // Track background
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.white.opacity(0.3))
-                        .frame(height: 6)
-                    
-                    // Progress fill
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.yellow)
-                        .frame(width: progressWidth(in: geo.size.width), height: 6)
-                    
-                    // Playhead
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: 18, height: 18)
-                        .shadow(color: .black.opacity(0.3), radius: 2)
-                        .offset(x: playheadOffset(in: geo.size.width))
-                }
-                .frame(height: 18)
-                .contentShape(Rectangle())
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in
-                            let fraction = max(0, min(1, value.location.x / geo.size.width))
-                            let newTime = CMTimeMultiplyByFloat64(duration, multiplier: Float64(fraction))
-                            seek(to: newTime)
-                        }
-                )
-            }
-            .frame(height: 18)
-            
-            // Time labels
-            HStack {
-                Text(formatTime(currentTime))
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                    .foregroundColor(.yellow)
-                
-                Spacer()
-                
-                Text(formatTime(duration))
-                    .font(.system(size: 13, weight: .medium, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.6))
-            }
-        }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 10)
-        .background(Color.black.opacity(0.4))
-        .cornerRadius(10)
-    }
-    
-    // MARK: - Speed Section
-    
-    private var speedSection: some View {
-        VStack(spacing: 8) {
-            Text("Playback Speed")
-                .font(.caption)
-                .foregroundColor(.white.opacity(0.6))
-            
-            HStack(spacing: 12) {
-                ForEach(speedOptions, id: \.self) { speed in
-                    Button {
-                        setSpeed(speed)
-                    } label: {
-                        Text(speedLabel(speed))
-                            .font(.system(size: 14, weight: playbackSpeed == speed ? .bold : .medium))
-                            .foregroundColor(playbackSpeed == speed ? .black : .white)
-                            .frame(width: 54, height: 34)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(playbackSpeed == speed ? Color.yellow : Color.white.opacity(0.15))
-                            )
-                    }
-                }
-            }
-            
-            // Continuous slider for fine control
-            HStack(spacing: 12) {
-                Text("0.1x")
-                    .font(.caption2)
-                    .foregroundColor(.white.opacity(0.5))
-                
-                Slider(value: Binding(
-                    get: { Double(playbackSpeed) },
-                    set: { setSpeed(Float($0)) }
-                ), in: 0.1...1.0, step: 0.05)
-                .tint(.yellow)
-                
-                Text("1.0x")
-                    .font(.caption2)
-                    .foregroundColor(.white.opacity(0.5))
-            }
-            .padding(.top, 4)
-        }
-        .padding()
-        .background(Color.white.opacity(0.08))
-        .cornerRadius(12)
-    }
-    
-    // MARK: - Player Setup
-    
-    private func setupPlayer() {
-        let newPlayer = AVPlayer(playerItem: playerItem)
-        player = newPlayer
-        
-        // Load duration
-        Task {
-            if let dur = try? await playerItem.asset.load(.duration) {
-                await MainActor.run {
-                    duration = dur
-                }
-            }
-        }
-        
-        // Time observer
-        let interval = CMTime(seconds: 0.05, preferredTimescale: 600)
-        timeObserver = newPlayer.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
-            currentTime = time
-            
-            // Check if at end
-            if CMTimeCompare(time, duration) >= 0 && CMTimeGetSeconds(duration) > 0 {
-                isPlaying = false
-            }
-        }
-        
-        // Start playing
-        newPlayer.play()
-        isPlaying = true
-    }
-    
-    private func cleanup() {
-        if let observer = timeObserver {
-            player?.removeTimeObserver(observer)
-        }
-        player?.pause()
-        player = nil
-    }
-    
     private func loadVideoInfo() {
         Task {
             if let info = await VideoExporter.getVideoInfo(asset: playerItem.asset) {
                 await MainActor.run {
                     sourceFPS = info.fps
+                    duration = CMTime(seconds: info.duration, preferredTimescale: 600)
                 }
             }
         }
@@ -1243,89 +1364,6 @@ struct SwingPlaybackView: View {
         }
     }
     
-    // MARK: - Playback Actions
-    
-    private func togglePlayback() {
-        guard let player else { return }
-        
-        if isPlaying {
-            player.pause()
-        } else {
-            // If at end, restart
-            if CMTimeCompare(currentTime, duration) >= 0 {
-                seek(to: .zero)
-            }
-            player.rate = playbackSpeed
-        }
-        isPlaying.toggle()
-    }
-    
-    private func seek(to time: CMTime) {
-        player?.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
-        currentTime = time
-    }
-    
-    private func stepForward() {
-        // Step one frame (assuming ~30fps base, but works for any)
-        let frameDuration = CMTime(value: 1, timescale: 30)
-        let newTime = CMTimeAdd(currentTime, frameDuration)
-        if CMTimeCompare(newTime, duration) <= 0 {
-            seek(to: newTime)
-        }
-    }
-    
-    private func stepBackward() {
-        let frameDuration = CMTime(value: 1, timescale: 30)
-        let newTime = CMTimeSubtract(currentTime, frameDuration)
-        if CMTimeCompare(newTime, .zero) >= 0 {
-            seek(to: newTime)
-        } else {
-            seek(to: .zero)
-        }
-    }
-    
-    private func setSpeed(_ speed: Float) {
-        playbackSpeed = speed
-        if isPlaying {
-            player?.rate = speed
-        }
-    }
-    
-    // MARK: - Helpers
-    
-    private func progressWidth(in totalWidth: CGFloat) -> CGFloat {
-        guard CMTimeGetSeconds(duration) > 0 else { return 0 }
-        let fraction = CMTimeGetSeconds(currentTime) / CMTimeGetSeconds(duration)
-        return CGFloat(fraction) * totalWidth
-    }
-    
-    private func playheadOffset(in totalWidth: CGFloat) -> CGFloat {
-        guard CMTimeGetSeconds(duration) > 0 else { return 0 }
-        let fraction = CMTimeGetSeconds(currentTime) / CMTimeGetSeconds(duration)
-        // Offset so the playhead center aligns with progress
-        return CGFloat(fraction) * totalWidth - 9
-    }
-    
-    private func formatTime(_ time: CMTime) -> String {
-        let totalSeconds = CMTimeGetSeconds(time)
-        guard totalSeconds.isFinite else { return "00.0" }
-        let secs = Int(totalSeconds)
-        let tenths = Int((totalSeconds * 10).truncatingRemainder(dividingBy: 10))
-        return String(format: "%02d.%d", secs, tenths)
-    }
-    
-    private func speedLabel(_ speed: Float) -> String {
-        if speed == 1.0 {
-            return "1x"
-        } else if speed == 0.5 {
-            return "0.5x"
-        } else if speed == 0.25 {
-            return "0.25x"
-        } else if speed == 0.75 {
-            return "0.75x"
-        }
-        return String(format: "%.2fx", speed)
-    }
 }
 
 // MARK: - FPS Export Sheet

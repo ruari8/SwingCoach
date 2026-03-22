@@ -61,6 +61,7 @@ Implemented feature set:
 - Runtime mode switching without full session teardown.
 - Tap-to-focus and exposure targeting.
 - Recording state handling with immediate post-stop playback of the captured high-fps asset.
+- Post-stop review now uses the app's own playback chrome instead of the default `VideoPlayer` controls, reusing the library-style play/pause, frame step, scrubber, and time UI.
 - Slow-motion rendering is deferred until explicit clip export instead of blocking the stop-record action.
 - Integration path into library and optional analyze handoff.
 

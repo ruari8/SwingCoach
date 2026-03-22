@@ -267,7 +267,7 @@ struct CaptureView: View {
     
     @StateObject private var camera = CameraSession()
     @State private var isRecording = false
-    @State private var player: AVPlayer?
+    @State private var previewPlayerItem: AVPlayerItem?
     @State private var currentRecordingURL: URL?
     @State private var currentRecordingMode: SloMoMode?
     
@@ -304,15 +304,14 @@ struct CaptureView: View {
                 }
 
                 // Video playback overlay
-                if let player {
-                    Color.black.opacity(0.4)
-                    VideoPlayer(player: player)
-                        .onTapGesture {
-                            self.player = nil
-                        }
-                    VStack {
+                if let previewPlayerItem {
+                    PlaybackChromeView(
+                        playerItem: previewPlayerItem,
+                        initialPlaybackRate: currentRecordingMode?.slowMotionRate ?? 1.0,
+                        playbackEnabled: !showTrimView,
+                        showsSpeedControls: false
+                    ) {
                         HStack {
-                            // Save button
                             Button {
                                 saveToPhotoLibrary()
                             } label: {
@@ -322,11 +321,9 @@ struct CaptureView: View {
                                     .foregroundColor(.white)
                                     .shadow(radius: 4)
                             }
-                            .padding()
                             
                             Spacer()
                             
-                            // Close button
                             Button {
                                 clearCurrentRecording()
                             } label: {
@@ -336,11 +333,9 @@ struct CaptureView: View {
                                     .foregroundColor(.white)
                                     .shadow(radius: 4)
                             }
-                            .padding()
                         }
-                        Spacer()
-                        
-                        // Trim button (bottom center)
+                        .padding()
+                    } footer: {
                         Button {
                             showTrimView = true
                         } label: {
@@ -356,7 +351,8 @@ struct CaptureView: View {
                             .cornerRadius(25)
                             .shadow(radius: 4)
                         }
-                        .padding(.bottom, 30)
+                        .padding(.horizontal)
+                        .padding(.bottom, 24)
                     }
                 }
 
@@ -374,7 +370,7 @@ struct CaptureView: View {
                 }
                 
                 // Camera controls overlay (when not playing back)
-                if player == nil && !isProcessing {
+                if previewPlayerItem == nil && !isProcessing {
                     VStack {
                         // Top controls: FPS toggle and recording timer
                         HStack {
@@ -451,11 +447,7 @@ struct CaptureView: View {
             stopRecordingTimer()
             
             let recordedMode = camera.recordedMode
-            let newPlayer = AVPlayer(url: url)
-            newPlayer.actionAtItemEnd = .pause
-            newPlayer.playImmediately(atRate: recordedMode.slowMotionRate)
-            
-            player = newPlayer
+            previewPlayerItem = AVPlayerItem(url: url)
             currentRecordingURL = url
             currentRecordingMode = recordedMode
             isProcessing = false
@@ -515,8 +507,7 @@ struct CaptureView: View {
             camera.stopRecording()
             stopRecordingTimer()
         } else {
-            player = nil
-            currentRecordingMode = nil
+            clearCurrentRecording()
             isProcessing = false
             camera.startRecording()
             startRecordingTimer()
@@ -531,8 +522,7 @@ struct CaptureView: View {
     }
 
     private func clearCurrentRecording() {
-        player?.pause()
-        player = nil
+        previewPlayerItem = nil
         if let url = currentRecordingURL {
             try? FileManager.default.removeItem(at: url)
         }
