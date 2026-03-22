@@ -1222,11 +1222,12 @@ struct SwingPlaybackView: View {
                 )
                 
                 // Add to library
-                await SwingLibrary.shared.addSwing(
+                SwingLibrary.shared.addSwing(
                     photoAssetID: assetID,
                     vantage: swing?.vantage ?? .dtl,
                     duration: newDuration,
-                    notes: "Exported at \(targetFPS.shortName)"
+                    notes: "Exported at \(targetFPS.shortName)",
+                    initialThumbnail: swing?.thumbnail
                 )
                 
                 await MainActor.run {

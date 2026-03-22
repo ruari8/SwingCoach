@@ -48,6 +48,7 @@ class SwingLibrary: ObservableObject {
     @Published var isLoading = false
     
     private let storageURL: URL
+    private let thumbnailTargetSize = CGSize(width: 240, height: 140)
     
     static let shared = SwingLibrary()
     
@@ -60,8 +61,14 @@ class SwingLibrary: ObservableObject {
     // MARK: - CRUD Operations
     
     /// Add a new swing after saving to Photos
-    func addSwing(photoAssetID: String, vantage: Vantage, duration: Double, notes: String? = nil) {
-        let swing = SavedSwing(
+    func addSwing(
+        photoAssetID: String,
+        vantage: Vantage,
+        duration: Double,
+        notes: String? = nil,
+        initialThumbnail: UIImage? = nil
+    ) {
+        var swing = SavedSwing(
             id: UUID(),
             photoAssetID: photoAssetID,
             vantage: vantage,
@@ -70,8 +77,16 @@ class SwingLibrary: ObservableObject {
             notes: notes,
             analyzed: false
         )
+        swing.thumbnail = initialThumbnail
         swings.insert(swing, at: 0)  // Newest first
         saveToDisk()
+        
+        Task {
+            await refreshThumbnail(
+                forPhotoAssetID: photoAssetID,
+                retryDelays: initialThumbnail == nil ? [0.35, 1.0, 2.0, 4.0] : [1.0, 3.0]
+            )
+        }
     }
     
     /// Remove a swing (doesn't delete from Photos - user manages that)
@@ -113,13 +128,12 @@ class SwingLibrary: ObservableObject {
         let options = PHImageRequestOptions()
         options.deliveryMode = .opportunistic
         options.resizeMode = .fast
-        
-        let targetSize = CGSize(width: 200, height: 120)
+        options.isNetworkAccessAllowed = true
         
         fetchResult.enumerateObjects { asset, _, _ in
             imageManager.requestImage(
                 for: asset,
-                targetSize: targetSize,
+                targetSize: self.thumbnailTargetSize,
                 contentMode: .aspectFill,
                 options: options
             ) { image, _ in
@@ -132,6 +146,60 @@ class SwingLibrary: ObservableObject {
         }
         
         isLoading = false
+    }
+
+    private func refreshThumbnail(forPhotoAssetID photoAssetID: String, retryDelays: [TimeInterval]) async {
+        guard swings.contains(where: { $0.photoAssetID == photoAssetID }) else { return }
+        
+        let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [photoAssetID], options: nil)
+        guard let asset = fetchResult.firstObject else { return }
+        
+        for delay in [0.0] + retryDelays {
+            if delay > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            }
+            
+            if let image = await requestThumbnailImage(for: asset) {
+                if let index = swings.firstIndex(where: { $0.photoAssetID == photoAssetID }) {
+                    swings[index].thumbnail = image
+                }
+                return
+            }
+        }
+    }
+    
+    private func requestThumbnailImage(for asset: PHAsset) async -> UIImage? {
+        await withCheckedContinuation { continuation in
+            let options = PHImageRequestOptions()
+            options.deliveryMode = .highQualityFormat
+            options.resizeMode = .fast
+            options.isNetworkAccessAllowed = true
+            
+            var didResume = false
+            PHImageManager.default().requestImage(
+                for: asset,
+                targetSize: thumbnailTargetSize,
+                contentMode: .aspectFill,
+                options: options
+            ) { image, info in
+                guard !didResume else { return }
+                
+                if let image {
+                    didResume = true
+                    continuation.resume(returning: image)
+                    return
+                }
+                
+                let cancelled = (info?[PHImageCancelledKey] as? Bool) ?? false
+                let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
+                let error = info?[PHImageErrorKey] as? NSError
+                
+                if cancelled || error != nil || !isDegraded {
+                    didResume = true
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
     }
     
     /// Get an AVPlayerItem for a swing (handles slow-mo and edited videos properly)
@@ -262,4 +330,3 @@ extension PHPhotoLibrary {
         }
     }
 }
-

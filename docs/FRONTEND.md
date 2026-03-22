@@ -80,9 +80,10 @@ Implemented feature set:
 - Multi-clip extraction from a long source video.
 - Per-clip vantage assignment and clip list management.
 - Press-and-hold frame stepping with acceleration for faster long scrubs.
-- Overview-default timeline plus a single cycling precision control that recenters the playhead when the zoom level changes.
+- Overview-only timeline for long-session trimming, with no separate precision toggle UI.
 - A single primary export action in the footer.
 - Export to MP4 clips for downstream storage/analysis, with captured high-fps sessions rendered to true slow-motion during export.
+- Newly exported clips enter the library with an immediate frame thumbnail, then refresh from Photos in the background once the asset poster frame is available.
 
 ## 4. Coach Tab (Analysis)
 

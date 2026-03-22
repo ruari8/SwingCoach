@@ -590,7 +590,7 @@ struct TrimView: View {
     private func addClip() {
         guard let start = rangeStart, let end = rangeEnd else { return }
         
-        var newClip = SwingClip(
+        let newClip = SwingClip(
             startTime: start,
             endTime: end,
             vantage: selectedVantage
@@ -648,10 +648,12 @@ struct TrimView: View {
                 var savedCount = 0
                 for (clip, url) in zip(clips, exportedURLs) {
                     if let assetID = await PHPhotoLibrary.saveVideoAndGetID(url: url) {
-                        await SwingLibrary.shared.addSwing(
+                        let libraryThumbnail = await immediateLibraryThumbnail(for: clip, exportAsset: exportAsset)
+                        SwingLibrary.shared.addSwing(
                             photoAssetID: assetID,
                             vantage: clip.vantage,
-                            duration: clip.duration * (sourceCaptureMode.map { $0.targetFPS / 30.0 } ?? 1.0)
+                            duration: clip.duration * (sourceCaptureMode.map { $0.targetFPS / 30.0 } ?? 1.0),
+                            initialThumbnail: libraryThumbnail
                         )
                         savedCount += 1
                     }
@@ -825,6 +827,19 @@ struct TrimView: View {
         default:
             return 16
         }
+    }
+    
+    private func immediateLibraryThumbnail(for clip: SwingClip, exportAsset: AVAsset) async -> UIImage? {
+        if let thumbnail = clip.thumbnail {
+            return thumbnail
+        }
+        
+        if let previewAsset,
+           let thumbnail = try? await trimmer.generateThumbnail(for: previewAsset, at: clip.startCMTime) {
+            return thumbnail
+        }
+        
+        return try? await trimmer.generateThumbnail(for: exportAsset, at: clip.startCMTime)
     }
 }
 
