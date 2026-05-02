@@ -45,7 +45,7 @@ Implemented feature set:
 - Persist swing metadata and thumbnails via `SwingLibrary`.
 - Grid browsing with vantage filtering.
 - Multi-select for batch analyze and batch delete (library-only delete, does not remove Photos asset).
-- Playback with loading/error states.
+- Playback with loading/error states and a shared in-frame scrubber plus gesture-driven transport on the video surface.
 - Export/playback utilities integrated through app sheets.
 
 ## 2. Capture Tab
@@ -61,7 +61,7 @@ Implemented feature set:
 - Runtime mode switching without full session teardown.
 - Tap-to-focus and exposure targeting.
 - Recording state handling with immediate post-stop playback of the captured high-fps asset.
-- Post-stop review now uses the app's own playback chrome instead of the default `VideoPlayer` controls, reusing the library-style play/pause, frame step, scrubber, and time UI.
+- Post-stop review now uses the app's own playback chrome instead of the default `VideoPlayer` controls, with the scrubber integrated into the video frame, tap-to-play/pause, hold-left/hold-right stepping, and capture trim exposed as a floating scissors action.
 - Slow-motion rendering is deferred until explicit clip export instead of blocking the stop-record action.
 - Integration path into library and optional analyze handoff.
 
@@ -78,6 +78,7 @@ Implemented feature set:
 - Library imports hand trim a lightweight Photos-backed source first, then load a fast preview asset in-editor and defer high-quality asset resolution until export.
 - High-fps capture timelines display slow-playback timing while keeping selection mapped to the original source frames.
 - Start/end range selection for clip creation.
+- When no clip ranges are marked, the footer offers an explicit full-video path so already-trimmed imports can be added as-is; Photos-backed imports reuse the existing asset instead of creating a duplicate.
 - Multi-clip extraction from a long source video.
 - Per-clip vantage assignment and clip list management.
 - Press-and-hold frame stepping with acceleration for faster long scrubs.
@@ -93,11 +94,8 @@ File: [AnalyseView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/
 Implemented feature set:
 - Queue multiple swings for analysis.
 - Show card-based analysis status (`pending`, `analyzing`, `complete`, `failed`).
-- Render returned summary, metrics dictionary, and drill links.
+- Render returned summary, ordered display metrics, annotated video availability, and lightweight drill suggestions.
 - Mark analyzed swings in local library.
-
-Important implementation note:
-- This view currently uses a legacy client response model (`summary`, `metrics`, `drill_links`) and not the new backend `CoachableAnalysisResponse` contract.
 
 ## Data and Models
 
@@ -112,7 +110,7 @@ Important implementation note:
 - Enum in [SwingClip.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingClip.swift)
 - Values: `DTL`, `Face-On`
 
-## Backend Integration Contract (Current Frontend Expectation)
+## Backend Integration Contract
 
 File: [SwingCoachAPI.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingCoachAPI.swift)
 
@@ -122,21 +120,24 @@ Current flow:
 3. `POST /analyze` with `video_key` + `vantage`
 4. Decode analysis result into frontend `AnalysisResponse`
 
+In DEBUG builds, `SwingCoachAPI.useMockAnalysis` is enabled. The app still exports the swing and uploads it to R2, then calls `POST /mock/analyze` instead of the heavy pipeline. The mock endpoint verifies the uploaded R2 object and returns the same lightweight response with a signed dummy annotated-video URL.
+
 Current frontend `AnalysisResponse` expectation:
+- `analysis_id: String`
 - `summary: String`
-- `metrics: [String: String]`
-- `drill_links: [{title, url, platform}]`
-- `raw_response: String?`
+- `metrics: [{key, name, value}]`
+- `annotated_video_url: String?`
+- `drills: [{title, summary}]`
 
 ## Known Gaps and Risks
 
-1. API contract mismatch
-- Backend now returns `run_id`, metric cards, coaching bundle, artifacts, and quality metadata.
-- Frontend decode model has not yet been migrated.
+1. Async analysis lifecycle
+- `/analyze` is still synchronous while the analysis pipeline can be expensive.
+- A future `AnalysisRun` status model should let the app submit work, leave processing, and poll for completion.
 
-2. Coach tab data richness
-- UI currently renders summary/metrics/drills only.
-- Does not yet consume annotated video URL, 3D artifact URL, confidence/warnings.
+2. Annotated video playback
+- UI currently links to the annotated video URL when available.
+- Embedded playback and expired URL refresh are still future work.
 
 3. Trim-to-analyze handoff
 - The capture trim footer currently shows a single primary action.

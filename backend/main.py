@@ -13,22 +13,24 @@ from fastapi.middleware.cors import CORSMiddleware
 from analysis import SwingCoachPipeline3D
 from analysis.coach_response_builder import CoachResponseBuilder, CoachingBundle
 from models import (
+    AnalysisDrill,
+    AnalysisMetric,
     AnalyzeRequest,
+    AnalyzeResponse,
     CoachChatRequest,
     CoachChatResponse,
-    CoachableAnalysisResponse,
-    CoachableDrill,
-    CoachableMetricCard,
-    CoachingBundleResponse,
     ArtifactBundleResponse,
     HealthResponse,
-    QualityBundleResponse,
     UploadURLResponse,
 )
 from r2_client import get_r2_client
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+BACKEND_DIR = Path(__file__).parent
+MOCK_ANNOTATED_VIDEO_PATH = BACKEND_DIR / "output" / "full_annotation.mp4"
+MOCK_ANNOTATED_VIDEO_KEY = "mock/full_annotation.mp4"
 
 ANALYSIS_AVAILABLE = True
 try:
@@ -63,6 +65,7 @@ async def root():
             "health": "/health",
             "upload_url": "/upload-url",
             "analyze": "/analyze",
+            "mock_analyze": "/mock/analyze",
             "chat": "/chat",
         },
     }
@@ -129,7 +132,79 @@ def _upload_run_artifacts(run_id: str, run_dir: Path) -> ArtifactBundleResponse:
     )
 
 
-@app.post("/analyze", response_model=CoachableAnalysisResponse)
+def _format_metric_value(value: Optional[float], unit: str) -> str:
+    """Format a metric value for the app-facing MVP response."""
+    if value is None:
+        return ""
+
+    if unit == ":1":
+        formatted = f"{value:.1f}:1"
+    elif unit:
+        formatted = f"{value:.1f} {unit}"
+    else:
+        formatted = f"{value:.1f}"
+
+    return formatted.replace(".0 ", " ").replace(".0:", ":")
+
+
+def _dummy_annotated_video_url() -> str:
+    """Ensure the dummy annotated video is in R2 and return a signed URL."""
+    if not MOCK_ANNOTATED_VIDEO_PATH.exists():
+        raise HTTPException(
+            status_code=500,
+            detail=f"Mock annotated video not found at {MOCK_ANNOTATED_VIDEO_PATH}",
+        )
+
+    r2 = get_r2_client()
+    if not r2.object_exists(MOCK_ANNOTATED_VIDEO_KEY):
+        r2.upload_video(
+            MOCK_ANNOTATED_VIDEO_KEY,
+            MOCK_ANNOTATED_VIDEO_PATH.read_bytes(),
+            content_type="video/mp4",
+        )
+
+    return r2.generate_download_url(MOCK_ANNOTATED_VIDEO_KEY)
+
+
+@app.post("/mock/analyze", response_model=AnalyzeResponse)
+async def mock_analyze_swing(request: AnalyzeRequest):
+    """R2-backed dummy analysis used to test the mobile MVP loop without running models."""
+    try:
+        r2 = get_r2_client()
+        if not r2.video_exists(request.video_key):
+            raise HTTPException(status_code=404, detail="Video not found in storage")
+
+        return AnalyzeResponse(
+            analysis_id=f"mock-{Path(request.video_key).stem}",
+            summary=(
+                "Demo analysis: your setup looks stable, but you lose posture slightly "
+                "as you move through impact."
+            ),
+            metrics=[
+                AnalysisMetric(key="tempo_ratio", name="Tempo", value="3.1:1"),
+                AnalysisMetric(key="spine_angle_change", name="Spine Angle Change", value="7 deg"),
+                AnalysisMetric(key="head_sway", name="Head Sway", value="1.8 in"),
+            ],
+            annotated_video_url=_dummy_annotated_video_url(),
+            drills=[
+                AnalysisDrill(
+                    title="Chair Drill",
+                    summary="Rehearse keeping your hips back through impact to maintain posture.",
+                ),
+                AnalysisDrill(
+                    title="Tempo Count",
+                    summary="Use a smooth three-count backswing and one-count downswing.",
+                ),
+            ],
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Mock analysis failed: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/analyze", response_model=AnalyzeResponse)
 async def analyze_swing(request: AnalyzeRequest):
     if not ANALYSIS_AVAILABLE or _pipeline is None:
         raise HTTPException(status_code=503, detail="Analysis pipeline is unavailable")
@@ -149,45 +224,28 @@ async def analyze_swing(request: AnalyzeRequest):
 
         artifacts = _upload_run_artifacts(result.run_id, Path(result.run_dir))
 
-        metric_cards = [
-            CoachableMetricCard(
+        metrics = [
+            AnalysisMetric(
                 key=card.key,
                 name=card.name,
-                value=card.value,
-                unit=card.unit,
-                confidence=card.confidence,
-                explanation=card.explanation,
-                fix_hint=card.fix_hint,
+                value=_format_metric_value(card.value, card.unit),
             )
             for card in result.metrics
+            if card.value is not None
         ]
 
-        coaching = CoachingBundleResponse(
+        return AnalyzeResponse(
+            analysis_id=result.run_id,
             summary=result.coaching.summary,
-            top_priorities=result.coaching.top_priorities,
+            metrics=metrics,
+            annotated_video_url=artifacts.annotated_video_url,
             drills=[
-                CoachableDrill(
-                    id=drill.id,
+                AnalysisDrill(
                     title=drill.title,
-                    source=drill.source,
                     summary=drill.summary,
                 )
                 for drill in result.coaching.drills
             ],
-        )
-
-        quality = QualityBundleResponse(
-            warnings=result.quality.get("warnings", []),
-            missing_data=result.quality.get("missing_data", []),
-            timings=result.quality.get("timings", {}),
-        )
-
-        return CoachableAnalysisResponse(
-            run_id=result.run_id,
-            metrics=metric_cards,
-            coaching=coaching,
-            artifacts=artifacts,
-            quality=quality,
         )
 
     except HTTPException:

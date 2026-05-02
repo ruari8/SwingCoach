@@ -55,5 +55,4 @@ cd backend
 
 - Frontend capture/library/trim flows are implemented.
 - Backend unified pipeline (`/analyze` + artifacts + `/chat`) is implemented.
-- Frontend analysis decoding currently expects an older response model and still needs migration to backend `CoachableAnalysisResponse`.
-
+- Frontend analysis decoding uses the lightweight MVP `/analyze` response: summary, display metrics, annotated video URL, and drills.

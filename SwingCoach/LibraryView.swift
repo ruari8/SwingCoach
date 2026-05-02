@@ -15,10 +15,10 @@ import UIKit
 struct LibraryView: View {
     let onNavigateToCapture: () -> Void
     var onAnalyzeSwings: (([SavedSwing]) -> Void)? = nil
-    
+
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var library = SwingLibrary.shared
-    
+
     // Import flow
     @State private var importedVideoSource: TrimVideoSource? = nil
     @State private var isImporting = false
@@ -28,45 +28,45 @@ struct LibraryView: View {
     @State private var showVideoPicker = false
     @State private var photoLibraryAccessStatus: PHAuthorizationStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
     @State private var showLimitedPhotoAccessOptions = false
-    
+
     // Playback
     @State private var selectedSwing: SavedSwing? = nil
     @State private var playbackItem: AVPlayerItem? = nil
     @State private var showPlayback = false
     @State private var isLoadingPlayback = false
     @State private var showPlaybackError = false
-    
+
     // Filter
     @State private var filterVantage: Vantage? = nil
-    
+
     // Multi-select
     @State private var isSelecting = false
     @State private var selectedSwings: Set<UUID> = []
     @State private var showDeleteConfirmation = false
-    
+
     private var filteredSwings: [SavedSwing] {
         if let vantage = filterVantage {
             return library.swings.filter { $0.vantage == vantage }
         }
         return library.swings
     }
-    
+
     private let columns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
-    
+
     private var shouldShowPhotoAccessBanner: Bool {
         photoLibraryAccessStatus != .authorized
     }
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
                 // Background
                 Color(.systemGroupedBackground)
                     .ignoresSafeArea()
-                
+
                 if library.swings.isEmpty {
                     emptyState
                 } else {
@@ -103,7 +103,7 @@ struct LibraryView: View {
                                         .foregroundColor(.blue)
                                 }
                             }
-                            
+
                             // Delete button
                             Button {
                                 showDeleteConfirmation = true
@@ -250,12 +250,12 @@ struct LibraryView: View {
                                     .scaleEffect(1.5)
                                     .tint(.white)
                             }
-                            
+
                             Text(importStatusText)
                                 .foregroundColor(.white)
                                 .font(.subheadline)
                                 .multilineTextAlignment(.center)
-                            
+
                             Button {
                                 cancelImport()
                             } label: {
@@ -281,27 +281,27 @@ struct LibraryView: View {
             }
         }
     }
-    
+
     private var photoAccessBanner: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: photoLibraryAccessStatus == .limited ? "photo.stack" : "exclamationmark.triangle.fill")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.yellow)
                 .padding(.top, 2)
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(photoAccessBannerTitle)
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(.white)
-                
+
                 Text(photoAccessBannerMessage)
                     .font(.caption)
                     .foregroundColor(.white.opacity(0.8))
                     .fixedSize(horizontal: false, vertical: true)
             }
-            
+
             Spacer(minLength: 8)
-            
+
             Button(photoAccessBannerActionTitle) {
                 handlePhotoAccessBannerAction()
             }
@@ -316,7 +316,7 @@ struct LibraryView: View {
         .background(Color.black.opacity(0.82))
         .cornerRadius(14)
     }
-    
+
     private var photoAccessBannerTitle: String {
         switch photoLibraryAccessStatus {
         case .limited:
@@ -331,7 +331,7 @@ struct LibraryView: View {
             return "Photos Access Needed"
         }
     }
-    
+
     private var photoAccessBannerMessage: String {
         switch photoLibraryAccessStatus {
         case .limited:
@@ -346,7 +346,7 @@ struct LibraryView: View {
             return "Photos access affects imports and saved swing playback."
         }
     }
-    
+
     private var photoAccessBannerActionTitle: String {
         switch photoLibraryAccessStatus {
         case .notDetermined:
@@ -361,23 +361,23 @@ struct LibraryView: View {
             return "Open Settings"
         }
     }
-    
+
     // MARK: - Empty State
-    
+
     private var emptyState: some View {
         VStack(spacing: 20) {
             Image(systemName: "figure.golf")
                 .font(.system(size: 60))
                 .foregroundColor(.secondary)
-            
+
             Text("No Swings Yet")
                 .font(.title2.weight(.semibold))
-            
+
             Text("Record a swing or import from Photos")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-            
+
             HStack(spacing: 16) {
                 Button {
                     onNavigateToCapture()
@@ -390,7 +390,7 @@ struct LibraryView: View {
                         .background(Color.blue)
                         .cornerRadius(10)
                 }
-                
+
                 Button {
                     beginImportFlow()
                 } label: {
@@ -406,9 +406,9 @@ struct LibraryView: View {
         }
         .padding()
     }
-    
+
     // MARK: - Swing Grid
-    
+
     private var swingGrid: some View {
         VStack(spacing: 0) {
             ScrollView {
@@ -418,7 +418,7 @@ struct LibraryView: View {
                         .padding(.horizontal)
                         .padding(.top, 8)
                 }
-                
+
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(filteredSwings) { swing in
                         swingCard(swing)
@@ -427,14 +427,14 @@ struct LibraryView: View {
                 .padding()
                 .padding(.bottom, isSelecting ? 60 : 0) // Space for selection bar
             }
-            
+
             // Selection bar
             if isSelecting {
                 selectionBar
             }
         }
     }
-    
+
     private var selectionBar: some View {
         HStack {
             Button {
@@ -447,15 +447,15 @@ struct LibraryView: View {
                 Text(selectedSwings.count == filteredSwings.count ? "Deselect All" : "Select All")
                     .font(.subheadline.weight(.medium))
             }
-            
+
             Spacer()
-            
+
             Text("\(selectedSwings.count) selected")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
-            
+
             Spacer()
-            
+
             Button {
                 exitSelectionMode()
             } label: {
@@ -473,7 +473,7 @@ struct LibraryView: View {
             alignment: .top
         )
     }
-    
+
     private var statsHeader: some View {
         HStack(spacing: 20) {
             statItem(value: "\(library.totalSwings)", label: "Swings")
@@ -483,7 +483,7 @@ struct LibraryView: View {
         }
         .padding(.vertical, 8)
     }
-    
+
     private func statItem(value: String, label: String) -> some View {
         VStack(spacing: 2) {
             Text(value)
@@ -493,10 +493,10 @@ struct LibraryView: View {
                 .foregroundColor(.secondary)
         }
     }
-    
+
     private func swingCard(_ swing: SavedSwing) -> some View {
         let isSelected = selectedSwings.contains(swing.id)
-        
+
         return Button {
             if isSelecting {
                 toggleSelection(swing)
@@ -521,7 +521,7 @@ struct LibraryView: View {
                                 ProgressView()
                             }
                     }
-                    
+
                     // Play icon overlay (hide in selection mode)
                     if !isSelecting {
                         Image(systemName: "play.circle.fill")
@@ -529,7 +529,7 @@ struct LibraryView: View {
                             .foregroundColor(.white)
                             .shadow(radius: 4)
                     }
-                    
+
                     // Selection checkmark (show in selection mode)
                     if isSelecting {
                         VStack {
@@ -544,7 +544,7 @@ struct LibraryView: View {
                         }
                         .padding(8)
                     }
-                    
+
                     // Vantage badge
                     VStack {
                         HStack {
@@ -566,14 +566,14 @@ struct LibraryView: View {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 3)
                 )
-                
+
                 // Info
                 HStack {
                     Text(formatDuration(swing.duration))
                         .font(.caption.weight(.medium))
-                    
+
                     Spacer()
-                    
+
                     Text(formatDate(swing.createdAt))
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -595,9 +595,9 @@ struct LibraryView: View {
             }
         }
     }
-    
+
     // MARK: - Toolbar Items
-    
+
     private var filterMenu: some View {
         Menu {
             Button {
@@ -610,9 +610,9 @@ struct LibraryView: View {
                     }
                 }
             }
-            
+
             Divider()
-            
+
             ForEach(Vantage.allCases, id: \.self) { vantage in
                 Button {
                     filterVantage = vantage
@@ -629,7 +629,7 @@ struct LibraryView: View {
             Image(systemName: filterVantage == nil ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
         }
     }
-    
+
     private var selectButton: some View {
         Button {
             withAnimation {
@@ -640,7 +640,7 @@ struct LibraryView: View {
         }
         .disabled(library.swings.isEmpty)
     }
-    
+
     private var importButton: some View {
         Button {
             beginImportFlow()
@@ -649,16 +649,16 @@ struct LibraryView: View {
                 .font(.title2)
         }
     }
-    
+
     // MARK: - Selection Actions
-    
+
     private func exitSelectionMode() {
         withAnimation {
             isSelecting = false
             selectedSwings.removeAll()
         }
     }
-    
+
     private func toggleSelection(_ swing: SavedSwing) {
         if selectedSwings.contains(swing.id) {
             selectedSwings.remove(swing.id)
@@ -666,7 +666,7 @@ struct LibraryView: View {
             selectedSwings.insert(swing.id)
         }
     }
-    
+
     private func deleteSelectedSwings() {
         for id in selectedSwings {
             if let swing = library.swings.first(where: { $0.id == id }) {
@@ -675,33 +675,33 @@ struct LibraryView: View {
         }
         exitSelectionMode()
     }
-    
+
     private func analyzeSelectedSwings() {
         let swings = library.swings.filter { selectedSwings.contains($0.id) }
         exitSelectionMode()
         onAnalyzeSwings?(swings)
     }
-    
+
     // MARK: - Import Actions
-    
+
     private func refreshPhotoLibraryAccessStatus() {
         photoLibraryAccessStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
     }
-    
+
     private func loadLibraryAssetsIfPermitted() async {
         guard photoLibraryAccessStatus == .authorized || photoLibraryAccessStatus == .limited else {
             return
         }
-        
+
         if photoLibraryAccessStatus == .authorized {
             library.validateAssets()
         }
         await library.loadThumbnails()
     }
-    
+
     private func beginImportFlow() {
         refreshPhotoLibraryAccessStatus()
-        
+
         switch photoLibraryAccessStatus {
         case .authorized:
             showVideoPicker = true
@@ -715,7 +715,7 @@ struct LibraryView: View {
             openAppSettings()
         }
     }
-    
+
     private func handlePhotoAccessBannerAction() {
         switch photoLibraryAccessStatus {
         case .notDetermined:
@@ -730,7 +730,7 @@ struct LibraryView: View {
             openAppSettings()
         }
     }
-    
+
     private func requestPhotoLibraryAccess(openPickerAfterAuthorization: Bool) {
         PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
             Task { @MainActor in
@@ -749,16 +749,16 @@ struct LibraryView: View {
             }
         }
     }
-    
+
     private func presentLimitedLibraryPicker() {
         DispatchQueue.main.async {
             guard let rootViewController = activeRootViewController() else {
                 openAppSettings()
                 return
             }
-            
+
             PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: rootViewController)
-            
+
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
                 refreshPhotoLibraryAccessStatus()
                 Task {
@@ -767,7 +767,7 @@ struct LibraryView: View {
             }
         }
     }
-    
+
     private func activeRootViewController() -> UIViewController? {
         let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
         let keyWindow = scenes.flatMap(\.windows).first { $0.isKeyWindow }
@@ -777,26 +777,26 @@ struct LibraryView: View {
         }
         return controller
     }
-    
+
     private func openAppSettings() {
         guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(settingsURL)
     }
-    
+
     private func cancelImport() {
         importTask?.cancel()
         importTask = nil
         isImporting = false
         importProgress = nil
         showVideoPicker = false
-        
+
         // Clean up any partial import
         if let url = importedVideoSource?.cleanupURL {
             try? FileManager.default.removeItem(at: url)
         }
         importedVideoSource = nil
     }
-    
+
     private func cleanupImport() {
         if let url = importedVideoSource?.cleanupURL {
             try? FileManager.default.removeItem(at: url)
@@ -804,11 +804,11 @@ struct LibraryView: View {
         importedVideoSource = nil
         importProgress = nil
     }
-    
+
     private func loadAndPlay(_ swing: SavedSwing) {
         selectedSwing = swing
         isLoadingPlayback = true
-        
+
         Task {
             if let playerItem = await library.getPlayerItem(for: swing) {
                 await MainActor.run {
@@ -825,14 +825,14 @@ struct LibraryView: View {
             }
         }
     }
-    
+
     // MARK: - Formatting
-    
+
     private func formatDuration(_ seconds: Double) -> String {
         let secs = Int(seconds)
         return "\(secs)s"
     }
-    
+
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
@@ -842,62 +842,59 @@ struct LibraryView: View {
 
 // MARK: - Playback View
 
-struct PlaybackChromeView<Header: View, Footer: View>: View {
+struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     let playerItem: AVPlayerItem
     let initialPlaybackRate: Float
     let playbackEnabled: Bool
     let showsSpeedControls: Bool
-    
+
     private let header: Header
-    private let footer: Footer
-    
+    private let overlayAccessory: OverlayAccessory
+
     @State private var player: AVPlayer?
     @State private var isPlaying = false
     @State private var currentTime: CMTime = .zero
     @State private var duration: CMTime = .zero
     @State private var playbackSpeed: Float
     @State private var timeObserver: Any?
-    
+    @State private var isScrubbing = false
+    @State private var resumePlaybackAfterScrub = false
+    @State private var transportHoldTask: Task<Void, Never>?
+    @State private var transportGestureDirection: Int?
+    @State private var didActivateTransportHold = false
+    @State private var activeTransportDirection: Int?
+
     private let speedOptions: [Float] = [0.25, 0.5, 0.75, 1.0]
-    
+
     init(
         playerItem: AVPlayerItem,
         initialPlaybackRate: Float = 1.0,
         playbackEnabled: Bool = true,
         showsSpeedControls: Bool = true,
         @ViewBuilder header: () -> Header,
-        @ViewBuilder footer: () -> Footer
+        @ViewBuilder overlayAccessory: () -> OverlayAccessory
     ) {
         self.playerItem = playerItem
         self.initialPlaybackRate = initialPlaybackRate
         self.playbackEnabled = playbackEnabled
         self.showsSpeedControls = showsSpeedControls
         self.header = header()
-        self.footer = footer()
+        self.overlayAccessory = overlayAccessory()
         _playbackSpeed = State(initialValue: max(0.1, initialPlaybackRate))
     }
-    
+
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
-                header
-                
                 videoArea
                     .frame(maxHeight: .infinity)
-                
-                controlsSection
-                
-                timelineSection
-                    .padding(.horizontal)
-                    .padding(.vertical, 12)
-                
-                footer
-                
+
                 if showsSpeedControls {
                     speedSection
                         .padding(.horizontal)
+                        .padding(.top, 12)
                         .padding(.bottom, 16)
                 }
             }
@@ -912,114 +909,156 @@ struct PlaybackChromeView<Header: View, Footer: View>: View {
             guard !enabled else { return }
             player?.pause()
             isPlaying = false
+            stopTransportHold()
         }
     }
-    
+
     private var videoArea: some View {
-        Group {
-            if let player {
-                VideoPlayer(player: player)
-                    .disabled(true)
-                    .overlay(
-                        Color.clear
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                togglePlayback()
-                            }
-                    )
-            } else {
-                ProgressView()
-                    .scaleEffect(1.5)
-                    .tint(.white)
-            }
-        }
-    }
-    
-    private var controlsSection: some View {
-        HStack(spacing: 24) {
-            Button {
-                stepBackward()
-            } label: {
-                Image(systemName: "backward.frame.fill")
-                    .font(.title2)
-                    .foregroundColor(.white)
-            }
-            
-            Button {
-                togglePlayback()
-            } label: {
-                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 32))
-                    .foregroundColor(.white)
-                    .frame(width: 50, height: 50)
-            }
-            
-            Button {
-                stepForward()
-            } label: {
-                Image(systemName: "forward.frame.fill")
-                    .font(.title2)
-                    .foregroundColor(.white)
-            }
-        }
-        .padding(.vertical, 12)
-    }
-    
-    private var timelineSection: some View {
-        VStack(spacing: 8) {
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.white.opacity(0.3))
-                        .frame(height: 6)
-                    
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.yellow)
-                        .frame(width: progressWidth(in: geo.size.width), height: 6)
-                    
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: 18, height: 18)
-                        .shadow(color: .black.opacity(0.3), radius: 2)
-                        .offset(x: playheadOffset(in: geo.size.width))
+        GeometryReader { geometry in
+            let timelineWidth = max(geometry.size.width - 28, 1)
+
+            ZStack {
+                Group {
+                    if let player {
+                        VideoPlayer(player: player)
+                            .disabled(true)
+                            .overlay(
+                                Color.clear
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        togglePlayback()
+                                    }
+                            )
+                    } else {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                            .tint(.white)
+                    }
                 }
-                .frame(height: 18)
-                .contentShape(Rectangle())
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in
-                            let fraction = max(0, min(1, value.location.x / geo.size.width))
-                            let newTime = CMTimeMultiplyByFloat64(duration, multiplier: Float64(fraction))
-                            seek(to: newTime)
-                        }
-                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                transportTouchLayer
+
+                VStack(spacing: 0) {
+                    LinearGradient(
+                        colors: [
+                            Color.black.opacity(0.62),
+                            Color.black.opacity(0.18),
+                            .clear
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 140)
+
+                    Spacer(minLength: 0)
+
+                    LinearGradient(
+                        colors: [
+                            .clear,
+                            Color.black.opacity(0.3),
+                            Color.black.opacity(0.76)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 160)
+                }
+                .allowsHitTesting(false)
+
+                VStack(spacing: 0) {
+                    header
+                        .padding(.horizontal, 12)
+                        .padding(.top, 12)
+
+                    Spacer(minLength: 0)
+
+                    if activeTransportDirection != nil {
+                        transportFeedback
+                            .padding(.bottom, isScrubbing ? 16 : 30)
+                    }
+
+                    if isScrubbing {
+                        scrubTimeBadge
+                            .padding(.bottom, 10)
+                    }
+
+                    integratedTimeline(width: timelineWidth)
+                        .padding(.horizontal, 14)
+                        .padding(.bottom, 12)
+                }
+
+                VStack {
+                    Spacer()
+
+                    HStack {
+                        Spacer()
+                        overlayAccessory
+                    }
+                    .padding(.trailing, 12)
+                    .padding(.bottom, 34)
+                }
             }
-            .frame(height: 18)
-            
-            HStack {
-                Text(formatTime(currentTime))
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                    .foregroundColor(.yellow)
-                
-                Spacer()
-                
-                Text(formatTime(duration))
-                    .font(.system(size: 13, weight: .medium, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.6))
+            .background(Color.black)
+        }
+    }
+
+    private var transportTouchLayer: some View {
+        HStack(spacing: 0) {
+            transportTouchZone(direction: -1)
+            transportTouchZone(direction: 0)
+            transportTouchZone(direction: 1)
+        }
+        .padding(.bottom, 44)
+    }
+
+    private var transportFeedback: some View {
+        HStack {
+            if activeTransportDirection == -1 {
+                transportFeedbackIcon(systemName: "backward.fill")
+            } else {
+                Spacer(minLength: 0)
+            }
+
+            Spacer(minLength: 0)
+
+            if activeTransportDirection == 1 {
+                transportFeedbackIcon(systemName: "forward.fill")
+            } else {
+                Spacer(minLength: 0)
             }
         }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 10)
-        .background(Color.black.opacity(0.4))
-        .cornerRadius(10)
+        .padding(.horizontal, 36)
     }
-    
+
+    private func transportFeedbackIcon(systemName: String) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 18, weight: .bold))
+            .foregroundColor(.white)
+            .frame(width: 48, height: 48)
+            .background(Circle().fill(Color.black.opacity(0.46)))
+    }
+
+    private func transportTouchZone(direction: Int) -> some View {
+        Color.clear
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        beginTransportGesture(direction: direction)
+                    }
+                    .onEnded { _ in
+                        endTransportGesture(direction: direction)
+                    }
+            )
+    }
+
     private var speedSection: some View {
         VStack(spacing: 8) {
             Text("Playback Speed")
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.6))
-            
+
             HStack(spacing: 12) {
                 ForEach(speedOptions, id: \.self) { speed in
                     Button {
@@ -1036,12 +1075,12 @@ struct PlaybackChromeView<Header: View, Footer: View>: View {
                     }
                 }
             }
-            
+
             HStack(spacing: 12) {
                 Text("0.1x")
                     .font(.caption2)
                     .foregroundColor(.white.opacity(0.5))
-                
+
                 Slider(
                     value: Binding(
                         get: { Double(playbackSpeed) },
@@ -1051,7 +1090,7 @@ struct PlaybackChromeView<Header: View, Footer: View>: View {
                     step: 0.05
                 )
                 .tint(.yellow)
-                
+
                 Text("1.0x")
                     .font(.caption2)
                     .foregroundColor(.white.opacity(0.5))
@@ -1062,12 +1101,56 @@ struct PlaybackChromeView<Header: View, Footer: View>: View {
         .background(Color.white.opacity(0.08))
         .cornerRadius(12)
     }
-    
+
+    private var scrubTimeBadge: some View {
+        Text("\(formatTime(currentTime))/\(formatTime(duration))")
+            .font(.system(size: 12, weight: .semibold, design: .monospaced))
+            .foregroundColor(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(
+                Capsule()
+                    .fill(Color.black.opacity(0.7))
+            )
+    }
+
+    private func integratedTimeline(width: CGFloat) -> some View {
+        ZStack(alignment: .leading) {
+            Capsule()
+                .fill(Color.white.opacity(0.28))
+                .frame(height: 4)
+
+            Capsule()
+                .fill(Color.yellow)
+                .frame(width: progressWidth(in: width), height: 4)
+
+            Circle()
+                .fill(Color.white)
+                .frame(width: isScrubbing ? 16 : 12, height: isScrubbing ? 16 : 12)
+                .shadow(color: .black.opacity(0.28), radius: 3)
+                .offset(x: playheadOffset(in: width))
+        }
+        .frame(height: 28)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    beginScrubbing()
+                    let fraction = max(0, min(1, value.location.x / width))
+                    let newTime = CMTimeMultiplyByFloat64(duration, multiplier: Float64(fraction))
+                    seek(to: newTime)
+                }
+                .onEnded { _ in
+                    endScrubbing()
+                }
+        )
+    }
+
     private func setupPlayer() {
         let newPlayer = AVPlayer(playerItem: playerItem)
         newPlayer.actionAtItemEnd = .pause
         player = newPlayer
-        
+
         Task {
             if let dur = try? await playerItem.asset.load(.duration) {
                 await MainActor.run {
@@ -1075,32 +1158,33 @@ struct PlaybackChromeView<Header: View, Footer: View>: View {
                 }
             }
         }
-        
+
         let interval = CMTime(seconds: 0.05, preferredTimescale: 600)
         timeObserver = newPlayer.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
             currentTime = time
-            
+
             if CMTimeCompare(time, duration) >= 0 && CMTimeGetSeconds(duration) > 0 {
                 isPlaying = false
             }
         }
-        
+
         guard playbackEnabled else { return }
         newPlayer.playImmediately(atRate: playbackSpeed)
         isPlaying = true
     }
-    
+
     private func cleanup() {
         if let observer = timeObserver {
             player?.removeTimeObserver(observer)
         }
         player?.pause()
         player = nil
+        stopTransportHold()
     }
-    
+
     private func togglePlayback() {
         guard playbackEnabled, let player else { return }
-        
+
         if isPlaying {
             player.pause()
         } else {
@@ -1111,49 +1195,157 @@ struct PlaybackChromeView<Header: View, Footer: View>: View {
         }
         isPlaying.toggle()
     }
-    
+
     private func seek(to time: CMTime) {
         player?.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
         currentTime = time
     }
-    
-    private func stepForward() {
-        let frameDuration = CMTime(value: 1, timescale: 30)
-        let newTime = CMTimeAdd(currentTime, frameDuration)
-        if CMTimeCompare(newTime, duration) <= 0 {
-            seek(to: newTime)
+
+    private func beginScrubbing() {
+        guard !isScrubbing else { return }
+        resumePlaybackAfterScrub = isPlaying
+        player?.pause()
+        isPlaying = false
+        isScrubbing = true
+    }
+
+    private func endScrubbing() {
+        isScrubbing = false
+        guard playbackEnabled, resumePlaybackAfterScrub else { return }
+        player?.playImmediately(atRate: playbackSpeed)
+        isPlaying = true
+        resumePlaybackAfterScrub = false
+    }
+
+    private func beginTransportGesture(direction: Int) {
+        guard playbackEnabled, !isScrubbing else { return }
+        guard transportGestureDirection != direction else { return }
+
+        stopTransportHold()
+        transportGestureDirection = direction
+        didActivateTransportHold = false
+        activeTransportDirection = nil
+
+        guard direction != 0 else { return }
+
+        transportHoldTask = Task {
+            let holdStart = Date()
+            try? await Task.sleep(nanoseconds: 180_000_000)
+            guard !Task.isCancelled else { return }
+
+            await MainActor.run {
+                didActivateTransportHold = true
+                activeTransportDirection = direction
+                step(direction: direction)
+            }
+
+            while !Task.isCancelled {
+                let elapsed = Date().timeIntervalSince(holdStart)
+                let interval = transportRepeatInterval(for: elapsed)
+                let multiplier = transportStepMultiplier(for: elapsed)
+                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    step(direction: direction, multiplier: multiplier)
+                }
+            }
         }
     }
-    
-    private func stepBackward() {
-        let frameDuration = CMTime(value: 1, timescale: 30)
-        let newTime = CMTimeSubtract(currentTime, frameDuration)
-        if CMTimeCompare(newTime, .zero) >= 0 {
-            seek(to: newTime)
+
+    private func endTransportGesture(direction: Int) {
+        guard transportGestureDirection == direction else { return }
+        let didHold = didActivateTransportHold
+        stopTransportHold()
+
+        if !didHold {
+            togglePlayback()
+        }
+    }
+
+    private func stopTransportHold() {
+        transportHoldTask?.cancel()
+        transportHoldTask = nil
+        transportGestureDirection = nil
+        didActivateTransportHold = false
+        activeTransportDirection = nil
+    }
+
+    private func step(direction: Int, multiplier: Int = 1) {
+        if isPlaying {
+            player?.pause()
+            isPlaying = false
+        }
+
+        let frameDuration = CMTimeMultiplyByFloat64(
+            CMTime(value: 1, timescale: 30),
+            multiplier: Double(multiplier)
+        )
+        let candidateTime = direction >= 0
+            ? CMTimeAdd(currentTime, frameDuration)
+            : CMTimeSubtract(currentTime, frameDuration)
+
+        let clampedTime: CMTime
+        if CMTimeCompare(candidateTime, .zero) < 0 {
+            clampedTime = .zero
+        } else if CMTimeCompare(candidateTime, duration) > 0 {
+            clampedTime = duration
         } else {
-            seek(to: .zero)
+            clampedTime = candidateTime
+        }
+
+        seek(to: clampedTime)
+    }
+
+    private func stepForward() {
+        step(direction: 1)
+    }
+
+    private func stepBackward() {
+        step(direction: -1)
+    }
+
+    private func transportRepeatInterval(for holdDuration: TimeInterval) -> Double {
+        switch holdDuration {
+        case 0..<1.0:
+            return 0.12
+        case 1.0..<2.2:
+            return 0.08
+        default:
+            return 0.055
         }
     }
-    
+
+    private func transportStepMultiplier(for holdDuration: TimeInterval) -> Int {
+        switch holdDuration {
+        case 0..<1.0:
+            return 1
+        case 1.0..<2.2:
+            return 2
+        default:
+            return 4
+        }
+    }
+
     private func setSpeed(_ speed: Float) {
         playbackSpeed = speed
         if isPlaying {
             player?.rate = speed
         }
     }
-    
+
     private func progressWidth(in totalWidth: CGFloat) -> CGFloat {
         guard CMTimeGetSeconds(duration) > 0 else { return 0 }
         let fraction = CMTimeGetSeconds(currentTime) / CMTimeGetSeconds(duration)
         return CGFloat(fraction) * totalWidth
     }
-    
+
     private func playheadOffset(in totalWidth: CGFloat) -> CGFloat {
         guard CMTimeGetSeconds(duration) > 0 else { return 0 }
         let fraction = CMTimeGetSeconds(currentTime) / CMTimeGetSeconds(duration)
-        return CGFloat(fraction) * totalWidth - 9
+        let thumbRadius: CGFloat = isScrubbing ? 8 : 6
+        return CGFloat(fraction) * totalWidth - thumbRadius
     }
-    
+
     private func formatTime(_ time: CMTime) -> String {
         let totalSeconds = CMTimeGetSeconds(time)
         guard totalSeconds.isFinite else { return "00.0" }
@@ -1161,7 +1353,7 @@ struct PlaybackChromeView<Header: View, Footer: View>: View {
         let tenths = Int((totalSeconds * 10).truncatingRemainder(dividingBy: 10))
         return String(format: "%02d.%d", secs, tenths)
     }
-    
+
     private func speedLabel(_ speed: Float) -> String {
         if speed == 1.0 {
             return "1x"
@@ -1176,7 +1368,7 @@ struct PlaybackChromeView<Header: View, Footer: View>: View {
     }
 }
 
-extension PlaybackChromeView where Footer == EmptyView {
+extension PlaybackChromeView where OverlayAccessory == EmptyView {
     init(
         playerItem: AVPlayerItem,
         initialPlaybackRate: Float = 1.0,
@@ -1190,7 +1382,7 @@ extension PlaybackChromeView where Footer == EmptyView {
             playbackEnabled: playbackEnabled,
             showsSpeedControls: showsSpeedControls,
             header: header,
-            footer: { EmptyView() }
+            overlayAccessory: { EmptyView() }
         )
     }
 }
@@ -1199,22 +1391,22 @@ struct SwingPlaybackView: View {
     let playerItem: AVPlayerItem
     let swing: SavedSwing?
     let onDismiss: () -> Void
-    
+
     @State private var duration: CMTime = .zero
-    
+
     // Export state
     @State private var showExportSheet = false
     @State private var isExporting = false
     @State private var exportProgress: Float = 0
     @State private var showExportSuccess = false
     @State private var sourceFPS: Double = 30
-    
+
     var body: some View {
         ZStack {
             PlaybackChromeView(playerItem: playerItem) {
                 topBar
             }
-            
+
             if isExporting {
                 exportProgressOverlay
             }
@@ -1242,9 +1434,9 @@ struct SwingPlaybackView: View {
             Text("Your slowed-down video has been saved to Photos and added to your library.")
         }
     }
-    
+
     // MARK: - Top Bar
-    
+
     private var topBar: some View {
         HStack {
             if let swing {
@@ -1256,45 +1448,49 @@ struct SwingPlaybackView: View {
                     .background(Color.black.opacity(0.5))
                     .cornerRadius(8)
             }
-            
+
             Spacer()
-            
+
             // Export button
             Button {
                 showExportSheet = true
             } label: {
                 Image(systemName: "square.and.arrow.up")
-                    .font(.title2)
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white)
+                    .frame(width: 42, height: 42)
+                    .background(Circle().fill(Color.black.opacity(0.42)))
                     .shadow(radius: 4)
             }
             .padding(.trailing, 12)
-            
+
             Button {
                 onDismiss()
             } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.title)
+                Image(systemName: "xmark")
+                    .font(.system(size: 17, weight: .bold))
                     .foregroundColor(.white)
+                    .frame(width: 42, height: 42)
+                    .background(Circle().fill(Color.black.opacity(0.42)))
                     .shadow(radius: 4)
             }
         }
         .padding()
     }
-    
+
     // MARK: - Export Progress Overlay
-    
+
     private var exportProgressOverlay: some View {
         ZStack {
             Color.black.opacity(0.8)
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 16) {
                 ProgressView(value: Double(exportProgress))
                     .progressViewStyle(.linear)
                     .tint(.yellow)
                     .frame(width: 200)
-                
+
                 Text("Exporting... \(Int(exportProgress * 100))%")
                     .font(.headline)
                     .foregroundColor(.white)
@@ -1304,7 +1500,7 @@ struct SwingPlaybackView: View {
             .cornerRadius(16)
         }
     }
-    
+
     private func loadVideoInfo() {
         Task {
             if let info = await VideoExporter.getVideoInfo(asset: playerItem.asset) {
@@ -1315,12 +1511,12 @@ struct SwingPlaybackView: View {
             }
         }
     }
-    
+
     private func exportWithFPS(_ targetFPS: ExportFPS) {
         showExportSheet = false
         isExporting = true
         exportProgress = 0
-        
+
         Task {
             do {
                 let exporter = VideoExporter()
@@ -1333,7 +1529,7 @@ struct SwingPlaybackView: View {
                         exportProgress = progress
                     }
                 }
-                
+
                 // Calculate new duration for library entry
                 let currentDuration = CMTimeGetSeconds(duration)
                 let newDuration = VideoExporter.calculateNewDuration(
@@ -1341,7 +1537,7 @@ struct SwingPlaybackView: View {
                     sourceFPS: sourceFPS,
                     targetFPS: Double(targetFPS.rawValue)
                 )
-                
+
                 // Add to library
                 SwingLibrary.shared.addSwing(
                     photoAssetID: assetID,
@@ -1350,7 +1546,7 @@ struct SwingPlaybackView: View {
                     notes: "Exported at \(targetFPS.shortName)",
                     initialThumbnail: swing?.thumbnail
                 )
-                
+
                 await MainActor.run {
                     isExporting = false
                     showExportSuccess = true
@@ -1363,7 +1559,7 @@ struct SwingPlaybackView: View {
             }
         }
     }
-    
+
 }
 
 // MARK: - FPS Export Sheet
@@ -1374,9 +1570,9 @@ struct FPSExportSheet: View {
     let vantage: Vantage
     let onExport: (ExportFPS) -> Void
     let onCancel: () -> Void
-    
+
     @State private var selectedFPS: ExportFPS = .cinematic
-    
+
     private func newDuration(for fps: ExportFPS) -> Double {
         VideoExporter.calculateNewDuration(
             originalDuration: currentDuration,
@@ -1384,7 +1580,7 @@ struct FPSExportSheet: View {
             targetFPS: Double(fps.rawValue)
         )
     }
-    
+
     private func formatDuration(_ seconds: Double) -> String {
         let secs = Int(seconds)
         let tenths = Int((seconds * 10).truncatingRemainder(dividingBy: 10))
@@ -1395,7 +1591,7 @@ struct FPSExportSheet: View {
         }
         return String(format: "%d.%ds", secs, tenths)
     }
-    
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
@@ -1403,19 +1599,19 @@ struct FPSExportSheet: View {
                 VStack(spacing: 8) {
                     Text("Export Slower Version")
                         .font(.title2.weight(.semibold))
-                    
+
                     Text("Current: \(formatDuration(currentDuration)) at \(Int(sourceFPS))fps")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
                 .padding(.top)
-                
+
                 // FPS options
                 VStack(spacing: 12) {
                     ForEach(ExportFPS.allCases) { fps in
                         let duration = newDuration(for: fps)
                         let isSelected = selectedFPS == fps
-                        
+
                         Button {
                             selectedFPS = fps
                         } label: {
@@ -1424,14 +1620,14 @@ struct FPSExportSheet: View {
                                     Text(fps.displayName)
                                         .font(.headline)
                                         .foregroundColor(isSelected ? .white : .primary)
-                                    
+
                                     Text("Duration: \(formatDuration(duration))")
                                         .font(.subheadline)
                                         .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
                                 }
-                                
+
                                 Spacer()
-                                
+
                                 if isSelected {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(.title2)
@@ -1448,9 +1644,9 @@ struct FPSExportSheet: View {
                     }
                 }
                 .padding(.horizontal)
-                
+
                 Spacer()
-                
+
                 // Export button
                 Button {
                     onExport(selectedFPS)
@@ -1487,7 +1683,7 @@ struct FPSExportSheet: View {
 enum ImportError: Error, LocalizedError {
     case noData
     case copyFailed
-    
+
     var errorDescription: String? {
         switch self {
         case .noData:
@@ -1501,7 +1697,7 @@ enum ImportError: Error, LocalizedError {
 /// Transferable wrapper for video files that copies to a temp location
 struct VideoFileTransferable: Transferable {
     let url: URL
-    
+
     static var transferRepresentation: some TransferRepresentation {
         FileRepresentation(contentType: .movie) { video in
             SentTransferredFile(video.url)
@@ -1511,9 +1707,9 @@ struct VideoFileTransferable: Transferable {
             let tempDir = FileManager.default.temporaryDirectory
             let filename = "\(UUID().uuidString).mov"
             let destURL = tempDir.appendingPathComponent(filename)
-            
+
             try FileManager.default.copyItem(at: received.file, to: destURL)
-            
+
             return VideoFileTransferable(url: destURL)
         }
     }
@@ -1529,35 +1725,35 @@ struct VideoPickerWithProgress: UIViewControllerRepresentable {
     let onProgress: (Double, Int64, Int64) -> Void  // (fraction, completedBytes, totalBytes)
     let onCancel: () -> Void
     let onError: (Error) -> Void
-    
+
     func makeUIViewController(context: Context) -> PHPickerViewController {
         var config = PHPickerConfiguration(photoLibrary: .shared())
         config.filter = .videos
         config.selectionLimit = 1
         config.preferredAssetRepresentationMode = .current
-        
+
         let picker = PHPickerViewController(configuration: config)
         picker.delegate = context.coordinator
         return picker
     }
-    
+
     func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
-    
+
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
-    
+
     class Coordinator: NSObject, PHPickerViewControllerDelegate {
         let parent: VideoPickerWithProgress
         private var importStartTime: Date?
-        
+
         init(_ parent: VideoPickerWithProgress) {
             self.parent = parent
         }
-        
+
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
             importStartTime = Date()
-            
+
             // Dismiss picker first, then begin the handoff/import work.
             picker.dismiss(animated: true) {
                 DispatchQueue.main.async {
@@ -1566,7 +1762,7 @@ struct VideoPickerWithProgress: UIViewControllerRepresentable {
                 self.handlePickedResults(results)
             }
         }
-        
+
         private func handlePickedResults(_ results: [PHPickerResult]) {
             guard let result = results.first else {
                 print("📹 Import: User cancelled picker")
@@ -1575,7 +1771,7 @@ struct VideoPickerWithProgress: UIViewControllerRepresentable {
                 }
                 return
             }
-            
+
             let readWriteStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
             let canAttemptAssetFetch = readWriteStatus == .authorized || readWriteStatus == .limited
             if !canAttemptAssetFetch {
@@ -1583,16 +1779,16 @@ struct VideoPickerWithProgress: UIViewControllerRepresentable {
                 fallbackToItemProvider(result: result)
                 return
             }
-            
+
             // Get the PHAsset identifier
             guard let assetIdentifier = result.assetIdentifier else {
                 print("❌ Import: No asset identifier - falling back to itemProvider")
                 fallbackToItemProvider(result: result)
                 return
             }
-            
+
             print("📹 Import: Got asset identifier: \(assetIdentifier)")
-            
+
             // Fetch the PHAsset
             let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [assetIdentifier], options: nil)
             guard let asset = fetchResult.firstObject else {
@@ -1600,7 +1796,7 @@ struct VideoPickerWithProgress: UIViewControllerRepresentable {
                 fallbackToItemProvider(result: result)
                 return
             }
-            
+
             DispatchQueue.main.async {
                 print("📹 Import: Got PHAsset - duration: \(asset.duration)s, mediaType: \(asset.mediaType.rawValue)")
                 if let importStartTime = self.importStartTime {
@@ -1614,29 +1810,29 @@ struct VideoPickerWithProgress: UIViewControllerRepresentable {
                 )
             }
         }
-        
+
         private func copyVideoFile(from sourceURL: URL) {
             // Get file size for logging
             if let attrs = try? FileManager.default.attributesOfItem(atPath: sourceURL.path),
                let size = attrs[.size] as? Int64 {
                 print("📹 Import: Source file size: \(Double(size) / 1_000_000) MB")
             }
-            
+
             do {
                 let tempDir = FileManager.default.temporaryDirectory
                 let filename = "\(UUID().uuidString).mov"
                 let destURL = tempDir.appendingPathComponent(filename)
-                
+
                 print("📹 Import: Copying to \(destURL.lastPathComponent)...")
-                
+
                 // Copy is currently an indeterminate stage.
                 DispatchQueue.main.async {
                     self.parent.onProgress(0, 0, 0)
                 }
-                
+
                 try FileManager.default.copyItem(at: sourceURL, to: destURL)
                 print("✅ Import: Copy complete!")
-                
+
                 DispatchQueue.main.async {
                     self.parent.onProgress(1.0, 100, 100)
                     self.parent.onVideoSelected(.localFile(url: destURL))
@@ -1648,38 +1844,38 @@ struct VideoPickerWithProgress: UIViewControllerRepresentable {
                 }
             }
         }
-        
+
         private func fallbackToItemProvider(result: PHPickerResult) {
             let itemProvider = result.itemProvider
             print("📹 Import: Fallback - using itemProvider")
             print("📹 Import: Registered types: \(itemProvider.registeredTypeIdentifiers)")
-            
+
             guard itemProvider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) else {
                 print("❌ Import: Item does not conform to movie type")
                 parent.onError(ImportError.noData)
                 return
             }
-            
+
             // Signal start
             DispatchQueue.main.async {
                 self.parent.onProgress(0, 0, 0)
             }
-            
+
             _ = itemProvider.loadInPlaceFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { [weak self] url, isInPlace, error in
                 guard let self = self else { return }
-                
+
                 if let error = error {
                     print("❌ Import: in-place file handoff failed - \(error.localizedDescription)")
                     self.loadCopiedFileRepresentation(from: itemProvider)
                     return
                 }
-                
+
                 guard let sourceURL = url else {
                     print("❌ Import: No in-place URL from itemProvider - falling back to copied file")
                     self.loadCopiedFileRepresentation(from: itemProvider)
                     return
                 }
-                
+
                 if isInPlace {
                     print("📹 Import: Using in-place file URL from picker")
                     DispatchQueue.main.async {
@@ -1694,11 +1890,11 @@ struct VideoPickerWithProgress: UIViewControllerRepresentable {
                 }
             }
         }
-        
+
         private func loadCopiedFileRepresentation(from itemProvider: NSItemProvider) {
             _ = itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { [weak self] url, error in
                 guard let self = self else { return }
-                
+
                 if let error = error {
                     print("❌ Import: itemProvider error - \(error.localizedDescription)")
                     DispatchQueue.main.async {
@@ -1706,7 +1902,7 @@ struct VideoPickerWithProgress: UIViewControllerRepresentable {
                     }
                     return
                 }
-                
+
                 guard let sourceURL = url else {
                     print("❌ Import: No URL from itemProvider")
                     DispatchQueue.main.async {
@@ -1714,7 +1910,7 @@ struct VideoPickerWithProgress: UIViewControllerRepresentable {
                     }
                     return
                 }
-                
+
                 self.copyVideoFile(from: sourceURL)
             }
         }

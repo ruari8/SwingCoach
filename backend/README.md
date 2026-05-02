@@ -71,12 +71,25 @@ Request shape:
 - `vantage: "DTL" | "FO"`
 - `fps: Optional[float]`
 
-Response shape (`CoachableAnalysisResponse`):
-- `run_id`
-- `metrics[]` (cards with `key`, `name`, `value`, `unit`, `confidence`, `explanation`, `fix_hint`)
-- `coaching` (`summary`, `top_priorities[]`, `drills[]`)
-- `artifacts` (`annotated_video_url`, `swing_3d_url`, keys)
-- `quality` (`warnings[]`, `missing_data[]`, `timings{}`)
+Response shape (`AnalyzeResponse`):
+- `analysis_id`
+- `summary`
+- `metrics[]` (display rows with `key`, `name`, `value`)
+- `annotated_video_url`
+- `drills[]` (lightweight `title`, `summary` suggestions)
+
+The pipeline still records richer internal data such as confidence, warnings, timings, 3D artifacts, and raw files. The mobile MVP contract intentionally exposes only the fields needed by the current Coach tab.
+
+### `POST /mock/analyze`
+
+Request shape:
+- `video_key: str`
+- `vantage: "DTL" | "FO"`
+
+Response shape:
+- Same `AnalyzeResponse` shape as `/analyze`
+
+Mock analysis is for mobile MVP testing. It verifies the uploaded source `video_key` exists in R2, uploads `output/full_annotation.mp4` to `mock/full_annotation.mp4` if needed, and returns a signed R2 URL for that dummy annotated video without running the model pipeline.
 
 ### `POST /chat`
 
@@ -145,5 +158,4 @@ python test_temporal_smoothing.py
 
 1. Some metrics are confidence-gated and may be absent if detection confidence is low.
 2. Club and impact-related metrics depend on club tracking quality and event alignment.
-3. Frontend client currently expects an older `/analyze` response shape and needs migration.
-
+3. `/analyze` is still synchronous and should move to an async analysis-run lifecycle before broader beta use.

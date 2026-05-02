@@ -14,7 +14,7 @@ struct SwingAnalysis: Identifiable {
     let swing: SavedSwing
     var status: AnalysisStatus
     var result: AnalysisResult?
-    
+
     enum AnalysisStatus: Equatable {
         case pending
         case analyzing
@@ -23,42 +23,35 @@ struct SwingAnalysis: Identifiable {
     }
 }
 
-/// Mock analysis result - will be replaced with real API response
 struct AnalysisResult {
+    let analysisID: String
     let summary: String
-    let metrics: [String: String]
-    let drillLinks: [DrillLink]
-    let rawResponse: String
-}
-
-struct DrillLink: Identifiable {
-    let id = UUID()
-    let title: String
-    let url: String
-    let platform: String // "youtube", "instagram", etc.
+    let metrics: [SwingCoachAPI.AnalysisMetric]
+    let annotatedVideoURL: String?
+    let drills: [SwingCoachAPI.AnalysisDrill]
 }
 
 /// Main Analyse/Swing Coach tab
 struct AnalyseView: View {
     @Binding var swingsToAnalyze: [SavedSwing]
     let onNavigateToLibrary: () -> Void
-    
+
     @StateObject private var library = SwingLibrary.shared
-    
+
     // Analysis state
     @State private var analyses: [SwingAnalysis] = []
     @State private var isAnalyzing = false
     @State private var showSwingPicker = false
-    
+
     // Selection for picking from library
     @State private var selectedSwingIDs: Set<UUID> = []
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color(.systemGroupedBackground)
                     .ignoresSafeArea()
-                
+
                 if analyses.isEmpty && swingsToAnalyze.isEmpty {
                     emptyState
                 } else {
@@ -106,24 +99,24 @@ struct AnalyseView: View {
             }
         }
     }
-    
+
     // MARK: - Empty State
-    
+
     private var emptyState: some View {
         VStack(spacing: 20) {
             Image(systemName: "wand.and.stars")
                 .font(.system(size: 60))
                 .foregroundColor(.secondary)
-            
+
             Text("AI Swing Coach")
                 .font(.title2.weight(.semibold))
-            
+
             Text("Select swings from your library to get AI-powered analysis and drill recommendations")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
-            
+
             VStack(spacing: 12) {
                 Button {
                     showSwingPicker = true
@@ -136,7 +129,7 @@ struct AnalyseView: View {
                         .background(Color.blue)
                         .cornerRadius(12)
                 }
-                
+
                 Button {
                     onNavigateToLibrary()
                 } label: {
@@ -149,9 +142,9 @@ struct AnalyseView: View {
         }
         .padding()
     }
-    
+
     // MARK: - Analysis Content
-    
+
     private var analysisContent: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
@@ -162,62 +155,61 @@ struct AnalyseView: View {
             .padding()
         }
     }
-    
+
     // MARK: - Actions
-    
+
     private func addSelectedSwingsAndAnalyze() {
         let swings = library.swings.filter { selectedSwingIDs.contains($0.id) }
         showSwingPicker = false
         selectedSwingIDs.removeAll()
         startAnalysis(for: swings)
     }
-    
+
     private func startAnalysis(for swings: [SavedSwing]) {
         // Add new analyses
         let newAnalyses = swings.map { SwingAnalysis(swing: $0, status: .pending) }
         analyses.insert(contentsOf: newAnalyses, at: 0)
-            
+
         // Start analyzing
         isAnalyzing = true
-        
+
         Task {
             for i in analyses.indices where analyses[i].status == .pending {
                 await MainActor.run {
                     analyses[i].status = .analyzing
                 }
-                
+
                 do {
                     // Real API call
                     let response = try await SwingCoachAPI.shared.analyzeSwing(analyses[i].swing) { stage, progress in
                         // Could update UI with stage/progress here if we add more granular status
                         print("📤 \(stage) - \(progress.map { String(format: "%.0f%%", $0 * 100) } ?? "")")
                     }
-                    
+
                     // Convert API response to our local model
                     let result = AnalysisResult(
+                        analysisID: response.analysisID,
                         summary: response.summary,
                         metrics: response.metrics,
-                        drillLinks: response.drillLinks.map { drill in
-                            DrillLink(title: drill.title, url: drill.url, platform: drill.platform)
-                        },
-                        rawResponse: response.rawResponse ?? ""
+                        annotatedVideoURL: response.annotatedVideoURL,
+                        drills: response.drills
                     )
-                    
+
                     await MainActor.run {
                         analyses[i].result = result
                         analyses[i].status = .complete
                     }
-                    
+
                     // Mark as analyzed in library
                     library.markAnalyzed(analyses[i].swing)
-                    
+
                 } catch {
                     await MainActor.run {
                         analyses[i].status = .failed(error.localizedDescription)
                     }
                 }
             }
-            
+
             await MainActor.run {
                 isAnalyzing = false
             }
@@ -229,7 +221,7 @@ struct AnalyseView: View {
 
 struct AnalysisCard: View {
     let analysis: SwingAnalysis
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Header
@@ -242,7 +234,7 @@ struct AnalysisCard: View {
                         .clipped()
                         .cornerRadius(6)
                 }
-                
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text(analysis.swing.vantage.displayName)
                         .font(.headline)
@@ -250,30 +242,30 @@ struct AnalysisCard: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                
+
                 Spacer()
-                
+
                 statusBadge
             }
-            
+
             // Content based on status
             switch analysis.status {
             case .pending:
                 Text("Waiting...")
                     .foregroundColor(.secondary)
-                
+
             case .analyzing:
                 HStack(spacing: 8) {
                     ProgressView()
                     Text("Analyzing swing...")
                         .foregroundColor(.secondary)
                 }
-                
+
             case .complete:
                 if let result = analysis.result {
                     resultContent(result)
                 }
-                
+
             case .failed(let error):
                 Text("Error: \(error)")
                     .foregroundColor(.red)
@@ -285,7 +277,7 @@ struct AnalysisCard: View {
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
     }
-    
+
     private var statusBadge: some View {
         Group {
             switch analysis.status {
@@ -304,7 +296,7 @@ struct AnalysisCard: View {
             }
         }
     }
-    
+
     @ViewBuilder
     private func resultContent(_ result: AnalysisResult) -> some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -312,56 +304,62 @@ struct AnalysisCard: View {
             Text(result.summary)
                 .font(.title3.weight(.semibold))
                 .foregroundColor(.primary)
-            
-            // Metrics
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Metrics")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(.secondary)
-                
-                ForEach(Array(result.metrics.keys.sorted()), id: \.self) { key in
-                    HStack {
-                        Text(key)
-                            .font(.subheadline)
-                        Spacer()
-                        Text(result.metrics[key] ?? "")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundColor(.secondary)
-                    }
+
+            if let annotatedVideoURL = result.annotatedVideoURL,
+               let url = URL(string: annotatedVideoURL) {
+                Link(destination: url) {
+                    Label("Annotated Video Available", systemImage: "play.rectangle.fill")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundColor(.blue)
                 }
             }
-            .padding()
-            .background(Color(.secondarySystemBackground))
-            .cornerRadius(8)
-            
-            // Drill Links
-            if !result.drillLinks.isEmpty {
+
+            // Metrics
+            if !result.metrics.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Metrics")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(.secondary)
+
+                    ForEach(result.metrics, id: \.key) { metric in
+                        HStack {
+                            Text(metric.name)
+                                .font(.subheadline)
+                            Spacer()
+                            Text(metric.value)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                .padding()
+                .background(Color(.secondarySystemBackground))
+                .cornerRadius(8)
+            }
+
+            // Drills
+            if !result.drills.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Recommended Drills")
                         .font(.caption.weight(.semibold))
                         .foregroundColor(.secondary)
-                    
-                    ForEach(result.drillLinks) { drill in
-                        Link(destination: URL(string: drill.url)!) {
-                            HStack {
-                                Image(systemName: drill.platform == "youtube" ? "play.rectangle.fill" : "link")
-                                    .foregroundColor(.red)
-                                Text(drill.title)
-                                    .font(.subheadline)
-                                    .foregroundColor(.primary)
-                                Spacer()
-                                Image(systemName: "arrow.up.right")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.vertical, 8)
+
+                    ForEach(result.drills, id: \.title) { drill in
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(drill.title)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundColor(.primary)
+                            Text(drill.summary)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                         }
+                        .padding(.vertical, 6)
                     }
                 }
             }
         }
     }
-    
+
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
@@ -377,13 +375,13 @@ struct SwingPickerSheet: View {
     @Binding var selectedIDs: Set<UUID>
     let onConfirm: () -> Void
     let onCancel: () -> Void
-    
+
     private let columns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
-    
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -419,10 +417,10 @@ struct SwingPickerSheet: View {
             }
         }
     }
-    
+
     private func swingTile(_ swing: SavedSwing) -> some View {
         let isSelected = selectedIDs.contains(swing.id)
-        
+
         return Button {
             if isSelected {
                 selectedIDs.remove(swing.id)
@@ -442,7 +440,7 @@ struct SwingPickerSheet: View {
                         .fill(Color.gray.opacity(0.2))
                         .frame(height: 80)
                 }
-                
+
                 // Selection indicator
                 VStack {
                     HStack {
@@ -482,4 +480,3 @@ struct SwingPickerSheet: View {
         onNavigateToLibrary: {}
     )
 }
-

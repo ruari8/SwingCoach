@@ -15,7 +15,7 @@ enum SloMoMode {
     case standard    // 120 fps @ 1080p
     case ultra       // 240 fps @ 1080p
     case ballTracer  // 60 fps @ 4K (for future shot tracer feature)
-    
+
     var targetFPS: Double {
         switch self {
         case .standard: return 120.0
@@ -23,7 +23,7 @@ enum SloMoMode {
         case .ballTracer: return 60.0
         }
     }
-    
+
     var targetResolution: (width: Int32, height: Int32) {
         switch self {
         case .standard, .ultra:
@@ -32,7 +32,7 @@ enum SloMoMode {
             return (3840, 2160)
         }
     }
-    
+
     var displayName: String {
         switch self {
         case .standard: return "120fps HD"
@@ -40,7 +40,7 @@ enum SloMoMode {
         case .ballTracer: return "60fps 4K"
         }
     }
-    
+
     /// Playback rate to achieve slow-motion (recorded FPS / playback FPS)
     var slowMotionRate: Float {
         Float(30.0 / targetFPS)
@@ -54,7 +54,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     @Published var lastRecordingURL: URL?
     @Published var recordingError: Error?
     @Published var captureMode: SloMoMode = .ultra  // Default to 240 fps
-    
+
     /// The mode that was active when recording started (for correct playback rate)
     private(set) var recordedMode: SloMoMode = .ultra
 
@@ -81,18 +81,18 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         if session.canAddOutput(movieOutput) {
             session.addOutput(movieOutput)
         }
-        
+
         // Configure high FPS AFTER input/output are added to the session
         // Otherwise the session may override format settings when input is added
         configureHighFPS(device: device, mode: captureMode)
-        
+
         session.commitConfiguration()
     }
-    
+
     private func configureHighFPS(device: AVCaptureDevice, mode: SloMoMode) {
         let targetFPS = mode.targetFPS
         let targetRes = mode.targetResolution
-        
+
         // Find format matching our exact resolution and FPS requirements
         let matchingFormat = device.formats.first { format in
             let dims = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
@@ -102,15 +102,15 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             }
             return resolutionMatches && fpsSupported
         }
-        
+
         guard let bestFormat = matchingFormat else {
             print("❌ No format found for \(mode.displayName) (\(targetRes.width)×\(targetRes.height) @ \(targetFPS) fps)")
             return
         }
-        
+
         let dims = CMVideoFormatDescriptionGetDimensions(bestFormat.formatDescription)
         print("✅ Selected format: \(dims.width)×\(dims.height) @ \(targetFPS) fps (\(mode.displayName))")
-        
+
         // Apply the format and lock frame rate
         do {
             try device.lockForConfiguration()
@@ -123,34 +123,34 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             print("❌ Failed to configure \(mode.displayName): \(error)")
         }
     }
-    
+
     /// Switch capture mode without stopping the session (prevents errors)
     func switchMode(to mode: SloMoMode) {
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else { return }
-        
+
         session.beginConfiguration()
         captureMode = mode
         configureHighFPS(device: device, mode: mode)
         session.commitConfiguration()
     }
-    
+
     /// Focus and expose at the given point (normalized 0-1 coordinates)
     func focus(at point: CGPoint) {
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else { return }
-        
+
         do {
             try device.lockForConfiguration()
-            
+
             if device.isFocusPointOfInterestSupported {
                 device.focusPointOfInterest = point
                 device.focusMode = .autoFocus
             }
-            
+
             if device.isExposurePointOfInterestSupported {
                 device.exposurePointOfInterest = point
                 device.exposureMode = .autoExpose
             }
-            
+
             device.unlockForConfiguration()
         } catch {
             print("❌ Failed to focus: \(error)")
@@ -174,7 +174,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     func startRecording() {
         // Capture the mode at recording start for correct playback rate
         recordedMode = captureMode
-        
+
         queue.async {
             guard !self.movieOutput.isRecording else { return }
             let url = Self.tempURL()
@@ -214,7 +214,7 @@ final class CameraPreviewView: UIView {
     var previewLayer: AVCaptureVideoPreviewLayer {
         layer as! AVCaptureVideoPreviewLayer
     }
-    
+
     /// Convert a tap point to camera coordinates (0-1 normalized)
     func cameraPoint(from viewPoint: CGPoint) -> CGPoint {
         previewLayer.captureDevicePointConverted(fromLayerPoint: viewPoint)
@@ -229,10 +229,10 @@ struct CameraPreview: UIViewRepresentable {
         let view = CameraPreviewView()
         view.previewLayer.videoGravity = .resizeAspectFill
         view.previewLayer.session = session
-        
+
         let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
         view.addGestureRecognizer(tapGesture)
-        
+
         return view
     }
 
@@ -240,19 +240,19 @@ struct CameraPreview: UIViewRepresentable {
         context.coordinator.onTap = onTap
         context.coordinator.previewView = uiView
     }
-    
+
     func makeCoordinator() -> Coordinator {
         Coordinator(onTap: onTap)
     }
-    
+
     class Coordinator: NSObject {
         var onTap: ((CGPoint, CGPoint) -> Void)?
         weak var previewView: CameraPreviewView?
-        
+
         init(onTap: ((CGPoint, CGPoint) -> Void)?) {
             self.onTap = onTap
         }
-        
+
         @objc func handleTap(_ gesture: UITapGestureRecognizer) {
             guard let view = previewView else { return }
             let viewPoint = gesture.location(in: view)
@@ -264,25 +264,25 @@ struct CameraPreview: UIViewRepresentable {
 
 struct CaptureView: View {
     var onAnalyzeSwings: (([SavedSwing]) -> Void)? = nil
-    
+
     @StateObject private var camera = CameraSession()
     @State private var isRecording = false
     @State private var previewPlayerItem: AVPlayerItem?
     @State private var currentRecordingURL: URL?
     @State private var currentRecordingMode: SloMoMode?
-    
+
     // Focus indicator state
     @State private var focusPoint: CGPoint? = nil
     @State private var showFocusIndicator = false
-    
+
     // Recording timer
     @State private var recordingStartTime: Date? = nil
     @State private var recordingDuration: TimeInterval = 0
     @State private var timerCancellable: AnyCancellable? = nil
-    
+
     // Recording finalization state
     @State private var isProcessing = false
-    
+
     // Trim view presentation
     @State private var showTrimView = false
 
@@ -296,7 +296,7 @@ struct CaptureView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.black)
-                
+
                 // Focus indicator (yellow square)
                 if showFocusIndicator, let point = focusPoint {
                     FocusIndicatorView()
@@ -316,43 +316,41 @@ struct CaptureView: View {
                                 saveToPhotoLibrary()
                             } label: {
                                 Image(systemName: "square.and.arrow.down.fill")
-                                    .resizable()
-                                    .frame(width: 28, height: 34)
+                                    .font(.system(size: 17, weight: .semibold))
                                     .foregroundColor(.white)
+                                    .frame(width: 40, height: 40)
+                                    .background(Circle().fill(Color.black.opacity(0.54)))
                                     .shadow(radius: 4)
                             }
-                            
+                            .padding(.leading, -6)
+
                             Spacer()
-                            
+
                             Button {
                                 clearCurrentRecording()
                             } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .resizable()
-                                    .frame(width: 36, height: 36)
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 16, weight: .bold))
                                     .foregroundColor(.white)
+                                    .frame(width: 40, height: 40)
+                                    .background(Circle().fill(Color.black.opacity(0.54)))
                                     .shadow(radius: 4)
                             }
+                            .padding(.trailing, -6)
                         }
-                        .padding()
-                    } footer: {
+                        .padding(.top, -2)
+                        .padding(.horizontal, 6)
+                    } overlayAccessory: {
                         Button {
                             showTrimView = true
                         } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "scissors")
-                                Text("Trim Swings")
-                                    .fontWeight(.semibold)
-                            }
-                            .foregroundColor(.black)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 14)
-                            .background(Color.yellow)
-                            .cornerRadius(25)
+                            Image(systemName: "scissors")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.black)
+                                .frame(width: 50, height: 50)
+                                .background(Circle().fill(Color.yellow))
                             .shadow(radius: 4)
                         }
-                        .padding(.horizontal)
-                        .padding(.bottom, 24)
                     }
                 }
 
@@ -368,7 +366,7 @@ struct CaptureView: View {
                             .foregroundColor(.white)
                     }
                 }
-                
+
                 // Camera controls overlay (when not playing back)
                 if previewPlayerItem == nil && !isProcessing {
                     VStack {
@@ -390,9 +388,9 @@ struct CaptureView: View {
                             }
                             .disabled(isRecording)
                             .opacity(isRecording ? 0.5 : 1.0)
-                            
+
                             Spacer()
-                            
+
                             // Recording indicator (center)
                             if isRecording {
                                 HStack(spacing: 6) {
@@ -410,18 +408,18 @@ struct CaptureView: View {
                                         .fill(Color.black.opacity(0.5))
                                 )
                             }
-                            
+
                             Spacer()
-                            
+
                             // Placeholder for symmetry
                             Color.clear
                                 .frame(width: 50, height: 30)
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 8)
-                        
+
                         Spacer()
-                        
+
                         // Bottom: Record button
                         RecordButton(isRecording: isRecording) {
                             toggleRecording()
@@ -442,10 +440,10 @@ struct CaptureView: View {
         }
         .onReceive(camera.$lastRecordingURL) { url in
             guard let url else { return }
-            
+
             isRecording = false
             stopRecordingTimer()
-            
+
             let recordedMode = camera.recordedMode
             previewPlayerItem = AVPlayerItem(url: url)
             currentRecordingURL = url
@@ -480,19 +478,19 @@ struct CaptureView: View {
             }
         }
     }
-    
+
     // MARK: - Actions
-    
+
     private func handleFocusTap(viewPoint: CGPoint, cameraPoint: CGPoint) {
         guard !isRecording else { return }
-        
+
         // Trigger focus
         camera.focus(at: cameraPoint)
-        
+
         // Show focus indicator
         focusPoint = viewPoint
         showFocusIndicator = true
-        
+
         // Hide after delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             withAnimation(.easeOut(duration: 0.2)) {
@@ -515,7 +513,7 @@ struct CaptureView: View {
         currentRecordingURL = nil
         isRecording.toggle()
     }
-    
+
     private func toggleFPSMode() {
         let newMode: SloMoMode = camera.captureMode == .standard ? .ultra : .standard
         camera.switchMode(to: newMode)
@@ -530,16 +528,16 @@ struct CaptureView: View {
         currentRecordingMode = nil
         camera.lastRecordingURL = nil
     }
-    
+
     private func saveToPhotoLibrary() {
         guard let url = currentRecordingURL else { return }
-        
+
         PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
             guard status == .authorized else {
                 print("❌ Photo library access denied")
                 return
             }
-            
+
             PHPhotoLibrary.shared().performChanges {
                 PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
             } completionHandler: { success, error in
@@ -551,9 +549,9 @@ struct CaptureView: View {
             }
         }
     }
-    
+
     // MARK: - Timer
-    
+
     private func startRecordingTimer() {
         recordingStartTime = Date()
         recordingDuration = 0
@@ -565,20 +563,20 @@ struct CaptureView: View {
                 }
             }
     }
-    
+
     private func stopRecordingTimer() {
         timerCancellable?.cancel()
         timerCancellable = nil
         recordingStartTime = nil
     }
-    
+
     private func formatDuration(_ duration: TimeInterval) -> String {
         let minutes = Int(duration) / 60
         let seconds = Int(duration) % 60
         let tenths = Int((duration * 10).truncatingRemainder(dividingBy: 10))
         return String(format: "%02d:%02d.%d", minutes, seconds, tenths)
     }
-    
+
 }
 
 // MARK: - Supporting Views
@@ -586,7 +584,7 @@ struct CaptureView: View {
 struct RecordButton: View {
     let isRecording: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             ZStack {
@@ -594,7 +592,7 @@ struct RecordButton: View {
                 Circle()
                     .stroke(Color.white, lineWidth: 4)
                     .frame(width: 80, height: 80)
-                
+
                 // Inner shape (circle when idle, rounded square when recording)
                 if isRecording {
                     RoundedRectangle(cornerRadius: 8)
@@ -614,7 +612,7 @@ struct RecordButton: View {
 struct FocusIndicatorView: View {
     @State private var scale: CGFloat = 1.5
     @State private var opacity: Double = 1.0
-    
+
     var body: some View {
         RoundedRectangle(cornerRadius: 4)
             .stroke(Color.yellow, lineWidth: 2)

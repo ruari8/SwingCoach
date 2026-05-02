@@ -17,75 +17,75 @@ struct TrimView: View {
     let onComplete: ([SwingClip], [URL]) -> Void
     let onCancel: () -> Void
     var onExportAndAnalyze: (([SwingClip]) -> Void)? = nil
-    
+
     @State private var player: AVPlayer?
     @State private var duration: CMTime = .zero
     @State private var currentTime: CMTime = .zero
     @State private var isPlaying = false
-    
+
     // Thumbnail state
     @State private var thumbnails: [(time: CMTime, image: UIImage)] = []
     @State private var isLoadingThumbnails = true
     @State private var thumbnailPlaceholderCount = 12
-    
+
     // Range selection
     @State private var rangeStart: CMTime?
     @State private var rangeEnd: CMTime?
-    
+
     // Clips
     @State private var clips: [SwingClip] = []
     @State private var selectedVantage: Vantage = .dtl
-    
+
     // Export state
     @State private var isExporting = false
     @State private var exportProgress: (current: Int, total: Int)?
-    
+
     // Source loading state
     @State private var previewAsset: AVAsset?
     @State private var sourcePreparationTask: Task<Void, Never>?
-    
+
     // Time observer
     @State private var timeObserver: Any?
-    
+
     // Playback tuning
     @State private var preferredPlaybackRate: Float = 1.0
     @State private var frameStep = CMTime(value: 1, timescale: 30)
     @State private var seekRepeatTask: Task<Void, Never>?
     @State private var activeSeekDirection: Int?
-    
+
     private let trimmer = VideoTrimmer()
-    
+
     private var displayTimeScale: Double {
         sourceCaptureMode.map { $0.targetFPS / 30.0 } ?? 1.0
     }
-    
+
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
                 // Top bar
                 topBar
-                
+
                 // Video preview
                 videoPreview
                     .frame(maxHeight: .infinity)
-                
+
                 // Controls
                 controlsSection
-                
+
                 // Timeline
                 timelineSection
                     .padding(.horizontal)
                     .padding(.vertical, 8)
-                
+
                 // Clips list
                 clipsSection
-                
+
                 // Bottom actions
                 bottomBar
             }
-            
+
             // Export overlay
             if isExporting {
                 exportOverlay
@@ -98,24 +98,24 @@ struct TrimView: View {
             cleanup()
         }
     }
-    
+
     // MARK: - Top Bar
-    
+
     private var topBar: some View {
         HStack {
             Button("Cancel") {
                 onCancel()
             }
             .foregroundColor(.white)
-            
+
             Spacer()
-            
+
             Text("Trim Swings")
                 .font(.headline)
                 .foregroundColor(.white)
-            
+
             Spacer()
-            
+
             // Vantage picker
             Menu {
                 ForEach(Vantage.allCases, id: \.self) { vantage in
@@ -138,9 +138,9 @@ struct TrimView: View {
         .padding()
         .background(Color.black.opacity(0.5))
     }
-    
+
     // MARK: - Video Preview
-    
+
     private var videoPreview: some View {
         Group {
             if let player = player {
@@ -165,15 +165,15 @@ struct TrimView: View {
             }
         }
     }
-    
+
     // MARK: - Controls
-    
+
     private var controlsSection: some View {
         HStack(spacing: 12) {
             // Playback controls
             HStack(spacing: 16) {
                 seekButton(systemImage: "backward.frame.fill", direction: -1)
-                
+
                 Button {
                     togglePlayback()
                 } label: {
@@ -182,17 +182,17 @@ struct TrimView: View {
                         .foregroundColor(.white)
                         .frame(width: 40, height: 40)
                 }
-                
+
                 seekButton(systemImage: "forward.frame.fill", direction: 1)
             }
-            
+
             // Time display
             Text(formatTimeCompact(currentTime))
                 .font(.system(size: 18, weight: .semibold, design: .monospaced))
                 .foregroundColor(.white)
-            
+
             Spacer()
-            
+
             // Scissors button - tap once for start, again for end
             Button {
                 if rangeStart == nil {
@@ -211,7 +211,7 @@ struct TrimView: View {
                     )
             }
             .disabled(rangeStart != nil && rangeEnd != nil)
-            
+
             // Clear button
             Button {
                 clearSelection()
@@ -231,9 +231,9 @@ struct TrimView: View {
         .padding(.vertical, 10)
         .background(Color.black.opacity(0.3))
     }
-    
+
     // MARK: - Timeline
-    
+
     private var timelineSection: some View {
         VStack(spacing: 4) {
             ThumbnailTimeline(
@@ -250,7 +250,7 @@ struct TrimView: View {
                     seek(to: time)
                 }
             )
-            
+
             if isLoadingThumbnails {
                 Text(thumbnails.isEmpty ? "Preparing timeline..." : "Loading more frames...")
                     .font(.caption2)
@@ -258,7 +258,7 @@ struct TrimView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 4)
             }
-            
+
             // Add clip button (when range is selected)
             if rangeStart != nil && rangeEnd != nil {
                 Button {
@@ -276,9 +276,9 @@ struct TrimView: View {
             }
         }
     }
-    
+
     // MARK: - Clips Section
-    
+
     private var clipsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             if !clips.isEmpty {
@@ -286,7 +286,7 @@ struct TrimView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(.white)
                     .padding(.horizontal)
-                
+
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(clips) { clip in
@@ -299,7 +299,7 @@ struct TrimView: View {
         }
         .padding(.vertical, 8)
     }
-    
+
     private func clipThumbnail(_ clip: SwingClip) -> some View {
         VStack(spacing: 4) {
             ZStack(alignment: .topTrailing) {
@@ -316,7 +316,7 @@ struct TrimView: View {
                         .frame(width: 80, height: 50)
                         .cornerRadius(6)
                 }
-                
+
                 // Delete button
                 Button {
                     removeClip(clip)
@@ -328,7 +328,7 @@ struct TrimView: View {
                 }
                 .offset(x: 6, y: -6)
             }
-            
+
             Text(clipDurationText(clip))
                 .font(.caption2)
                 .foregroundColor(.white.opacity(0.7))
@@ -340,31 +340,35 @@ struct TrimView: View {
             rangeEnd = clip.endCMTime
         }
     }
-    
+
     private func clipDurationText(_ clip: SwingClip) -> String {
         formatDurationSeconds(clip.duration * displayTimeScale)
     }
-    
+
     private func formatDurationSeconds(_ seconds: Double) -> String {
         let wholeSeconds = Int(seconds)
         let tenths = Int((seconds * 10).truncatingRemainder(dividingBy: 10))
         return "\(wholeSeconds).\(tenths)s"
     }
-    
+
     // MARK: - Bottom Bar
-    
+
     private var statusText: String {
         if rangeStart != nil && rangeEnd != nil {
             return "Adjust selection, then add swing"
         } else if rangeStart != nil {
             return "Navigate to end, tap ✂️ again"
         } else if clips.isEmpty {
-            return "Tap ✂️ at start of swing"
+            return "Tap ✂️ to trim, or use the full video"
         } else {
             return "\(clips.count) swing\(clips.count == 1 ? "" : "s") ready"
         }
     }
-    
+
+    private var canUseFullVideo: Bool {
+        CMTimeCompare(duration, .zero) > 0
+    }
+
     private var bottomBar: some View {
         HStack {
             Text(statusText)
@@ -372,40 +376,40 @@ struct TrimView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .foregroundColor(.white.opacity(0.6))
-            
+
             Spacer()
-            
+
             Button {
                 handlePrimaryExportAction()
             } label: {
                 Text(primaryExportButtonTitle)
                     .font(.system(size: 16, weight: .semibold))
                     .lineLimit(1)
-                    .foregroundColor(clips.isEmpty ? .gray : .black)
+                    .foregroundColor((clips.isEmpty && !canUseFullVideo) ? .gray : .black)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
-                    .background(clips.isEmpty ? Color.gray.opacity(0.3) : Color.yellow)
+                    .background((clips.isEmpty && !canUseFullVideo) ? Color.gray.opacity(0.3) : Color.yellow)
                     .cornerRadius(10)
             }
             .fixedSize(horizontal: true, vertical: false)
-            .disabled(clips.isEmpty)
+            .disabled(clips.isEmpty && !canUseFullVideo)
         }
         .padding()
         .background(Color.black.opacity(0.5))
     }
-    
+
     // MARK: - Export Overlay
-    
+
     private var exportOverlay: some View {
         ZStack {
             Color.black.opacity(0.8)
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 16) {
                 ProgressView()
                     .scaleEffect(1.5)
                     .tint(.white)
-                
+
                 if let progress = exportProgress {
                     Text("Exporting \(progress.current) of \(progress.total)...")
                         .font(.headline)
@@ -414,17 +418,17 @@ struct TrimView: View {
             }
         }
     }
-    
+
     // MARK: - Actions
-    
+
     private func prepareSource() {
         preferredPlaybackRate = sourceCaptureMode?.slowMotionRate ?? 1.0
         let preparationStart = Date()
-        
+
         if let durationHint = source.durationHint {
             duration = durationHint
         }
-        
+
         sourcePreparationTask?.cancel()
         sourcePreparationTask = Task {
             do {
@@ -434,7 +438,7 @@ struct TrimView: View {
                 let newPlayer = AVPlayer(playerItem: playerItem)
                 let loadedDuration = try await loadedPreviewAsset.load(.duration)
                 var loadedFrameStep = frameStep
-                
+
                 if let videoTrack = try await loadedPreviewAsset.loadTracks(withMediaType: .video).first {
                     let sourceFrameRate = try await videoTrack.load(.nominalFrameRate)
                     if sourceFrameRate > 0 {
@@ -444,7 +448,7 @@ struct TrimView: View {
                         )
                     }
                 }
-                
+
                 await MainActor.run {
                     previewAsset = loadedPreviewAsset
                     player = newPlayer
@@ -452,7 +456,7 @@ struct TrimView: View {
                     frameStep = loadedFrameStep
                     attachTimeObserver()
                 }
-                
+
                 try await loadThumbnails(for: loadedPreviewAsset, duration: loadedDuration)
                 print("📹 Trim: Initial timeline ready after \(String(format: "%.2f", Date().timeIntervalSince(preparationStart)))s")
             } catch {
@@ -463,17 +467,17 @@ struct TrimView: View {
             }
         }
     }
-    
+
     private func attachTimeObserver() {
         if let observer = timeObserver {
             player?.removeTimeObserver(observer)
             timeObserver = nil
         }
-        
+
         let interval = CMTime(seconds: 0.1, preferredTimescale: 600)
         timeObserver = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
             currentTime = time
-            
+
             if let player = player,
                let duration = player.currentItem?.duration,
                CMTimeCompare(time, duration) >= 0 {
@@ -481,19 +485,19 @@ struct TrimView: View {
             }
         }
     }
-    
+
     private func loadThumbnails(for asset: AVAsset, duration videoDuration: CMTime) async throws {
         let durationSeconds = CMTimeGetSeconds(videoDuration)
         let fullCount = thumbnailCount(for: durationSeconds)
         let previewCount = min(fullCount, previewThumbnailCount(for: durationSeconds))
         let previewSize = CGSize(width: 56, height: 32)
         let fullSize = CGSize(width: 80, height: 45)
-        
+
         await MainActor.run {
             thumbnailPlaceholderCount = max(1, previewCount)
             isLoadingThumbnails = true
         }
-        
+
         if let cachedFull = await trimmer.cachedThumbnails(for: source.cacheKey, count: fullCount, size: fullSize) {
             await MainActor.run {
                 thumbnails = cachedFull
@@ -502,7 +506,7 @@ struct TrimView: View {
             }
             return
         }
-        
+
         print("📹 Video: \(Int(durationSeconds))s → generating \(previewCount) quick thumbnails")
         let previewThumbnails = try await trimmer.generateThumbnails(
             for: asset,
@@ -510,15 +514,15 @@ struct TrimView: View {
             size: previewSize,
             cacheKey: source.cacheKey
         )
-        
+
         await MainActor.run {
             thumbnails = previewThumbnails
             thumbnailPlaceholderCount = previewCount
             isLoadingThumbnails = previewCount < fullCount
         }
-        
+
         guard fullCount > previewCount else { return }
-        
+
         print("📹 Video: refining timeline with \(fullCount) thumbnails")
         let fullThumbnails = try await trimmer.generateThumbnails(
             for: asset,
@@ -526,14 +530,14 @@ struct TrimView: View {
             size: fullSize,
             cacheKey: source.cacheKey
         )
-        
+
         await MainActor.run {
             thumbnails = fullThumbnails
             thumbnailPlaceholderCount = fullCount
             isLoadingThumbnails = false
         }
     }
-    
+
     private func cleanup() {
         sourcePreparationTask?.cancel()
         sourcePreparationTask = nil
@@ -545,7 +549,7 @@ struct TrimView: View {
         player = nil
         previewAsset = nil
     }
-    
+
     private func togglePlayback() {
         if isPlaying {
             player?.pause()
@@ -559,13 +563,13 @@ struct TrimView: View {
         }
         isPlaying.toggle()
     }
-    
+
     private func seek(to time: CMTime) {
         let clampedTime = clamped(time)
         player?.seek(to: clampedTime, toleranceBefore: .zero, toleranceAfter: .zero)
         currentTime = clampedTime
     }
-    
+
     private func markStart() {
         rangeStart = currentTime
         // If end is before start, clear it
@@ -573,7 +577,7 @@ struct TrimView: View {
             rangeEnd = nil
         }
     }
-    
+
     private func markEnd() {
         rangeEnd = currentTime
         // If start is after end, clear it
@@ -581,21 +585,21 @@ struct TrimView: View {
             rangeStart = nil
         }
     }
-    
+
     private func clearSelection() {
         rangeStart = nil
         rangeEnd = nil
     }
-    
+
     private func addClip() {
         guard let start = rangeStart, let end = rangeEnd else { return }
-        
+
         let newClip = SwingClip(
             startTime: start,
             endTime: end,
             vantage: selectedVantage
         )
-        
+
         // Generate thumbnail for the clip
         if let previewAsset {
             Task {
@@ -609,33 +613,34 @@ struct TrimView: View {
                 }
             }
         }
-        
+
         clips.append(newClip)
-        
+
         // Clear selection for next clip
         rangeStart = nil
         rangeEnd = nil
     }
-    
+
     private func removeClip(_ clip: SwingClip) {
         clips.removeAll { $0.id == clip.id }
     }
-    
-    private func exportClips() {
-        guard !clips.isEmpty else { return }
-        
+
+    private func exportClips(_ clipsToExport: [SwingClip]) {
+        guard !clipsToExport.isEmpty else { return }
+
         isExporting = true
-        
+        exportProgress = nil
+
         Task {
             do {
                 // Use temp directory for intermediate files
                 let tempDir = FileManager.default.temporaryDirectory
                 let exportAsset = try await source.loadExportAsset()
-                
+
                 // Export clips to temp files first
                 let exportedURLs = try await trimmer.exportClips(
                     from: exportAsset,
-                    clips: clips,
+                    clips: clipsToExport,
                     outputDirectory: tempDir,
                     slowMotionFactor: sourceCaptureMode.map { $0.targetFPS / 30.0 }
                 ) { current, total in
@@ -643,41 +648,44 @@ struct TrimView: View {
                         exportProgress = (current, total)
                     }
                 }
-                
+
                 // Save each clip to Photos library and add to SwingLibrary
                 var savedCount = 0
-                for (clip, url) in zip(clips, exportedURLs) {
+                for (clip, url) in zip(clipsToExport, exportedURLs) {
                     if let assetID = await PHPhotoLibrary.saveVideoAndGetID(url: url) {
                         let libraryThumbnail = await immediateLibraryThumbnail(for: clip, exportAsset: exportAsset)
-                        SwingLibrary.shared.addSwing(
-                            photoAssetID: assetID,
-                            vantage: clip.vantage,
-                            duration: clip.duration * (sourceCaptureMode.map { $0.targetFPS / 30.0 } ?? 1.0),
-                            initialThumbnail: libraryThumbnail
-                        )
+                        await MainActor.run {
+                            SwingLibrary.shared.addSwing(
+                                photoAssetID: assetID,
+                                vantage: clip.vantage,
+                                duration: clip.duration * (sourceCaptureMode.map { $0.targetFPS / 30.0 } ?? 1.0),
+                                initialThumbnail: libraryThumbnail
+                            )
+                        }
                         savedCount += 1
                     }
                     // Clean up temp file
                     try? FileManager.default.removeItem(at: url)
                 }
-                
+
                 print("✅ Saved \(savedCount)/\(exportedURLs.count) clips to Photos & Library")
-                
+
                 await MainActor.run {
                     isExporting = false
-                    onComplete(clips, exportedURLs)
+                    onComplete(clipsToExport, exportedURLs)
                 }
             } catch {
                 print("❌ Export failed: \(error)")
                 await MainActor.run {
                     isExporting = false
+                    exportProgress = nil
                 }
             }
         }
     }
-    
+
     // MARK: - Helpers
-    
+
     /// Compact format: just seconds and tenths (e.g., "05.3")
     private func formatTimeCompact(_ time: CMTime) -> String {
         let totalSeconds = CMTimeGetSeconds(time)
@@ -686,20 +694,98 @@ struct TrimView: View {
         let tenths = Int((displaySeconds * 10).truncatingRemainder(dividingBy: 10))
         return String(format: "%02d.%d", secs, tenths)
     }
-    
+
     private var primaryExportButtonTitle: String {
+        if clips.isEmpty {
+            return "Use Full Video"
+        }
+
         if onExportAndAnalyze != nil {
             return "Export & Analyze"
         }
-        
+
         return "Export \(clips.count) Clip\(clips.count == 1 ? "" : "s")"
     }
-    
+
     private func handlePrimaryExportAction() {
+        if clips.isEmpty {
+            exportFullVideo()
+            return
+        }
+
         // TODO: Re-enable automatic analyze handoff once the exported-clip coach flow is ready.
-        exportClips()
+        exportClips(clips)
     }
-    
+
+    private func exportFullVideo() {
+        guard canUseFullVideo else { return }
+
+        isExporting = true
+        exportProgress = nil
+
+        Task {
+            do {
+                let exportAsset = try await source.loadExportAsset()
+                let assetDuration = try await exportAsset.load(.duration)
+                let fullDuration = CMTimeCompare(assetDuration, .zero) > 0 ? assetDuration : duration
+                let fullClip = SwingClip(
+                    startTime: .zero,
+                    endTime: fullDuration,
+                    vantage: selectedVantage
+                )
+                let thumbnail = await immediateLibraryThumbnail(for: fullClip, exportAsset: exportAsset)
+
+                if let existingPhotoAssetID = source.existingPhotoAssetID {
+                    await MainActor.run {
+                        SwingLibrary.shared.addSwing(
+                            photoAssetID: existingPhotoAssetID,
+                            vantage: fullClip.vantage,
+                            duration: fullClip.duration * displayTimeScale,
+                            initialThumbnail: thumbnail
+                        )
+                        isExporting = false
+                        onComplete([fullClip], [])
+                    }
+                    return
+                }
+
+                let tempDir = FileManager.default.temporaryDirectory
+                let outputURL = tempDir.appendingPathComponent("swing_\(fullClip.id.uuidString.prefix(8)).mp4")
+
+                try await trimmer.exportClip(
+                    from: exportAsset,
+                    startTime: .zero,
+                    endTime: fullDuration,
+                    to: outputURL,
+                    slowMotionFactor: sourceCaptureMode.map { $0.targetFPS / 30.0 }
+                )
+
+                guard let assetID = await PHPhotoLibrary.saveVideoAndGetID(url: outputURL) else {
+                    throw VideoTrimmer.TrimmerError.exportFailed("Failed to save video to Photos")
+                }
+
+                await MainActor.run {
+                    SwingLibrary.shared.addSwing(
+                        photoAssetID: assetID,
+                        vantage: fullClip.vantage,
+                        duration: fullClip.duration * displayTimeScale,
+                        initialThumbnail: thumbnail
+                    )
+                    isExporting = false
+                    onComplete([fullClip], [outputURL])
+                }
+
+                try? FileManager.default.removeItem(at: outputURL)
+            } catch {
+                print("❌ Full video export failed: \(error)")
+                await MainActor.run {
+                    isExporting = false
+                    exportProgress = nil
+                }
+            }
+        }
+    }
+
     private func seekButton(systemImage: String, direction: Int) -> some View {
         Image(systemName: systemImage)
             .font(.title3)
@@ -720,17 +806,17 @@ struct TrimView: View {
                     }
             )
     }
-    
+
     private func startContinuousStep(direction: Int) {
         guard activeSeekDirection != direction else { return }
-        
+
         stopContinuousStep()
         activeSeekDirection = direction
         step(by: direction)
-        
+
         seekRepeatTask = Task {
             let holdStart = Date()
-            
+
             try? await Task.sleep(nanoseconds: 350_000_000)
             while !Task.isCancelled {
                 let elapsed = Date().timeIntervalSince(holdStart)
@@ -738,19 +824,19 @@ struct TrimView: View {
                 await MainActor.run {
                     step(by: direction, multiplier: multiplier)
                 }
-                
+
                 let interval = seekRepeatInterval(for: elapsed)
                 try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
             }
         }
     }
-    
+
     private func stopContinuousStep() {
         seekRepeatTask?.cancel()
         seekRepeatTask = nil
         activeSeekDirection = nil
     }
-    
+
     private func seekStepMultiplier(for holdDuration: TimeInterval) -> Int {
         switch holdDuration {
         case 0..<1.2:
@@ -763,7 +849,7 @@ struct TrimView: View {
             return 8
         }
     }
-    
+
     private func seekRepeatInterval(for holdDuration: TimeInterval) -> Double {
         switch holdDuration {
         case 0..<1.2:
@@ -776,33 +862,33 @@ struct TrimView: View {
             return 0.06
         }
     }
-    
+
     private func step(by direction: Int, multiplier: Int = 1) {
         if isPlaying {
             player?.pause()
             isPlaying = false
         }
-        
+
         let stepDuration = CMTimeMultiplyByFloat64(frameStep, multiplier: Double(multiplier))
         let candidateTime = direction >= 0
             ? CMTimeAdd(currentTime, stepDuration)
             : CMTimeSubtract(currentTime, stepDuration)
-        
+
         seek(to: candidateTime)
     }
-    
+
     private func clamped(_ time: CMTime) -> CMTime {
         if CMTimeCompare(time, .zero) < 0 {
             return .zero
         }
-        
+
         if CMTimeCompare(time, duration) > 0 {
             return duration
         }
-        
+
         return time
     }
-    
+
     private func thumbnailCount(for durationSeconds: Double) -> Int {
         switch durationSeconds {
         case ..<30:
@@ -815,7 +901,7 @@ struct TrimView: View {
             return min(96, 66 + Int((durationSeconds - 300) / 10))
         }
     }
-    
+
     private func previewThumbnailCount(for durationSeconds: Double) -> Int {
         switch durationSeconds {
         case ..<30:
@@ -828,17 +914,17 @@ struct TrimView: View {
             return 16
         }
     }
-    
+
     private func immediateLibraryThumbnail(for clip: SwingClip, exportAsset: AVAsset) async -> UIImage? {
         if let thumbnail = clip.thumbnail {
             return thumbnail
         }
-        
+
         if let previewAsset,
            let thumbnail = try? await trimmer.generateThumbnail(for: previewAsset, at: clip.startCMTime) {
             return thumbnail
         }
-        
+
         return try? await trimmer.generateThumbnail(for: exportAsset, at: clip.startCMTime)
     }
 }

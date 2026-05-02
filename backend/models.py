@@ -163,6 +163,28 @@ class FullAnalysisResult(BaseModel):
     annotated_video: Optional[AnnotatedVideoResult] = Field(None, description="Annotated video if requested")
 
 
+class AnalysisMetric(BaseModel):
+    """Display-ready metric for the mobile MVP response."""
+    key: str
+    name: str
+    value: str
+
+
+class AnalysisDrill(BaseModel):
+    """Lightweight drill suggestion for the mobile MVP response."""
+    title: str
+    summary: str
+
+
+class AnalyzeResponse(BaseModel):
+    """Lightweight app-facing response used by /analyze."""
+    analysis_id: str
+    summary: str
+    metrics: List[AnalysisMetric] = Field(default_factory=list)
+    annotated_video_url: Optional[str] = None
+    drills: List[AnalysisDrill] = Field(default_factory=list)
+
+
 class CoachableMetricCard(BaseModel):
     """Coachable metric card returned by the unified pipeline."""
     key: str
