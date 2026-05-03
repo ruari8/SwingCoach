@@ -20,6 +20,7 @@ struct SwingDetailView: View {
     @State private var analysisStatus: SwingAnalysis.AnalysisStatus = .pending
     @State private var analysisProgressText: String?
     @State private var showTechnicalDetails = false
+    @State private var isOriginalExpanded = false
 
     private var currentSwing: SavedSwing {
         library.swings.first { $0.id == swing.id } ?? swing
@@ -40,8 +41,9 @@ struct SwingDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 originalVideoSection
-                metadataSection
-                analysisActionSection
+                if shouldShowAnalysisAction {
+                    analysisActionSection
+                }
                 analysisSection
             }
             .padding()
@@ -50,70 +52,110 @@ struct SwingDetailView: View {
         .navigationTitle("Swing Detail")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            preparePlayback()
+            Task {
+                await library.loadThumbnails()
+            }
+        }
+        .onChange(of: isOriginalExpanded) { _, expanded in
+            if expanded {
+                preparePlayback()
+            }
         }
     }
 
     private var originalVideoSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Original Swing")
-                .font(.headline)
+        DisclosureGroup(isExpanded: $isOriginalExpanded) {
+            VStack(alignment: .leading, spacing: 14) {
+                originalPlayer
+                    .frame(height: 280)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            Group {
-                if let playerItem {
-                    PlaybackChromeView(
-                        playerItem: playerItem,
-                        playbackEnabled: true,
-                        showsSpeedControls: true,
-                        startsPlaying: false
-                    ) {
-                        HStack {
-                            Text(currentSwing.vantage.displayName)
-                                .font(.caption.weight(.semibold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(Color.black.opacity(0.52))
-                                .cornerRadius(8)
+                metadataContent
+            }
+            .padding(.top, 12)
+        } label: {
+            HStack(spacing: 12) {
+                originalThumbnail
 
-                            Spacer()
-                        }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Original Swing")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+
+                    Text("\(currentSwing.vantage.displayName) · \(formatDuration(currentSwing.duration))")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer(minLength: 0)
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(8)
+    }
+
+    @ViewBuilder
+    private var originalPlayer: some View {
+        if let playerItem {
+            PlaybackChromeView(
+                playerItem: playerItem,
+                playbackEnabled: true,
+                showsSpeedControls: true,
+                startsPlaying: false
+            ) {
+                EmptyView()
+            }
+        } else {
+            ZStack {
+                Color.black
+
+                if let playbackError {
+                    VStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.yellow)
+                        Text(playbackError)
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.8))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
                     }
                 } else {
-                    ZStack {
-                        Color.black
-
-                        if let playbackError {
-                            VStack(spacing: 8) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundColor(.yellow)
-                                Text(playbackError)
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.8))
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal)
-                            }
-                        } else {
-                            VStack(spacing: 8) {
-                                ProgressView()
-                                    .tint(.white)
-                                Text(isLoadingPlayback ? "Loading swing..." : "Preparing playback...")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.75))
-                            }
-                        }
+                    VStack(spacing: 8) {
+                        ProgressView()
+                            .tint(.white)
+                        Text(isLoadingPlayback ? "Loading swing..." : "Preparing playback...")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.75))
                     }
                 }
             }
-            .frame(height: 280)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .onAppear {
+                preparePlayback()
+            }
         }
     }
 
-    private var metadataSection: some View {
+    private var originalThumbnail: some View {
+        ZStack {
+            if let thumbnail = currentSwing.thumbnail {
+                Image(uiImage: thumbnail)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Color.black
+                Image(systemName: "play.rectangle.fill")
+                    .foregroundColor(.white.opacity(0.75))
+            }
+        }
+        .frame(width: 86, height: 56)
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+
+    private var metadataContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Metadata")
-                .font(.headline)
+                .font(.subheadline.weight(.semibold))
 
             VStack(spacing: 10) {
                 metadataRow("View", currentSwing.vantage.displayName)
@@ -121,10 +163,17 @@ struct SwingDetailView: View {
                 metadataRow("Saved", formatDate(currentSwing.createdAt))
                 metadataRow("Analysis", savedAnalysis == nil ? "Not analyzed" : "Complete")
             }
-            .padding()
-            .background(Color(.systemBackground))
-            .cornerRadius(8)
         }
+    }
+
+    private var shouldShowAnalysisAction: Bool {
+        if isAnalyzing || savedAnalysis == nil {
+            return true
+        }
+        if case .failed = analysisStatus {
+            return true
+        }
+        return false
     }
 
     private var analysisActionSection: some View {
@@ -213,7 +262,10 @@ struct SwingDetailView: View {
         if isAnalyzing {
             return analysisProgressText ?? "Analyzing..."
         }
-        return savedAnalysis == nil ? "Analyze Swing" : "Re-analyze Swing"
+        if case .failed = analysisStatus {
+            return "Retry Analysis"
+        }
+        return "Analyze Swing"
     }
 
     private func metadataRow(_ title: String, _ value: String) -> some View {

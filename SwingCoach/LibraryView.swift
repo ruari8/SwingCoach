@@ -865,6 +865,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     let playbackEnabled: Bool
     let showsSpeedControls: Bool
     let startsPlaying: Bool
+    let allowsFullscreen: Bool
 
     private let header: Header
     private let overlayAccessory: OverlayAccessory
@@ -881,6 +882,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     @State private var transportGestureDirection: Int?
     @State private var didActivateTransportHold = false
     @State private var activeTransportDirection: Int?
+    @State private var showsFullscreen = false
 
     private let speedOptions: [Float] = [0.25, 0.5, 0.75, 1.0]
 
@@ -890,6 +892,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         playbackEnabled: Bool = true,
         showsSpeedControls: Bool = true,
         startsPlaying: Bool = true,
+        allowsFullscreen: Bool = true,
         @ViewBuilder header: () -> Header,
         @ViewBuilder overlayAccessory: () -> OverlayAccessory
     ) {
@@ -898,6 +901,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         self.playbackEnabled = playbackEnabled
         self.showsSpeedControls = showsSpeedControls
         self.startsPlaying = startsPlaying
+        self.allowsFullscreen = allowsFullscreen
         self.header = header()
         self.overlayAccessory = overlayAccessory()
         _playbackSpeed = State(initialValue: max(0.1, initialPlaybackRate))
@@ -907,17 +911,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                videoArea
-                    .frame(maxHeight: .infinity)
-
-                if showsSpeedControls {
-                    speedSection
-                        .padding(.horizontal)
-                        .padding(.top, 12)
-                        .padding(.bottom, 16)
-                }
-            }
+            videoArea
         }
         .onAppear {
             setupPlayer()
@@ -930,6 +924,9 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             player?.pause()
             isPlaying = false
             stopTransportHold()
+        }
+        .fullScreenCover(isPresented: $showsFullscreen) {
+            fullscreenPlayback
         }
     }
 
@@ -987,9 +984,15 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 .allowsHitTesting(false)
 
                 VStack(spacing: 0) {
-                    header
-                        .padding(.horizontal, 12)
-                        .padding(.top, 12)
+                    HStack(alignment: .top, spacing: 10) {
+                        header
+
+                        Spacer(minLength: 0)
+
+                        playerCornerControls
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.top, 12)
 
                     Spacer(minLength: 0)
 
@@ -1021,6 +1024,85 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             }
             .background(Color.black)
         }
+    }
+
+    private var playerCornerControls: some View {
+        HStack(spacing: 8) {
+            if showsSpeedControls {
+                Button {
+                    cyclePlaybackSpeed()
+                } label: {
+                    Text(speedLabel(playbackSpeed))
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.black)
+                        .frame(width: 44, height: 34)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.yellow)
+                        )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Change playback speed")
+                .accessibilityValue(speedLabel(playbackSpeed))
+            }
+
+            if allowsFullscreen {
+                Button {
+                    showsFullscreen = true
+                } label: {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 34, height: 34)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.black.opacity(0.58))
+                        )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open full screen")
+            }
+        }
+    }
+
+    private var fullscreenPlayback: some View {
+        ZStack(alignment: .topLeading) {
+            Color.black.ignoresSafeArea()
+
+            PlaybackChromeView<EmptyView, EmptyView>(
+                playerItem: playerItem,
+                initialPlaybackRate: playbackSpeed,
+                playbackEnabled: playbackEnabled,
+                showsSpeedControls: showsSpeedControls,
+                startsPlaying: false,
+                allowsFullscreen: false
+            ) {
+                EmptyView()
+            } overlayAccessory: {
+                EmptyView()
+            }
+
+            Button {
+                showsFullscreen = false
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 40, height: 40)
+                    .background(Circle().fill(Color.black.opacity(0.62)))
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 18)
+            .padding(.leading, 18)
+            .accessibilityLabel("Close full screen")
+        }
+        .gesture(
+            DragGesture(minimumDistance: 24)
+                .onEnded { value in
+                    guard value.translation.height > 80, abs(value.translation.width) < 120 else { return }
+                    showsFullscreen = false
+                }
+        )
     }
 
     private var transportTouchLayer: some View {
@@ -1071,55 +1153,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                         endTransportGesture(direction: direction)
                     }
             )
-    }
-
-    private var speedSection: some View {
-        VStack(spacing: 8) {
-            Text("Playback Speed")
-                .font(.caption)
-                .foregroundColor(.white.opacity(0.6))
-
-            HStack(spacing: 12) {
-                ForEach(speedOptions, id: \.self) { speed in
-                    Button {
-                        setSpeed(speed)
-                    } label: {
-                        Text(speedLabel(speed))
-                            .font(.system(size: 14, weight: playbackSpeed == speed ? .bold : .medium))
-                            .foregroundColor(playbackSpeed == speed ? .black : .white)
-                            .frame(width: 54, height: 34)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(playbackSpeed == speed ? Color.yellow : Color.white.opacity(0.15))
-                            )
-                    }
-                }
-            }
-
-            HStack(spacing: 12) {
-                Text("0.1x")
-                    .font(.caption2)
-                    .foregroundColor(.white.opacity(0.5))
-
-                Slider(
-                    value: Binding(
-                        get: { Double(playbackSpeed) },
-                        set: { setSpeed(Float($0)) }
-                    ),
-                    in: 0.1...1.0,
-                    step: 0.05
-                )
-                .tint(.yellow)
-
-                Text("1.0x")
-                    .font(.caption2)
-                    .foregroundColor(.white.opacity(0.5))
-            }
-            .padding(.top, 4)
-        }
-        .padding()
-        .background(Color.white.opacity(0.08))
-        .cornerRadius(12)
     }
 
     private var scrubTimeBadge: some View {
@@ -1359,6 +1392,15 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         }
     }
 
+    private func cyclePlaybackSpeed() {
+        guard let currentIndex = speedOptions.firstIndex(of: playbackSpeed) else {
+            setSpeed(1.0)
+            return
+        }
+        let nextIndex = speedOptions.index(after: currentIndex)
+        setSpeed(speedOptions[nextIndex == speedOptions.endIndex ? speedOptions.startIndex : nextIndex])
+    }
+
     private func progressWidth(in totalWidth: CGFloat) -> CGFloat {
         guard CMTimeGetSeconds(duration) > 0 else { return 0 }
         let fraction = CMTimeGetSeconds(currentTime) / CMTimeGetSeconds(duration)
@@ -1401,6 +1443,7 @@ extension PlaybackChromeView where OverlayAccessory == EmptyView {
         playbackEnabled: Bool = true,
         showsSpeedControls: Bool = true,
         startsPlaying: Bool = true,
+        allowsFullscreen: Bool = true,
         @ViewBuilder header: () -> Header
     ) {
         self.init(
@@ -1409,6 +1452,7 @@ extension PlaybackChromeView where OverlayAccessory == EmptyView {
             playbackEnabled: playbackEnabled,
             showsSpeedControls: showsSpeedControls,
             startsPlaying: startsPlaying,
+            allowsFullscreen: allowsFullscreen,
             header: header,
             overlayAccessory: { EmptyView() }
         )

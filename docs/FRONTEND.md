@@ -107,9 +107,10 @@ File: [SwingDetailView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCo
 
 Implemented feature set:
 - Treat a saved swing as the primary product object.
-- Display original swing playback using the shared playback chrome.
-- Show swing metadata and local analysis status.
-- Run or re-run the current R2-backed analysis flow for a single swing.
+- Show the original swing as a collapsed thumbnail disclosure by default, with playback and metadata available after expansion.
+- Display original and annotated swing playback using the shared playback chrome, including timeline, compact cycle-through playback speed control, and full-screen viewing.
+- Show swing metadata and local analysis status inside the original swing disclosure.
+- Run the current R2-backed analysis flow for a single swing, with retry controls reserved for failed analysis attempts.
 - Attach completed analysis to the swing through `AnalysisLibrary`.
 - Render annotated video, metrics, coach notes, and recommendations with the shared [AnalysisResultView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AnalysisResultView.swift).
 

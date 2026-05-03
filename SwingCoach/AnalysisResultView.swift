@@ -103,15 +103,10 @@ struct AnnotatedAnalysisVideo: View {
                 PlaybackChromeView(
                     playerItem: playerItem,
                     playbackEnabled: true,
-                    showsSpeedControls: false,
+                    showsSpeedControls: true,
                     startsPlaying: false
                 ) {
-                    HStack {
-                        Label("Annotated Video", systemImage: "play.rectangle.fill")
-                            .font(.caption.weight(.semibold))
-                            .foregroundColor(.white)
-                        Spacer()
-                    }
+                    EmptyView()
                 }
             } else {
                 ZStack {
@@ -138,7 +133,7 @@ struct AnnotatedAnalysisVideo: View {
                 }
             }
         }
-        .frame(height: 220)
+        .frame(height: 280)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .onAppear {
             prepareVideo()
