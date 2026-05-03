@@ -26,9 +26,17 @@ struct SwingAnalysis: Identifiable {
 struct AnalysisResult {
     let analysisID: String
     let summary: String
-    let metrics: [SwingCoachAPI.AnalysisMetric]
-    let annotatedVideoURL: String?
-    let drills: [SwingCoachAPI.AnalysisDrill]
+    let metrics: [SavedAnalysisMetric]
+    let annotatedVideo: SavedAnalysisVideo?
+    let drills: [SavedAnalysisDrill]
+
+    init(savedAnalysis: SavedAnalysis) {
+        analysisID = savedAnalysis.analysisID
+        summary = savedAnalysis.summary
+        metrics = savedAnalysis.metrics
+        annotatedVideo = savedAnalysis.annotatedVideo
+        drills = savedAnalysis.drills
+    }
 }
 
 /// Main Analyse/Swing Coach tab
@@ -37,6 +45,7 @@ struct AnalyseView: View {
     let onNavigateToLibrary: () -> Void
 
     @StateObject private var library = SwingLibrary.shared
+    @StateObject private var analysisLibrary = AnalysisLibrary.shared
 
     // Analysis state
     @State private var analyses: [SwingAnalysis] = []
@@ -91,6 +100,7 @@ struct AnalyseView: View {
                 }
             }
             .onAppear {
+                loadSavedAnalyses()
                 // Handle swings passed in on appear
                 if !swingsToAnalyze.isEmpty {
                     startAnalysis(for: swingsToAnalyze)
@@ -167,6 +177,26 @@ struct AnalyseView: View {
         startAnalysis(for: swings)
     }
 
+    private func loadSavedAnalyses() {
+        let savedCards = library.swings.compactMap { swing -> SwingAnalysis? in
+            guard let saved = analysisLibrary.analysis(for: swing) else { return nil }
+            return SwingAnalysis(
+                swing: swing,
+                status: .complete,
+                result: AnalysisResult(savedAnalysis: saved)
+            )
+        }
+
+        let activeCards = analyses.filter {
+            if case .complete = $0.status {
+                return false
+            }
+            return true
+        }
+
+        analyses = activeCards + savedCards
+    }
+
     private func retryAnalysis(_ analysis: SwingAnalysis) {
         analyses.removeAll { $0.id == analysis.id }
         startAnalysis(for: [analysis.swing])
@@ -193,21 +223,16 @@ struct AnalyseView: View {
                         print("📤 \(stage) - \(progress.map { String(format: "%.0f%%", $0 * 100) } ?? "")")
                     }
 
-                    // Convert API response to our local model
-                    let result = AnalysisResult(
-                        analysisID: response.analysisID,
-                        summary: response.summary,
-                        metrics: response.metrics,
-                        annotatedVideoURL: response.annotatedVideoURL,
-                        drills: response.drills
-                    )
+                    let savedAnalysis = await MainActor.run {
+                        analysisLibrary.save(response, for: analyses[i].swing)
+                    }
+                    let result = AnalysisResult(savedAnalysis: savedAnalysis)
 
                     await MainActor.run {
                         analyses[i].result = result
                         analyses[i].status = .complete
                     }
 
-                    // Mark as analyzed in library
                     library.markAnalyzed(analyses[i].swing)
 
                 } catch {
@@ -349,9 +374,8 @@ struct AnalysisCard: View {
     @ViewBuilder
     private func resultContent(_ result: AnalysisResult) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            if let annotatedVideoURL = result.annotatedVideoURL,
-               let url = URL(string: annotatedVideoURL) {
-                AnnotatedAnalysisVideo(url: url)
+            if let annotatedVideo = result.annotatedVideo {
+                AnnotatedAnalysisVideo(video: annotatedVideo, analysisID: result.analysisID)
             }
 
             // Metrics
@@ -420,9 +444,11 @@ struct AnalysisCard: View {
 }
 
 private struct AnnotatedAnalysisVideo: View {
-    let url: URL
+    let video: SavedAnalysisVideo
+    let analysisID: String
 
     @State private var playerItem: AVPlayerItem?
+    @State private var errorMessage: String?
 
     var body: some View {
         Group {
@@ -443,12 +469,24 @@ private struct AnnotatedAnalysisVideo: View {
             } else {
                 ZStack {
                     Color.black
-                    VStack(spacing: 8) {
-                        ProgressView()
-                            .tint(.white)
-                        Text("Loading annotated video...")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.75))
+                    if let errorMessage {
+                        VStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.yellow)
+                            Text(errorMessage)
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.8))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
+                    } else {
+                        VStack(spacing: 8) {
+                            ProgressView()
+                                .tint(.white)
+                            Text("Loading annotated video...")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.75))
+                        }
                     }
                 }
             }
@@ -456,13 +494,44 @@ private struct AnnotatedAnalysisVideo: View {
         .frame(height: 220)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .onAppear {
-            if playerItem == nil {
-                playerItem = AVPlayerItem(url: url)
+            prepareVideo()
+        }
+        .onChange(of: video.url) { _, _ in
+            prepareVideo()
+        }
+    }
+
+    private func prepareVideo() {
+        guard playerItem == nil else { return }
+
+        if Date().timeIntervalSince(video.refreshedAt) > 45 * 60 {
+            Task {
+                do {
+                    let refreshed = try await SwingCoachAPI.shared.refreshArtifactURL(key: video.key)
+                    await MainActor.run {
+                        AnalysisLibrary.shared.updateAnnotatedVideoURL(
+                            for: analysisID,
+                            url: refreshed.url
+                        )
+                        loadPlayer(urlString: refreshed.url)
+                    }
+                } catch {
+                    await MainActor.run {
+                        errorMessage = "Could not refresh annotated video."
+                    }
+                }
             }
+        } else {
+            loadPlayer(urlString: video.url)
         }
-        .onChange(of: url) { _, newURL in
-            playerItem = AVPlayerItem(url: newURL)
+    }
+
+    private func loadPlayer(urlString: String) {
+        guard let url = URL(string: urlString) else {
+            errorMessage = "Annotated video link is invalid."
+            return
         }
+        playerItem = AVPlayerItem(url: url)
     }
 }
 

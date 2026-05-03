@@ -15,8 +15,11 @@ from analysis.coach_response_builder import CoachResponseBuilder, CoachingBundle
 from models import (
     AnalysisDrill,
     AnalysisMetric,
+    AnalysisVideo,
     AnalyzeRequest,
     AnalyzeResponse,
+    ArtifactURLRequest,
+    ArtifactURLResponse,
     CoachChatRequest,
     CoachChatResponse,
     ArtifactBundleResponse,
@@ -66,6 +69,7 @@ async def root():
             "upload_url": "/upload-url",
             "analyze": "/analyze",
             "mock_analyze": "/mock/analyze",
+            "artifact_url": "/artifact-url",
             "chat": "/chat",
         },
     }
@@ -147,8 +151,8 @@ def _format_metric_value(value: Optional[float], unit: str) -> str:
     return formatted.replace(".0 ", " ").replace(".0:", ":")
 
 
-def _dummy_annotated_video_url() -> str:
-    """Ensure the dummy annotated video is in R2 and return a signed URL."""
+def _dummy_annotated_video() -> AnalysisVideo:
+    """Ensure the dummy annotated video is in R2 and return a signed URL with its key."""
     if not MOCK_ANNOTATED_VIDEO_PATH.exists():
         raise HTTPException(
             status_code=500,
@@ -163,7 +167,34 @@ def _dummy_annotated_video_url() -> str:
             content_type="video/mp4",
         )
 
-    return r2.generate_download_url(MOCK_ANNOTATED_VIDEO_KEY)
+    return AnalysisVideo(
+        key=MOCK_ANNOTATED_VIDEO_KEY,
+        url=r2.generate_download_url(MOCK_ANNOTATED_VIDEO_KEY),
+    )
+
+
+def _artifact_video(key: Optional[str], url: Optional[str]) -> Optional[AnalysisVideo]:
+    if not key or not url:
+        return None
+    return AnalysisVideo(key=key, url=url)
+
+
+@app.post("/artifact-url", response_model=ArtifactURLResponse)
+async def artifact_url(request: ArtifactURLRequest):
+    """Return a fresh signed URL for an existing R2 artifact key."""
+    try:
+        r2 = get_r2_client()
+        if not r2.object_exists(request.key):
+            raise HTTPException(status_code=404, detail="Artifact not found in storage")
+        return ArtifactURLResponse(
+            key=request.key,
+            url=r2.generate_download_url(request.key),
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Artifact URL generation failed: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 @app.post("/mock/analyze", response_model=AnalyzeResponse)
@@ -185,7 +216,7 @@ async def mock_analyze_swing(request: AnalyzeRequest):
                 AnalysisMetric(key="spine_angle_change", name="Spine Angle Change", value="7 deg"),
                 AnalysisMetric(key="head_sway", name="Head Sway", value="1.8 in"),
             ],
-            annotated_video_url=_dummy_annotated_video_url(),
+            annotated_video=_dummy_annotated_video(),
             drills=[
                 AnalysisDrill(
                     title="Chair Drill",
@@ -238,7 +269,7 @@ async def analyze_swing(request: AnalyzeRequest):
             analysis_id=result.run_id,
             summary=result.coaching.summary,
             metrics=metrics,
-            annotated_video_url=artifacts.annotated_video_url,
+            annotated_video=_artifact_video(artifacts.annotated_video_key, artifacts.annotated_video_url),
             drills=[
                 AnalysisDrill(
                     title=drill.title,

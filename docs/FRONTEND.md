@@ -126,7 +126,7 @@ Current frontend `AnalysisResponse` expectation:
 - `analysis_id: String`
 - `summary: String`
 - `metrics: [{key, name, value}]`
-- `annotated_video_url: String?`
+- `annotated_video: {key, url}?`
 - `drills: [{title, summary}]`
 
 ## Known Gaps and Risks
@@ -136,8 +136,8 @@ Current frontend `AnalysisResponse` expectation:
 - A future `AnalysisRun` status model should let the app submit work, leave processing, and poll for completion.
 
 2. Annotated video playback
-- UI currently links to the annotated video URL when available.
-- Embedded playback and expired URL refresh are still future work.
+- UI embeds the annotated video in the Coach result when available.
+- Saved analyses persist artifact keys and refresh signed video URLs through `POST /artifact-url` when stale.
 
 3. Trim-to-analyze handoff
 - The capture trim footer currently shows a single primary action.

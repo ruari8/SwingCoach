@@ -176,13 +176,30 @@ class AnalysisDrill(BaseModel):
     summary: str
 
 
+class AnalysisVideo(BaseModel):
+    """Signed video URL plus durable storage key."""
+    key: str
+    url: str
+
+
 class AnalyzeResponse(BaseModel):
     """Lightweight app-facing response used by /analyze."""
     analysis_id: str
     summary: str
     metrics: List[AnalysisMetric] = Field(default_factory=list)
-    annotated_video_url: Optional[str] = None
+    annotated_video: Optional[AnalysisVideo] = None
     drills: List[AnalysisDrill] = Field(default_factory=list)
+
+
+class ArtifactURLRequest(BaseModel):
+    """Request a fresh signed URL for a stored artifact."""
+    key: str
+
+
+class ArtifactURLResponse(BaseModel):
+    """Fresh signed URL for a stored artifact."""
+    key: str
+    url: str
 
 
 class CoachableMetricCard(BaseModel):

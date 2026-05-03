@@ -75,7 +75,7 @@ Response shape (`AnalyzeResponse`):
 - `analysis_id`
 - `summary`
 - `metrics[]` (display rows with `key`, `name`, `value`)
-- `annotated_video_url`
+- `annotated_video` (`key`, fresh signed `url`)
 - `drills[]` (lightweight `title`, `summary` suggestions)
 
 The pipeline still records richer internal data such as confidence, warnings, timings, 3D artifacts, and raw files. The mobile MVP contract intentionally exposes only the fields needed by the current Coach tab.
@@ -90,6 +90,17 @@ Response shape:
 - Same `AnalyzeResponse` shape as `/analyze`
 
 Mock analysis is for mobile MVP testing. It verifies the uploaded source `video_key` exists in R2, uploads `output/full_annotation.mp4` to `mock/full_annotation.mp4` if needed, and returns a signed R2 URL for that dummy annotated video without running the model pipeline.
+
+### `POST /artifact-url`
+
+Request shape:
+- `key: str`
+
+Response shape:
+- `key`
+- `url`
+
+Returns a fresh signed R2 URL for a stored artifact key. The app persists artifact keys locally and refreshes signed URLs when saved analysis results are reopened after URL expiry.
 
 ### `POST /chat`
 

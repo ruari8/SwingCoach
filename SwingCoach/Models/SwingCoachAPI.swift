@@ -90,20 +90,34 @@ actor SwingCoachAPI {
         let summary: String
     }
 
+    struct AnalysisVideo: Codable {
+        let key: String
+        let url: String
+    }
+
     struct AnalysisResponse: Codable {
         let analysisID: String
         let summary: String
         let metrics: [AnalysisMetric]
-        let annotatedVideoURL: String?
+        let annotatedVideo: AnalysisVideo?
         let drills: [AnalysisDrill]
 
         enum CodingKeys: String, CodingKey {
             case analysisID = "analysis_id"
             case summary
             case metrics
-            case annotatedVideoURL = "annotated_video_url"
+            case annotatedVideo = "annotated_video"
             case drills
         }
+    }
+
+    struct ArtifactURLRequest: Codable {
+        let key: String
+    }
+
+    struct ArtifactURLResponse: Codable {
+        let key: String
+        let url: String
     }
 
     struct HealthResponse: Codable {
@@ -207,6 +221,28 @@ actor SwingCoachAPI {
         }
 
         return try JSONDecoder().decode(AnalysisResponse.self, from: data)
+    }
+
+    func refreshArtifactURL(key: String) async throws -> ArtifactURLResponse {
+        let url = URL(string: "\(Self.baseURL)/artifact-url")!
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(ArtifactURLRequest(key: key))
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.networkError(NSError(domain: "SwingCoach", code: -1))
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw APIError.serverError(httpResponse.statusCode, errorMessage)
+        }
+
+        return try JSONDecoder().decode(ArtifactURLResponse.self, from: data)
     }
 
     // MARK: - Full Analysis Flow
