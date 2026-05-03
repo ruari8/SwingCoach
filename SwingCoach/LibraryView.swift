@@ -544,14 +544,6 @@ struct LibraryView: View {
                         }
                 }
 
-                // Detail affordance (hide in selection mode)
-                if !isSelecting {
-                    Image(systemName: "chevron.right.circle.fill")
-                        .font(.system(size: 30))
-                        .foregroundColor(.white)
-                        .shadow(radius: 4)
-                }
-
                 // Selection checkmark (show in selection mode)
                 if isSelecting {
                     VStack {

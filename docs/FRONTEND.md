@@ -90,6 +90,7 @@ Implemented feature set:
 - A single primary export action in the footer.
 - Export to MP4 clips for downstream storage/analysis, with captured high-fps sessions rendered to true slow-motion during export.
 - Newly exported clips enter the library with an immediate frame thumbnail, then refresh from Photos in the background once the asset poster frame is available.
+- Library swing thumbnails stay visually clean, with only selection and analyzed-status overlays.
 
 ## 4. Coach Tab (Analysis)
 
