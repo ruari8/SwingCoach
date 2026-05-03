@@ -149,7 +149,9 @@ struct AnalyseView: View {
         ScrollView {
             LazyVStack(spacing: 16) {
                 ForEach(analyses) { analysis in
-                    AnalysisCard(analysis: analysis)
+                    AnalysisCard(analysis: analysis) {
+                        retryAnalysis(analysis)
+                    }
                 }
             }
             .padding()
@@ -163,6 +165,11 @@ struct AnalyseView: View {
         showSwingPicker = false
         selectedSwingIDs.removeAll()
         startAnalysis(for: swings)
+    }
+
+    private func retryAnalysis(_ analysis: SwingAnalysis) {
+        analyses.removeAll { $0.id == analysis.id }
+        startAnalysis(for: [analysis.swing])
     }
 
     private func startAnalysis(for swings: [SavedSwing]) {
@@ -221,6 +228,9 @@ struct AnalyseView: View {
 
 struct AnalysisCard: View {
     let analysis: SwingAnalysis
+    let onRetry: () -> Void
+
+    @State private var showTechnicalDetails = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -267,9 +277,7 @@ struct AnalysisCard: View {
                 }
 
             case .failed(let error):
-                Text("Error: \(error)")
-                    .foregroundColor(.red)
-                    .font(.subheadline)
+                failureContent(error)
             }
         }
         .padding()
@@ -298,20 +306,52 @@ struct AnalysisCard: View {
     }
 
     @ViewBuilder
+    private func failureContent(_ error: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Analysis failed")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(.primary)
+                Text("We couldn't finish this swing analysis. Check your connection and try again.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            HStack(spacing: 12) {
+                Button(action: onRetry) {
+                    Label("Retry", systemImage: "arrow.clockwise")
+                        .font(.subheadline.weight(.medium))
+                }
+                .buttonStyle(.borderedProminent)
+
+                Button {
+                    showTechnicalDetails.toggle()
+                } label: {
+                    Text(showTechnicalDetails ? "Hide details" : "Details")
+                        .font(.subheadline)
+                }
+                .buttonStyle(.bordered)
+            }
+
+            if showTechnicalDetails {
+                Text(error)
+                    .font(.caption2.monospaced())
+                    .foregroundColor(.secondary)
+                    .textSelection(.enabled)
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.secondarySystemBackground))
+                    .cornerRadius(8)
+            }
+        }
+    }
+
+    @ViewBuilder
     private func resultContent(_ result: AnalysisResult) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Summary
-            Text(result.summary)
-                .font(.title3.weight(.semibold))
-                .foregroundColor(.primary)
-
             if let annotatedVideoURL = result.annotatedVideoURL,
                let url = URL(string: annotatedVideoURL) {
-                Link(destination: url) {
-                    Label("Annotated Video Available", systemImage: "play.rectangle.fill")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundColor(.blue)
-                }
+                AnnotatedAnalysisVideo(url: url)
             }
 
             // Metrics
@@ -337,10 +377,21 @@ struct AnalysisCard: View {
                 .cornerRadius(8)
             }
 
+            // Coach Text
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Coach Notes")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.secondary)
+
+                Text(result.summary)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(.primary)
+            }
+
             // Drills
             if !result.drills.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Recommended Drills")
+                    Text("Recommendations")
                         .font(.caption.weight(.semibold))
                         .foregroundColor(.secondary)
 
@@ -365,6 +416,53 @@ struct AnalysisCard: View {
         formatter.dateStyle = .short
         formatter.timeStyle = .short
         return formatter.string(from: date)
+    }
+}
+
+private struct AnnotatedAnalysisVideo: View {
+    let url: URL
+
+    @State private var playerItem: AVPlayerItem?
+
+    var body: some View {
+        Group {
+            if let playerItem {
+                PlaybackChromeView(
+                    playerItem: playerItem,
+                    playbackEnabled: true,
+                    showsSpeedControls: false,
+                    startsPlaying: false
+                ) {
+                    HStack {
+                        Label("Annotated Video", systemImage: "play.rectangle.fill")
+                            .font(.caption.weight(.semibold))
+                            .foregroundColor(.white)
+                        Spacer()
+                    }
+                }
+            } else {
+                ZStack {
+                    Color.black
+                    VStack(spacing: 8) {
+                        ProgressView()
+                            .tint(.white)
+                        Text("Loading annotated video...")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.75))
+                    }
+                }
+            }
+        }
+        .frame(height: 220)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .onAppear {
+            if playerItem == nil {
+                playerItem = AVPlayerItem(url: url)
+            }
+        }
+        .onChange(of: url) { _, newURL in
+            playerItem = AVPlayerItem(url: newURL)
+        }
     }
 }
 

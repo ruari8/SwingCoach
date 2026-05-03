@@ -847,6 +847,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     let initialPlaybackRate: Float
     let playbackEnabled: Bool
     let showsSpeedControls: Bool
+    let startsPlaying: Bool
 
     private let header: Header
     private let overlayAccessory: OverlayAccessory
@@ -871,6 +872,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         initialPlaybackRate: Float = 1.0,
         playbackEnabled: Bool = true,
         showsSpeedControls: Bool = true,
+        startsPlaying: Bool = true,
         @ViewBuilder header: () -> Header,
         @ViewBuilder overlayAccessory: () -> OverlayAccessory
     ) {
@@ -878,6 +880,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         self.initialPlaybackRate = initialPlaybackRate
         self.playbackEnabled = playbackEnabled
         self.showsSpeedControls = showsSpeedControls
+        self.startsPlaying = startsPlaying
         self.header = header()
         self.overlayAccessory = overlayAccessory()
         _playbackSpeed = State(initialValue: max(0.1, initialPlaybackRate))
@@ -1168,7 +1171,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             }
         }
 
-        guard playbackEnabled else { return }
+        guard playbackEnabled, startsPlaying else { return }
         newPlayer.playImmediately(atRate: playbackSpeed)
         isPlaying = true
     }
@@ -1374,6 +1377,7 @@ extension PlaybackChromeView where OverlayAccessory == EmptyView {
         initialPlaybackRate: Float = 1.0,
         playbackEnabled: Bool = true,
         showsSpeedControls: Bool = true,
+        startsPlaying: Bool = true,
         @ViewBuilder header: () -> Header
     ) {
         self.init(
@@ -1381,6 +1385,7 @@ extension PlaybackChromeView where OverlayAccessory == EmptyView {
             initialPlaybackRate: initialPlaybackRate,
             playbackEnabled: playbackEnabled,
             showsSpeedControls: showsSpeedControls,
+            startsPlaying: startsPlaying,
             header: header,
             overlayAccessory: { EmptyView() }
         )

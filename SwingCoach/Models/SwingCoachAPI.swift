@@ -14,12 +14,11 @@ actor SwingCoachAPI {
 
     // MARK: - Configuration
 
-    // TODO: Update this to your deployed backend URL
     #if DEBUG
-    static let baseURL = "http://192.168.86.21:8000"
+    static let baseURL = "https://swingcoach-api.ruari.dev"
     static let useMockAnalysis = true
     #else
-    static let baseURL = "https://your-production-url.com"
+    static let baseURL = "https://swingcoach-api.ruari.dev"
     static let useMockAnalysis = false
     #endif
 
