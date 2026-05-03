@@ -310,19 +310,12 @@ actor SwingCoachAPI {
             throw APIError.videoExportFailed("Could not create export session")
         }
 
-        exportSession.outputURL = tempURL
-        exportSession.outputFileType = .mp4
         exportSession.shouldOptimizeForNetworkUse = true
 
-        // Export
-        await exportSession.export()
-
-        if let error = exportSession.error {
+        do {
+            try await exportSession.export(to: tempURL, as: .mp4)
+        } catch {
             throw APIError.videoExportFailed(error.localizedDescription)
-        }
-
-        guard exportSession.status == .completed else {
-            throw APIError.videoExportFailed("Export did not complete")
         }
 
         // Read exported file into Data

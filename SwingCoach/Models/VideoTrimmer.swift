@@ -214,22 +214,14 @@ actor VideoTrimmer {
             throw TrimmerError.exportSessionCreationFailed
         }
         
-        exportSession.outputURL = outputURL
-        exportSession.outputFileType = .mp4
         exportSession.timeRange = timeRange
-        
-        await exportSession.export()
-        
-        switch exportSession.status {
-        case .completed:
+
+        do {
+            try await exportSession.export(to: outputURL, as: .mp4)
             let clipDuration = CMTimeGetSeconds(CMTimeSubtract(endTime, startTime))
             print("✅ Exported clip: \(String(format: "%.1f", clipDuration))s → \(outputURL.lastPathComponent)")
-        case .failed:
-            throw TrimmerError.exportFailed(exportSession.error?.localizedDescription ?? "Unknown error")
-        case .cancelled:
-            throw TrimmerError.exportFailed("Export cancelled")
-        default:
-            throw TrimmerError.exportFailed("Unexpected status: \(exportSession.status.rawValue)")
+        } catch {
+            throw TrimmerError.exportFailed(error.localizedDescription)
         }
     }
     
@@ -320,20 +312,11 @@ actor VideoTrimmer {
             throw TrimmerError.exportSessionCreationFailed
         }
         
-        exportSession.outputURL = outputURL
-        exportSession.outputFileType = .mp4
-        
-        await exportSession.export()
-        
-        switch exportSession.status {
-        case .completed:
-            return
-        case .failed:
-            throw TrimmerError.exportFailed(exportSession.error?.localizedDescription ?? "Unknown error")
-        case .cancelled:
-            throw TrimmerError.exportFailed("Export cancelled")
-        default:
-            throw TrimmerError.exportFailed("Unexpected status: \(exportSession.status.rawValue)")
+
+        do {
+            try await exportSession.export(to: outputURL, as: .mp4)
+        } catch {
+            throw TrimmerError.exportFailed(error.localizedDescription)
         }
     }
     
@@ -349,4 +332,3 @@ actor VideoTrimmer {
         return "\(sourceKey)#\(count)#\(width)x\(height)"
     }
 }
-

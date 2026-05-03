@@ -175,11 +175,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         // Capture the mode at recording start for correct playback rate
         recordedMode = captureMode
 
-        queue.async {
-            guard !self.movieOutput.isRecording else { return }
-            let url = Self.tempURL()
-            self.movieOutput.startRecording(to: url, recordingDelegate: self)
-        }
+        guard !movieOutput.isRecording else { return }
+        let url = Self.tempURL()
+        movieOutput.startRecording(to: url, recordingDelegate: self)
     }
 
     func stopRecording() {

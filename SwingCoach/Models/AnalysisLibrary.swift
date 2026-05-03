@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 struct SavedAnalysisMetric: Codable, Equatable {
     let key: String

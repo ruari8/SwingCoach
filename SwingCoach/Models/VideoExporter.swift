@@ -149,28 +149,31 @@ class VideoExporter {
             throw ExportError.compositionFailed
         }
         
-        exportSession.outputURL = outputURL
-        exportSession.outputFileType = .mp4
         exportSession.shouldOptimizeForNetworkUse = true
-        
-        // Progress monitoring
-        if let progressHandler = progress {
-            let timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-                progressHandler(exportSession.progress)
+
+        do {
+            if let progress {
+                progress(0)
+                async let export: Void = exportSession.export(to: outputURL, as: .mp4)
+
+                for await state in exportSession.states(updateInterval: 0.1) {
+                    switch state {
+                    case .pending, .waiting:
+                        progress(0)
+                    case .exporting(let exportProgress):
+                        progress(Float(exportProgress.fractionCompleted))
+                    @unknown default:
+                        break
+                    }
+                }
+
+                try await export
+                progress(1)
+            } else {
+                try await exportSession.export(to: outputURL, as: .mp4)
             }
-            
-            await exportSession.export()
-            timer.invalidate()
-        } else {
-            await exportSession.export()
-        }
-        
-        if let error = exportSession.error {
+        } catch {
             throw ExportError.exportFailed(error.localizedDescription)
-        }
-        
-        guard exportSession.status == .completed else {
-            throw ExportError.exportFailed("Export did not complete successfully")
         }
         
         return outputURL
@@ -236,4 +239,3 @@ class VideoExporter {
         }
     }
 }
-
