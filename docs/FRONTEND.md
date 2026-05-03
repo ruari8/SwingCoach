@@ -23,6 +23,8 @@ Primary app root: [AppRootView.swift](/Users/ruari/Documents/Startups/SwingCoach
 - Library and playback/import: [LibraryView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/LibraryView.swift)
 - Trim workflow: [TrimView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/TrimView/TrimView.swift)
 - Analysis UX: [AnalyseView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AnalyseView.swift)
+- Swing detail workspace: [SwingDetailView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/SwingDetailView.swift)
+- Shared analysis result rendering: [AnalysisResultView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AnalysisResultView.swift)
 - API client: [SwingCoachAPI.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingCoachAPI.swift)
 - Persistence: [SwingLibrary.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingLibrary.swift)
 
@@ -44,6 +46,8 @@ Implemented feature set:
 - Launch trim flow for imported source video.
 - Persist swing metadata and thumbnails via `SwingLibrary`.
 - Grid browsing with vantage filtering.
+- Swing cards open a swing detail workspace instead of immediately presenting full-screen playback.
+- Analyzed swings show a status indicator on their library card.
 - Multi-select for batch analyze and batch delete (library-only delete, does not remove Photos asset).
 - Playback with loading/error states and a shared in-frame scrubber plus gesture-driven transport on the video surface.
 - Export/playback utilities integrated through app sheets.
@@ -93,9 +97,21 @@ File: [AnalyseView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/
 
 Implemented feature set:
 - Queue multiple swings for analysis.
-- Show card-based analysis status (`pending`, `analyzing`, `complete`, `failed`).
-- Render returned summary, ordered display metrics, annotated video availability, and lightweight drill suggestions.
+- Show lightweight queue status (`pending`, `analyzing`, `failed`) without stacking full analysis cards.
+- Show recent completed analyses as dashboard rows that link back to the swing detail workspace.
 - Mark analyzed swings in local library.
+
+## 5. Swing Detail
+
+File: [SwingDetailView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/SwingDetailView.swift)
+
+Implemented feature set:
+- Treat a saved swing as the primary product object.
+- Display original swing playback using the shared playback chrome.
+- Show swing metadata and local analysis status.
+- Run or re-run the current R2-backed analysis flow for a single swing.
+- Attach completed analysis to the swing through `AnalysisLibrary`.
+- Render annotated video, metrics, coach notes, and recommendations with the shared [AnalysisResultView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AnalysisResultView.swift).
 
 ## Data and Models
 

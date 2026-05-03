@@ -55,6 +55,24 @@ struct AnalyseView: View {
     // Selection for picking from library
     @State private var selectedSwingIDs: Set<UUID> = []
 
+    private var activeAnalyses: [SwingAnalysis] {
+        analyses.filter {
+            if case .complete = $0.status {
+                return false
+            }
+            return true
+        }
+    }
+
+    private var completedAnalyses: [SwingAnalysis] {
+        analyses.filter {
+            if case .complete = $0.status {
+                return true
+            }
+            return false
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -157,15 +175,46 @@ struct AnalyseView: View {
 
     private var analysisContent: some View {
         ScrollView {
-            LazyVStack(spacing: 16) {
-                ForEach(analyses) { analysis in
-                    AnalysisCard(analysis: analysis) {
-                        retryAnalysis(analysis)
+            VStack(alignment: .leading, spacing: 22) {
+                if !activeAnalyses.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        sectionHeader("Analysis Queue")
+
+                        LazyVStack(spacing: 10) {
+                            ForEach(activeAnalyses) { analysis in
+                                AnalysisQueueRow(analysis: analysis) {
+                                    retryAnalysis(analysis)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if !completedAnalyses.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        sectionHeader("Recent Analyses")
+
+                        LazyVStack(spacing: 10) {
+                            ForEach(completedAnalyses) { analysis in
+                                NavigationLink {
+                                    SwingDetailView(swing: analysis.swing)
+                                } label: {
+                                    RecentAnalysisRow(analysis: analysis)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
                     }
                 }
             }
             .padding()
         }
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.headline)
+            .padding(.horizontal, 2)
     }
 
     // MARK: - Actions
@@ -249,6 +298,161 @@ struct AnalyseView: View {
     }
 }
 
+// MARK: - Coach Dashboard Rows
+
+struct AnalysisQueueRow: View {
+    let analysis: SwingAnalysis
+    let onRetry: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            swingThumbnail
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(analysis.swing.vantage.displayName)
+                    .font(.subheadline.weight(.semibold))
+
+                Text(statusText)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 8)
+
+            trailingControl
+        }
+        .padding(12)
+        .background(Color(.systemBackground))
+        .cornerRadius(8)
+    }
+
+    private var swingThumbnail: some View {
+        Group {
+            if let thumbnail = analysis.swing.thumbnail {
+                Image(uiImage: thumbnail)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                Color.gray.opacity(0.2)
+                    .overlay {
+                        Image(systemName: "film")
+                            .foregroundColor(.secondary)
+                    }
+            }
+        }
+        .frame(width: 68, height: 48)
+        .clipped()
+        .cornerRadius(6)
+    }
+
+    @ViewBuilder
+    private var trailingControl: some View {
+        switch analysis.status {
+        case .pending:
+            Image(systemName: "clock")
+                .foregroundColor(.secondary)
+        case .analyzing:
+            ProgressView()
+        case .complete:
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(.green)
+        case .failed:
+            Button(action: onRetry) {
+                Image(systemName: "arrow.clockwise")
+                    .font(.headline)
+            }
+            .buttonStyle(.bordered)
+        }
+    }
+
+    private var statusText: String {
+        switch analysis.status {
+        case .pending:
+            return "Waiting to start"
+        case .analyzing:
+            return "Analyzing swing"
+        case .complete:
+            return "Complete"
+        case .failed:
+            return "Failed. Tap retry to run this swing again."
+        }
+    }
+}
+
+struct RecentAnalysisRow: View {
+    let analysis: SwingAnalysis
+
+    var body: some View {
+        HStack(spacing: 12) {
+            swingThumbnail
+
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 8) {
+                    Text(analysis.swing.vantage.displayName)
+                        .font(.subheadline.weight(.semibold))
+
+                    Spacer(minLength: 8)
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundColor(Color(uiColor: .tertiaryLabel))
+                }
+
+                if let summary = analysis.result?.summary {
+                    Text(summary)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
+
+                Text(formatDate(analysis.swing.createdAt))
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(12)
+        .background(Color(.systemBackground))
+        .cornerRadius(8)
+    }
+
+    private var swingThumbnail: some View {
+        Group {
+            if let thumbnail = analysis.swing.thumbnail {
+                Image(uiImage: thumbnail)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                Color.gray.opacity(0.2)
+                    .overlay {
+                        Image(systemName: "film")
+                            .foregroundColor(.secondary)
+                    }
+            }
+        }
+        .frame(width: 76, height: 56)
+        .clipped()
+        .cornerRadius(6)
+        .overlay(alignment: .topLeading) {
+            Text(analysis.swing.vantage.shortName)
+                .font(.caption2.weight(.bold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(Color.black.opacity(0.58))
+                .cornerRadius(4)
+                .padding(5)
+        }
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+}
+
 // MARK: - Analysis Card
 
 struct AnalysisCard: View {
@@ -298,7 +502,7 @@ struct AnalysisCard: View {
 
             case .complete:
                 if let result = analysis.result {
-                    resultContent(result)
+                    AnalysisResultView(result: result)
                 }
 
             case .failed(let error):
@@ -371,167 +575,11 @@ struct AnalysisCard: View {
         }
     }
 
-    @ViewBuilder
-    private func resultContent(_ result: AnalysisResult) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if let annotatedVideo = result.annotatedVideo {
-                AnnotatedAnalysisVideo(video: annotatedVideo, analysisID: result.analysisID)
-            }
-
-            // Metrics
-            if !result.metrics.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Metrics")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(.secondary)
-
-                    ForEach(result.metrics, id: \.key) { metric in
-                        HStack {
-                            Text(metric.name)
-                                .font(.subheadline)
-                            Spacer()
-                            Text(metric.value)
-                                .font(.subheadline.weight(.medium))
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-                .padding()
-                .background(Color(.secondarySystemBackground))
-                .cornerRadius(8)
-            }
-
-            // Coach Text
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Coach Notes")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(.secondary)
-
-                Text(result.summary)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundColor(.primary)
-            }
-
-            // Drills
-            if !result.drills.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Recommendations")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(.secondary)
-
-                    ForEach(result.drills, id: \.title) { drill in
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(drill.title)
-                                .font(.subheadline.weight(.medium))
-                                .foregroundColor(.primary)
-                            Text(drill.summary)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.vertical, 6)
-                    }
-                }
-            }
-        }
-    }
-
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         formatter.timeStyle = .short
         return formatter.string(from: date)
-    }
-}
-
-private struct AnnotatedAnalysisVideo: View {
-    let video: SavedAnalysisVideo
-    let analysisID: String
-
-    @State private var playerItem: AVPlayerItem?
-    @State private var errorMessage: String?
-
-    var body: some View {
-        Group {
-            if let playerItem {
-                PlaybackChromeView(
-                    playerItem: playerItem,
-                    playbackEnabled: true,
-                    showsSpeedControls: false,
-                    startsPlaying: false
-                ) {
-                    HStack {
-                        Label("Annotated Video", systemImage: "play.rectangle.fill")
-                            .font(.caption.weight(.semibold))
-                            .foregroundColor(.white)
-                        Spacer()
-                    }
-                }
-            } else {
-                ZStack {
-                    Color.black
-                    if let errorMessage {
-                        VStack(spacing: 8) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundColor(.yellow)
-                            Text(errorMessage)
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.8))
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
-                        }
-                    } else {
-                        VStack(spacing: 8) {
-                            ProgressView()
-                                .tint(.white)
-                            Text("Loading annotated video...")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.75))
-                        }
-                    }
-                }
-            }
-        }
-        .frame(height: 220)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .onAppear {
-            prepareVideo()
-        }
-        .onChange(of: video.url) { _, _ in
-            prepareVideo()
-        }
-    }
-
-    private func prepareVideo() {
-        guard playerItem == nil else { return }
-
-        if Date().timeIntervalSince(video.refreshedAt) > 45 * 60 {
-            Task {
-                do {
-                    let refreshed = try await SwingCoachAPI.shared.refreshArtifactURL(key: video.key)
-                    await MainActor.run {
-                        AnalysisLibrary.shared.updateAnnotatedVideoURL(
-                            for: analysisID,
-                            url: refreshed.url
-                        )
-                        loadPlayer(urlString: refreshed.url)
-                    }
-                } catch {
-                    await MainActor.run {
-                        errorMessage = "Could not refresh annotated video."
-                    }
-                }
-            }
-        } else {
-            loadPlayer(urlString: video.url)
-        }
-    }
-
-    private func loadPlayer(urlString: String) {
-        guard let url = URL(string: urlString) else {
-            errorMessage = "Annotated video link is invalid."
-            return
-        }
-        playerItem = AVPlayerItem(url: url)
     }
 }
 

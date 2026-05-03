@@ -497,94 +497,23 @@ struct LibraryView: View {
     private func swingCard(_ swing: SavedSwing) -> some View {
         let isSelected = selectedSwings.contains(swing.id)
 
-        return Button {
+        return Group {
             if isSelecting {
-                toggleSelection(swing)
+                Button {
+                    toggleSelection(swing)
+                } label: {
+                    swingCardContent(swing, isSelected: isSelected)
+                }
+                .buttonStyle(.plain)
             } else {
-                loadAndPlay(swing)
-            }
-        } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                // Thumbnail
-                ZStack {
-                    if let thumbnail = swing.thumbnail {
-                        Image(uiImage: thumbnail)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(height: 100)
-                            .clipped()
-                    } else {
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.2))
-                            .frame(height: 100)
-                            .overlay {
-                                ProgressView()
-                            }
-                    }
-
-                    // Play icon overlay (hide in selection mode)
-                    if !isSelecting {
-                        Image(systemName: "play.circle.fill")
-                            .font(.system(size: 36))
-                            .foregroundColor(.white)
-                            .shadow(radius: 4)
-                    }
-
-                    // Selection checkmark (show in selection mode)
-                    if isSelecting {
-                        VStack {
-                            Spacer()
-                            HStack {
-                                Spacer()
-                                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(isSelected ? .blue : .white)
-                                    .shadow(radius: 2)
-                            }
-                        }
-                        .padding(8)
-                    }
-
-                    // Vantage badge
-                    VStack {
-                        HStack {
-                            Text(swing.vantage.shortName)
-                                .font(.caption2.weight(.bold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.black.opacity(0.6))
-                                .cornerRadius(4)
-                            Spacer()
-                        }
-                        Spacer()
-                    }
-                    .padding(6)
+                NavigationLink {
+                    SwingDetailView(swing: swing)
+                } label: {
+                    swingCardContent(swing, isSelected: isSelected)
                 }
-                .cornerRadius(8)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 3)
-                )
-
-                // Info
-                HStack {
-                    Text(formatDuration(swing.duration))
-                        .font(.caption.weight(.medium))
-
-                    Spacer()
-
-                    Text(formatDate(swing.createdAt))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
+                .buttonStyle(.plain)
             }
-            .padding(8)
-            .background(Color(.systemBackground))
-            .cornerRadius(12)
-            .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
         }
-        .buttonStyle(.plain)
         .contextMenu {
             if !isSelecting {
                 Button(role: .destructive) {
@@ -594,6 +523,94 @@ struct LibraryView: View {
                 }
             }
         }
+    }
+
+    private func swingCardContent(_ swing: SavedSwing, isSelected: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Thumbnail
+            ZStack {
+                if let thumbnail = swing.thumbnail {
+                    Image(uiImage: thumbnail)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(height: 100)
+                        .clipped()
+                } else {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(height: 100)
+                        .overlay {
+                            ProgressView()
+                        }
+                }
+
+                // Detail affordance (hide in selection mode)
+                if !isSelecting {
+                    Image(systemName: "chevron.right.circle.fill")
+                        .font(.system(size: 30))
+                        .foregroundColor(.white)
+                        .shadow(radius: 4)
+                }
+
+                // Selection checkmark (show in selection mode)
+                if isSelecting {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 24))
+                                .foregroundColor(isSelected ? .blue : .white)
+                                .shadow(radius: 2)
+                        }
+                    }
+                    .padding(8)
+                }
+
+                // Vantage badge
+                VStack {
+                    HStack {
+                        Text(swing.vantage.shortName)
+                            .font(.caption2.weight(.bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.black.opacity(0.6))
+                            .cornerRadius(4)
+                        Spacer()
+                        if swing.analyzed {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.green)
+                                .shadow(radius: 2)
+                        }
+                    }
+                    Spacer()
+                }
+                .padding(6)
+            }
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 3)
+            )
+
+            // Info
+            HStack {
+                Text(formatDuration(swing.duration))
+                    .font(.caption.weight(.medium))
+
+                Spacer()
+
+                Text(formatDate(swing.createdAt))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(8)
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
     }
 
     // MARK: - Toolbar Items
@@ -1150,12 +1167,18 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     }
 
     private func setupPlayer() {
-        let newPlayer = AVPlayer(playerItem: playerItem)
+        guard player == nil else { return }
+
+        // AVPlayerItem instances are single-owner; SwiftUI can recreate this chrome
+        // around the same source item during result-card updates, so each player
+        // needs a fresh item backed by the same asset.
+        let playbackItem = AVPlayerItem(asset: playerItem.asset)
+        let newPlayer = AVPlayer(playerItem: playbackItem)
         newPlayer.actionAtItemEnd = .pause
         player = newPlayer
 
         Task {
-            if let dur = try? await playerItem.asset.load(.duration) {
+            if let dur = try? await playbackItem.asset.load(.duration) {
                 await MainActor.run {
                     duration = dur
                 }
