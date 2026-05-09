@@ -6,6 +6,7 @@ This folder and `backend/docs` are the active documentation set.
 
 - [Root README](/Users/ruari/Documents/Startups/SwingCoach/README.md)
 - [AGENTS](/Users/ruari/Documents/Startups/SwingCoach/AGENTS.md)
+- [Market Thesis](/Users/ruari/Documents/Startups/SwingCoach/docs/MARKET.md)
 
 ## Frontend
 
@@ -19,4 +20,3 @@ This folder and `backend/docs` are the active documentation set.
 ## Maintenance Rule
 
 When behavior changes in code, update these canonical docs in the same change.
-
