@@ -66,7 +66,10 @@ Implemented feature set:
 - Tap-to-focus and exposure targeting.
 - Live DTL-focused on-device capture guard using Vision body pose sampling to warn when the golfer is not framed for analysis. The first pass checks head, hands, feet, body size, and edge margins without blocking recording.
 - Capture setup includes an on-preview DTL framing guide and optional spoken guidance for solo setup when the phone screen is not visible from the hitting position.
+- Live auto swing-detection prototype runs while recording. It samples the camera feed, uses Vision body pose to estimate takeaway/swing timing, searches a pose-derived address ROI for a stable compact bright ball candidate, and treats ball disappearance/movement in the predicted impact window as hit evidence.
+- During recording, the capture badge switches from framing readiness to live auto-detection state (`Finding ball`, `Ball locked`, `Swing started`, `Impact detected`, or detected count).
 - Recording state handling with immediate post-stop playback of the captured high-fps asset.
+- Stopping a new recording opens the trim editor automatically instead of requiring the post-stop scissors action.
 - Active recording disables the iOS idle timer so solo range sessions do not Auto-Lock while the golfer walks into frame, then restores the prior idle-timer state after stop, error, or leaving capture.
 - Post-stop review now uses the app's own playback chrome instead of the default `VideoPlayer` controls, with the scrubber integrated into the video frame, tap-to-play/pause, hold-left/hold-right stepping, and capture trim exposed as a floating scissors action.
 - Slow-motion rendering is deferred until explicit clip export instead of blocking the stop-record action.
@@ -78,6 +81,8 @@ Files:
 - [TrimView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/TrimView/TrimView.swift)
 - [ThumbnailTimeline.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/TrimView/ThumbnailTimeline.swift)
 - [VideoTrimmer.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/VideoTrimmer.swift)
+- [OnDeviceSwingDetector.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/OnDeviceSwingDetector.swift)
+- [LiveSwingDetector.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/LiveSwingDetector.swift)
 
 Implemented feature set:
 - Timeline opens immediately with placeholder/progressive thumbnail loading.
@@ -85,6 +90,10 @@ Implemented feature set:
 - Library imports hand trim a lightweight Photos-backed source first, then load a fast preview asset in-editor and defer high-quality asset resolution until export.
 - High-fps capture timelines display slow-playback timing while keeping selection mapped to the original source frames.
 - Start/end range selection for clip creation.
+- Captured recordings pass live-detected swing timestamps into trim immediately; captured trim does not run a post-stop scan before showing the editor.
+- Imported/library videos can still use on-device Vision body-pose swing detection against the local preview asset when trim opens. Candidate full-swing windows are preselected as clips without calling the backend.
+- Auto-detected clips can be reviewed one at a time by tapping their thumbnail, adjusted with the existing start/end trim handles, updated in place, or discarded with the clip delete control.
+- The first-pass imported-video detector uses conservative hand-motion, pose-coverage, body-stability, and duration heuristics to reject low-confidence or practice-like motion. The live capture prototype adds lightweight ball-movement evidence, but it is not yet validated enough to guarantee practice-swing rejection.
 - When no clip ranges are marked, the footer offers an explicit full-video path so already-trimmed imports can be added as-is; Photos-backed imports reuse the existing asset instead of creating a duplicate.
 - Multi-clip extraction from a long source video.
 - MVP clip export defaults to down-the-line capture; face-on remains in the data model but is not exposed as an equal capture path in the trim header.
@@ -166,6 +175,10 @@ Current frontend `AnalysisResponse` expectation:
 
 4. Environment setup
 - `baseURL` in [SwingCoachAPI.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingCoachAPI.swift) is still hardcoded and should be environment-configurable.
+
+5. Swing auto-detection validation
+- On-device detection is intentionally conservative and editable, but needs device/video validation with real range sessions before it should be treated as a high-confidence practice-swing filter.
+- The live prototype's ball detector is heuristic-only: pose-derived ROI + compact bright blob stability + disappearance/movement near predicted impact. It should be tested heavily on irons, mats, grass, range balls in the background, glare, and partial ball occlusion.
 
 ## Recommended Next Frontend Documentation Additions
 

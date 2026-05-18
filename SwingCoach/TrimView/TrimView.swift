@@ -10,10 +10,19 @@ import AVKit
 import AVFoundation
 import Photos
 
+private enum SwingAutoDetectionState: Equatable {
+    case idle
+    case detecting
+    case finished(count: Int)
+    case failed
+}
+
 /// Main view for trimming a long video into individual swing clips
 struct TrimView: View {
     let source: TrimVideoSource
     var sourceCaptureMode: SloMoMode? = nil
+    var initialDetectedSwings: [DetectedSwing] = []
+    var runsPostRecordDetection = true
     let onComplete: ([SwingClip], [URL]) -> Void
     let onCancel: () -> Void
     var onExportAndAnalyze: (([SwingClip]) -> Void)? = nil
@@ -34,7 +43,10 @@ struct TrimView: View {
 
     // Clips
     @State private var clips: [SwingClip] = []
+    @State private var autoDetectedClipIDs: Set<UUID> = []
+    @State private var editingClipID: UUID?
     @State private var selectedVantage: Vantage = .dtl
+    @State private var autoDetectionState: SwingAutoDetectionState = .idle
 
     // Export state
     @State private var isExporting = false
@@ -43,6 +55,7 @@ struct TrimView: View {
     // Source loading state
     @State private var previewAsset: AVAsset?
     @State private var sourcePreparationTask: Task<Void, Never>?
+    @State private var swingDetectionTask: Task<Void, Never>?
 
     // Time observer
     @State private var timeObserver: Any?
@@ -54,6 +67,7 @@ struct TrimView: View {
     @State private var activeSeekDirection: Int?
 
     private let trimmer = VideoTrimmer()
+    private let swingDetector = OnDeviceSwingDetector()
 
     private var displayTimeScale: Double {
         sourceCaptureMode.map { $0.targetFPS / 30.0 } ?? 1.0
@@ -250,12 +264,19 @@ struct TrimView: View {
                     .padding(.horizontal, 4)
             }
 
+            if shouldShowAutoDetectionStatus {
+                autoDetectionStatusRow
+            }
+
             // Add clip button (when range is selected)
             if rangeStart != nil && rangeEnd != nil {
                 Button {
                     addClip()
                 } label: {
-                    Label("Add Swing", systemImage: "plus.circle.fill")
+                    Label(
+                        editingClipID == nil ? "Add Swing" : "Update Swing",
+                        systemImage: editingClipID == nil ? "plus.circle.fill" : "checkmark.circle.fill"
+                    )
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.black)
                         .padding(.horizontal, 16)
@@ -268,12 +289,81 @@ struct TrimView: View {
         }
     }
 
+    private var shouldShowAutoDetectionStatus: Bool {
+        switch autoDetectionState {
+        case .idle:
+            return false
+        case .detecting:
+            return clips.isEmpty
+        case .finished(let count):
+            return count > 0 || clips.isEmpty
+        case .failed:
+            return clips.isEmpty
+        }
+    }
+
+    private var autoDetectionStatusRow: some View {
+        HStack(spacing: 8) {
+            if autoDetectionState == .detecting {
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(.yellow)
+            } else {
+                Image(systemName: autoDetectionStatusIcon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(autoDetectionStatusColor)
+            }
+
+            Text(autoDetectionStatusText)
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.68))
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 4)
+    }
+
+    private var autoDetectionStatusText: String {
+        switch autoDetectionState {
+        case .idle:
+            return ""
+        case .detecting:
+            return "Detecting swings on device..."
+        case .finished(let count):
+            return count == 0 ? "No full swing detected" : "\(count) swing\(count == 1 ? "" : "s") detected"
+        case .failed:
+            return "Swing detection unavailable"
+        }
+    }
+
+    private var autoDetectionStatusIcon: String {
+        switch autoDetectionState {
+        case .idle, .detecting:
+            return "sparkles"
+        case .finished(let count):
+            return count == 0 ? "magnifyingglass" : "checkmark.circle.fill"
+        case .failed:
+            return "exclamationmark.triangle.fill"
+        }
+    }
+
+    private var autoDetectionStatusColor: Color {
+        switch autoDetectionState {
+        case .idle, .detecting:
+            return .yellow
+        case .finished(let count):
+            return count == 0 ? .white.opacity(0.65) : .green
+        case .failed:
+            return .yellow
+        }
+    }
+
     // MARK: - Clips Section
 
     private var clipsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             if !clips.isEmpty {
-                Text("Clips (\(clips.count))")
+                Text("\(clipsTitle) (\(clips.count))")
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(.white)
                     .padding(.horizontal)
@@ -291,6 +381,14 @@ struct TrimView: View {
         .padding(.vertical, 8)
     }
 
+    private var clipsTitle: String {
+        if autoDetectedClipIDs.isEmpty {
+            return "Clips"
+        }
+
+        return autoDetectedClipIDs.count == clips.count ? "Detected Swings" : "Swings"
+    }
+
     private func clipThumbnail(_ clip: SwingClip) -> some View {
         VStack(spacing: 4) {
             ZStack(alignment: .topTrailing) {
@@ -301,11 +399,29 @@ struct TrimView: View {
                         .frame(width: 80, height: 50)
                         .clipped()
                         .cornerRadius(6)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(editingClipID == clip.id ? Color.yellow : Color.clear, lineWidth: 2)
+                        )
                 } else {
                     Rectangle()
                         .fill(Color.gray.opacity(0.3))
                         .frame(width: 80, height: 50)
                         .cornerRadius(6)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(editingClipID == clip.id ? Color.yellow : Color.clear, lineWidth: 2)
+                        )
+                }
+
+                if autoDetectedClipIDs.contains(clip.id) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.black)
+                        .frame(width: 20, height: 20)
+                        .background(Circle().fill(Color.yellow))
+                        .offset(x: -54, y: -6)
+                        .accessibilityLabel("Auto-detected swing")
                 }
 
                 // Delete button
@@ -325,10 +441,7 @@ struct TrimView: View {
                 .foregroundColor(.white.opacity(0.7))
         }
         .onTapGesture {
-            // Jump to clip start
-            seek(to: clip.startCMTime)
-            rangeStart = clip.startCMTime
-            rangeEnd = clip.endCMTime
+            selectClipForEditing(clip)
         }
     }
 
@@ -345,10 +458,16 @@ struct TrimView: View {
     // MARK: - Bottom Bar
 
     private var statusText: String {
-        if rangeStart != nil && rangeEnd != nil {
+        if editingClipID != nil && rangeStart != nil && rangeEnd != nil {
+            return "Adjust selection, then update swing"
+        } else if rangeStart != nil && rangeEnd != nil {
             return "Adjust selection, then add swing"
         } else if rangeStart != nil {
             return "Navigate to end, tap ✂️ again"
+        } else if autoDetectionState == .detecting && clips.isEmpty {
+            return "Detecting swings on device..."
+        } else if autoDetectionState == .finished(count: 0) && clips.isEmpty {
+            return "Tap ✂️ to trim, or use the full video"
         } else if clips.isEmpty {
             return "Tap ✂️ to trim, or use the full video"
         } else {
@@ -446,6 +565,14 @@ struct TrimView: View {
                     duration = loadedDuration
                     frameStep = loadedFrameStep
                     attachTimeObserver()
+
+                    if !initialDetectedSwings.isEmpty {
+                        applyDetectedSwings(initialDetectedSwings, asset: loadedPreviewAsset)
+                    } else if runsPostRecordDetection {
+                        startSwingDetection(for: loadedPreviewAsset)
+                    } else {
+                        autoDetectionState = .finished(count: 0)
+                    }
                 }
 
                 try await loadThumbnails(for: loadedPreviewAsset, duration: loadedDuration)
@@ -532,6 +659,8 @@ struct TrimView: View {
     private func cleanup() {
         sourcePreparationTask?.cancel()
         sourcePreparationTask = nil
+        swingDetectionTask?.cancel()
+        swingDetectionTask = nil
         stopContinuousStep()
         if let observer = timeObserver {
             player?.removeTimeObserver(observer)
@@ -539,6 +668,60 @@ struct TrimView: View {
         player?.pause()
         player = nil
         previewAsset = nil
+    }
+
+    private func startSwingDetection(for asset: AVAsset) {
+        swingDetectionTask?.cancel()
+        autoDetectionState = .detecting
+
+        swingDetectionTask = Task {
+            do {
+                let detections = try await swingDetector.detectSwings(in: asset)
+                await MainActor.run {
+                    applyDetectedSwings(detections, asset: asset)
+                }
+            } catch is CancellationError {
+                // The trim view is going away or reloading a different source.
+            } catch {
+                print("⚠️ Swing detection failed: \(error)")
+                await MainActor.run {
+                    autoDetectionState = .failed
+                }
+            }
+        }
+    }
+
+    private func applyDetectedSwings(_ detections: [DetectedSwing], asset: AVAsset) {
+        guard !detections.isEmpty else {
+            autoDetectionState = .finished(count: 0)
+            return
+        }
+
+        let hasUserSelection = rangeStart != nil || rangeEnd != nil
+        guard clips.isEmpty, !hasUserSelection else {
+            autoDetectionState = .idle
+            return
+        }
+
+        let detectedClips = detections.map {
+            SwingClip(
+                startTime: $0.startTime,
+                endTime: $0.endTime,
+                vantage: selectedVantage
+            )
+        }
+
+        clips = detectedClips
+        autoDetectedClipIDs = Set(detectedClips.map(\.id))
+        autoDetectionState = .finished(count: detectedClips.count)
+
+        if let firstClip = detectedClips.first {
+            selectClipForEditing(firstClip)
+        }
+
+        for clip in detectedClips {
+            generateThumbnail(for: clip, asset: asset)
+        }
     }
 
     private func togglePlayback() {
@@ -562,6 +745,7 @@ struct TrimView: View {
     }
 
     private func markStart() {
+        editingClipID = nil
         rangeStart = currentTime
         // If end is before start, clear it
         if let end = rangeEnd, CMTimeCompare(end, currentTime) <= 0 {
@@ -580,10 +764,18 @@ struct TrimView: View {
     private func clearSelection() {
         rangeStart = nil
         rangeEnd = nil
+        editingClipID = nil
     }
 
     private func addClip() {
         guard let start = rangeStart, let end = rangeEnd else { return }
+
+        if updateEditingClip(start: start, end: end) {
+            rangeStart = nil
+            rangeEnd = nil
+            editingClipID = nil
+            return
+        }
 
         let newClip = SwingClip(
             startTime: start,
@@ -591,29 +783,64 @@ struct TrimView: View {
             vantage: selectedVantage
         )
 
-        // Generate thumbnail for the clip
-        if let previewAsset {
-            Task {
-                if let thumbnail = try? await trimmer.generateThumbnail(for: previewAsset, at: start) {
-                    await MainActor.run {
-                        // Find and update the clip with thumbnail
-                        if let index = clips.firstIndex(where: { $0.id == newClip.id }) {
-                            clips[index].thumbnail = thumbnail
-                        }
-                    }
-                }
-            }
-        }
-
         clips.append(newClip)
+        generateThumbnail(for: newClip)
 
         // Clear selection for next clip
         rangeStart = nil
         rangeEnd = nil
+        editingClipID = nil
     }
 
     private func removeClip(_ clip: SwingClip) {
         clips.removeAll { $0.id == clip.id }
+        autoDetectedClipIDs.remove(clip.id)
+
+        if editingClipID == clip.id {
+            clearSelection()
+        }
+    }
+
+    private func selectClipForEditing(_ clip: SwingClip) {
+        seek(to: clip.startCMTime)
+        rangeStart = clip.startCMTime
+        rangeEnd = clip.endCMTime
+        editingClipID = clip.id
+    }
+
+    private func updateEditingClip(start: CMTime, end: CMTime) -> Bool {
+        guard let editingClipID,
+              let index = clips.firstIndex(where: { $0.id == editingClipID }) else {
+            return false
+        }
+
+        clips[index].startTime = CMTimeGetSeconds(start)
+        clips[index].endTime = CMTimeGetSeconds(end)
+        clips[index].vantage = selectedVantage
+        clips[index].thumbnail = nil
+        generateThumbnail(for: clips[index])
+
+        return true
+    }
+
+    private func commitEditingClipIfNeeded() {
+        guard let start = rangeStart, let end = rangeEnd else { return }
+        _ = updateEditingClip(start: start, end: end)
+    }
+
+    private func generateThumbnail(for clip: SwingClip, asset: AVAsset? = nil) {
+        guard let thumbnailAsset = asset ?? previewAsset else { return }
+
+        Task {
+            if let thumbnail = try? await trimmer.generateThumbnail(for: thumbnailAsset, at: clip.startCMTime) {
+                await MainActor.run {
+                    if let index = clips.firstIndex(where: { $0.id == clip.id }),
+                       clips[index].startTime == clip.startTime {
+                        clips[index].thumbnail = thumbnail
+                    }
+                }
+            }
+        }
     }
 
     private func exportClips(_ clipsToExport: [SwingClip]) {
@@ -699,6 +926,8 @@ struct TrimView: View {
     }
 
     private func handlePrimaryExportAction() {
+        commitEditingClipIfNeeded()
+
         if clips.isEmpty {
             exportFullVideo()
             return

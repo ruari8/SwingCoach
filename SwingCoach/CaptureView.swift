@@ -131,12 +131,17 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private let qualityQueue = DispatchQueue(label: "camera.quality.queue")
     private let movieOutput = AVCaptureMovieFileOutput()
     private let videoDataOutput = AVCaptureVideoDataOutput()
+    private let liveSwingDetector = LiveSwingDetector()
     private var lastQualitySampleTime = CACurrentMediaTime()
+    private var recordingStartSampleTime: CMTime?
+    private var lastLiveSwingSampleTime = -Double.greatestFiniteMagnitude
     private var isProcessingQualityFrame = false
     @Published var lastRecordingURL: URL?
+    @Published var lastRecordingSwingDetections: [DetectedSwing] = []
     @Published var recordingError: Error?
     @Published var captureMode: SloMoMode = .ultra  // Default to 240 fps
     @Published var captureQuality = CaptureQualitySnapshot()
+    @Published var liveSwingDetection = LiveSwingDetectionSnapshot.idle
 
     /// The mode that was active when recording started (for correct playback rate)
     private(set) var recordedMode: SloMoMode = .ultra
@@ -270,6 +275,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     func startRecording() {
         // Capture the mode at recording start for correct playback rate
         recordedMode = captureMode
+        resetLiveSwingDetection()
 
         guard !movieOutput.isRecording else { return }
         let url = Self.tempURL()
@@ -289,20 +295,45 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         return directory.appendingPathComponent(filename)
     }
 
-    func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
+    private func resetLiveSwingDetection() {
+        qualityQueue.async {
+            self.recordingStartSampleTime = nil
+            self.lastLiveSwingSampleTime = -Double.greatestFiniteMagnitude
+            self.liveSwingDetector.reset()
+        }
+
         DispatchQueue.main.async {
-            guard error == nil else {
-                self.recordingError = error
-                self.lastRecordingURL = nil
-                return
+            self.lastRecordingSwingDetections = []
+            self.liveSwingDetection = .idle
+        }
+    }
+
+    func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
+        qualityQueue.async {
+            let detections = self.liveSwingDetector.finish(recordingTime: self.lastLiveSwingSampleTime.isFinite ? self.lastLiveSwingSampleTime : nil)
+
+            DispatchQueue.main.async {
+                guard error == nil else {
+                    self.recordingError = error
+                    self.lastRecordingURL = nil
+                    self.lastRecordingSwingDetections = []
+                    return
+                }
+
+                self.recordingError = nil
+                self.lastRecordingSwingDetections = detections
+                self.lastRecordingURL = outputFileURL
             }
-            self.recordingError = nil
-            self.lastRecordingURL = outputFileURL
         }
     }
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         let now = CACurrentMediaTime()
+        if movieOutput.isRecording {
+            processLiveSwingFrame(sampleBuffer)
+            return
+        }
+
         guard now - lastQualitySampleTime >= 0.35 else { return }
         guard !isProcessingQualityFrame else { return }
 
@@ -330,6 +361,49 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         }
 
         isProcessingQualityFrame = false
+    }
+
+    private func processLiveSwingFrame(_ sampleBuffer: CMSampleBuffer) {
+        let sampleTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+
+        if recordingStartSampleTime == nil {
+            recordingStartSampleTime = sampleTime
+        }
+
+        guard let recordingStartSampleTime else { return }
+
+        let relativeTime = CMTimeGetSeconds(CMTimeSubtract(sampleTime, recordingStartSampleTime))
+        guard relativeTime.isFinite, relativeTime - lastLiveSwingSampleTime >= 0.10 else { return }
+
+        lastLiveSwingSampleTime = relativeTime
+
+        let request = VNDetectHumanBodyPoseRequest()
+        let handler = VNImageRequestHandler(cmSampleBuffer: sampleBuffer, options: [:])
+
+        do {
+            try handler.perform([request])
+            let observation = request.results?.first
+            let snapshot = liveSwingDetector.process(
+                sampleBuffer: sampleBuffer,
+                observation: observation,
+                recordingTime: relativeTime
+            )
+
+            DispatchQueue.main.async {
+                self.liveSwingDetection = snapshot
+            }
+        } catch {
+            DispatchQueue.main.async {
+                self.liveSwingDetection = LiveSwingDetectionSnapshot(
+                    status: .unavailable,
+                    primaryMessage: "Auto detect unavailable",
+                    detailMessage: "Pose detection failed on this frame.",
+                    detectedSwingCount: self.liveSwingDetection.detectedSwingCount,
+                    hasBallLock: self.liveSwingDetection.hasBallLock,
+                    hasBallMovement: self.liveSwingDetection.hasBallMovement
+                )
+            }
+        }
     }
 
     private static func evaluateCaptureQuality(observation: VNHumanBodyPoseObservation?) -> CaptureQualitySnapshot {
@@ -680,9 +754,15 @@ struct CaptureView: View {
                         .padding(.horizontal, 16)
                         .padding(.top, 8)
 
-                        CaptureQualityBadge(snapshot: camera.captureQuality)
-                            .padding(.top, 10)
-                            .padding(.horizontal, 16)
+                        if isRecording {
+                            LiveSwingDetectionBadge(snapshot: camera.liveSwingDetection)
+                                .padding(.top, 10)
+                                .padding(.horizontal, 16)
+                        } else {
+                            CaptureQualityBadge(snapshot: camera.captureQuality)
+                                .padding(.top, 10)
+                                .padding(.horizontal, 16)
+                        }
 
                         Spacer()
 
@@ -717,6 +797,7 @@ struct CaptureView: View {
             currentRecordingURL = url
             currentRecordingMode = recordedMode
             isProcessing = false
+            showTrimView = true
         }
         .onReceive(camera.$recordingError) { error in
             guard error != nil else { return }
@@ -733,6 +814,8 @@ struct CaptureView: View {
                 TrimView(
                     source: .capturedFile(url: url),
                     sourceCaptureMode: currentRecordingMode,
+                    initialDetectedSwings: camera.lastRecordingSwingDetections,
+                    runsPostRecordDetection: false,
                     onComplete: { clips, exportedURLs in
                         // Handle exported clips
                         print("✅ Exported \(clips.count) clips:")
@@ -965,6 +1048,79 @@ struct CaptureQualityBadge: View {
         case .ready:
             return .green
         case .warning:
+            return .yellow
+        }
+    }
+}
+
+struct LiveSwingDetectionBadge: View {
+    let snapshot: LiveSwingDetectionSnapshot
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: iconName)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(iconColor)
+                .frame(width: 22)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(snapshot.primaryMessage)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    if snapshot.detectedSwingCount > 0 {
+                        Text("\(snapshot.detectedSwingCount)")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Color.yellow))
+                    }
+                }
+
+                Text(snapshot.detailMessage)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.78))
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.black.opacity(0.58))
+        )
+    }
+
+    private var iconName: String {
+        switch snapshot.status {
+        case .idle:
+            return "scope"
+        case .searchingBall:
+            return "magnifyingglass"
+        case .ballLocked:
+            return "smallcircle.filled.circle"
+        case .swingInProgress:
+            return "figure.golf"
+        case .hitDetected, .swingDetected:
+            return "checkmark.circle.fill"
+        case .unavailable:
+            return "exclamationmark.triangle.fill"
+        }
+    }
+
+    private var iconColor: Color {
+        switch snapshot.status {
+        case .idle, .searchingBall:
+            return .white.opacity(0.84)
+        case .ballLocked, .swingInProgress:
+            return .yellow
+        case .hitDetected, .swingDetected:
+            return .green
+        case .unavailable:
             return .yellow
         }
     }
