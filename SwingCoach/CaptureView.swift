@@ -6,10 +6,12 @@
 //
 
 import SwiftUI
+import UIKit
 import AVKit
 import Combine
 import AVFoundation
 import Photos
+import Vision
 
 enum SloMoMode {
     case standard    // 120 fps @ 1080p
@@ -47,13 +49,94 @@ enum SloMoMode {
     }
 }
 
-final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecordingDelegate {
+enum CaptureReadiness {
+    case unknown
+    case ready
+    case warning
+}
+
+struct CaptureQualitySnapshot {
+    var readiness: CaptureReadiness = .unknown
+    var primaryMessage: String = "Finding golfer"
+    var detailMessage: String = "Stand in frame with the full body visible."
+    var bodyBoxAreaRatio: CGFloat?
+    var visibleJointCount: Int = 0
+
+    var isReady: Bool {
+        readiness == .ready
+    }
+}
+
+final class CaptureAudioGuide: NSObject, ObservableObject {
+    @Published var isEnabled = true
+
+    private let synthesizer = AVSpeechSynthesizer()
+    private var lastSpokenPhrase = ""
+    private var lastSpokenAt = Date.distantPast
+
+    override init() {
+        super.init()
+        configureAudioSession()
+    }
+
+    func handle(snapshot: CaptureQualitySnapshot, isRecording: Bool) {
+        guard isEnabled, !isRecording else { return }
+        guard let phrase = phrase(for: snapshot) else { return }
+
+        let now = Date()
+        let phraseChanged = phrase != lastSpokenPhrase
+        let minimumDelay: TimeInterval = phraseChanged ? 1.5 : (phrase == "Ready" ? 8.0 : 2.5)
+        guard now.timeIntervalSince(lastSpokenAt) > minimumDelay else { return }
+
+        speak(phrase)
+    }
+
+    private func configureAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+        } catch {
+            print("❌ Failed to configure capture audio guide: \(error)")
+        }
+    }
+
+    private func phrase(for snapshot: CaptureQualitySnapshot) -> String? {
+        switch snapshot.readiness {
+        case .unknown:
+            return nil
+        case .ready:
+            return "Ready"
+        case .warning:
+            return snapshot.primaryMessage
+        }
+    }
+
+    private func speak(_ phrase: String) {
+        lastSpokenPhrase = phrase
+        lastSpokenAt = Date()
+
+        if synthesizer.isSpeaking {
+            synthesizer.stopSpeaking(at: .immediate)
+        }
+
+        let utterance = AVSpeechUtterance(string: phrase)
+        utterance.rate = 0.48
+        utterance.volume = 1.0
+        synthesizer.speak(utterance)
+    }
+}
+
+final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecordingDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
     let session = AVCaptureSession()
     private let queue = DispatchQueue(label: "camera.session.queue")
+    private let qualityQueue = DispatchQueue(label: "camera.quality.queue")
     private let movieOutput = AVCaptureMovieFileOutput()
+    private let videoDataOutput = AVCaptureVideoDataOutput()
+    private var lastQualitySampleTime = CACurrentMediaTime()
+    private var isProcessingQualityFrame = false
     @Published var lastRecordingURL: URL?
     @Published var recordingError: Error?
     @Published var captureMode: SloMoMode = .ultra  // Default to 240 fps
+    @Published var captureQuality = CaptureQualitySnapshot()
 
     /// The mode that was active when recording started (for correct playback rate)
     private(set) var recordedMode: SloMoMode = .ultra
@@ -81,12 +164,25 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         if session.canAddOutput(movieOutput) {
             session.addOutput(movieOutput)
         }
+        configureQualityOutput()
 
         // Configure high FPS AFTER input/output are added to the session
         // Otherwise the session may override format settings when input is added
         configureHighFPS(device: device, mode: captureMode)
 
         session.commitConfiguration()
+    }
+
+    private func configureQualityOutput() {
+        videoDataOutput.alwaysDiscardsLateVideoFrames = true
+        videoDataOutput.videoSettings = [
+            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
+        ]
+        videoDataOutput.setSampleBufferDelegate(self, queue: qualityQueue)
+
+        if session.canAddOutput(videoDataOutput) {
+            session.addOutput(videoDataOutput)
+        }
     }
 
     private func configureHighFPS(device: AVCaptureDevice, mode: SloMoMode) {
@@ -204,6 +300,156 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             self.lastRecordingURL = outputFileURL
         }
     }
+
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        let now = CACurrentMediaTime()
+        guard now - lastQualitySampleTime >= 0.35 else { return }
+        guard !isProcessingQualityFrame else { return }
+
+        lastQualitySampleTime = now
+        isProcessingQualityFrame = true
+
+        let request = VNDetectHumanBodyPoseRequest()
+        let handler = VNImageRequestHandler(cmSampleBuffer: sampleBuffer, options: [:])
+
+        do {
+            try handler.perform([request])
+            let observation = request.results?.first
+            let snapshot = Self.evaluateCaptureQuality(observation: observation)
+            DispatchQueue.main.async {
+                self.captureQuality = snapshot
+            }
+        } catch {
+            DispatchQueue.main.async {
+                self.captureQuality = CaptureQualitySnapshot(
+                    readiness: .unknown,
+                    primaryMessage: "Checking setup",
+                    detailMessage: "Keep the full body in frame."
+                )
+            }
+        }
+
+        isProcessingQualityFrame = false
+    }
+
+    private static func evaluateCaptureQuality(observation: VNHumanBodyPoseObservation?) -> CaptureQualitySnapshot {
+        guard let observation,
+              let points = try? observation.recognizedPoints(.all)
+        else {
+            return CaptureQualitySnapshot(
+                readiness: .unknown,
+                primaryMessage: "Finding golfer",
+                detailMessage: "Stand in frame with the full body visible."
+            )
+        }
+
+        let confidentPoints = points.filter { $0.value.confidence >= 0.35 }
+        guard confidentPoints.count >= 8 else {
+            return CaptureQualitySnapshot(
+                readiness: .warning,
+                primaryMessage: "Body not clear",
+                detailMessage: "Improve lighting and keep your full body visible.",
+                visibleJointCount: confidentPoints.count
+            )
+        }
+
+        let xs = confidentPoints.map { $0.value.location.x }
+        let ys = confidentPoints.map { $0.value.location.y }
+        guard let minX = xs.min(), let maxX = xs.max(), let minY = ys.min(), let maxY = ys.max() else {
+            return CaptureQualitySnapshot()
+        }
+
+        let width = maxX - minX
+        let height = maxY - minY
+        let area = width * height
+        let visibleJointCount = confidentPoints.count
+
+        func has(_ joint: VNHumanBodyPoseObservation.JointName) -> Bool {
+            (points[joint]?.confidence ?? 0) >= 0.35
+        }
+
+        let hasHead = has(.nose) || has(.neck)
+        let hasHands = has(.leftWrist) && has(.rightWrist)
+        let hasFeet = has(.leftAnkle) && has(.rightAnkle)
+
+        if !hasHead {
+            return CaptureQualitySnapshot(
+                readiness: .warning,
+                primaryMessage: "Head not visible",
+                detailMessage: "Tilt or move the phone until head and feet are visible.",
+                bodyBoxAreaRatio: area,
+                visibleJointCount: visibleJointCount
+            )
+        }
+
+        if !hasFeet {
+            return CaptureQualitySnapshot(
+                readiness: .warning,
+                primaryMessage: "Feet not visible",
+                detailMessage: "Move the phone back or lower it slightly.",
+                bodyBoxAreaRatio: area,
+                visibleJointCount: visibleJointCount
+            )
+        }
+
+        if !hasHands {
+            return CaptureQualitySnapshot(
+                readiness: .warning,
+                primaryMessage: "Hands not visible",
+                detailMessage: "Center your setup so the hands stay in frame.",
+                bodyBoxAreaRatio: area,
+                visibleJointCount: visibleJointCount
+            )
+        }
+
+        if height > 0.82 || area > 0.34 {
+            return CaptureQualitySnapshot(
+                readiness: .warning,
+                primaryMessage: "Move phone back",
+                detailMessage: "You are too large in frame for the club arc.",
+                bodyBoxAreaRatio: area,
+                visibleJointCount: visibleJointCount
+            )
+        }
+
+        if height < 0.34 {
+            return CaptureQualitySnapshot(
+                readiness: .warning,
+                primaryMessage: "Move phone closer",
+                detailMessage: "The body is too small for reliable tracking.",
+                bodyBoxAreaRatio: area,
+                visibleJointCount: visibleJointCount
+            )
+        }
+
+        if minX < 0.08 || maxX > 0.92 {
+            return CaptureQualitySnapshot(
+                readiness: .warning,
+                primaryMessage: "Re-center golfer",
+                detailMessage: "Leave space around the body for the swing.",
+                bodyBoxAreaRatio: area,
+                visibleJointCount: visibleJointCount
+            )
+        }
+
+        if minY < 0.04 || maxY > 0.96 {
+            return CaptureQualitySnapshot(
+                readiness: .warning,
+                primaryMessage: "Adjust phone angle",
+                detailMessage: "Keep head, feet, and swing space away from the edges.",
+                bodyBoxAreaRatio: area,
+                visibleJointCount: visibleJointCount
+            )
+        }
+
+        return CaptureQualitySnapshot(
+            readiness: .ready,
+            primaryMessage: "Ready",
+            detailMessage: "Full body framing looks usable.",
+            bodyBoxAreaRatio: area,
+            visibleJointCount: visibleJointCount
+        )
+    }
 }
 
 final class CameraPreviewView: UIView {
@@ -264,10 +510,12 @@ struct CaptureView: View {
     var onAnalyzeSwings: (([SavedSwing]) -> Void)? = nil
 
     @StateObject private var camera = CameraSession()
+    @StateObject private var audioGuide = CaptureAudioGuide()
     @State private var isRecording = false
     @State private var previewPlayerItem: AVPlayerItem?
     @State private var currentRecordingURL: URL?
     @State private var currentRecordingMode: SloMoMode?
+    @State private var previousIdleTimerDisabled: Bool?
 
     // Focus indicator state
     @State private var focusPoint: CGPoint? = nil
@@ -294,6 +542,13 @@ struct CaptureView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.black)
+
+                if previewPlayerItem == nil && !isProcessing {
+                    DTLFramingGuideView(snapshot: camera.captureQuality)
+                        .padding(.horizontal, 22)
+                        .padding(.vertical, 54)
+                        .allowsHitTesting(false)
+                }
 
                 // Focus indicator (yellow square)
                 if showFocusIndicator, let point = focusPoint {
@@ -409,12 +664,25 @@ struct CaptureView: View {
 
                             Spacer()
 
-                            // Placeholder for symmetry
-                            Color.clear
-                                .frame(width: 50, height: 30)
+                            Button {
+                                audioGuide.isEnabled.toggle()
+                            } label: {
+                                Image(systemName: audioGuide.isEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(audioGuide.isEnabled ? .yellow : .white.opacity(0.7))
+                                    .frame(width: 44, height: 30)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .fill(Color.black.opacity(0.5))
+                                    )
+                            }
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 8)
+
+                        CaptureQualityBadge(snapshot: camera.captureQuality)
+                            .padding(.top, 10)
+                            .padding(.horizontal, 16)
 
                         Spacer()
 
@@ -435,12 +703,14 @@ struct CaptureView: View {
         .onDisappear {
             camera.stop()
             timerCancellable?.cancel()
+            restoreIdleTimer()
         }
         .onReceive(camera.$lastRecordingURL) { url in
             guard let url else { return }
 
             isRecording = false
             stopRecordingTimer()
+            restoreIdleTimer()
 
             let recordedMode = camera.recordedMode
             previewPlayerItem = AVPlayerItem(url: url)
@@ -452,7 +722,11 @@ struct CaptureView: View {
             guard error != nil else { return }
             isRecording = false
             stopRecordingTimer()
+            restoreIdleTimer()
             isProcessing = false
+        }
+        .onReceive(camera.$captureQuality) { snapshot in
+            audioGuide.handle(snapshot: snapshot, isRecording: isRecording)
         }
         .fullScreenCover(isPresented: $showTrimView) {
             if let url = currentRecordingURL {
@@ -502,14 +776,29 @@ struct CaptureView: View {
             isProcessing = true
             camera.stopRecording()
             stopRecordingTimer()
+            restoreIdleTimer()
         } else {
             clearCurrentRecording()
             isProcessing = false
+            preventIdleTimer()
             camera.startRecording()
             startRecordingTimer()
         }
         currentRecordingURL = nil
         isRecording.toggle()
+    }
+
+    private func preventIdleTimer() {
+        if previousIdleTimerDisabled == nil {
+            previousIdleTimerDisabled = UIApplication.shared.isIdleTimerDisabled
+        }
+        UIApplication.shared.isIdleTimerDisabled = true
+    }
+
+    private func restoreIdleTimer() {
+        guard let previousIdleTimerDisabled else { return }
+        UIApplication.shared.isIdleTimerDisabled = previousIdleTimerDisabled
+        self.previousIdleTimerDisabled = nil
     }
 
     private func toggleFPSMode() {
@@ -625,6 +914,140 @@ struct FocusIndicatorView: View {
                     opacity = 0.5
                 }
             }
+    }
+}
+
+struct CaptureQualityBadge: View {
+    let snapshot: CaptureQualitySnapshot
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: iconName)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(iconColor)
+                .frame(width: 22)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(snapshot.primaryMessage)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+                Text(snapshot.detailMessage)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.78))
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.black.opacity(0.58))
+        )
+    }
+
+    private var iconName: String {
+        switch snapshot.readiness {
+        case .unknown:
+            return "figure.golf"
+        case .ready:
+            return "checkmark.circle.fill"
+        case .warning:
+            return "exclamationmark.triangle.fill"
+        }
+    }
+
+    private var iconColor: Color {
+        switch snapshot.readiness {
+        case .unknown:
+            return .white.opacity(0.84)
+        case .ready:
+            return .green
+        case .warning:
+            return .yellow
+        }
+    }
+}
+
+struct DTLFramingGuideView: View {
+    let snapshot: CaptureQualitySnapshot
+
+    var body: some View {
+        GeometryReader { geometry in
+            let size = geometry.size
+            let guideRect = CGRect(
+                x: size.width * 0.28,
+                y: size.height * 0.16,
+                width: size.width * 0.36,
+                height: size.height * 0.68
+            )
+
+            ZStack {
+                SwingClearanceShape()
+                    .stroke(styleColor.opacity(0.56), style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [8, 8]))
+                    .frame(width: size.width * 0.76, height: size.height * 0.62)
+                    .position(x: size.width * 0.52, y: size.height * 0.48)
+
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(styleColor, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, dash: [10, 7]))
+                    .frame(width: guideRect.width, height: guideRect.height)
+                    .position(x: guideRect.midX, y: guideRect.midY)
+
+                Capsule()
+                    .fill(styleColor.opacity(0.82))
+                    .frame(width: guideRect.width * 0.72, height: 3)
+                    .position(x: guideRect.midX, y: guideRect.maxY)
+
+                Circle()
+                    .stroke(styleColor.opacity(0.86), lineWidth: 2)
+                    .frame(width: guideRect.width * 0.28, height: guideRect.width * 0.28)
+                    .position(x: guideRect.midX, y: guideRect.minY + guideRect.height * 0.12)
+
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(styleColor.opacity(0.72), lineWidth: 2)
+                    .frame(width: guideRect.width * 0.72, height: guideRect.height * 0.24)
+                    .position(x: guideRect.midX, y: guideRect.minY + guideRect.height * 0.42)
+
+                VStack(spacing: 6) {
+                    Text("DTL")
+                        .font(.system(size: 13, weight: .black, design: .rounded))
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(styleColor))
+
+                    Text("Frame body here")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.88))
+                        .shadow(radius: 2)
+                }
+                .position(x: size.width * 0.5, y: size.height * 0.09)
+            }
+        }
+    }
+
+    private var styleColor: Color {
+        switch snapshot.readiness {
+        case .ready:
+            return .green
+        case .warning:
+            return .yellow
+        case .unknown:
+            return .white
+        }
+    }
+}
+
+struct SwingClearanceShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + rect.width * 0.12, y: rect.minY + rect.height * 0.88))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX - rect.width * 0.08, y: rect.minY + rect.height * 0.16),
+            control: CGPoint(x: rect.minX + rect.width * 0.52, y: rect.minY - rect.height * 0.18)
+        )
+        return path
     }
 }
 

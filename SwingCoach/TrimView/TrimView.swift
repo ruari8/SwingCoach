@@ -116,24 +116,15 @@ struct TrimView: View {
 
             Spacer()
 
-            // Vantage picker
-            Menu {
-                ForEach(Vantage.allCases, id: \.self) { vantage in
-                    Button(vantage.displayName) {
-                        selectedVantage = vantage
-                    }
-                }
-            } label: {
-                Text(selectedVantage.shortName)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.yellow)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.white.opacity(0.15))
-                    )
-            }
+            Text("DTL")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.yellow)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.white.opacity(0.15))
+                )
         }
         .padding()
         .background(Color.black.opacity(0.5))

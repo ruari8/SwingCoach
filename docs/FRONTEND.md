@@ -64,7 +64,10 @@ Implemented feature set:
   - `60fps 4K` (ball-tracer future mode scaffold)
 - Runtime mode switching without full session teardown.
 - Tap-to-focus and exposure targeting.
+- Live DTL-focused on-device capture guard using Vision body pose sampling to warn when the golfer is not framed for analysis. The first pass checks head, hands, feet, body size, and edge margins without blocking recording.
+- Capture setup includes an on-preview DTL framing guide and optional spoken guidance for solo setup when the phone screen is not visible from the hitting position.
 - Recording state handling with immediate post-stop playback of the captured high-fps asset.
+- Active recording disables the iOS idle timer so solo range sessions do not Auto-Lock while the golfer walks into frame, then restores the prior idle-timer state after stop, error, or leaving capture.
 - Post-stop review now uses the app's own playback chrome instead of the default `VideoPlayer` controls, with the scrubber integrated into the video frame, tap-to-play/pause, hold-left/hold-right stepping, and capture trim exposed as a floating scissors action.
 - Slow-motion rendering is deferred until explicit clip export instead of blocking the stop-record action.
 - Integration path into library and optional analyze handoff.
@@ -84,7 +87,7 @@ Implemented feature set:
 - Start/end range selection for clip creation.
 - When no clip ranges are marked, the footer offers an explicit full-video path so already-trimmed imports can be added as-is; Photos-backed imports reuse the existing asset instead of creating a duplicate.
 - Multi-clip extraction from a long source video.
-- Per-clip vantage assignment and clip list management.
+- MVP clip export defaults to down-the-line capture; face-on remains in the data model but is not exposed as an equal capture path in the trim header.
 - Press-and-hold frame stepping with acceleration for faster long scrubs.
 - Overview-only timeline for long-session trimming, with no separate precision toggle UI.
 - A single primary export action in the footer.
