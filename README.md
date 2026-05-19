@@ -53,6 +53,6 @@ cd backend
 
 ## Current State
 
-- Frontend capture/library/trim flows are implemented, including live on-device preselection of likely full-swing clips during capture and editable preselected clips in the trim editor.
+- Frontend capture/library/trim flows are implemented, including live on-device preselection of likely full-swing clips during capture and editable preselected clips in the trim editor. DEBUG builds include a replay harness that runs saved videos through the live detector for development.
 - Backend unified pipeline (`/analyze` + artifacts + `/chat`) is implemented.
 - Frontend analysis decoding uses the lightweight MVP `/analyze` response: summary, display metrics, annotated video URL, and drills.

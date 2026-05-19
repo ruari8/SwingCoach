@@ -2,10 +2,12 @@
 
 ## Scope
 
-The frontend is a SwiftUI app in [SwingCoach/](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach) with three tabs:
+The frontend is a SwiftUI app in [SwingCoach/](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach) with three production tabs:
 - Library
 - Capture
 - Coach (analysis)
+
+DEBUG builds also include a Replay Debug tab for detector development.
 
 Primary app root: [AppRootView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AppRootView.swift)
 
@@ -23,6 +25,7 @@ Primary app root: [AppRootView.swift](/Users/ruari/Documents/Startups/SwingCoach
 - Library and playback/import: [LibraryView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/LibraryView.swift)
 - Trim workflow: [TrimView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/TrimView/TrimView.swift)
 - Analysis UX: [AnalyseView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AnalyseView.swift)
+- DEBUG replay harness: [DebugReplayView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/DebugReplayView.swift)
 - Swing detail workspace: [SwingDetailView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/SwingDetailView.swift)
 - Shared analysis result rendering: [AnalysisResultView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AnalysisResultView.swift)
 - API client: [SwingCoachAPI.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingCoachAPI.swift)
@@ -126,6 +129,17 @@ Implemented feature set:
 - Run the current R2-backed analysis flow for a single swing, with retry controls reserved for failed analysis attempts.
 - Attach completed analysis to the swing through `AnalysisLibrary`.
 - Render annotated video, metrics, coach notes, and recommendations with the shared [AnalysisResultView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AnalysisResultView.swift).
+
+## 6. Replay Debug Tab
+
+File: [DebugReplayView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/DebugReplayView.swift)
+
+Implemented feature set:
+- DEBUG-only tab for home/range development of live swing detection.
+- Selects a video from Photos, copies it into temporary app storage, and replays decoded frames through `LiveSwingDetector` as if they were arriving from the camera preview output.
+- Shows replay progress, detector state, ball-lock/movement state, and detected swing windows while the replay runs.
+- Opens trim with replay-detected timestamps preselected and disables the trim view's post-open detector scan, matching the intended capture path where detections are already known when recording stops.
+- This tool is not a production import path. It exists to tune and validate live detector behavior with saved long-session videos without repeatedly recording fresh device-camera sessions.
 
 ## Data and Models
 

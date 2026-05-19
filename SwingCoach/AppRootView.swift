@@ -42,6 +42,12 @@ struct AppRootView: View {
             )
             .tabItem { Label("Coach", systemImage: "wand.and.stars") }
             .tag(Tab.analyse)
+
+            #if DEBUG
+            DebugReplayView()
+                .tabItem { Label("Debug", systemImage: "ladybug") }
+                .tag(Tab.debug)
+            #endif
         }
     }
 }
@@ -50,6 +56,9 @@ enum Tab: Hashable {
     case library
     case capture
     case analyse
+    #if DEBUG
+    case debug
+    #endif
 }
 
 #Preview {
