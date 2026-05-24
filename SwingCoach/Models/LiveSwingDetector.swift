@@ -11,6 +11,7 @@ import Vision
 
 enum LiveSwingDetectionStatus: Equatable {
     case idle
+    case disabled
     case searchingBall
     case ballLocked
     case swingInProgress
@@ -26,6 +27,14 @@ struct LiveSwingDetectionSnapshot: Equatable {
     var detectedSwingCount: Int = 0
     var hasBallLock = false
     var hasBallMovement = false
+    var poseObservationCount = 0
+    var handSpeed = 0.0
+    var peakHandSpeed = 0.0
+    var handTravel = 0.0
+    var setupDuration = 0.0
+    var ballCandidateScore: Double?
+    var ballLumaDelta: Double?
+    var lastRejectionReason: String?
 
     static let idle = LiveSwingDetectionSnapshot()
 }
@@ -71,6 +80,11 @@ final class LiveSwingDetector {
         }
     }
 
+    private struct BallState {
+        let isPresent: Bool
+        let meanLuma: Double
+    }
+
     private struct ActiveSwing {
         let startTime: Double
         let motionStartTime: Double
@@ -81,25 +95,45 @@ final class LiveSwingDetector {
         var ballMoved = false
         var ballMissingFrames = 0
         var checkedImpactWindow = false
+        var minHandX: Double
+        var maxHandX: Double
+        var minHandY: Double
+        var maxHandY: Double
+        var observedFrameCount: Int
+        var highMotionFrameCount: Int
     }
 
-    private let setupSpeedThreshold = 0.34
-    private let swingStartSpeedThreshold = 0.92
-    private let swingMotionThreshold = 0.55
-    private let minimumPeakSpeed = 1.25
-    private let minimumSwingDuration = 0.9
-    private let maximumSwingDuration = 3.3
-    private let impactWindowStartOffset = 0.55
-    private let impactWindowEndOffset = 1.45
+    private let setupSpeedThreshold = 0.42
+    private let swingStartSpeedThreshold = 0.72
+    private let swingMotionThreshold = 0.46
+    private let minimumPeakSpeed = 1.05
+    private let poseOnlyPeakSpeedThreshold = 1.85
+    private let minimumSwingDuration = 0.65
+    private let maximumSwingDuration = 4.4
+    private let impactWindowStartOffset = 0.25
+    private let impactWindowEndOffset = 2.2
 
     private var state: SwingState = .waitingForSetup
     private var previousPose: PoseFrame?
     private var lockedBall: BallLock?
     private var stableBallCandidate: BrightBlob?
     private var stableBallFrameCount = 0
+    private var ballLockMissingFrames = 0
+    private var setupStableStartedAt: Double?
+    private var addressPose: PoseFrame?
+    private var swingStartCandidateAt: Double?
+    private var nextAllowedSwingStartTime = 0.0
     private var activeSwing: ActiveSwing?
     private var detections: [DetectedSwing] = []
     private var lastSnapshot = LiveSwingDetectionSnapshot.idle
+    private var recentHandSpeeds: [Double] = []
+    private var lastPoseObservationCount = 0
+    private var lastHandSpeed = 0.0
+    private var lastPeakHandSpeed = 0.0
+    private var lastHandTravel = 0.0
+    private var lastBallCandidateScore: Double?
+    private var lastBallLumaDelta: Double?
+    private var lastRejectionReason: String?
 
     func reset() {
         state = .waitingForSetup
@@ -107,9 +141,22 @@ final class LiveSwingDetector {
         lockedBall = nil
         stableBallCandidate = nil
         stableBallFrameCount = 0
+        ballLockMissingFrames = 0
+        setupStableStartedAt = nil
+        addressPose = nil
+        swingStartCandidateAt = nil
+        nextAllowedSwingStartTime = 0
         activeSwing = nil
         detections = []
         lastSnapshot = .idle
+        recentHandSpeeds = []
+        lastPoseObservationCount = 0
+        lastHandSpeed = 0
+        lastPeakHandSpeed = 0
+        lastHandTravel = 0
+        lastBallCandidateScore = nil
+        lastBallLumaDelta = nil
+        lastRejectionReason = nil
     }
 
     func process(
@@ -117,9 +164,22 @@ final class LiveSwingDetector {
         observation: VNHumanBodyPoseObservation?,
         recordingTime: Double
     ) -> LiveSwingDetectionSnapshot {
-        guard let observation,
-              let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
-              let pose = Self.poseFrame(from: observation, at: recordingTime)
+        process(
+            sampleBuffer: sampleBuffer,
+            observations: observation.map { [$0] } ?? [],
+            recordingTime: recordingTime
+        )
+    }
+
+    func process(
+        sampleBuffer: CMSampleBuffer,
+        observations: [VNHumanBodyPoseObservation],
+        recordingTime: Double
+    ) -> LiveSwingDetectionSnapshot {
+        lastPoseObservationCount = observations.count
+
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
+              let pose = primaryPoseFrame(from: observations, at: recordingTime)
         else {
             lastSnapshot = snapshot(
                 status: .unavailable,
@@ -129,7 +189,8 @@ final class LiveSwingDetector {
             return lastSnapshot
         }
 
-        let speed = handSpeed(current: pose, previous: previousPose)
+        let speed = smoothedHandSpeed(rawSpeed: handSpeed(current: pose, previous: previousPose))
+        lastHandSpeed = speed
         updateBallLockIfNeeded(pixelBuffer: pixelBuffer, pose: pose, speed: speed)
         updateSwingState(pixelBuffer: pixelBuffer, pose: pose, speed: speed)
         previousPose = pose
@@ -147,13 +208,66 @@ final class LiveSwingDetector {
         return detections
     }
 
+    func currentDetections() -> [DetectedSwing] {
+        detections
+    }
+
+    private func primaryPoseFrame(from observations: [VNHumanBodyPoseObservation], at time: Double) -> PoseFrame? {
+        let poseFrames = observations.compactMap { Self.poseFrame(from: $0, at: time) }
+        guard !poseFrames.isEmpty else { return nil }
+
+        return poseFrames.max { lhs, rhs in
+            primaryGolferScore(lhs) < primaryGolferScore(rhs)
+        }
+    }
+
+    private func primaryGolferScore(_ pose: PoseFrame) -> Double {
+        var score = Double(pose.validJointCount) * 0.08 + pose.bodyHeight * 2.6
+
+        if let previousPose {
+            let continuity = max(0, 1 - pose.bodyCenter.distance(to: previousPose.bodyCenter) / 0.55)
+            score += continuity * 3.0
+        }
+
+        if let lockedBall {
+            let horizontalProximity = max(0, 1 - abs(pose.bodyCenter.x - lockedBall.center.x) / 0.48)
+            score += horizontalProximity * 0.9
+        }
+
+        return score
+    }
+
     private func updateBallLockIfNeeded(pixelBuffer: CVPixelBuffer, pose: PoseFrame, speed: Double) {
-        guard lockedBall == nil, speed <= setupSpeedThreshold else { return }
-        guard let roi = ballSearchROI(for: pose),
-              let candidate = Self.bestBallBlob(in: roi, pixelBuffer: pixelBuffer, expectedCenter: pose.hands)
+        guard speed <= setupSpeedThreshold else { return }
+
+        if let lockedBall {
+            if Self.ballStillPresent(lockedBall, pixelBuffer: pixelBuffer) {
+                ballLockMissingFrames = 0
+                lastSnapshot = snapshot(
+                    status: .ballLocked,
+                    primary: "Ball locked",
+                    detail: "Watching for takeaway and impact."
+                )
+                return
+            }
+
+            ballLockMissingFrames += 1
+            if ballLockMissingFrames < 8 {
+                return
+            }
+
+            self.lockedBall = nil
+            stableBallCandidate = nil
+            stableBallFrameCount = 0
+            ballLockMissingFrames = 0
+        }
+
+        guard let search = ballSearchArea(for: pose),
+              let candidate = Self.bestBallBlob(in: search.roi, pixelBuffer: pixelBuffer, expectedCenter: search.expectedCenter)
         else {
             stableBallCandidate = nil
             stableBallFrameCount = 0
+            lastBallCandidateScore = nil
             lastSnapshot = snapshot(
                 status: .searchingBall,
                 primary: "Finding ball",
@@ -169,6 +283,7 @@ final class LiveSwingDetector {
             stableBallCandidate = candidate
             stableBallFrameCount = 1
         }
+        lastBallCandidateScore = candidate.score
 
         guard stableBallFrameCount >= 3 else {
             lastSnapshot = snapshot(
@@ -200,7 +315,32 @@ final class LiveSwingDetector {
     private func updateSwingState(pixelBuffer: CVPixelBuffer, pose: PoseFrame, speed: Double) {
         switch state {
         case .waitingForSetup:
-            guard speed >= swingStartSpeedThreshold, pose.validJointCount >= 8 else {
+            guard pose.time >= nextAllowedSwingStartTime else {
+                if lockedBall != nil {
+                    lastSnapshot = snapshot(
+                        status: .ballLocked,
+                        primary: "Ball locked",
+                        detail: "Waiting for the next setup."
+                    )
+                }
+                return
+            }
+
+            if speed <= setupSpeedThreshold, pose.validJointCount >= 8 {
+                if setupStableStartedAt == nil {
+                    setupStableStartedAt = pose.time
+                }
+                addressPose = pose
+                swingStartCandidateAt = nil
+            }
+
+            let takeawayDistance = addressPose.map { pose.relativeHands.distance(to: $0.relativeHands) } ?? 0
+            let hasTakeaway = speed >= swingStartSpeedThreshold && (takeawayDistance >= 0.10 || speed >= swingStartSpeedThreshold * 1.35)
+
+            guard hasTakeaway, pose.validJointCount >= 8 else {
+                if speed < swingMotionThreshold {
+                    swingStartCandidateAt = nil
+                }
                 if lockedBall != nil {
                     lastSnapshot = snapshot(
                         status: .ballLocked,
@@ -211,14 +351,42 @@ final class LiveSwingDetector {
                 return
             }
 
+            if swingStartCandidateAt == nil {
+                swingStartCandidateAt = pose.time
+            }
+
+            let candidateAge = pose.time - (swingStartCandidateAt ?? pose.time)
+            guard candidateAge >= 0.12 || speed >= swingStartSpeedThreshold * 1.65 else {
+                lastSnapshot = snapshot(
+                    status: .swingInProgress,
+                    primary: "Takeaway candidate",
+                    detail: "Checking that motion continues into a swing."
+                )
+                return
+            }
+
+            let startTime = setupStableStartedAt.map { stableStart in
+                pose.time - stableStart <= 2.5 ? stableStart : max(0, pose.time - 0.55)
+            } ?? max(0, pose.time - 0.55)
+
             activeSwing = ActiveSwing(
-                startTime: max(0, pose.time - 0.35),
+                startTime: max(0, startTime),
                 motionStartTime: pose.time,
                 endTime: min(pose.time + 2.2, pose.time + maximumSwingDuration),
                 peakSpeed: speed,
-                lastMotionTime: pose.time
+                lastMotionTime: pose.time,
+                minHandX: pose.relativeHands.x,
+                maxHandX: pose.relativeHands.x,
+                minHandY: pose.relativeHands.y,
+                maxHandY: pose.relativeHands.y,
+                observedFrameCount: 1,
+                highMotionFrameCount: speed >= swingMotionThreshold ? 1 : 0
             )
+            lastPeakHandSpeed = speed
+            lastHandTravel = 0
+            lastRejectionReason = nil
             state = .swinging
+            swingStartCandidateAt = nil
             lastSnapshot = snapshot(
                 status: .swingInProgress,
                 primary: "Swing started",
@@ -232,6 +400,18 @@ final class LiveSwingDetector {
             }
 
             swing.peakSpeed = max(swing.peakSpeed, speed)
+            swing.minHandX = min(swing.minHandX, pose.relativeHands.x)
+            swing.maxHandX = max(swing.maxHandX, pose.relativeHands.x)
+            swing.minHandY = min(swing.minHandY, pose.relativeHands.y)
+            swing.maxHandY = max(swing.maxHandY, pose.relativeHands.y)
+            let handTravelX = swing.maxHandX - swing.minHandX
+            let handTravelY = swing.maxHandY - swing.minHandY
+            lastPeakHandSpeed = swing.peakSpeed
+            lastHandTravel = sqrt(handTravelX * handTravelX + handTravelY * handTravelY)
+            swing.observedFrameCount += 1
+            if speed >= swingMotionThreshold {
+                swing.highMotionFrameCount += 1
+            }
 
             if speed >= swingMotionThreshold {
                 swing.lastMotionTime = pose.time
@@ -243,7 +423,7 @@ final class LiveSwingDetector {
             let elapsed = pose.time - swing.motionStartTime
             if elapsed >= impactWindowStartOffset, elapsed <= impactWindowEndOffset {
                 swing.checkedImpactWindow = true
-                if ballMoved(pixelBuffer: pixelBuffer, swing: &swing) {
+                if ballMoved(pixelBuffer: pixelBuffer, swing: &swing, speed: speed) {
                     swing.ballMoved = true
                     lastSnapshot = snapshot(
                         status: .hitDetected,
@@ -274,24 +454,57 @@ final class LiveSwingDetector {
         let duration = endTime - swing.startTime
         let hasBallEvidence = lockedBall != nil
         let isConfirmedHit = swing.ballMoved
-        let strongPoseOnlySwing = !hasBallEvidence && swing.peakSpeed >= 1.85
+        let handTravelX = swing.maxHandX - swing.minHandX
+        let handTravelY = swing.maxHandY - swing.minHandY
+        let handTravel = sqrt(handTravelX * handTravelX + handTravelY * handTravelY)
+        let sustainedMotionRatio = Double(swing.highMotionFrameCount) / Double(max(1, swing.observedFrameCount))
+        let hasFullSwingShape = handTravel >= 0.44 && swing.highMotionFrameCount >= 3 && sustainedMotionRatio >= 0.28
+        let strongPoseSwing = hasFullSwingShape && swing.peakSpeed >= poseOnlyPeakSpeedThreshold
+        let plausibleShotWithoutImpact = hasFullSwingShape && swing.peakSpeed >= 1.45
+        let acceptedAsShot = isConfirmedHit || strongPoseSwing || (!hasBallEvidence && plausibleShotWithoutImpact)
+        let rejectionReason: String
+        if duration < minimumSwingDuration {
+            rejectionReason = "too short"
+        } else if duration > maximumSwingDuration + 0.6 {
+            rejectionReason = "too long"
+        } else if swing.peakSpeed < minimumPeakSpeed {
+            rejectionReason = "low peak speed"
+        } else if !hasFullSwingShape {
+            rejectionReason = "not enough hand travel"
+        } else if hasBallEvidence && !isConfirmedHit {
+            rejectionReason = "ball did not move"
+        } else {
+            rejectionReason = "weak shot evidence"
+        }
 
         guard duration >= minimumSwingDuration,
               duration <= maximumSwingDuration + 0.6,
               swing.peakSpeed >= minimumPeakSpeed,
-              isConfirmedHit || strongPoseOnlySwing
+              acceptedAsShot
         else {
+            lastRejectionReason = rejectionReason
             activeSwing = nil
             state = .waitingForSetup
+            setupStableStartedAt = nil
+            addressPose = nil
+            swingStartCandidateAt = nil
+            nextAllowedSwingStartTime = endTime + 0.35
             lastSnapshot = snapshot(
                 status: lockedBall == nil ? .searchingBall : .ballLocked,
                 primary: lockedBall == nil ? "Finding ball" : "Ball locked",
-                detail: "Rejected motion without enough hit evidence."
+                detail: "Rejected motion: \(rejectionReason)."
             )
             return
         }
 
-        let confidence = isConfirmedHit ? min(0.95, 0.72 + (swing.peakSpeed - minimumPeakSpeed) * 0.08) : 0.6
+        let speedScore = min(1, max(0, (swing.peakSpeed - minimumPeakSpeed) / 1.8))
+        let travelScore = min(1, max(0, (handTravel - 0.36) / 0.44))
+        let sustainedScore = min(1, max(0, sustainedMotionRatio / 0.55))
+        let hitBonus = isConfirmedHit ? 0.28 : 0
+        let confidence = min(
+            isConfirmedHit ? 0.96 : 0.78,
+            0.42 + hitBonus + 0.14 * speedScore + 0.14 * travelScore + 0.08 * sustainedScore
+        )
         let detection = DetectedSwing(
             startTime: CMTime(seconds: swing.startTime, preferredTimescale: 600),
             endTime: CMTime(seconds: max(endTime, swing.startTime + minimumSwingDuration), preferredTimescale: 600),
@@ -304,23 +517,33 @@ final class LiveSwingDetector {
 
         activeSwing = nil
         state = .waitingForSetup
+        setupStableStartedAt = nil
+        addressPose = nil
+        swingStartCandidateAt = nil
+        nextAllowedSwingStartTime = endTime + 0.45
+        lastRejectionReason = nil
         lastSnapshot = snapshot(
             status: .swingDetected,
             primary: isConfirmedHit ? "Swing detected" : "Likely swing detected",
-            detail: isConfirmedHit ? "Ball movement confirmed this hit." : "No ball lock; saved high-motion swing only."
+            detail: isConfirmedHit ? "Ball movement confirmed this hit." : "Saved from strong swing motion; review before export."
         )
     }
 
-    private func ballMoved(pixelBuffer: CVPixelBuffer, swing: inout ActiveSwing) -> Bool {
+    private func ballMoved(pixelBuffer: CVPixelBuffer, swing: inout ActiveSwing, speed: Double) -> Bool {
         guard let lockedBall else { return false }
 
-        if Self.ballStillPresent(lockedBall, pixelBuffer: pixelBuffer) {
+        let ballState = Self.ballState(lockedBall, pixelBuffer: pixelBuffer)
+        let lumaShift = abs(ballState.meanLuma - lockedBall.baselineLuma)
+        lastBallLumaDelta = lumaShift
+        let hasMovementEvidence = !ballState.isPresent || (speed >= swingMotionThreshold && lumaShift >= 34)
+
+        if !hasMovementEvidence {
             swing.ballMissingFrames = 0
             return false
         }
 
         swing.ballMissingFrames += 1
-        return swing.ballMissingFrames >= 2
+        return swing.ballMissingFrames >= (ballState.isPresent ? 2 : 1)
     }
 
     private func handSpeed(current: PoseFrame, previous: PoseFrame?) -> Double {
@@ -330,26 +553,46 @@ final class LiveSwingDetector {
         return current.relativeHands.distance(to: previous.relativeHands) / dt
     }
 
-    private func ballSearchROI(for pose: PoseFrame) -> NormalizedRect? {
+    private func smoothedHandSpeed(rawSpeed: Double) -> Double {
+        recentHandSpeeds.append(rawSpeed)
+        if recentHandSpeeds.count > 5 {
+            recentHandSpeeds.removeFirst(recentHandSpeeds.count - 5)
+        }
+
+        let sorted = recentHandSpeeds.sorted()
+        guard !sorted.isEmpty else { return rawSpeed }
+
+        let median = sorted[sorted.count / 2]
+        let mean = recentHandSpeeds.reduce(0, +) / Double(recentHandSpeeds.count)
+        return (median * 0.62) + (mean * 0.38)
+    }
+
+    private func ballSearchArea(for pose: PoseFrame) -> (roi: NormalizedRect, expectedCenter: NormalizedPoint)? {
         let anklePoints = [pose.leftAnkle, pose.rightAnkle].compactMap { $0 }
         guard !anklePoints.isEmpty else { return nil }
 
         let ankleMinX = anklePoints.map(\.x).min() ?? pose.hands.x
         let ankleMaxX = anklePoints.map(\.x).max() ?? pose.hands.x
         let ankleMinY = anklePoints.map(\.y).min() ?? pose.hands.y
-        let ankleMaxY = anklePoints.map(\.y).max() ?? pose.hands.y
 
-        let minX = min(pose.hands.x, ankleMinX) - 0.12
-        let maxX = max(pose.hands.x, ankleMaxX) + 0.34
+        let expectedCenter = NormalizedPoint(
+            x: min(1, max(0, (pose.hands.x * 0.62) + (((ankleMinX + ankleMaxX) / 2) * 0.38))),
+            y: min(1, max(0, ankleMinY + pose.bodyHeight * 0.10))
+        )
+
+        let minX = min(expectedCenter.x, ankleMinX, pose.hands.x) - 0.10
+        let maxX = max(expectedCenter.x, ankleMaxX, pose.hands.x) + 0.16
         let minY = min(ankleMinY, pose.hands.y) - 0.08
-        let maxY = max(ankleMaxY, pose.hands.y) + 0.12
+        let maxY = min(max(ankleMinY + pose.bodyHeight * 0.28, pose.hands.y + 0.04), ankleMinY + 0.26)
 
-        return NormalizedRect(
+        let roi = NormalizedRect(
             minX: max(0, minX),
             maxX: min(1, maxX),
             minY: max(0, minY),
             maxY: min(1, maxY)
         )
+
+        return (roi, expectedCenter)
     }
 
     private func snapshot(
@@ -363,8 +606,20 @@ final class LiveSwingDetector {
             detailMessage: detail,
             detectedSwingCount: detections.count,
             hasBallLock: lockedBall != nil,
-            hasBallMovement: activeSwing?.ballMoved ?? false
+            hasBallMovement: activeSwing?.ballMoved ?? false,
+            poseObservationCount: lastPoseObservationCount,
+            handSpeed: lastHandSpeed,
+            peakHandSpeed: activeSwing?.peakSpeed ?? lastPeakHandSpeed,
+            handTravel: lastHandTravel,
+            setupDuration: setupStableStartedAt.map { max(0, lastSnapshotTimeFallback() - $0) } ?? 0,
+            ballCandidateScore: lastBallCandidateScore,
+            ballLumaDelta: lastBallLumaDelta,
+            lastRejectionReason: lastRejectionReason
         )
+    }
+
+    private func lastSnapshotTimeFallback() -> Double {
+        activeSwing?.lastMotionTime ?? previousPose?.time ?? 0
     }
 
     private static func poseFrame(from observation: VNHumanBodyPoseObservation, at time: Double) -> PoseFrame? {
@@ -440,11 +695,15 @@ final class LiveSwingDetector {
     }
 
     private static func ballStillPresent(_ ball: BallLock, pixelBuffer: CVPixelBuffer) -> Bool {
+        ballState(ball, pixelBuffer: pixelBuffer).isPresent
+    }
+
+    private static func ballState(_ ball: BallLock, pixelBuffer: CVPixelBuffer) -> BallState {
         let width = CVPixelBufferGetWidthOfPlane(pixelBuffer, 0)
         let height = CVPixelBufferGetHeightOfPlane(pixelBuffer, 0)
         let centerX = ball.center.x * Double(width)
         let centerY = (1 - ball.center.y) * Double(height)
-        let searchRadius = max(18, ball.radiusPixels * 3.2)
+        let searchRadius = max(9, ball.radiusPixels * 1.9)
         let roi = PixelRect(
             minX: max(0, Int((centerX - searchRadius).rounded(.down))),
             maxX: min(width - 1, Int((centerX + searchRadius).rounded(.up))),
@@ -453,11 +712,39 @@ final class LiveSwingDetector {
         )
         let normalizedROI = NormalizedRect(pixelRect: roi, width: width, height: height)
         let blobs = brightBlobs(in: normalizedROI, pixelBuffer: pixelBuffer, expectedCenter: ball.center)
+        let meanLuma = meanLuma(in: roi, pixelBuffer: pixelBuffer)
 
-        return blobs.contains { blob in
+        let isPresent = blobs.contains { blob in
             blob.center.distance(to: CGPoint(x: centerX, y: centerY)) <= searchRadius &&
+            abs(blob.radiusPixels - ball.radiusPixels) <= max(7, ball.radiusPixels * 0.9) &&
             abs(blob.meanLuma - ball.baselineLuma) <= 52
         }
+
+        return BallState(isPresent: isPresent, meanLuma: meanLuma)
+    }
+
+    private static func meanLuma(in rect: PixelRect, pixelBuffer: CVPixelBuffer) -> Double {
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+
+        guard let baseAddress = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0) else {
+            return 0
+        }
+
+        let bytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0)
+        let pixels = baseAddress.assumingMemoryBound(to: UInt8.self)
+        var sum = 0
+        var count = 0
+
+        for y in rect.minY...rect.maxY {
+            for x in rect.minX...rect.maxX {
+                sum += Int(pixels[y * bytesPerRow + x])
+                count += 1
+            }
+        }
+
+        guard count > 0 else { return 0 }
+        return Double(sum) / Double(count)
     }
 
     private static func brightBlobs(

@@ -25,6 +25,7 @@ from models import (
     ArtifactBundleResponse,
     HealthResponse,
     UploadURLResponse,
+    VisualizationLayerInfo,
 )
 from r2_client import get_r2_client
 
@@ -106,21 +107,39 @@ def _upload_run_artifacts(run_id: str, run_dir: Path) -> ArtifactBundleResponse:
     """Upload generated artifacts from local run dir to R2 and return URLs."""
     r2 = get_r2_client()
 
+    base_name = "base.mp4"
     annotated_name = "annotated.mp4"
+    tracks_name = "annotation_tracks.json"
     swing_name = "swing_3d.gltf"
 
+    base_path = run_dir / base_name
     annotated_path = run_dir / annotated_name
+    tracks_path = run_dir / tracks_name
     swing_path = run_dir / swing_name
 
+    base_key: Optional[str] = None
     annotated_key: Optional[str] = None
+    tracks_key: Optional[str] = None
     swing_key: Optional[str] = None
+    base_url: Optional[str] = None
     annotated_url: Optional[str] = None
+    tracks_url: Optional[str] = None
     swing_url: Optional[str] = None
+
+    if base_path.exists():
+        base_key = f"analysis_runs/{run_id}/{base_name}"
+        r2.upload_video(base_key, base_path.read_bytes(), content_type="video/mp4")
+        base_url = r2.generate_download_url(base_key)
 
     if annotated_path.exists():
         annotated_key = f"analysis_runs/{run_id}/{annotated_name}"
         r2.upload_video(annotated_key, annotated_path.read_bytes(), content_type="video/mp4")
         annotated_url = r2.generate_download_url(annotated_key)
+
+    if tracks_path.exists():
+        tracks_key = f"analysis_runs/{run_id}/{tracks_name}"
+        r2.upload_bytes(tracks_key, tracks_path.read_bytes(), content_type="application/json")
+        tracks_url = r2.generate_download_url(tracks_key)
 
     if swing_path.exists():
         swing_key = f"analysis_runs/{run_id}/{swing_name}"
@@ -128,8 +147,12 @@ def _upload_run_artifacts(run_id: str, run_dir: Path) -> ArtifactBundleResponse:
         swing_url = r2.generate_download_url(swing_key)
 
     return ArtifactBundleResponse(
+        base_video_url=base_url,
+        base_video_key=base_key,
         annotated_video_url=annotated_url,
         annotated_video_key=annotated_key,
+        annotation_tracks_url=tracks_url,
+        annotation_tracks_key=tracks_key,
         swing_3d_url=swing_url,
         swing_3d_key=swing_key,
         debug_urls=[],
@@ -151,6 +174,45 @@ def _format_metric_value(value: Optional[float], unit: str) -> str:
     return formatted.replace(".0 ", " ").replace(".0:", ":")
 
 
+def _layer_info_from_metadata(metadata: Optional[dict]) -> list[VisualizationLayerInfo]:
+    """Convert pipeline annotation metadata into app-facing layer info."""
+    if not metadata:
+        return []
+
+    layers = metadata.get("layers") or []
+    result: list[VisualizationLayerInfo] = []
+    for layer in layers:
+        try:
+            result.append(VisualizationLayerInfo(**layer))
+        except Exception:
+            logger.warning("Skipping malformed annotation layer metadata: %s", layer)
+    return result
+
+
+def _dummy_annotation_layers() -> list[VisualizationLayerInfo]:
+    """Layer metadata for the mock annotated video."""
+    return [
+        VisualizationLayerInfo(
+            name="skeleton",
+            color="#00FFFF",
+            description="Body pose skeleton showing joint positions",
+            enabled=True,
+        ),
+        VisualizationLayerInfo(
+            name="reference_lines",
+            color="#FFFF00",
+            description="Shoulder plane and spine angle reference lines",
+            enabled=True,
+        ),
+        VisualizationLayerInfo(
+            name="swing_path",
+            color="#FF0000",
+            description="Trajectory of club head through the swing",
+            enabled=True,
+        ),
+    ]
+
+
 def _dummy_annotated_video() -> AnalysisVideo:
     """Ensure the dummy annotated video is in R2 and return a signed URL with its key."""
     if not MOCK_ANNOTATED_VIDEO_PATH.exists():
@@ -170,13 +232,30 @@ def _dummy_annotated_video() -> AnalysisVideo:
     return AnalysisVideo(
         key=MOCK_ANNOTATED_VIDEO_KEY,
         url=r2.generate_download_url(MOCK_ANNOTATED_VIDEO_KEY),
+        layers=_dummy_annotation_layers(),
     )
 
 
-def _artifact_video(key: Optional[str], url: Optional[str]) -> Optional[AnalysisVideo]:
+def _artifact_video(
+    key: Optional[str],
+    url: Optional[str],
+    base_key: Optional[str] = None,
+    base_url: Optional[str] = None,
+    tracks_key: Optional[str] = None,
+    tracks_url: Optional[str] = None,
+    layers: Optional[list[VisualizationLayerInfo]] = None,
+) -> Optional[AnalysisVideo]:
     if not key or not url:
         return None
-    return AnalysisVideo(key=key, url=url)
+    return AnalysisVideo(
+        key=key,
+        url=url,
+        base_key=base_key,
+        base_url=base_url,
+        tracks_key=tracks_key,
+        tracks_url=tracks_url,
+        layers=layers or [],
+    )
 
 
 @app.post("/artifact-url", response_model=ArtifactURLResponse)
@@ -254,6 +333,7 @@ async def analyze_swing(request: AnalyzeRequest):
         )
 
         artifacts = _upload_run_artifacts(result.run_id, Path(result.run_dir))
+        annotation_layers = _layer_info_from_metadata(result.artifacts.get("annotation_metadata"))
 
         metrics = [
             AnalysisMetric(
@@ -269,7 +349,15 @@ async def analyze_swing(request: AnalyzeRequest):
             analysis_id=result.run_id,
             summary=result.coaching.summary,
             metrics=metrics,
-            annotated_video=_artifact_video(artifacts.annotated_video_key, artifacts.annotated_video_url),
+            annotated_video=_artifact_video(
+                artifacts.annotated_video_key,
+                artifacts.annotated_video_url,
+                base_key=artifacts.base_video_key,
+                base_url=artifacts.base_video_url,
+                tracks_key=artifacts.annotation_tracks_key,
+                tracks_url=artifacts.annotation_tracks_url,
+                layers=annotation_layers,
+            ),
             drills=[
                 AnalysisDrill(
                     title=drill.title,

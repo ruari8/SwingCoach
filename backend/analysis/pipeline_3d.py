@@ -273,6 +273,7 @@ class SwingCoachPipeline3D:
                 club2d_frames=club2d_frames,
                 poses3d=poses3d,
                 club3d_frames=club3d_frames,
+                swing_phases=dense_phases,
             )
 
         with run_store.stage("coaching"):
@@ -303,9 +304,12 @@ class SwingCoachPipeline3D:
             metrics=metrics_result.metrics,
             coaching=coaching,
             artifacts={
+                "base_video_path": rendered.base_video_filename,
                 "annotated_video_path": rendered.annotated_video_filename,
                 "swing_3d_path": rendered.swing_3d_filename,
+                "annotation_tracks_path": rendered.annotation_tracks_filename,
                 "debug_paths": rendered.debug_files,
+                "annotation_metadata": rendered.annotation_metadata,
             },
             quality=quality,
             run_dir=str(run_store.run_dir),

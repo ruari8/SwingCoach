@@ -16,102 +16,106 @@ import Vision
 
 struct DebugReplayView: View {
     @StateObject private var model = DebugReplayViewModel()
+    @AppStorage(ExperimentalSettingKey.debugReplaySpeedMultiplier) private var debugReplaySpeedMultiplier = 8.0
     @State private var showsVideoPicker = false
     @State private var trimSource: TrimVideoSource?
     @State private var trimDetections: [DetectedSwing] = []
+    @State private var previewDetection: DetectionPreview?
+
+    private let replaySpeedOptions = [1.0, 2.0, 4.0, 8.0]
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    Button {
-                        showsVideoPicker = true
-                    } label: {
-                        Label("Choose Replay Video", systemImage: "video.badge.plus")
-                    }
+            ZStack {
+                Color.black
+                    .ignoresSafeArea()
 
-                    if let selectedVideoURL = model.selectedVideoURL {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(selectedVideoURL.lastPathComponent)
-                                .font(.subheadline.weight(.semibold))
-                            Text(selectedVideoURL.path)
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                                .lineLimit(2)
-                        }
-
-                        Button {
-                            model.startReplay()
-                        } label: {
-                            Label("Replay Through Live Detector", systemImage: "play.circle.fill")
-                        }
-                        .disabled(model.isReplaying)
-                    }
-                } header: {
-                    Text("Input")
-                } footer: {
-                    Text("This DEBUG-only tool copies a selected video to temp storage, replays its frames through the live capture detector, then opens trim with the detected timestamps.")
-                }
-
-                Section("Replay State") {
-                    HStack {
-                        Text("Status")
-                        Spacer()
-                        Text(model.statusText)
-                            .foregroundColor(.secondary)
-                    }
-
-                    ProgressView(value: model.progress)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(model.snapshot.primaryMessage)
+                if let player = model.player {
+                    DebugReplayPlayerSurface(player: player)
+                        .ignoresSafeArea(edges: .bottom)
+                } else {
+                    VStack(spacing: 14) {
+                        Image(systemName: "video.badge.plus")
+                            .font(.system(size: 42, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.86))
+                        Text("Choose a video to replay through the live detector.")
                             .font(.subheadline.weight(.semibold))
-                        Text(model.snapshot.detailMessage)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white.opacity(0.84))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 36)
                     }
-
-                    HStack {
-                        Label(model.snapshot.hasBallLock ? "Ball locked" : "No ball lock", systemImage: model.snapshot.hasBallLock ? "smallcircle.filled.circle" : "circle")
-                        Spacer()
-                        Label(model.snapshot.hasBallMovement ? "Ball moved" : "No movement", systemImage: model.snapshot.hasBallMovement ? "checkmark.circle.fill" : "circle")
-                    }
-                    .font(.caption)
-                    .foregroundColor(.secondary)
                 }
 
-                Section("Detected Swings") {
-                    if model.detections.isEmpty {
-                        Text(model.isReplaying ? "Waiting for detections..." : "No detected swings yet.")
-                            .foregroundColor(.secondary)
-                    } else {
-                        ForEach(Array(model.detections.enumerated()), id: \.element.id) { index, detection in
+                VStack(spacing: 0) {
+                    HStack(spacing: 10) {
+                        Button {
+                            showsVideoPicker = true
+                        } label: {
+                            Label(model.selectedVideoURL == nil ? "Choose" : "Change", systemImage: "video.badge.plus")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(RoundedRectangle(cornerRadius: 8).fill(Color.black.opacity(0.62)))
+                        }
+
+                        if let selectedVideoURL = model.selectedVideoURL {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Swing \(index + 1)")
-                                    .font(.subheadline.weight(.semibold))
-                                Text("\(formatTime(detection.startTime)) to \(formatTime(detection.endTime)) · confidence \(Int(detection.confidence * 100))%")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                Text(selectedVideoURL.lastPathComponent)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundColor(.white)
+                                    .lineLimit(1)
+
+                                HStack(spacing: 4) {
+                                    ForEach(replaySpeedOptions, id: \.self) { speed in
+                                        Button {
+                                            debugReplaySpeedMultiplier = speed
+                                        } label: {
+                                            Text("\(Int(speed))x")
+                                                .font(.caption2.weight(.bold))
+                                                .foregroundColor(debugReplaySpeedMultiplier == speed ? .black : .white.opacity(0.78))
+                                                .frame(width: 30, height: 20)
+                                                .background(
+                                                    Capsule()
+                                                        .fill(debugReplaySpeedMultiplier == speed ? Color.yellow : Color.white.opacity(0.14))
+                                                )
+                                        }
+                                        .buttonStyle(.plain)
+                                        .disabled(model.isReplaying)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(Color.black.opacity(0.62)))
+
+                            Spacer()
+
+                            Button {
+                                if model.isReplaying {
+                                    model.togglePause(speedMultiplier: debugReplaySpeedMultiplier)
+                                } else {
+                                    model.startReplay(speedMultiplier: debugReplaySpeedMultiplier)
+                                }
+                            } label: {
+                                Image(systemName: model.isPaused ? "play.circle.fill" : (model.isReplaying ? "pause.circle.fill" : "play.circle.fill"))
+                                    .font(.system(size: 28, weight: .semibold))
+                                    .foregroundColor(.yellow)
                             }
                         }
-
-                        Button {
-                            trimDetections = model.detections
-                            trimSource = model.trimVideoSource
-                        } label: {
-                            Label("Open Trim With Detections", systemImage: "scissors")
-                        }
                     }
-                }
+                    .padding(.horizontal, 14)
+                    .padding(.top, 12)
 
-                if let errorMessage = model.errorMessage {
-                    Section("Error") {
-                        Text(errorMessage)
-                            .foregroundColor(.red)
-                    }
+                    Spacer()
+
+                    replayOverlay
+                        .padding(.horizontal, 14)
+                        .padding(.bottom, 14)
                 }
             }
             .navigationTitle("Replay Debug")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if model.isReplaying {
                     Button("Cancel") {
@@ -147,6 +151,193 @@ struct DebugReplayView: View {
                     }
                 )
             }
+            .sheet(item: $previewDetection) { preview in
+                DebugDetectionPreviewSheet(
+                    videoURL: preview.videoURL,
+                    detection: preview.detection,
+                    index: preview.index
+                )
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+            }
+        }
+    }
+
+    private var replayOverlay: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(model.statusText)
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.white.opacity(0.76))
+                Spacer()
+                Label(model.snapshot.hasBallLock ? "Ball" : "No ball", systemImage: model.snapshot.hasBallLock ? "smallcircle.filled.circle" : "circle")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.white.opacity(0.76))
+                Label(model.snapshot.hasBallMovement ? "Moved" : "Still", systemImage: model.snapshot.hasBallMovement ? "checkmark.circle.fill" : "circle")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.white.opacity(0.76))
+            }
+
+            ProgressView(value: model.progress)
+                .tint(.yellow)
+
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: iconName(for: model.snapshot.status))
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(iconColor(for: model.snapshot.status))
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(model.snapshot.primaryMessage)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+                    Text(model.snapshot.detailMessage)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.74))
+                        .lineLimit(2)
+                }
+            }
+
+            debugEvidenceGrid(snapshot: model.snapshot)
+
+            if let errorMessage = model.errorMessage {
+                Text(errorMessage)
+                    .font(.caption)
+                    .foregroundColor(.red.opacity(0.9))
+            }
+
+            Divider()
+                .overlay(Color.white.opacity(0.16))
+
+            HStack {
+                Text(model.detections.isEmpty ? "No detected swings yet" : "\(model.detections.count) detected")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.white.opacity(0.82))
+                Spacer()
+                if !model.detections.isEmpty {
+                    Button {
+                        trimDetections = model.detections
+                        trimSource = model.trimVideoSource
+                    } label: {
+                        Label("Open Trim", systemImage: "scissors")
+                            .font(.caption.weight(.bold))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
+                            .background(Capsule().fill(Color.yellow))
+                    }
+                }
+            }
+
+            if !model.detections.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(Array(model.detections.enumerated()), id: \.element.id) { index, detection in
+                            Button {
+                                if let videoURL = model.selectedVideoURL {
+                                    previewDetection = DetectionPreview(
+                                        videoURL: videoURL,
+                                        detection: detection,
+                                        index: index
+                                    )
+                                }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Swing \(index + 1)")
+                                        .font(.caption.weight(.bold))
+                                    Text("\(formatTime(detection.startTime))-\(formatTime(detection.endTime))")
+                                        .font(.caption2.monospacedDigit())
+                                        .foregroundColor(.white.opacity(0.72))
+                                    Text("\(Int(detection.confidence * 100))%")
+                                        .font(.caption2.weight(.semibold))
+                                        .foregroundColor(.yellow)
+                                }
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 7)
+                                .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.12)))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.black.opacity(0.72))
+        )
+    }
+
+    private func debugEvidenceGrid(snapshot: LiveSwingDetectionSnapshot) -> some View {
+        let rows = [
+            ("poses", "\(snapshot.poseObservationCount)"),
+            ("speed", String(format: "%.2f", snapshot.handSpeed)),
+            ("peak", String(format: "%.2f", snapshot.peakHandSpeed)),
+            ("travel", String(format: "%.2f", snapshot.handTravel)),
+            ("setup", String(format: "%.1fs", snapshot.setupDuration)),
+            ("ball", snapshot.ballCandidateScore.map { String(format: "%.2f", $0) } ?? "-"),
+            ("luma", snapshot.ballLumaDelta.map { String(format: "%.0f", $0) } ?? "-"),
+            ("reject", snapshot.lastRejectionReason ?? "-")
+        ]
+
+        return LazyVGrid(
+            columns: [
+                GridItem(.flexible(), spacing: 6),
+                GridItem(.flexible(), spacing: 6),
+                GridItem(.flexible(), spacing: 6),
+                GridItem(.flexible(), spacing: 6)
+            ],
+            alignment: .leading,
+            spacing: 6
+        ) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(row.0.uppercased())
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(.white.opacity(0.42))
+                    Text(row.1)
+                        .font(.caption2.monospacedDigit().weight(.semibold))
+                        .foregroundColor(.white.opacity(0.82))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.65)
+                }
+            }
+        }
+    }
+
+    private func iconName(for status: LiveSwingDetectionStatus) -> String {
+        switch status {
+        case .idle:
+            return "scope"
+        case .disabled:
+            return "scope.slash"
+        case .searchingBall:
+            return "magnifyingglass"
+        case .ballLocked:
+            return "smallcircle.filled.circle"
+        case .swingInProgress:
+            return "figure.golf"
+        case .hitDetected, .swingDetected:
+            return "checkmark.circle.fill"
+        case .unavailable:
+            return "exclamationmark.triangle.fill"
+        }
+    }
+
+    private func iconColor(for status: LiveSwingDetectionStatus) -> Color {
+        switch status {
+        case .disabled:
+            return .white.opacity(0.68)
+        case .idle, .searchingBall:
+            return .white.opacity(0.84)
+        case .ballLocked, .swingInProgress:
+            return .yellow
+        case .hitDetected, .swingDetected:
+            return .green
+        case .unavailable:
+            return .yellow
         }
     }
 
@@ -155,16 +346,134 @@ struct DebugReplayView: View {
     }
 }
 
+private struct DetectionPreview: Identifiable {
+    let id = UUID()
+    let videoURL: URL
+    let detection: DetectedSwing
+    let index: Int
+}
+
+private struct DebugDetectionPreviewSheet: View {
+    let videoURL: URL
+    let detection: DetectedSwing
+    let index: Int
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var player = AVPlayer()
+    @State private var timeObserver: Any?
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+
+                DebugReplayPlayerSurface(player: player)
+                    .ignoresSafeArea(edges: .bottom)
+
+                VStack {
+                    Spacer()
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Swing \(index + 1)")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                        Text("\(formatTime(detection.startTime)) to \(formatTime(detection.endTime)) · \(Int(detection.confidence * 100))%")
+                            .font(.caption.monospacedDigit())
+                            .foregroundColor(.white.opacity(0.76))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(14)
+                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.black.opacity(0.72)))
+                    .padding(14)
+                }
+            }
+            .navigationTitle("Detected Swing")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .onAppear {
+            startPreview()
+        }
+        .onDisappear {
+            stopPreview()
+        }
+    }
+
+    private func startPreview() {
+        let item = AVPlayerItem(url: videoURL)
+        player.replaceCurrentItem(with: item)
+        player.seek(to: detection.startTime, toleranceBefore: .zero, toleranceAfter: .zero)
+        player.play()
+
+        timeObserver = player.addPeriodicTimeObserver(
+            forInterval: CMTime(seconds: 0.08, preferredTimescale: 600),
+            queue: .main
+        ) { time in
+            if CMTimeCompare(time, detection.endTime) >= 0 {
+                player.seek(to: detection.startTime, toleranceBefore: .zero, toleranceAfter: .zero)
+                player.play()
+            }
+        }
+    }
+
+    private func stopPreview() {
+        if let timeObserver {
+            player.removeTimeObserver(timeObserver)
+            self.timeObserver = nil
+        }
+        player.pause()
+    }
+
+    private func formatTime(_ time: CMTime) -> String {
+        String(format: "%.2fs", CMTimeGetSeconds(time))
+    }
+}
+
+private struct DebugReplayPlayerSurface: UIViewRepresentable {
+    let player: AVPlayer
+
+    func makeUIView(context: Context) -> PlayerView {
+        let view = PlayerView()
+        view.playerLayer.player = player
+        view.playerLayer.videoGravity = .resizeAspectFill
+        return view
+    }
+
+    func updateUIView(_ uiView: PlayerView, context: Context) {
+        uiView.playerLayer.player = player
+    }
+
+    final class PlayerView: UIView {
+        override static var layerClass: AnyClass {
+            AVPlayerLayer.self
+        }
+
+        var playerLayer: AVPlayerLayer {
+            layer as! AVPlayerLayer
+        }
+    }
+}
+
 @MainActor
 final class DebugReplayViewModel: ObservableObject {
     @Published var selectedVideoURL: URL?
+    @Published var player: AVPlayer?
     @Published var isReplaying = false
+    @Published var isPaused = false
     @Published var progress = 0.0
     @Published var snapshot = LiveSwingDetectionSnapshot.idle
     @Published var detections: [DetectedSwing] = []
     @Published var errorMessage: String?
 
     private var replayTask: Task<Void, Never>?
+    private var replayControl: DebugReplayControl?
+    private var lastProgressUpdateAt = Date.distantPast
 
     var statusText: String {
         if isReplaying {
@@ -185,17 +494,22 @@ final class DebugReplayViewModel: ObservableObject {
     func setSelectedVideo(_ url: URL) {
         cancelReplay()
         selectedVideoURL = url
+        player = AVPlayer(url: url)
         progress = 0
         snapshot = .idle
         detections = []
         errorMessage = nil
+        lastProgressUpdateAt = .distantPast
     }
 
-    func startReplay() {
+    func startReplay(speedMultiplier: Double) {
         guard let selectedVideoURL else { return }
 
         cancelReplay()
+        let control = DebugReplayControl()
+        replayControl = control
         isReplaying = true
+        isPaused = false
         progress = 0
         snapshot = LiveSwingDetectionSnapshot(
             status: .searchingBall,
@@ -204,19 +518,31 @@ final class DebugReplayViewModel: ObservableObject {
         )
         detections = []
         errorMessage = nil
+        lastProgressUpdateAt = .distantPast
+        player?.seek(to: .zero)
+        player?.playImmediately(atRate: Float(max(1, min(8, speedMultiplier))))
 
-        let stream = DebugLiveSwingReplayRunner.eventStream(for: selectedVideoURL)
+        let stream = DebugLiveSwingReplayRunner.eventStream(
+            for: selectedVideoURL,
+            speedMultiplier: speedMultiplier,
+            control: control
+        )
 
         replayTask = Task {
             for await event in stream {
                 switch event {
-                case .progress(let progressValue, let newSnapshot):
-                    progress = progressValue
-                    snapshot = newSnapshot
+                case .progress(let progressValue, let newSnapshot, let currentDetections):
+                    applyProgress(
+                        progressValue,
+                        snapshot: newSnapshot,
+                        detections: currentDetections
+                    )
                 case .finished(let newDetections):
                     detections = newDetections
                     progress = 1
                     isReplaying = false
+                    isPaused = false
+                    player?.pause()
                     snapshot = LiveSwingDetectionSnapshot(
                         status: newDetections.isEmpty ? .idle : .swingDetected,
                         primaryMessage: newDetections.isEmpty ? "No swings detected" : "\(newDetections.count) swing\(newDetections.count == 1 ? "" : "s") detected",
@@ -227,6 +553,8 @@ final class DebugReplayViewModel: ObservableObject {
                     )
                 case .failed(let message):
                     isReplaying = false
+                    isPaused = false
+                    player?.pause()
                     errorMessage = message
                     snapshot = LiveSwingDetectionSnapshot(
                         status: .unavailable,
@@ -241,27 +569,105 @@ final class DebugReplayViewModel: ObservableObject {
     func cancelReplay() {
         replayTask?.cancel()
         replayTask = nil
+        replayControl = nil
         isReplaying = false
+        isPaused = false
+        player?.pause()
+    }
+
+    func togglePause(speedMultiplier: Double) {
+        guard isReplaying, let replayControl else { return }
+
+        isPaused.toggle()
+        Task {
+            await replayControl.setPaused(isPaused)
+        }
+
+        if isPaused {
+            player?.pause()
+        } else {
+            player?.playImmediately(atRate: Float(max(1, min(8, speedMultiplier))))
+        }
     }
 
     func fail(_ error: Error) {
         errorMessage = error.localizedDescription
     }
+
+    private func applyProgress(
+        _ progressValue: Double,
+        snapshot newSnapshot: LiveSwingDetectionSnapshot,
+        detections currentDetections: [DetectedSwing]
+    ) {
+        let now = Date()
+        let detectionsChanged = currentDetections.count != detections.count
+        let statusChanged = newSnapshot.status != snapshot.status
+        let enoughTimePassed = now.timeIntervalSince(lastProgressUpdateAt) >= 0.25
+
+        progress = progressValue
+
+        guard detectionsChanged || statusChanged || enoughTimePassed else { return }
+
+        snapshot = newSnapshot
+        detections = currentDetections
+        lastProgressUpdateAt = now
+    }
+}
+
+private actor DebugReplayControl {
+    private var isPaused = false
+    private var pausedAt: Date?
+    private var totalPausedDuration: TimeInterval = 0
+
+    func setPaused(_ paused: Bool) {
+        guard paused != isPaused else { return }
+
+        isPaused = paused
+        if paused {
+            pausedAt = Date()
+        } else if let pausedAt {
+            totalPausedDuration += Date().timeIntervalSince(pausedAt)
+            self.pausedAt = nil
+        }
+    }
+
+    func waitIfPaused() async throws {
+        while isPaused {
+            try Task.checkCancellation()
+            try await Task.sleep(nanoseconds: 80_000_000)
+        }
+    }
+
+    func activeElapsed(since startDate: Date) -> TimeInterval {
+        var pausedDuration = totalPausedDuration
+        if let pausedAt {
+            pausedDuration += Date().timeIntervalSince(pausedAt)
+        }
+        return Date().timeIntervalSince(startDate) - pausedDuration
+    }
 }
 
 private enum DebugReplayEvent {
-    case progress(Double, LiveSwingDetectionSnapshot)
+    case progress(Double, LiveSwingDetectionSnapshot, [DetectedSwing])
     case finished([DetectedSwing])
     case failed(String)
 }
 
 private enum DebugLiveSwingReplayRunner {
-    static func eventStream(for url: URL) -> AsyncStream<DebugReplayEvent> {
+    static func eventStream(
+        for url: URL,
+        speedMultiplier: Double,
+        control: DebugReplayControl
+    ) -> AsyncStream<DebugReplayEvent> {
         AsyncStream { continuation in
             let task = Task.detached(priority: .userInitiated) {
                 do {
-                    let detections = try await replay(url: url) { progress, snapshot in
-                        continuation.yield(.progress(progress, snapshot))
+                    let detections = try await replay(
+                        url: url,
+                        speedMultiplier: speedMultiplier,
+                        control: control
+                    ) { progress, snapshot, detections in
+                        continuation.yield(.progress(progress, snapshot, detections))
                     }
                     continuation.yield(.finished(detections))
                 } catch is CancellationError {
@@ -282,8 +688,11 @@ private enum DebugLiveSwingReplayRunner {
 
     private static func replay(
         url: URL,
-        onProgress: @escaping (Double, LiveSwingDetectionSnapshot) -> Void
+        speedMultiplier: Double,
+        control: DebugReplayControl,
+        onProgress: @escaping (Double, LiveSwingDetectionSnapshot, [DetectedSwing]) -> Void
     ) async throws -> [DetectedSwing] {
+        let clampedSpeedMultiplier = max(1, min(8, speedMultiplier))
         let asset = AVURLAsset(url: url)
         let duration = try await asset.load(.duration)
         let durationSeconds = CMTimeGetSeconds(duration)
@@ -318,11 +727,13 @@ private enum DebugLiveSwingReplayRunner {
         let detector = LiveSwingDetector()
         let request = VNDetectHumanBodyPoseRequest()
         var firstSampleTime: CMTime?
-        var lastProcessedTime = -Double.greatestFiniteMagnitude
-        var lastRelativeTime = 0.0
+        var lastProcessedDetectorTime = -Double.greatestFiniteMagnitude
+        var lastDetectorTime = 0.0
+        let replayStartedAt = Date()
 
         while reader.status == .reading, let sampleBuffer = output.copyNextSampleBuffer() {
             try Task.checkCancellation()
+            try await control.waitIfPaused()
 
             let sampleTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
             if firstSampleTime == nil {
@@ -331,28 +742,42 @@ private enum DebugLiveSwingReplayRunner {
 
             guard let firstSampleTime else { continue }
 
-            let relativeTime = CMTimeGetSeconds(CMTimeSubtract(sampleTime, firstSampleTime))
-            guard relativeTime.isFinite, relativeTime - lastProcessedTime >= 0.10 else { continue }
+            let videoRelativeTime = CMTimeGetSeconds(CMTimeSubtract(sampleTime, firstSampleTime))
+            guard videoRelativeTime.isFinite else { continue }
 
-            lastProcessedTime = relativeTime
-            lastRelativeTime = relativeTime
+            let detectorTime = videoRelativeTime
+            guard detectorTime - lastProcessedDetectorTime >= 0.10 else { continue }
+
+            let realElapsed = await control.activeElapsed(since: replayStartedAt)
+            let targetReplayElapsed = videoRelativeTime / clampedSpeedMultiplier
+            if targetReplayElapsed > realElapsed {
+                let delay = targetReplayElapsed - realElapsed
+                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            }
+
+            lastProcessedDetectorTime = detectorTime
+            lastDetectorTime = detectorTime
 
             let handler = VNImageRequestHandler(cmSampleBuffer: sampleBuffer, orientation: .up, options: [:])
             try handler.perform([request])
 
             let snapshot = detector.process(
                 sampleBuffer: sampleBuffer,
-                observation: request.results?.first,
-                recordingTime: relativeTime
+                observations: request.results ?? [],
+                recordingTime: detectorTime
             )
-            onProgress(min(1, max(0, relativeTime / durationSeconds)), snapshot)
+            onProgress(
+                min(1, max(0, videoRelativeTime / durationSeconds)),
+                snapshot,
+                detector.currentDetections()
+            )
         }
 
         if reader.status == .failed {
             throw reader.error ?? VideoTrimmer.TrimmerError.assetLoadFailed
         }
 
-        return detector.finish(recordingTime: lastRelativeTime)
+        return detector.finish(recordingTime: lastDetectorTime)
     }
 
     private static func orientedVideoComposition(for track: AVAssetTrack, duration: CMTime) async throws -> AVVideoComposition {

@@ -75,10 +75,10 @@ Response shape (`AnalyzeResponse`):
 - `analysis_id`
 - `summary`
 - `metrics[]` (display rows with `key`, `name`, `value`)
-- `annotated_video` (`key`, fresh signed `url`)
+- `annotated_video` (`key`, fresh signed `url`, optional `base_key` / `base_url`, optional `tracks_key` / `tracks_url`, rendered `layers[]`)
 - `drills[]` (lightweight `title`, `summary` suggestions)
 
-The pipeline still records richer internal data such as confidence, warnings, timings, 3D artifacts, and raw files. The mobile MVP contract intentionally exposes only the fields needed by the current Coach tab.
+The pipeline still records richer internal data such as confidence, warnings, timings, 3D artifacts, annotation metadata, and raw files. The mobile MVP contract exposes the fields needed by the current Coach tab plus annotation layer metadata, a clean base video, and a normalized overlay-track artifact for client-side toggles, including club plane, ball/contact evidence, P1-P10 phase markers, and confidence evidence when detected.
 
 ### `POST /mock/analyze`
 
@@ -139,7 +139,10 @@ Typical files per successful run:
 - `club_3d.npz`
 - `metrics.json`
 - `coach_summary.json`
+- `base.mp4`
 - `annotated.mp4`
+- `annotation_metadata.json`
+- `annotation_tracks.json`
 - `swing_3d.gltf` (if 3D available)
 - `timings.json`
 
@@ -157,6 +160,12 @@ python test_pipeline.py
 
 # Full annotation export test
 python test_full_annotation.py --sample
+
+# Annotation track contract test
+python test_annotation_tracks.py
+
+# Annotation rendered-overlay visual regression
+python test_annotation_visuals.py
 
 # SAM3 prompt diagnostics
 python test_sam3_detection.py

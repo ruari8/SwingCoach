@@ -7,7 +7,7 @@ The frontend is a SwiftUI app in [SwingCoach/](/Users/ruari/Documents/Startups/S
 - Capture
 - Coach (analysis)
 
-DEBUG builds also include a Replay Debug tab for detector development.
+DEBUG builds can show a Replay Debug tab for detector development. The tab is controlled by the in-app Experiments settings.
 
 Primary app root: [AppRootView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AppRootView.swift)
 
@@ -26,6 +26,7 @@ Primary app root: [AppRootView.swift](/Users/ruari/Documents/Startups/SwingCoach
 - Trim workflow: [TrimView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/TrimView/TrimView.swift)
 - Analysis UX: [AnalyseView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AnalyseView.swift)
 - DEBUG replay harness: [DebugReplayView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/DebugReplayView.swift)
+- Experimental settings: [ExperimentalSettingsView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/ExperimentalSettingsView.swift)
 - Swing detail workspace: [SwingDetailView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/SwingDetailView.swift)
 - Shared analysis result rendering: [AnalysisResultView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AnalysisResultView.swift)
 - API client: [SwingCoachAPI.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingCoachAPI.swift)
@@ -67,10 +68,10 @@ Implemented feature set:
   - `60fps 4K` (ball-tracer future mode scaffold)
 - Runtime mode switching without full session teardown.
 - Tap-to-focus and exposure targeting.
-- Live DTL-focused on-device capture guard using Vision body pose sampling to warn when the golfer is not framed for analysis. The first pass checks head, hands, feet, body size, and edge margins without blocking recording.
-- Capture setup includes an on-preview DTL framing guide and optional spoken guidance for solo setup when the phone screen is not visible from the hitting position.
-- Live auto swing-detection prototype runs while recording. It samples the camera feed, uses Vision body pose to estimate takeaway/swing timing, searches a pose-derived address ROI for a stable compact bright ball candidate, and treats ball disappearance/movement in the predicted impact window as hit evidence.
-- During recording, the capture badge switches from framing readiness to live auto-detection state (`Finding ball`, `Ball locked`, `Swing started`, `Impact detected`, or detected count).
+- Live auto swing-detection is experimental and can be turned off from Library > Experiments. When enabled, it samples the camera feed, scores multiple Vision body-pose observations to keep tracking the primary golfer, smooths Vision hand-speed jitter, uses a rolling address-to-takeaway state machine, searches a pose-derived address ROI for a stable compact bright ball candidate, and treats ball disappearance, ball-region luma change, or strong full-swing pose motion as swing evidence with lower confidence when impact is not confirmed.
+- When live auto-detection is off, capture still records normally and the trim editor opens without generated ranges so the user can mark clips manually.
+- When live auto-detection is enabled but no live swing windows are found during recording, captured trim runs the local on-device post-pass as a fallback before asking the user to mark ranges manually.
+- During recording, the capture badge shows live auto-detection state (`Finding ball`, `Ball locked`, `Swing started`, `Impact detected`, or detected count).
 - Recording state handling with immediate post-stop playback of the captured high-fps asset.
 - Stopping a new recording opens the trim editor automatically instead of requiring the post-stop scissors action.
 - Active recording disables the iOS idle timer so solo range sessions do not Auto-Lock while the golfer walks into frame, then restores the prior idle-timer state after stop, error, or leaving capture.
@@ -93,10 +94,10 @@ Implemented feature set:
 - Library imports hand trim a lightweight Photos-backed source first, then load a fast preview asset in-editor and defer high-quality asset resolution until export.
 - High-fps capture timelines display slow-playback timing while keeping selection mapped to the original source frames.
 - Start/end range selection for clip creation.
-- Captured recordings pass live-detected swing timestamps into trim immediately; captured trim does not run a post-stop scan before showing the editor.
+- Captured recordings pass live-detected swing timestamps into trim immediately. If live detection is enabled and returns no ranges, captured trim runs the local on-device detector as a fallback; if the experiment is disabled, captured trim opens for manual marking only.
 - Imported/library videos can still use on-device Vision body-pose swing detection against the local preview asset when trim opens. Candidate full-swing windows are preselected as clips without calling the backend.
 - Auto-detected clips can be reviewed one at a time by tapping their thumbnail, adjusted with the existing start/end trim handles, updated in place, or discarded with the clip delete control.
-- The first-pass imported-video detector uses conservative hand-motion, pose-coverage, body-stability, and duration heuristics to reject low-confidence or practice-like motion. The live capture prototype adds lightweight ball-movement evidence, but it is not yet validated enough to guarantee practice-swing rejection.
+- The imported-video detector uses adaptive hand-speed thresholds plus hand-travel, pose-coverage, body-stability, and duration heuristics to find candidate full-swing windows without calling the backend. The live capture/debug detector adds lightweight primary-golfer tracking and ball-region impact evidence, but the feature remains experimental and editable because messy range footage can still produce likely-swing detections without confirmed ball contact.
 - When no clip ranges are marked, the footer offers an explicit full-video path so already-trimmed imports can be added as-is; Photos-backed imports reuse the existing asset instead of creating a duplicate.
 - Multi-clip extraction from a long source video.
 - MVP clip export defaults to down-the-line capture; face-on remains in the data model but is not exposed as an equal capture path in the trim header.
@@ -125,6 +126,7 @@ Implemented feature set:
 - Treat a saved swing as the primary product object.
 - Show the original swing as a collapsed thumbnail disclosure by default, with playback and metadata available after expansion.
 - Display original and annotated swing playback using the shared playback chrome, including timeline, compact cycle-through playback speed control, and full-screen viewing.
+- For backend results that include `annotated_video.base_url` and `annotated_video.tracks_url`, the annotated video card plays the clean base video and draws/toggles skeleton, reference-line, swing-path, phase-marker, confidence, and speed overlays over playback. If no base video is available, it falls back to the flattened annotated MP4. The selected overlay state is preserved when the annotated player opens full-screen.
 - Show swing metadata and local analysis status inside the original swing disclosure.
 - Run the current R2-backed analysis flow for a single swing, with retry controls reserved for failed analysis attempts.
 - Attach completed analysis to the swing through `AnalysisLibrary`.
@@ -135,11 +137,27 @@ Implemented feature set:
 File: [DebugReplayView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/DebugReplayView.swift)
 
 Implemented feature set:
-- DEBUG-only tab for home/range development of live swing detection.
-- Selects a video from Photos, copies it into temporary app storage, and replays decoded frames through `LiveSwingDetector` as if they were arriving from the camera preview output.
-- Shows replay progress, detector state, ball-lock/movement state, and detected swing windows while the replay runs.
+- DEBUG-only tab for home/range development of live swing detection, controlled from Library > Experiments.
+- Selects a video from Photos, copies it into temporary app storage, and displays the video as the primary replay surface using a custom player layer so iOS default playback controls do not overlap detector instrumentation.
+- Replays decoded frames through `LiveSwingDetector` on a paced clock so the selected video behaves like a substitute camera feed instead of an offline batch job.
+- Supports in-screen configurable replay speed (`1x`, `2x`, `4x`, `8x`; default `8x`) for faster long-session review while detector timestamps remain on the selected video's source timeline.
+- Shows replay progress, detector state, ball-lock/movement state, and detected swing windows as an overlay on the video while replay runs.
+- Shows detector evidence fields in the replay overlay: Vision pose count, current/peak hand speed, normalized hand travel, stable setup duration, ball-candidate score, ball-region luma shift, and the latest rejection reason.
+- The replay pause control pauses both visible video playback and detector pacing.
+- Detector overlay updates are throttled so fast state churn does not flicker continuously during long range videos.
+- Detected swing chips can be tapped to open a looping preview sheet for that detected window while the main replay/detector continues behind the sheet.
 - Opens trim with replay-detected timestamps preselected and disables the trim view's post-open detector scan, matching the intended capture path where detections are already known when recording stops.
 - This tool is not a production import path. It exists to tune and validate live detector behavior with saved long-session videos without repeatedly recording fresh device-camera sessions.
+
+## 7. Experimental Settings
+
+File: [ExperimentalSettingsView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/ExperimentalSettingsView.swift)
+
+Implemented feature set:
+- Library toolbar gear opens Experiments.
+- Toggle live auto swing detection on/off for capture recordings.
+- Toggle the DEBUG Replay Debug tab on/off.
+- Configure Replay Debug speed multiplier for normal-speed and slow-motion source videos.
 
 ## Data and Models
 
@@ -170,8 +188,10 @@ Current frontend `AnalysisResponse` expectation:
 - `analysis_id: String`
 - `summary: String`
 - `metrics: [{key, name, value}]`
-- `annotated_video: {key, url}?`
+- `annotated_video: {key, url, base_key?, base_url?, tracks_key?, tracks_url?, layers?}?`
 - `drills: [{title, summary}]`
+
+`annotated_video.layers` is metadata for the rendered annotation layers and should list every server-backed toggle layer, including dynamic layers such as `speed` when samples exist. `base_url` points to a clean dense-window video for true client-side toggles, while `url` remains the flattened annotated MP4 fallback. `tracks_url` points to normalized JSON overlay tracks; saved analysis results persist the video key/URL, base key/URL, track key/URL, and layer metadata. The current track decoder supports `skeleton`, `reference_lines`, `club_plane`, `ball_contact`, `swing_path`, top-level `phase_markers`, top-level `confidence_evidence`, and `speed`.
 
 ## Known Gaps and Risks
 
@@ -181,7 +201,8 @@ Current frontend `AnalysisResponse` expectation:
 
 2. Annotated video playback
 - UI embeds the annotated video in the Coach result when available.
-- Saved analyses persist artifact keys and refresh signed video URLs through `POST /artifact-url` when stale.
+- Saved analyses persist artifact keys and refresh signed video and track URLs through `POST /artifact-url` when stale.
+- Track overlays are a first pass. They cover skeleton, reference lines, club plane, ball/contact evidence, swing path, phase markers, confidence evidence, and speed, but not club masks, ball-flight tracking, or 3D replay controls yet.
 
 3. Trim-to-analyze handoff
 - The capture trim footer currently shows a single primary action.

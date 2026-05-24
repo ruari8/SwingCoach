@@ -19,10 +19,65 @@ struct SavedAnalysisDrill: Codable, Equatable {
     let summary: String
 }
 
+struct SavedVisualizationLayer: Codable, Equatable {
+    let name: String
+    let color: String
+    let description: String
+    let enabled: Bool
+}
+
 struct SavedAnalysisVideo: Codable, Equatable {
     let key: String
     var url: String
+    let baseKey: String?
+    var baseUrl: String?
+    let tracksKey: String?
+    var tracksUrl: String?
+    let layers: [SavedVisualizationLayer]
     var refreshedAt: Date
+
+    init(
+        key: String,
+        url: String,
+        baseKey: String? = nil,
+        baseUrl: String? = nil,
+        tracksKey: String? = nil,
+        tracksUrl: String? = nil,
+        layers: [SavedVisualizationLayer] = [],
+        refreshedAt: Date
+    ) {
+        self.key = key
+        self.url = url
+        self.baseKey = baseKey
+        self.baseUrl = baseUrl
+        self.tracksKey = tracksKey
+        self.tracksUrl = tracksUrl
+        self.layers = layers
+        self.refreshedAt = refreshedAt
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case key
+        case url
+        case baseKey
+        case baseUrl
+        case tracksKey
+        case tracksUrl
+        case layers
+        case refreshedAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        key = try container.decode(String.self, forKey: .key)
+        url = try container.decode(String.self, forKey: .url)
+        baseKey = try container.decodeIfPresent(String.self, forKey: .baseKey)
+        baseUrl = try container.decodeIfPresent(String.self, forKey: .baseUrl)
+        tracksKey = try container.decodeIfPresent(String.self, forKey: .tracksKey)
+        tracksUrl = try container.decodeIfPresent(String.self, forKey: .tracksUrl)
+        layers = try container.decodeIfPresent([SavedVisualizationLayer].self, forKey: .layers) ?? []
+        refreshedAt = try container.decode(Date.self, forKey: .refreshedAt)
+    }
 }
 
 struct SavedAnalysis: Identifiable, Codable, Equatable {
@@ -66,7 +121,23 @@ final class AnalysisLibrary: ObservableObject {
                 SavedAnalysisMetric(key: $0.key, name: $0.name, value: $0.value)
             },
             annotatedVideo: response.annotatedVideo.map {
-                SavedAnalysisVideo(key: $0.key, url: $0.url, refreshedAt: Date())
+                SavedAnalysisVideo(
+                    key: $0.key,
+                    url: $0.url,
+                    baseKey: $0.baseKey,
+                    baseUrl: $0.baseUrl,
+                    tracksKey: $0.tracksKey,
+                    tracksUrl: $0.tracksUrl,
+                    layers: ($0.layers ?? []).map {
+                        SavedVisualizationLayer(
+                            name: $0.name,
+                            color: $0.color,
+                            description: $0.description,
+                            enabled: $0.enabled
+                        )
+                    },
+                    refreshedAt: Date()
+                )
             },
             drills: response.drills.map {
                 SavedAnalysisDrill(title: $0.title, summary: $0.summary)
@@ -79,16 +150,33 @@ final class AnalysisLibrary: ObservableObject {
         return saved
     }
 
-    func updateAnnotatedVideoURL(for analysisID: String, url: String) {
+    func updateAnnotatedVideoURLs(
+        for analysisID: String,
+        url: String? = nil,
+        baseUrl: String? = nil,
+        tracksUrl: String? = nil
+    ) {
         guard let index = analyses.firstIndex(where: { $0.analysisID == analysisID }),
               var video = analyses[index].annotatedVideo else {
             return
         }
 
-        video.url = url
+        if let url {
+            video.url = url
+        }
+        if let baseUrl {
+            video.baseUrl = baseUrl
+        }
+        if let tracksUrl {
+            video.tracksUrl = tracksUrl
+        }
         video.refreshedAt = Date()
         analyses[index].annotatedVideo = video
         saveToDisk()
+    }
+
+    func updateAnnotatedVideoURL(for analysisID: String, url: String) {
+        updateAnnotatedVideoURLs(for: analysisID, url: url)
     }
 
     func needsArtifactRefresh(_ analysis: SavedAnalysis) -> Bool {

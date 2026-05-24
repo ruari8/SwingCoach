@@ -93,6 +93,28 @@ actor SwingCoachAPI {
     struct AnalysisVideo: Codable {
         let key: String
         let url: String
+        let baseKey: String?
+        let baseUrl: String?
+        let tracksKey: String?
+        let tracksUrl: String?
+        let layers: [VisualizationLayer]?
+
+        enum CodingKeys: String, CodingKey {
+            case key
+            case url
+            case baseKey = "base_key"
+            case baseUrl = "base_url"
+            case tracksKey = "tracks_key"
+            case tracksUrl = "tracks_url"
+            case layers
+        }
+    }
+
+    struct VisualizationLayer: Codable {
+        let name: String
+        let color: String
+        let description: String
+        let enabled: Bool
     }
 
     struct AnalysisResponse: Codable {

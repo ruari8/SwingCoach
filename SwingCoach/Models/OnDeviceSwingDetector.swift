@@ -29,7 +29,7 @@ actor OnDeviceSwingDetector {
     private let peakSpeedThreshold = 1.65
     private let motionThreshold = 0.85
     private let quietThreshold = 0.28
-    private let confidenceThreshold = 0.58
+    private let confidenceThreshold = 0.50
 
     func detectSwings(in asset: AVAsset) async throws -> [DetectedSwing] {
         let duration = try await asset.load(.duration)
@@ -96,7 +96,8 @@ actor OnDeviceSwingDetector {
                 from: sampleBuffer,
                 at: time,
                 orientation: orientation,
-                request: request
+                request: request,
+                previousSample: samples.last
             ) {
                 samples.append(sample)
             }
@@ -113,7 +114,8 @@ actor OnDeviceSwingDetector {
         guard samples.count >= 6 else { return [] }
 
         let speeds = smoothedHandSpeeds(for: samples)
-        let peakIndices = candidatePeakIndices(from: speeds, samples: samples)
+        let adaptivePeakThreshold = adaptivePeakSpeedThreshold(from: speeds)
+        let peakIndices = candidatePeakIndices(from: speeds, samples: samples, peakThreshold: adaptivePeakThreshold)
         var candidates: [SwingCandidate] = []
 
         for peakIndex in peakIndices {
@@ -130,6 +132,7 @@ actor OnDeviceSwingDetector {
                 startTime: bounds.startTime,
                 endTime: bounds.endTime,
                 peakIndex: peakIndex,
+                peakThreshold: adaptivePeakThreshold,
                 samples: samples,
                 speeds: speeds
             ) {
@@ -168,10 +171,29 @@ actor OnDeviceSwingDetector {
         }
     }
 
-    private func candidatePeakIndices(from speeds: [Double], samples: [PoseSample]) -> [Int] {
+    private func adaptivePeakSpeedThreshold(from speeds: [Double]) -> Double {
+        let movingSpeeds = speeds
+            .filter { $0.isFinite && $0 > 0.05 }
+            .sorted()
+
+        guard movingSpeeds.count >= 8 else { return peakSpeedThreshold }
+
+        func percentile(_ fraction: Double) -> Double {
+            let index = min(movingSpeeds.count - 1, max(0, Int((Double(movingSpeeds.count - 1) * fraction).rounded())))
+            return movingSpeeds[index]
+        }
+
+        let p85 = percentile(0.85)
+        let p95 = percentile(0.95)
+        let distributionThreshold = max(0.65, max(p85 * 0.85, p95 * 0.52))
+
+        return min(peakSpeedThreshold, distributionThreshold)
+    }
+
+    private func candidatePeakIndices(from speeds: [Double], samples: [PoseSample], peakThreshold: Double) -> [Int] {
         let sorted = speeds.enumerated()
             .filter { index, speed in
-                index > 1 && index < speeds.count - 2 && speed >= peakSpeedThreshold
+                index > 1 && index < speeds.count - 2 && speed >= peakThreshold
             }
             .sorted { $0.element > $1.element }
 
@@ -248,6 +270,7 @@ actor OnDeviceSwingDetector {
         startTime: Double,
         endTime: Double,
         peakIndex: Int,
+        peakThreshold: Double,
         samples: [PoseSample],
         speeds: [Double]
     ) -> SwingCandidate? {
@@ -279,14 +302,14 @@ actor OnDeviceSwingDetector {
             speeds: speeds
         )
 
-        guard peakSpeed >= peakSpeedThreshold else { return nil }
-        guard handTravel >= 0.68 else { return nil }
-        guard verticalTravel >= 0.26 || horizontalTravel >= 0.42 else { return nil }
+        guard peakSpeed >= peakThreshold else { return nil }
+        guard handTravel >= 0.52 else { return nil }
+        guard verticalTravel >= 0.20 || horizontalTravel >= 0.34 else { return nil }
         guard bodyDrift <= 0.7 else { return nil }
         guard coverage >= 0.45 else { return nil }
 
-        let peakScore = clamp((peakSpeed - peakSpeedThreshold) / 2.0)
-        let travelScore = clamp((handTravel - 0.55) / 0.65)
+        let peakScore = clamp((peakSpeed - peakThreshold) / 1.7)
+        let travelScore = clamp((handTravel - 0.42) / 0.62)
         let verticalScore = clamp(verticalTravel / 0.55)
         let coverageScore = clamp((coverage - 0.45) / 0.45)
         let durationScore = clamp(1 - abs(duration - 2.4) / 2.6)
@@ -364,17 +387,48 @@ actor OnDeviceSwingDetector {
         from sampleBuffer: CMSampleBuffer,
         at time: Double,
         orientation: CGImagePropertyOrientation,
-        request: VNDetectHumanBodyPoseRequest
+        request: VNDetectHumanBodyPoseRequest,
+        previousSample: PoseSample?
     ) -> PoseSample? {
         let handler = VNImageRequestHandler(cmSampleBuffer: sampleBuffer, orientation: orientation, options: [:])
 
         do {
             try handler.perform([request])
-            guard let observation = request.results?.first else { return nil }
-            return try poseSample(from: observation, at: time)
+            return try primaryPoseSample(
+                from: request.results ?? [],
+                at: time,
+                previousSample: previousSample
+            )
         } catch {
             return nil
         }
+    }
+
+    private static func primaryPoseSample(
+        from observations: [VNHumanBodyPoseObservation],
+        at time: Double,
+        previousSample: PoseSample?
+    ) throws -> PoseSample? {
+        let samples = try observations.compactMap { observation in
+            try poseSample(from: observation, at: time)
+        }
+
+        guard !samples.isEmpty else { return nil }
+
+        return samples.max { lhs, rhs in
+            primaryGolferScore(lhs, previousSample: previousSample) < primaryGolferScore(rhs, previousSample: previousSample)
+        }
+    }
+
+    private static func primaryGolferScore(_ sample: PoseSample, previousSample: PoseSample?) -> Double {
+        var score = Double(sample.validJointCount) * 0.08 + sample.bodyHeight * 2.8
+
+        if let previousSample {
+            let continuity = max(0, 1 - sample.imageBodyCenter.distance(to: previousSample.imageBodyCenter) / 0.55)
+            score += continuity * 3.0
+        }
+
+        return score
     }
 
     private static func poseSample(from observation: VNHumanBodyPoseObservation, at time: Double) throws -> PoseSample? {
@@ -431,11 +485,17 @@ actor OnDeviceSwingDetector {
             x: Double(center.x) / bodyHeight,
             y: Double(center.y) / bodyHeight
         )
+        let imageBodyCenter = NormalizedPoint(
+            x: Double(center.x),
+            y: Double(center.y)
+        )
 
         return PoseSample(
             time: time,
             relativeHands: relativeHands,
             normalizedBodyCenter: normalizedBodyCenter,
+            imageBodyCenter: imageBodyCenter,
+            bodyHeight: bodyHeight,
             validJointCount: confidentPoints.count
         )
     }
@@ -491,6 +551,8 @@ private struct PoseSample {
     let time: Double
     let relativeHands: NormalizedPoint
     let normalizedBodyCenter: NormalizedPoint
+    let imageBodyCenter: NormalizedPoint
+    let bodyHeight: Double
     let validJointCount: Int
 }
 

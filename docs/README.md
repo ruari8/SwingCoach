@@ -7,6 +7,7 @@ This folder and `backend/docs` are the active documentation set.
 - [Root README](/Users/ruari/Documents/Startups/SwingCoach/README.md)
 - [AGENTS](/Users/ruari/Documents/Startups/SwingCoach/AGENTS.md)
 - [Market Thesis](/Users/ruari/Documents/Startups/SwingCoach/docs/MARKET.md)
+- [Out Of Scope](/Users/ruari/Documents/Startups/SwingCoach/docs/OUT_OF_SCOPE.md)
 
 ## Frontend
 

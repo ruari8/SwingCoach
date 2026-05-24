@@ -9,6 +9,9 @@ import SwiftUI
 
 struct AppRootView: View {
     @State private var selection: Tab = .capture
+    #if DEBUG
+    @AppStorage(ExperimentalSettingKey.showDebugReplayTab) private var showDebugReplayTab = true
+    #endif
     
     // Shared state for analysis - set by Library or TrimView, consumed by AnalyseView
     @State private var swingsToAnalyze: [SavedSwing] = []
@@ -44,11 +47,20 @@ struct AppRootView: View {
             .tag(Tab.analyse)
 
             #if DEBUG
-            DebugReplayView()
-                .tabItem { Label("Debug", systemImage: "ladybug") }
-                .tag(Tab.debug)
+            if showDebugReplayTab {
+                DebugReplayView()
+                    .tabItem { Label("Debug", systemImage: "ladybug") }
+                    .tag(Tab.debug)
+            }
             #endif
         }
+        #if DEBUG
+        .onChange(of: showDebugReplayTab) { _, isVisible in
+            if !isVisible, selection == .debug {
+                selection = .library
+            }
+        }
+        #endif
     }
 }
 

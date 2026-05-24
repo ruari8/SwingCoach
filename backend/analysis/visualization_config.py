@@ -13,6 +13,9 @@ class VisualizationConfig:
     draw_reference_lines: bool = True  # shoulder plane, spine angle
     draw_club_plane: bool = True       # Extended orange line from address
     draw_swing_path: bool = True       # Red trajectory curve
+    draw_ball_contact: bool = True     # Ball/contact evidence near impact
+    draw_phase_markers: bool = True    # P1-P10 event markers
+    draw_confidence: bool = True       # Confidence and evidence badges
     draw_club_mask: bool = False       # Semi-transparent mask overlay (disabled by default)
     min_visibility: float = 0.5        # Keypoint visibility threshold
 
@@ -27,6 +30,9 @@ class VisualizationConfig:
             draw_reference_lines=config_dict.get("draw_reference_lines", True),
             draw_club_plane=config_dict.get("draw_club_plane", True),
             draw_swing_path=config_dict.get("draw_swing_path", True),
+            draw_ball_contact=config_dict.get("draw_ball_contact", True),
+            draw_phase_markers=config_dict.get("draw_phase_markers", True),
+            draw_confidence=config_dict.get("draw_confidence", True),
             draw_club_mask=config_dict.get("draw_club_mask", False),
             min_visibility=config_dict.get("min_visibility", 0.5),
         )
@@ -38,6 +44,9 @@ class VisualizationConfig:
             "draw_reference_lines": self.draw_reference_lines,
             "draw_club_plane": self.draw_club_plane,
             "draw_swing_path": self.draw_swing_path,
+            "draw_ball_contact": self.draw_ball_contact,
+            "draw_phase_markers": self.draw_phase_markers,
+            "draw_confidence": self.draw_confidence,
             "draw_club_mask": self.draw_club_mask,
             "min_visibility": self.min_visibility,
         }
@@ -87,6 +96,30 @@ LAYER_DEFINITIONS = {
         description="Trajectory of club head through the swing",
         enabled=True,
     ),
+    "speed": LayerInfo(
+        name="speed",
+        color="#00FF80",
+        description="Estimated clubhead speed overlay",
+        enabled=True,
+    ),
+    "ball_contact": LayerInfo(
+        name="ball_contact",
+        color="#FFFFFF",
+        description="Ball/contact evidence near the detected impact window",
+        enabled=True,
+    ),
+    "phase_markers": LayerInfo(
+        name="phase_markers",
+        color="#FFFFFF",
+        description="Detected P1-P10 swing phase markers",
+        enabled=True,
+    ),
+    "confidence": LayerInfo(
+        name="confidence",
+        color="#00FF80",
+        description="Confidence and evidence badges for phase and impact detection",
+        enabled=True,
+    ),
     "club_mask": LayerInfo(
         name="club_mask",
         color="#00FF0064",  # Green with alpha
@@ -118,6 +151,12 @@ class VisualizationMetadata:
             layers.append(LAYER_DEFINITIONS["club_plane"])
         if config.draw_swing_path:
             layers.append(LAYER_DEFINITIONS["swing_path"])
+        if config.draw_ball_contact:
+            layers.append(LAYER_DEFINITIONS["ball_contact"])
+        if config.draw_phase_markers:
+            layers.append(LAYER_DEFINITIONS["phase_markers"])
+        if config.draw_confidence:
+            layers.append(LAYER_DEFINITIONS["confidence"])
         if config.draw_club_mask:
             layers.append(LAYER_DEFINITIONS["club_mask"])
 

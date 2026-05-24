@@ -26,6 +26,7 @@ struct LibraryView: View {
     @State private var importStatusText: String = "Preparing import..."
     @State private var importProgress: Double? = nil  // 0.0-1.0, nil = indeterminate
     @State private var showVideoPicker = false
+    @State private var showExperimentalSettings = false
     @State private var photoLibraryAccessStatus: PHAuthorizationStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
     @State private var showLimitedPhotoAccessOptions = false
 
@@ -113,6 +114,12 @@ struct LibraryView: View {
                             }
                         }
                     } else {
+                        Button {
+                            showExperimentalSettings = true
+                        } label: {
+                            Image(systemName: "gearshape")
+                        }
+                        .accessibilityLabel("Experimental settings")
                         selectButton
                         importButton
                     }
@@ -169,6 +176,18 @@ struct LibraryView: View {
                         importProgress = nil
                     }
                 )
+            }
+            .sheet(isPresented: $showExperimentalSettings) {
+                NavigationStack {
+                    ExperimentalSettingsView()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button("Done") {
+                                    showExperimentalSettings = false
+                                }
+                            }
+                        }
+                }
             }
             .confirmationDialog("Photos Access", isPresented: $showLimitedPhotoAccessOptions, titleVisibility: .visible) {
                 Button("Continue Import") {
@@ -861,6 +880,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
     private let header: Header
     private let overlayAccessory: OverlayAccessory
+    private let contentOverlay: (CMTime, CGSize) -> AnyView
 
     @State private var player: AVPlayer?
     @State private var isPlaying = false
@@ -885,6 +905,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         showsSpeedControls: Bool = true,
         startsPlaying: Bool = true,
         allowsFullscreen: Bool = true,
+        contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
         @ViewBuilder header: () -> Header,
         @ViewBuilder overlayAccessory: () -> OverlayAccessory
     ) {
@@ -896,6 +917,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         self.allowsFullscreen = allowsFullscreen
         self.header = header()
         self.overlayAccessory = overlayAccessory()
+        self.contentOverlay = contentOverlay
         _playbackSpeed = State(initialValue: max(0.1, initialPlaybackRate))
     }
 
@@ -945,6 +967,10 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                contentOverlay(currentTime, geometry.size)
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .allowsHitTesting(false)
 
                 transportTouchLayer
 
@@ -1067,7 +1093,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 playbackEnabled: playbackEnabled,
                 showsSpeedControls: showsSpeedControls,
                 startsPlaying: false,
-                allowsFullscreen: false
+                allowsFullscreen: false,
+                contentOverlay: contentOverlay
             ) {
                 EmptyView()
             } overlayAccessory: {
@@ -1436,6 +1463,7 @@ extension PlaybackChromeView where OverlayAccessory == EmptyView {
         showsSpeedControls: Bool = true,
         startsPlaying: Bool = true,
         allowsFullscreen: Bool = true,
+        contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
         @ViewBuilder header: () -> Header
     ) {
         self.init(
@@ -1445,6 +1473,7 @@ extension PlaybackChromeView where OverlayAccessory == EmptyView {
             showsSpeedControls: showsSpeedControls,
             startsPlaying: startsPlaying,
             allowsFullscreen: allowsFullscreen,
+            contentOverlay: contentOverlay,
             header: header,
             overlayAccessory: { EmptyView() }
         )

@@ -180,6 +180,26 @@ class AnalysisVideo(BaseModel):
     """Signed video URL plus durable storage key."""
     key: str
     url: str
+    base_key: Optional[str] = Field(
+        None,
+        description="Storage key for clean base video used with client-side overlays",
+    )
+    base_url: Optional[str] = Field(
+        None,
+        description="Signed URL for clean base video used with client-side overlays",
+    )
+    tracks_key: Optional[str] = Field(
+        None,
+        description="Storage key for machine-readable annotation overlay tracks",
+    )
+    tracks_url: Optional[str] = Field(
+        None,
+        description="Signed URL for machine-readable annotation overlay tracks",
+    )
+    layers: List[VisualizationLayerInfo] = Field(
+        default_factory=list,
+        description="Visualization layers rendered into this annotated video",
+    )
 
 
 class AnalyzeResponse(BaseModel):
@@ -230,8 +250,12 @@ class CoachingBundleResponse(BaseModel):
 
 class ArtifactBundleResponse(BaseModel):
     """Artifact URLs and local keys for run outputs."""
+    base_video_url: Optional[str] = None
+    base_video_key: Optional[str] = None
     annotated_video_url: Optional[str] = None
     annotated_video_key: Optional[str] = None
+    annotation_tracks_url: Optional[str] = None
+    annotation_tracks_key: Optional[str] = None
     swing_3d_url: Optional[str] = None
     swing_3d_key: Optional[str] = None
     debug_urls: List[str] = Field(default_factory=list)

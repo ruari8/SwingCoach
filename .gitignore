@@ -15,3 +15,6 @@ build/
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+# Video testing
+.videos/
