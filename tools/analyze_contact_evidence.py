@@ -12,6 +12,13 @@ from typing import Any
 import cv2
 import numpy as np
 
+try:
+    import mediapipe as mp
+except ImportError:  # pragma: no cover - optional local diagnostic dependency.
+    mp = None
+
+_POSE_MODEL: Any | None = None
+
 
 @dataclass(frozen=True)
 class BlobEvidence:
@@ -21,10 +28,13 @@ class BlobEvidence:
     width: int
     height: int
     pre_luma: float
+    stable_luma: float
     post_luma: float
     final_luma: float
+    stable_delta: float
     transient_luma_delta: float
     luma_delta: float
+    shaft_support: float
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -32,10 +42,13 @@ class BlobEvidence:
             "area": self.area,
             "size": [self.width, self.height],
             "pre_luma": round(self.pre_luma, 2),
+            "stable_luma": round(self.stable_luma, 2),
             "post_luma": round(self.post_luma, 2),
             "final_luma": round(self.final_luma, 2),
+            "stable_delta": round(self.stable_delta, 2),
             "transient_luma_delta": round(self.transient_luma_delta, 2),
             "luma_delta": round(self.luma_delta, 2),
+            "shaft_support": round(self.shaft_support, 3),
         }
 
 
@@ -80,7 +93,12 @@ def mat_roi(frame: np.ndarray) -> tuple[int, int, int, int]:
     )
 
 
-def bright_ball_blobs(frame: np.ndarray, roi: tuple[int, int, int, int]) -> list[tuple[int, int, int, int, int]]:
+def bright_ball_blobs(
+    frame: np.ndarray,
+    roi: tuple[int, int, int, int],
+    excluded_points: list[tuple[float, float]],
+    exclusion_radius: float,
+) -> list[tuple[int, int, int, int, int]]:
     min_x, min_y, max_x, max_y = roi
     crop = frame[min_y:max_y, min_x:max_x]
     hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
@@ -113,7 +131,10 @@ def bright_ball_blobs(frame: np.ndarray, roi: tuple[int, int, int, int]) -> list
 
         global_x = min_x + x
         global_y = min_y + y
+        center_x = global_x + w / 2
         center_y = global_y + h / 2
+        if is_near_excluded_point(center_x, center_y, excluded_points, exclusion_radius):
+            continue
         mat_like_min_y = max(frame.shape[0] * 0.70, min_y + (max_y - min_y) * 0.18)
         if center_y < mat_like_min_y:
             continue
@@ -125,6 +146,53 @@ def bright_ball_blobs(frame: np.ndarray, roi: tuple[int, int, int, int]) -> list
         blobs.append((global_x, global_y, w, h, area))
 
     return blobs
+
+
+def is_near_excluded_point(
+    center_x: float,
+    center_y: float,
+    points: list[tuple[float, float]],
+    radius: float,
+) -> bool:
+    return any(float(np.hypot(center_x - point_x, center_y - point_y)) <= radius for point_x, point_y in points)
+
+
+def lower_body_exclusion_points(frame: np.ndarray) -> list[tuple[float, float]]:
+    if mp is None or not hasattr(mp, "solutions"):
+        return []
+
+    global _POSE_MODEL
+    if _POSE_MODEL is None:
+        _POSE_MODEL = mp.solutions.pose.Pose(
+            static_image_mode=True,
+            model_complexity=1,
+            enable_segmentation=False,
+            min_detection_confidence=0.35,
+        )
+
+    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    result = _POSE_MODEL.process(rgb)
+    if not result.pose_landmarks:
+        return []
+
+    height, width = frame.shape[:2]
+    landmark_names = mp.solutions.pose.PoseLandmark
+    lower_landmarks = [
+        landmark_names.LEFT_ANKLE,
+        landmark_names.RIGHT_ANKLE,
+        landmark_names.LEFT_HEEL,
+        landmark_names.RIGHT_HEEL,
+        landmark_names.LEFT_FOOT_INDEX,
+        landmark_names.RIGHT_FOOT_INDEX,
+    ]
+    points: list[tuple[float, float]] = []
+    for name in lower_landmarks:
+        landmark = result.pose_landmarks.landmark[name.value]
+        if landmark.visibility < 0.28:
+            continue
+        points.append((landmark.x * width, landmark.y * height))
+
+    return points
 
 
 def green_support_ratio(frame: np.ndarray, x: int, y: int, w: int, h: int) -> float:
@@ -215,6 +283,77 @@ def clubhead_estimate(frame: np.ndarray, roi: tuple[int, int, int, int]) -> dict
     return best
 
 
+def shaft_lines(frame: np.ndarray, roi: tuple[int, int, int, int]) -> list[dict[str, Any]]:
+    min_x, min_y, max_x, max_y = roi
+    height = frame.shape[0]
+    search_min_y = max(int(height * 0.34), min_y - int(height * 0.30))
+    search = frame[search_min_y:max_y, min_x:max_x]
+    gray = cv2.cvtColor(search, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 45, 130)
+    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=40, minLineLength=95, maxLineGap=18)
+    if lines is None:
+        return []
+
+    result: list[dict[str, Any]] = []
+    for raw_line in lines[:, 0]:
+        x1, y1, x2, y2 = [int(value) for value in raw_line]
+        dx = x2 - x1
+        dy = y2 - y1
+        length = float(np.hypot(dx, dy))
+        if length < 95:
+            continue
+
+        angle = abs(np.degrees(np.arctan2(dy, dx)))
+        angle = min(angle, 180 - angle)
+        if angle < 36 or angle > 84:
+            continue
+
+        mask = np.zeros(gray.shape, dtype=np.uint8)
+        cv2.line(mask, (x1, y1), (x2, y2), 255, 3)
+        line_pixels = gray[mask > 0]
+        if line_pixels.size == 0:
+            continue
+        line_luma = float(line_pixels.mean())
+        if line_luma > 155:
+            continue
+
+        local_lower = (x1, y1) if y1 >= y2 else (x2, y2)
+        local_upper = (x2, y2) if y1 >= y2 else (x1, y1)
+        result.append(
+            {
+                "lower": [float(min_x + local_lower[0]), float(search_min_y + local_lower[1])],
+                "upper": [float(min_x + local_upper[0]), float(search_min_y + local_upper[1])],
+                "length": length,
+                "angle": float(angle),
+                "line_luma": line_luma,
+            }
+        )
+
+    return result
+
+
+def shaft_support_score(center_x: float, center_y: float, lines: list[dict[str, Any]]) -> float:
+    best = 0.0
+    for line in lines:
+        lower_x, lower_y = line["lower"]
+        upper_x, upper_y = line["upper"]
+        if upper_y >= center_y:
+            continue
+        if lower_y < center_y - 190 or lower_y > center_y + 210:
+            continue
+
+        distance = float(np.hypot(center_x - lower_x, center_y - lower_y))
+        if distance > 240:
+            continue
+
+        distance_score = max(0.0, 1 - distance / 240)
+        length_score = min(1.0, float(line["length"]) / 620)
+        darkness_score = max(0.0, 1 - float(line["line_luma"]) / 155)
+        best = max(best, 0.58 * distance_score + 0.28 * length_score + 0.14 * darkness_score)
+
+    return best
+
+
 def patch_luma(frame: np.ndarray, x: int, y: int, w: int, h: int, pad: int) -> float:
     height, width = frame.shape[:2]
     min_x = max(0, x - pad)
@@ -228,15 +367,29 @@ def patch_luma(frame: np.ndarray, x: int, y: int, w: int, h: int, pad: int) -> f
 
 
 def contact_evidence(
+    stable_frame: np.ndarray,
     pre_frame: np.ndarray,
     post_frame: np.ndarray,
     final_frame: np.ndarray,
     require_club_proximity: bool,
     club_radius: float,
+    exclude_lower_body: bool,
+    lower_body_radius: float,
+    require_shaft_support: bool,
+    shaft_support_threshold: float,
+    require_pre_stability: bool,
+    pre_stability_tolerance: float,
 ) -> dict[str, Any]:
     roi = mat_roi(pre_frame)
     club = clubhead_estimate(pre_frame, roi)
-    blobs = bright_ball_blobs(pre_frame, roi)
+    lines = shaft_lines(pre_frame, roi)
+    excluded_points = lower_body_exclusion_points(pre_frame) if exclude_lower_body else []
+    blobs = bright_ball_blobs(
+        pre_frame,
+        roi,
+        excluded_points=excluded_points,
+        exclusion_radius=lower_body_radius,
+    )
     evidence: list[BlobEvidence] = []
 
     for x, y, w, h, area in blobs:
@@ -250,7 +403,18 @@ def contact_evidence(
             continue
 
         pad = max(4, int(max(w, h) * 0.45))
+        center_x = x + w / 2
+        center_y = y + h / 2
+        shaft_support = shaft_support_score(center_x, center_y, lines)
+        if require_shaft_support and shaft_support < shaft_support_threshold:
+            continue
+
+        stable_luma = patch_luma(stable_frame, x, y, w, h, pad)
         pre_luma = patch_luma(pre_frame, x, y, w, h, pad)
+        stable_delta = abs(pre_luma - stable_luma)
+        if require_pre_stability and stable_delta > pre_stability_tolerance:
+            continue
+
         post_luma = patch_luma(post_frame, x, y, w, h, pad)
         final_luma = patch_luma(final_frame, x, y, w, h, pad)
         transient_delta = pre_luma - post_luma
@@ -262,11 +426,14 @@ def contact_evidence(
                 area=area,
                 width=w,
                 height=h,
+                stable_luma=stable_luma,
                 pre_luma=pre_luma,
                 post_luma=post_luma,
                 final_luma=final_luma,
+                stable_delta=stable_delta,
                 transient_luma_delta=transient_delta,
                 luma_delta=persistent_delta,
+                shaft_support=shaft_support,
             )
         )
 
@@ -275,6 +442,13 @@ def contact_evidence(
     return {
         "roi": list(roi),
         "club": club,
+        "shaft_line_count": len(lines),
+        "require_shaft_support": require_shaft_support,
+        "shaft_support_threshold": shaft_support_threshold,
+        "require_pre_stability": require_pre_stability,
+        "pre_stability_tolerance": pre_stability_tolerance,
+        "lower_body_exclusion_points": [[round(x, 1), round(y, 1)] for x, y in excluded_points],
+        "lower_body_radius": lower_body_radius,
         "require_club_proximity": require_club_proximity,
         "club_radius": club_radius,
         "candidate_count": len(evidence),
@@ -315,6 +489,13 @@ def score_case(
     threshold: float,
     require_club_proximity: bool,
     club_radius: float,
+    exclude_lower_body: bool,
+    lower_body_radius: float,
+    require_shaft_support: bool,
+    shaft_support_threshold: float,
+    require_pre_stability: bool,
+    pre_stability_tolerance: float,
+    stability_lookback: float,
 ) -> dict[str, Any]:
     clip_path = Path(case["clip"]["path"])
     detections = case.get("detections") or [None]
@@ -327,21 +508,31 @@ def score_case(
         pre_abs, post_abs, source = event_times(case, detection)
         clip_start = float(case["clip"]["start"])
         clip_end = float(case["clip"]["end"])
+        stable_abs = max(clip_start + 0.2, pre_abs - stability_lookback)
         final_abs = max(post_abs, clip_end - 0.5)
+        stable_frame = read_frame(clip_path, stable_abs - clip_start)
         pre_frame = read_frame(clip_path, pre_abs - clip_start)
         post_frame = read_frame(clip_path, post_abs - clip_start)
         final_frame = read_frame(clip_path, final_abs - clip_start)
         evidence = contact_evidence(
+            stable_frame,
             pre_frame,
             post_frame,
             final_frame,
             require_club_proximity=require_club_proximity,
             club_radius=club_radius,
+            exclude_lower_body=exclude_lower_body,
+            lower_body_radius=lower_body_radius,
+            require_shaft_support=require_shaft_support,
+            shaft_support_threshold=shaft_support_threshold,
+            require_pre_stability=require_pre_stability,
+            pre_stability_tolerance=pre_stability_tolerance,
         )
         best_delta = (evidence.get("best") or {}).get("luma_delta") or 0.0
         scored_events.append(
             {
                 "source": source,
+                "stable_time": round(stable_abs, 3),
                 "pre_time": round(pre_abs, 3),
                 "post_time": round(post_abs, 3),
                 "final_time": round(final_abs, 3),
@@ -371,6 +562,13 @@ def analyze(args: argparse.Namespace) -> dict[str, Any]:
             args.threshold,
             require_club_proximity=args.require_club_proximity,
             club_radius=args.club_radius,
+            exclude_lower_body=not args.disable_lower_body_exclusion,
+            lower_body_radius=args.lower_body_radius,
+            require_shaft_support=args.require_shaft_support,
+            shaft_support_threshold=args.shaft_support_threshold,
+            require_pre_stability=not args.disable_pre_stability,
+            pre_stability_tolerance=args.pre_stability_tolerance,
+            stability_lookback=args.stability_lookback,
         )
         for case in report.get("cases", [])
     ]
@@ -380,6 +578,13 @@ def analyze(args: argparse.Namespace) -> dict[str, Any]:
             args.threshold,
             require_club_proximity=args.require_club_proximity,
             club_radius=args.club_radius,
+            exclude_lower_body=not args.disable_lower_body_exclusion,
+            lower_body_radius=args.lower_body_radius,
+            require_shaft_support=args.require_shaft_support,
+            shaft_support_threshold=args.shaft_support_threshold,
+            require_pre_stability=not args.disable_pre_stability,
+            pre_stability_tolerance=args.pre_stability_tolerance,
+            stability_lookback=args.stability_lookback,
         )
         for case in report.get("negative_cases", [])
     ]
@@ -389,6 +594,13 @@ def analyze(args: argparse.Namespace) -> dict[str, Any]:
         "threshold": args.threshold,
         "require_club_proximity": args.require_club_proximity,
         "club_radius": args.club_radius,
+        "exclude_lower_body": not args.disable_lower_body_exclusion,
+        "lower_body_radius": args.lower_body_radius,
+        "require_shaft_support": args.require_shaft_support,
+        "shaft_support_threshold": args.shaft_support_threshold,
+        "require_pre_stability": not args.disable_pre_stability,
+        "pre_stability_tolerance": args.pre_stability_tolerance,
+        "stability_lookback": args.stability_lookback,
         "positive_case_count": len(positive_cases),
         "positive_contact_count": sum(1 for case in positive_cases if case["contact_confirmed"]),
         "negative_case_count": len(negative_cases),
@@ -409,6 +621,13 @@ def main() -> None:
     parser.add_argument("--threshold", type=float, default=24.0)
     parser.add_argument("--require-club-proximity", action="store_true")
     parser.add_argument("--club-radius", type=float, default=170.0)
+    parser.add_argument("--disable-lower-body-exclusion", action="store_true")
+    parser.add_argument("--lower-body-radius", type=float, default=54.0)
+    parser.add_argument("--require-shaft-support", action="store_true")
+    parser.add_argument("--shaft-support-threshold", type=float, default=0.25)
+    parser.add_argument("--disable-pre-stability", action="store_true")
+    parser.add_argument("--pre-stability-tolerance", type=float, default=28.0)
+    parser.add_argument("--stability-lookback", type=float, default=1.4)
     parser.add_argument("--summary-only", action="store_true")
     args = parser.parse_args()
 
@@ -420,6 +639,9 @@ def main() -> None:
                     "source_report": output["source_report"],
                     "threshold": output["threshold"],
                     "require_club_proximity": output["require_club_proximity"],
+                    "exclude_lower_body": output["exclude_lower_body"],
+                    "require_shaft_support": output["require_shaft_support"],
+                    "require_pre_stability": output["require_pre_stability"],
                     "positive_contact_count": output["positive_contact_count"],
                     "positive_case_count": output["positive_case_count"],
                     "negative_contact_count": output["negative_contact_count"],

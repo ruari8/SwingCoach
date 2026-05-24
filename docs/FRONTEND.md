@@ -158,7 +158,7 @@ Local detector fixture workflow:
 - Use `--evaluator .videos/bin/evaluate_live_detector --output-dir .videos/live_detector_eval` to score the live state machine against the same fixtures. This is a comparison harness, not a production import path.
 - The fixture report includes positive-window recall, detections outside the positive labels, and sampled negative-gap false positives. Practice swings in negative gaps are expected to expose the limitation of pose-only detection; imported-video detection still needs a validated ball/contact cue before it can reliably reject practice swings.
 - Run `python3 tools/analyze_contact_evidence.py --report .videos/detector_eval/results/detector_fixture_report.json` to prototype ball/contact validation on the same fixtures. The current scorer looks for compact bright blobs on the mat that persistently darken after a candidate event, with optional shaft/clubhead proximity filtering via `--require-club-proximity`.
-- The contact scorer is diagnostic, not production behavior. Broad mat-pixel evidence can still confuse shoes/socks or other foreground occlusions with balls, so the production hit validator should combine mat/contact evidence with primary-golfer pose exclusion and clubhead-derived strike-spot localization.
+- The contact scorer is diagnostic, not production behavior. It can require pre-event patch stability, optional shaft-line support, and optional lower-body exclusion, but current real-video evidence still shows that broad mat-pixel evidence can confuse shoes/socks or other foreground occlusions with balls. The production hit validator should combine mat/contact evidence with primary-golfer pose exclusion and stronger clubhead-derived strike-spot localization.
 
 ## 7. Experimental Settings
 
