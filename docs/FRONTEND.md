@@ -149,6 +149,15 @@ Implemented feature set:
 - Opens trim with replay-detected timestamps preselected and disables the trim view's post-open detector scan, matching the intended capture path where detections are already known when recording stops.
 - This tool is not a production import path. It exists to tune and validate live detector behavior with saved long-session videos without repeatedly recording fresh device-camera sessions.
 
+Local detector fixture workflow:
+- Keep heavy videos and generated clips in ignored `.videos/`.
+- Compile the local evaluator with `xcrun swiftc -parse-as-library -framework AVFoundation -framework Vision -framework CoreGraphics -framework ImageIO SwingCoach/Models/OnDeviceSwingDetector.swift tools/evaluate_on_device_detector.swift -o .videos/bin/evaluate_on_device_detector`.
+- Compile the live-detector comparison harness with `xcrun swiftc -parse-as-library -framework AVFoundation -framework Vision -framework CoreGraphics -framework CoreVideo -framework ImageIO SwingCoach/Models/OnDeviceSwingDetector.swift SwingCoach/Models/LiveSwingDetector.swift tools/evaluate_live_detector.swift -o .videos/bin/evaluate_live_detector`.
+- Store rough labels beside the local video, for example `.videos/IMG_2592.labels.json`.
+- Run `python3 tools/evaluate_detector_fixtures.py --limit 3` to trim labelled windows, execute the same post-pass detector, and write `.videos/detector_eval/results/detector_fixture_report.json`.
+- Use `--evaluator .videos/bin/evaluate_live_detector --output-dir .videos/live_detector_eval` to score the live state machine against the same fixtures. This is a comparison harness, not a production import path.
+- The fixture report includes positive-window recall, detections outside the positive labels, and sampled negative-gap false positives. Practice swings in negative gaps are expected to expose the limitation of pose-only detection; imported-video detection still needs a validated ball/contact cue before it can reliably reject practice swings.
+
 ## 7. Experimental Settings
 
 File: [ExperimentalSettingsView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/ExperimentalSettingsView.swift)

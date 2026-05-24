@@ -24,12 +24,28 @@ actor OnDeviceSwingDetector {
         case readerSetupFailed
     }
 
-    private let targetSampleInterval = 0.12
-    private let maxProcessedFrames = 900
-    private let peakSpeedThreshold = 1.65
-    private let motionThreshold = 0.85
-    private let quietThreshold = 0.28
-    private let confidenceThreshold = 0.50
+    private let targetSampleInterval: Double
+    private let maxProcessedFrames: Int
+    private let peakSpeedThreshold: Double
+    private let motionThreshold: Double
+    private let quietThreshold: Double
+    private let confidenceThreshold: Double
+
+    init(
+        targetSampleInterval: Double = 0.12,
+        maxProcessedFrames: Int = 900,
+        peakSpeedThreshold: Double = 1.65,
+        motionThreshold: Double = 0.85,
+        quietThreshold: Double = 0.28,
+        confidenceThreshold: Double = 0.50
+    ) {
+        self.targetSampleInterval = targetSampleInterval
+        self.maxProcessedFrames = max(12, maxProcessedFrames)
+        self.peakSpeedThreshold = peakSpeedThreshold
+        self.motionThreshold = motionThreshold
+        self.quietThreshold = quietThreshold
+        self.confidenceThreshold = confidenceThreshold
+    }
 
     func detectSwings(in asset: AVAsset) async throws -> [DetectedSwing] {
         let duration = try await asset.load(.duration)
