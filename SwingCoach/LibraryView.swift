@@ -45,6 +45,13 @@ struct LibraryView: View {
     @State private var selectedSwings: Set<UUID> = []
     @State private var showDeleteConfirmation = false
 
+    // Batch export
+    @State private var isExportingSelectedSwings = false
+    @State private var exportStatusText = ""
+    @State private var exportProgress: Double? = nil
+    @State private var exportSharePayload: SwingLibraryExportPayload? = nil
+    @State private var exportErrorMessage: String? = nil
+
     private var filteredSwings: [SavedSwing] {
         if let vantage = filterVantage {
             return library.swings.filter { $0.vantage == vantage }
@@ -95,6 +102,14 @@ struct LibraryView: View {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if isSelecting {
                         if !selectedSwings.isEmpty {
+                            Button {
+                                exportSelectedSwings()
+                            } label: {
+                                Image(systemName: "square.and.arrow.up")
+                                    .foregroundColor(.blue)
+                            }
+                            .disabled(isExportingSelectedSwings)
+
                             // Analyze button
                             if onAnalyzeSwings != nil {
                                 Button {
@@ -132,6 +147,11 @@ struct LibraryView: View {
                 }
             } message: {
                 Text("This will remove the selected swings from your library. The videos will remain in your Photos library.")
+            }
+            .sheet(item: $exportSharePayload, onDismiss: cleanupExportPayload) { payload in
+                ActivityView(activityItems: payload.itemURLs) {
+                    cleanupExportPayload()
+                }
             }
             .onAppear {
                 refreshPhotoLibraryAccessStatus()
@@ -293,10 +313,22 @@ struct LibraryView: View {
                     }
                 }
             }
+            .overlay {
+                if isExportingSelectedSwings {
+                    batchExportOverlay
+                }
+            }
             .alert("Unable to Load Video", isPresented: $showPlaybackError) {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text("The video could not be loaded. It may have been deleted from your Photos library.")
+            }
+            .alert("Export Failed", isPresented: exportErrorBinding) {
+                Button("OK", role: .cancel) {
+                    exportErrorMessage = nil
+                }
+            } message: {
+                Text(exportErrorMessage ?? "The selected videos could not be exported.")
             }
         }
     }
@@ -490,6 +522,50 @@ struct LibraryView: View {
                 .fill(Color(.separator))
                 .frame(height: 0.5),
             alignment: .top
+        )
+    }
+
+    private var batchExportOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.55)
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                if let exportProgress {
+                    ProgressView(value: exportProgress)
+                        .progressViewStyle(.linear)
+                        .tint(.white)
+                        .frame(width: 220)
+
+                    Text("\(Int(exportProgress * 100))%")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(.white.opacity(0.82))
+                } else {
+                    ProgressView()
+                        .scaleEffect(1.4)
+                        .tint(.white)
+                }
+
+                Text(exportStatusText.isEmpty ? "Preparing export..." : exportStatusText)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(28)
+            .frame(maxWidth: 320)
+            .background(Color.black.opacity(0.82))
+            .cornerRadius(16)
+        }
+    }
+
+    private var exportErrorBinding: Binding<Bool> {
+        Binding(
+            get: { exportErrorMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    exportErrorMessage = nil
+                }
+            }
         )
     }
 
@@ -708,6 +784,51 @@ struct LibraryView: View {
         let swings = library.swings.filter { selectedSwings.contains($0.id) }
         exitSelectionMode()
         onAnalyzeSwings?(swings)
+    }
+
+    private func exportSelectedSwings() {
+        let swingsToExport = filteredSwings.filter { selectedSwings.contains($0.id) }
+        guard !swingsToExport.isEmpty else { return }
+
+        isExportingSelectedSwings = true
+        exportProgress = 0
+        exportStatusText = "Preparing \(swingsToExport.count) swing\(swingsToExport.count == 1 ? "" : "s")..."
+
+        Task {
+            do {
+                let payload = try await SwingLibraryBatchExporter.export(swings: swingsToExport) { completed, total, currentName in
+                    let safeTotal = max(total, 1)
+                    exportProgress = Double(completed) / Double(safeTotal)
+                    if completed >= total {
+                        exportStatusText = "Opening share sheet..."
+                    } else {
+                        exportStatusText = "Exporting \(completed + 1) of \(total)\n\(currentName)"
+                    }
+                }
+
+                await MainActor.run {
+                    isExportingSelectedSwings = false
+                    exportProgress = nil
+                    exportStatusText = ""
+                    exportSharePayload = payload
+                }
+            } catch {
+                await MainActor.run {
+                    isExportingSelectedSwings = false
+                    exportProgress = nil
+                    exportStatusText = ""
+                    exportErrorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    private func cleanupExportPayload() {
+        guard let payload = exportSharePayload else { return }
+        exportSharePayload = nil
+        Task.detached {
+            try? FileManager.default.removeItem(at: payload.folderURL)
+        }
     }
 
     // MARK: - Import Actions
@@ -1764,6 +1885,196 @@ struct FPSExportSheet: View {
             }
         }
     }
+}
+
+// MARK: - Library Batch Export
+
+struct SwingLibraryExportPayload: Identifiable {
+    let id = UUID()
+    let folderURL: URL
+    let itemURLs: [URL]
+}
+
+private struct SwingLibraryExportManifest: Encodable {
+    let exportedAt: Date
+    let count: Int
+    let swings: [SwingLibraryExportManifestItem]
+}
+
+private struct SwingLibraryExportManifestItem: Encodable {
+    let filename: String
+    let swingID: UUID
+    let photoAssetID: String
+    let vantage: String
+    let duration: Double
+    let createdAt: Date
+    let notes: String?
+    let analyzed: Bool
+}
+
+private enum SwingLibraryBatchExportError: LocalizedError {
+    case missingPhotoAsset(String)
+    case missingVideoResource(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .missingPhotoAsset(let name):
+            return "Could not find the Photos asset for \(name). It may have been deleted or may not be allowed by limited Photos access."
+        case .missingVideoResource(let name):
+            return "Could not find a video resource for \(name)."
+        }
+    }
+}
+
+@MainActor
+private enum SwingLibraryBatchExporter {
+    static func export(
+        swings: [SavedSwing],
+        onProgress: @escaping (_ completed: Int, _ total: Int, _ currentName: String) -> Void
+    ) async throws -> SwingLibraryExportPayload {
+        let exportFolder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SwingCoachExport-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: exportFolder, withIntermediateDirectories: true)
+
+        var itemURLs: [URL] = []
+        var manifestItems: [SwingLibraryExportManifestItem] = []
+
+        do {
+            for (index, swing) in swings.enumerated() {
+                let displayName = exportDisplayName(for: swing, index: index + 1)
+                onProgress(index, swings.count, displayName)
+
+                let asset = try photoAsset(for: swing, displayName: displayName)
+                let resource = try videoResource(for: asset, displayName: displayName)
+                let filename = exportFilename(
+                    for: swing,
+                    index: index + 1,
+                    originalFilename: resource.originalFilename
+                )
+                let outputURL = exportFolder.appendingPathComponent(filename)
+
+                try await write(resource: resource, to: outputURL)
+                itemURLs.append(outputURL)
+                manifestItems.append(
+                    SwingLibraryExportManifestItem(
+                        filename: filename,
+                        swingID: swing.id,
+                        photoAssetID: swing.photoAssetID,
+                        vantage: swing.vantage.rawValue,
+                        duration: swing.duration,
+                        createdAt: swing.createdAt,
+                        notes: swing.notes,
+                        analyzed: swing.analyzed
+                    )
+                )
+            }
+
+            let manifestURL = exportFolder.appendingPathComponent("metadata.json")
+            let manifest = SwingLibraryExportManifest(
+                exportedAt: Date(),
+                count: manifestItems.count,
+                swings: manifestItems
+            )
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            encoder.dateEncodingStrategy = .iso8601
+            try encoder.encode(manifest).write(to: manifestURL, options: .atomic)
+            itemURLs.append(manifestURL)
+            onProgress(swings.count, swings.count, "metadata.json")
+
+            return SwingLibraryExportPayload(folderURL: exportFolder, itemURLs: itemURLs)
+        } catch {
+            try? FileManager.default.removeItem(at: exportFolder)
+            throw error
+        }
+    }
+
+    private static func photoAsset(for swing: SavedSwing, displayName: String) throws -> PHAsset {
+        let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [swing.photoAssetID], options: nil)
+        guard let asset = fetchResult.firstObject else {
+            throw SwingLibraryBatchExportError.missingPhotoAsset(displayName)
+        }
+        return asset
+    }
+
+    private static func videoResource(for asset: PHAsset, displayName: String) throws -> PHAssetResource {
+        let resources = PHAssetResource.assetResources(for: asset)
+        if let resource = resources.first(where: { $0.type == .fullSizeVideo }) {
+            return resource
+        }
+        if let resource = resources.first(where: { $0.type == .video }) {
+            return resource
+        }
+        if let resource = resources.first(where: { $0.uniformTypeIdentifier.contains("movie") || $0.uniformTypeIdentifier.contains("video") }) {
+            return resource
+        }
+        throw SwingLibraryBatchExportError.missingVideoResource(displayName)
+    }
+
+    private static func write(resource: PHAssetResource, to outputURL: URL) async throws {
+        try? FileManager.default.removeItem(at: outputURL)
+
+        let options = PHAssetResourceRequestOptions()
+        options.isNetworkAccessAllowed = true
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            PHAssetResourceManager.default().writeData(
+                for: resource,
+                toFile: outputURL,
+                options: options
+            ) { error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+            }
+        }
+    }
+
+    private static func exportDisplayName(for swing: SavedSwing, index: Int) -> String {
+        "\(String(format: "%03d", index)) \(swing.vantage.shortName)"
+    }
+
+    private static func exportFilename(for swing: SavedSwing, index: Int, originalFilename: String) -> String {
+        let number = String(format: "%03d", index)
+        let vantage = swing.vantage.shortName.lowercased().replacingOccurrences(of: "-", with: "_")
+        let date = filenameDateFormatter.string(from: swing.createdAt)
+        let originalExtension = URL(fileURLWithPath: originalFilename).pathExtension
+        let fileExtension = originalExtension.isEmpty ? "mov" : sanitizedFilenamePart(originalExtension.lowercased())
+        return "swingcoach_\(number)_\(vantage)_\(date).\(fileExtension)"
+    }
+
+    private static func sanitizedFilenamePart(_ value: String) -> String {
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_-"))
+        let scalars = value.unicodeScalars.map { allowed.contains($0) ? Character($0) : "_" }
+        return String(scalars)
+    }
+
+    private static let filenameDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMMdd_HHmmss"
+        return formatter
+    }()
+}
+
+private struct ActivityView: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    var onComplete: (() -> Void)? = nil
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        controller.completionWithItemsHandler = { _, _, _, _ in
+            DispatchQueue.main.async {
+                onComplete?()
+            }
+        }
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 #Preview {

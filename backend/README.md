@@ -174,6 +174,19 @@ python test_sam3_detection.py
 python test_temporal_smoothing.py
 ```
 
+## SAM3 Runtime Notes
+
+For Mac-side pseudo-labeling, prefer the MLX SAM3 image path over the current Meta PyTorch SAM3 CPU path. Local testing found that the official PyTorch package is CUDA-first: selecting `mps` did not move model weights or the processor to Apple GPU, while forcing MPS required community patches and still fell back to CPU for unsupported operations.
+
+Current recommendation:
+
+- MLX SAM3 image for Apple Silicon frame pseudo-labeling.
+- SAM3.1 only as a separate video-tracking/mask-propagation experiment.
+- Do not use SAM3/SAM3.1 as the planned live iPhone detector; train/export a small Core ML golf-object detector instead.
+- Treat SAM3D separately. The MLX SAM3 image findings do not prove SAM3D performance or compatibility.
+
+See [Experimental Swing Detector](/Users/ruari/Documents/Startups/SwingCoach/docs/EXPERIMENT_SWING_DETECTOR.md) for benchmark numbers and labeling strategy.
+
 ## Known Reliability Notes
 
 1. Some metrics are confidence-gated and may be absent if detection confidence is low.

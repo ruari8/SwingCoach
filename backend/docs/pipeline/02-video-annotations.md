@@ -72,9 +72,20 @@ Output files:
 Meta's current Segment Anything line has moved beyond the older SAM/SAM 2 assumptions. SAM 3 added open-vocabulary concept detection, segmentation, and tracking for images and videos from text, exemplar, and visual prompts. SAM 3.1 is positioned by Meta as a drop-in SAM 3 replacement with faster multi-object video tracking through object multiplexing.
 
 For SwingCoach, the practical path is:
-- Use SAM 3.1 server-side for annotation-quality masks when GPU resources are available.
+- Use MLX SAM3 image on Apple Silicon for Mac-side pseudo-labeling and annotation experiments when the task is independent image prompting.
+- Evaluate SAM 3.1 separately if the task needs temporally consistent video-propagated masks or multi-object tracking.
 - Keep lightweight on-device detection separate; do not try to run heavy SAM-class segmentation in the live capture loop.
 - Treat golf-specific prompts (`club shaft`, `golf club`, `golfer`, `golf ball`) as candidates that need validation against real range footage before relying on them for coaching claims.
+
+Local SAM3 runtime finding:
+
+- Meta's official PyTorch `sam3` package is CUDA-first. In the current local setup, selecting `mps` did not move model weights or the processor off CPU.
+- A community MPS patch can run image inference with `PYTORCH_ENABLE_MPS_FALLBACK=1`, but unsupported operations still fall back to CPU.
+- MLX SAM3 image was the fastest tested Mac route for frame pseudo-labeling: 46.0s for 20 hard frames versus 237.6s for the CPU PyTorch route, with the same class-count outcome.
+- Hugging Face Transformers SAM3 on MPS ran but reported missing text encoder weights and had severe runtime stalls; do not adopt it without another investigation.
+- SAM3D is a separate model family and needs its own Apple Silicon/runtime validation.
+
+Detailed findings live in [Experimental Swing Detector](/Users/ruari/Documents/Startups/SwingCoach/docs/EXPERIMENT_SWING_DETECTOR.md).
 
 ## Key Files
 

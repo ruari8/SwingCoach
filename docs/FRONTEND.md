@@ -53,6 +53,7 @@ Implemented feature set:
 - Swing cards open a swing detail workspace instead of immediately presenting full-screen playback.
 - Analyzed swings show a status indicator on their library card.
 - Multi-select for batch analyze and batch delete (library-only delete, does not remove Photos asset).
+- Multi-select can export selected swings by copying the underlying Photos video resources into a temporary SwingCoach export folder, adding one `metadata.json` manifest with app-level swing metadata, and presenting the iOS share sheet for AirDrop/Files transfer. The manifest is for dataset traceability and is shared alongside the selected videos, not embedded into each movie file.
 - Playback with loading/error states and a shared in-frame scrubber plus gesture-driven transport on the video surface.
 - Export/playback utilities integrated through app sheets.
 
