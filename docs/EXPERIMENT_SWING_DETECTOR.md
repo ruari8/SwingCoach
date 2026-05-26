@@ -17,8 +17,10 @@ The first trained model, if needed, should not be an end-to-end "swing detector"
 
 - clubhead at address
 - shaft or shaft endpoints
-- addressed ball or strike spot
+- useful foreground golf-ball candidates
 - confidence for each anchor
+
+The model should not predict `addressed_ball`, `impact`, `swing_start`, or `swing_end` in the first version. Those are derived runtime concepts. The app should infer them from body motion, audio, clubhead/shaft geometry, local ball candidates, and temporal consistency.
 
 The app-level swing detector remains a pipeline:
 
@@ -30,7 +32,7 @@ Apple Vision pose
   -> primary golfer, hands, body motion, swing phase
 
 Lightweight golf-anchor model
-  -> clubhead, shaft geometry, strike spot/addressed ball
+  -> clubhead, shaft geometry, foreground ball candidates
 
 Temporal state machine
   -> address, takeaway, downswing, impact, follow-through, end
@@ -358,6 +360,221 @@ addressed ball from clubhead/clubface proximity at address
 impact from addressed-ball region change plus club/body/audio evidence
 start/end from pose, club motion, and temporal state
 ```
+
+### Current MLX Relabel Run
+
+The first MLX SAM3 image relabel run completed over the 708 extracted SwingCoach frames using:
+
+- threshold: `0.3`
+- max image side: `960`
+- output folder: `detector_model/mlx_sam3_labels`
+- classes: `golf_club`, `club_shaft`, `clubhead`, `golf_ball_candidate`
+- ball prompts: `golf ball`, `golfball`, `white golf ball`, `small white golf ball`
+- duplicate handling: class-level NMS across prompt variants
+- overlay review set: 220 frames
+
+Verified output:
+
+| Artifact | Count |
+| --- | ---: |
+| annotations | 708 |
+| YOLO label files | 708 |
+| overlays | 220 |
+| empty frames | 0 |
+
+Class totals:
+
+| Class | Detections | Frames with class |
+| --- | ---: | ---: |
+| `golf_club` | 633 | 633 |
+| `club_shaft` | 623 | 623 |
+| `clubhead` | 623 | 623 |
+| `golf_ball_candidate` | 2942 | 620 |
+
+Average timing:
+
+```text
+set_image: 0.4823s/frame
+prompts:   1.0754s/frame
+```
+
+Comparison with the previous CPU SAM3 label pass:
+
+| Metric | CPU SAM3 | MLX SAM3 image |
+| --- | ---: | ---: |
+| frames | 708 | 708 |
+| empty frames | 24 | 0 |
+| club detections | 602 | 633 |
+| shaft detections | 581 | 623 |
+| clubhead detections | 597 | 623 |
+| ball detections | 323 single `golf_ball` | 2942 multi-candidate `golf_ball_candidate` |
+
+The ball count is intentionally much higher because this run labels all plausible ball candidates, including spare/alignment/background balls. Addressed-ball selection remains a separate derived step.
+
+### Filtered YOLO Dataset
+
+The raw MLX SAM3 labels are too noisy to train directly because the range background contains many tiny golf balls. A filtered training dataset was built with:
+
+```bash
+./backend/venv/bin/python tools/build_detector_training_dataset.py --overwrite
+```
+
+Output:
+
+```text
+detector_model/yolo_swing_objects_v1
+```
+
+This directory is ignored by git. The tracked builder script is `tools/build_detector_training_dataset.py`.
+
+Working layout for this experiment:
+
+| Path | Git status | Purpose |
+| --- | --- | --- |
+| `detector_model/` | ignored | heavy local workspace for videos, extracted frames, pseudo-labels, trained checkpoints, Core ML exports, and QA images |
+| `tools/` | tracked | reusable experiment/preprocessing/evaluation scripts |
+| `docs/EXPERIMENT_SWING_DETECTOR.md` | tracked | decisions, results, and current interpretation |
+
+The `tools/` name is generic, but it is already the repo's existing home for detector/build/evaluation utilities. If this work graduates from experiment to product code, move the stable pieces into a more explicit package such as `backend/analysis/detector_training/` or `experiments/swing_detector/`.
+
+The first model dataset deliberately uses three classes:
+
+| Class | Reason |
+| --- | --- |
+| `club_shaft` | needed for shaft/plane geometry and club context |
+| `clubhead` | needed to derive the addressed strike area |
+| `golf_ball_candidate` | generic useful ball candidates, not addressed-ball identity |
+
+The full `golf_club` box from SAM3 was excluded from v1 because it is a large nested box around the shaft/head and is less useful for impact timing than the specific anchors.
+
+Ball filtering policy:
+
+- keep only `golf_ball_candidate` boxes with area >= `100` px
+- keep only boxes with normalized center-y >= `0.50`
+- keep at most `5` balls per frame after scoring by confidence, size, and foreground position
+- do not try to choose the addressed ball during dataset creation
+
+Filtered dataset summary:
+
+| Metric | Count |
+| --- | ---: |
+| frames | 708 |
+| train frames | 528 |
+| validation frames | 108 |
+| test frames | 72 |
+| source videos | 59 |
+| train source videos | 44 |
+| validation source videos | 9 |
+| test source videos | 6 |
+| frames with labels | 707 |
+| frames without labels | 1 |
+| kept `club_shaft` labels | 623 |
+| kept `clubhead` labels | 623 |
+| kept `golf_ball_candidate` labels | 768 |
+| dropped tiny ball candidates | 2168 |
+
+Splitting is by source video, not random frame, so adjacent frames from the same swing do not leak across train/val/test.
+
+### First YOLO Training Run
+
+Two nano YOLO detectors were trained on the filtered pseudo-label dataset. These are experiments, not production models, because the labels are still SAM3-derived rather than hand-corrected.
+
+Training environment:
+
+- Mac local training on Apple MPS
+- Ultralytics `8.4.54`
+- training/evaluation image size `960`
+- batch size `4`
+- conservative geometry/color augmentation
+- output folder: `detector_model/yolo_runs`
+
+The image-size setting is the model input size, not a claim that source videos must be exactly 960 pixels. Training and inference resize/letterbox each input frame to the fixed model input, then output boxes are mapped back to the original frame coordinate system. On-device Core ML packages also expose fixed input dimensions, so the app-side camera pipeline must perform the same resize/letterbox and box remapping.
+
+YOLO11n was trained first because it is the stronger current Ultralytics nano detector:
+
+```text
+detector_model/yolo_runs/swing_objects_yolo11n_v1_960/weights/best.pt
+```
+
+YOLO11n validation metrics:
+
+| Class | Precision | Recall | mAP50 | mAP50-95 |
+| --- | ---: | ---: | ---: | ---: |
+| all | 0.975 | 0.886 | 0.941 | 0.770 |
+| `club_shaft` | 0.949 | 0.960 | 0.986 | 0.866 |
+| `clubhead` | 0.989 | 0.944 | 0.975 | 0.831 |
+| `golf_ball_candidate` | 0.988 | 0.754 | 0.863 | 0.614 |
+
+YOLO11n held-out test metrics:
+
+| Class | Precision | Recall | mAP50 | mAP50-95 |
+| --- | ---: | ---: | ---: | ---: |
+| all | 0.973 | 0.928 | 0.960 | 0.829 |
+| `club_shaft` | 1.000 | 0.918 | 0.972 | 0.871 |
+| `clubhead` | 0.923 | 0.970 | 0.980 | 0.868 |
+| `golf_ball_candidate` | 0.995 | 0.896 | 0.929 | 0.747 |
+
+YOLO11n is the best research checkpoint from this run. Initial Core ML testing was inconclusive because the backend Python `3.14` environment hit `coremltools`/wrapper failures before proving whether the model package itself was valid. A clean Python `3.13` re-check loaded and ran both raw YOLO11n Core ML packages:
+
+| Export | Direct Core ML load/predict? | Input size | Output shape |
+| --- | --- | ---: | --- |
+| `best.mlpackage` | yes | `640x640` | `(1, 7, 8400)` |
+| `best_960_raw.mlpackage` | yes | `960x960` | `(1, 7, 18900)` |
+
+Remaining YOLO11n Core ML work:
+
+- validate post-processing/NMS against the PyTorch predictions
+- test the package from Swift/Core ML, not only Python `coremltools`
+- decide whether raw model output plus Swift-side NMS is acceptable
+- re-test embedded-NMS export only if app-side NMS becomes a problem
+
+YOLOv8n was trained as a compatibility baseline:
+
+```text
+detector_model/yolo_runs/swing_objects_yolov8n_v1_960/weights/best.pt
+```
+
+YOLOv8n validation metrics:
+
+| Class | Precision | Recall | mAP50 | mAP50-95 |
+| --- | ---: | ---: | ---: | ---: |
+| all | 0.961 | 0.901 | 0.955 | 0.731 |
+| `club_shaft` | 1.000 | 0.938 | 0.985 | 0.842 |
+| `clubhead` | 0.884 | 0.926 | 0.945 | 0.740 |
+| `golf_ball_candidate` | 1.000 | 0.838 | 0.935 | 0.610 |
+
+YOLOv8n held-out test metrics:
+
+| Class | Precision | Recall | mAP50 | mAP50-95 |
+| --- | ---: | ---: | ---: | ---: |
+| all | 0.945 | 0.924 | 0.970 | 0.766 |
+| `club_shaft` | 1.000 | 0.921 | 0.995 | 0.855 |
+| `clubhead` | 0.836 | 0.930 | 0.949 | 0.785 |
+| `golf_ball_candidate` | 1.000 | 0.922 | 0.965 | 0.657 |
+
+YOLOv8n Core ML findings:
+
+| Export | Runs locally? | Test mAP50 | Test mAP50-95 | Ball recall | Approx local inference |
+| --- | --- | ---: | ---: | ---: | ---: |
+| `640` raw Core ML | yes | 0.869 | 0.567 | 0.692 | 62.6ms/image |
+| `960` raw Core ML | yes | 0.953 | 0.743 | 0.870 | 38.2ms/image |
+
+The 960 Core ML package is the compatibility baseline:
+
+```text
+detector_model/yolo_runs/swing_objects_yolov8n_v1_960/weights/best.mlpackage
+```
+
+It does not include embedded NMS. The app or runtime wrapper must perform post-processing/NMS outside the model.
+
+Current interpretation:
+
+- YOLO11n gives the best detector quality in PyTorch and remains the research target.
+- YOLOv8n remains the compatibility fallback because its Core ML path is older and easier to reason about.
+- Both raw Core ML packages still need app-side decoding/NMS before either can be called app-ready.
+- The metrics are optimistic because the train/val/test labels are pseudo-labels created by SAM3, not hand labels.
+- The next quality gate is visual QA on model predictions, especially ball false negatives/false positives near address.
+- The detector model still does not solve addressed-ball identity by itself. Addressed-ball identity is derived later from clubhead proximity, pose context, temporal consistency, and local before/after patch changes.
 
 ## Public Datasets And Models
 
