@@ -573,8 +573,86 @@ Current interpretation:
 - YOLOv8n remains the compatibility fallback because its Core ML path is older and easier to reason about.
 - Both raw Core ML packages still need app-side decoding/NMS before either can be called app-ready.
 - The metrics are optimistic because the train/val/test labels are pseudo-labels created by SAM3, not hand labels.
-- The next quality gate is visual QA on model predictions, especially ball false negatives/false positives near address.
+- Visual QA on real frames and a held-out iron swing clip was good enough to justify a detector-pipeline experiment.
 - The detector model still does not solve addressed-ball identity by itself. Addressed-ball identity is derived later from clubhead proximity, pose context, temporal consistency, and local before/after patch changes.
+
+### YOLO-backed Detector Pipeline Experiment
+
+Script:
+
+```text
+tools/evaluate_yolo_object_swing_detector.py
+```
+
+Purpose:
+
+Evaluate whether the trained golf-object model can act as the visual confirmation layer for swing detection on the long range-session video, without using the label timestamps during detection.
+
+Algorithm used in the current experiment:
+
+1. Sample the video sequentially at `2 fps`, simulating a live-style pass over the recording.
+2. Run the YOLO11n golf-object model on each sampled frame.
+3. Build a motion signal from:
+   - frame-to-frame visual difference
+   - detected club/clubhead movement
+   - club presence confidence
+4. Propose swing windows from sustained object/motion activity.
+5. Merge nearby short motion chunks before applying the minimum-duration rule. This matters because one true swing can fragment into several short motion bursts when the clubhead detector briefly drops out.
+6. Within each candidate window, cluster lower-foreground `golf_ball_candidate` boxes into possible strike-area anchors.
+7. Confirm a candidate only if a plausible ball anchor is present before the motion and disappears after the motion.
+8. Estimate impact from the first sustained disappearance of the selected ball anchor, then report a trimmed swing window around that impact estimate instead of returning the whole motion-proposal span.
+
+Important implementation notes:
+
+- Addressed-ball identity is still not a model class. The model outputs generic `golf_ball_candidate` boxes.
+- The detector derives addressed-ball evidence by selecting the candidate with the strongest before/after disappearance signal in the lower strike area.
+- Clubhead-address proximity is recorded in the evidence payload, but it is not a hard acceptance gate yet. It is used preferentially for impact timing when an anchor is clearly next to the clubhead.
+- The full-video evaluator supports a feature cache so threshold/logic changes can be rescored without re-running YOLO over the full video.
+
+Current full range-session result:
+
+| Run | Matched labelled swings | Missed labelled swings | Extra detections |
+| --- | ---: | ---: | ---: |
+| Initial YOLO object pass | 18/18 | 0 | 10 |
+| Tuned YOLO object pass | 18/18 | 0 | 0 |
+
+The final tuned report is:
+
+```text
+.videos/yolo_object_detector_full_tuned_final/results/yolo_object_detector_full_report.json
+```
+
+Readable summary:
+
+```text
+.videos/yolo_object_detector_full_tuned_final/results/detection_summary.md
+```
+
+The feature cache used for fast rescoring is:
+
+```text
+.videos/yolo_object_detector_full_tuned/features_full_yolo11n_2fps.json
+```
+
+The same code path also passed the trimmed fixture regression:
+
+| Fixture set | Matched positives | Positive false positives | Negative false positives |
+| --- | ---: | ---: | ---: |
+| 18 labelled swing clips + 8 negative clips | 18/18 | 0 | 0 |
+
+Report:
+
+```text
+.videos/yolo_object_detector_eval_tuned_final/results/yolo_object_detector_report.json
+```
+
+Interpretation:
+
+- The object model is useful enough to build around.
+- Ball disappearance is currently the strongest visual confirmation signal.
+- The app now bundles the YOLO11n Core ML package and uses a Swift port of this detector for post-record/import Trim preselection.
+- The shipped app path is model-only for trim ranges. The older Vision-only detector is not used as a production fallback.
+- Live camera-time Core ML scheduling and Apple Vision fusion remain future work; the current app integration runs after recording stops or when an import opens in Trim.
 
 ## Public Datasets And Models
 

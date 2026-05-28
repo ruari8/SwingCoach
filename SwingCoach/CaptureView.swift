@@ -11,7 +11,6 @@ import AVKit
 import Combine
 import AVFoundation
 import Photos
-import Vision
 
 enum SloMoMode {
     case standard    // 120 fps @ 1080p
@@ -55,9 +54,6 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private let qualityQueue = DispatchQueue(label: "camera.quality.queue")
     private let movieOutput = AVCaptureMovieFileOutput()
     private let videoDataOutput = AVCaptureVideoDataOutput()
-    private let liveSwingDetector = LiveSwingDetector()
-    private var recordingStartSampleTime: CMTime?
-    private var lastLiveSwingSampleTime = -Double.greatestFiniteMagnitude
     @Published var lastRecordingURL: URL?
     @Published var lastRecordingSwingDetections: [DetectedSwing] = []
     @Published var recordingError: Error?
@@ -218,15 +214,13 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     private func resetLiveSwingDetection() {
-        qualityQueue.async {
-            self.recordingStartSampleTime = nil
-            self.lastLiveSwingSampleTime = -Double.greatestFiniteMagnitude
-            self.liveSwingDetector.reset()
-        }
-
         DispatchQueue.main.async {
             self.lastRecordingSwingDetections = []
-            self.liveSwingDetection = self.isLiveSwingDetectionEnabled ? .idle : LiveSwingDetectionSnapshot(
+            self.liveSwingDetection = self.isLiveSwingDetectionEnabled ? LiveSwingDetectionSnapshot(
+                status: .idle,
+                primaryMessage: "Model detect ready",
+                detailMessage: "Swing windows will be detected after recording stops."
+            ) : LiveSwingDetectionSnapshot(
                 status: .disabled,
                 primaryMessage: "Auto detect off",
                 detailMessage: "Recording normally; trim manually after stop."
@@ -236,10 +230,6 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         qualityQueue.async {
-            let detections = self.isLiveSwingDetectionEnabled
-                ? self.liveSwingDetector.finish(recordingTime: self.lastLiveSwingSampleTime.isFinite ? self.lastLiveSwingSampleTime : nil)
-                : []
-
             DispatchQueue.main.async {
                 guard error == nil else {
                     self.recordingError = error
@@ -249,58 +239,15 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 }
 
                 self.recordingError = nil
-                self.lastRecordingSwingDetections = detections
+                self.lastRecordingSwingDetections = []
                 self.lastRecordingURL = outputFileURL
             }
         }
     }
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        if movieOutput.isRecording, isLiveSwingDetectionEnabled {
-            processLiveSwingFrame(sampleBuffer)
-        }
-    }
-
-    private func processLiveSwingFrame(_ sampleBuffer: CMSampleBuffer) {
-        let sampleTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-
-        if recordingStartSampleTime == nil {
-            recordingStartSampleTime = sampleTime
-        }
-
-        guard let recordingStartSampleTime else { return }
-
-        let relativeTime = CMTimeGetSeconds(CMTimeSubtract(sampleTime, recordingStartSampleTime))
-        guard relativeTime.isFinite, relativeTime - lastLiveSwingSampleTime >= 0.10 else { return }
-
-        lastLiveSwingSampleTime = relativeTime
-
-        let request = VNDetectHumanBodyPoseRequest()
-        let handler = VNImageRequestHandler(cmSampleBuffer: sampleBuffer, options: [:])
-
-        do {
-            try handler.perform([request])
-            let snapshot = liveSwingDetector.process(
-                sampleBuffer: sampleBuffer,
-                observations: request.results ?? [],
-                recordingTime: relativeTime
-            )
-
-            DispatchQueue.main.async {
-                self.liveSwingDetection = snapshot
-            }
-        } catch {
-            DispatchQueue.main.async {
-                self.liveSwingDetection = LiveSwingDetectionSnapshot(
-                    status: .unavailable,
-                    primaryMessage: "Auto detect unavailable",
-                    detailMessage: "Pose detection failed on this frame.",
-                    detectedSwingCount: self.liveSwingDetection.detectedSwingCount,
-                    hasBallLock: self.liveSwingDetection.hasBallLock,
-                    hasBallMovement: self.liveSwingDetection.hasBallMovement
-                )
-            }
-        }
+        // Model-backed swing detection currently runs on the recorded asset when
+        // Trim opens. Do not use the older live Vision/bright-blob fallback here.
     }
 
 }
@@ -570,8 +517,8 @@ struct CaptureView: View {
                 TrimView(
                     source: .capturedFile(url: url),
                     sourceCaptureMode: currentRecordingMode,
-                    initialDetectedSwings: liveAutoSwingDetectionEnabled ? camera.lastRecordingSwingDetections : [],
-                    runsPostRecordDetection: liveAutoSwingDetectionEnabled && camera.lastRecordingSwingDetections.isEmpty,
+                    initialDetectedSwings: [],
+                    runsPostRecordDetection: liveAutoSwingDetectionEnabled,
                     onComplete: { clips, exportedURLs in
                         // Handle exported clips
                         print("✅ Exported \(clips.count) clips:")

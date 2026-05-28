@@ -23,9 +23,9 @@ struct ExperimentalSettingsView: View {
     var body: some View {
         List {
             Section {
-                Toggle("Live auto swing detection", isOn: $liveAutoSwingDetectionEnabled)
+                Toggle("Model swing detection", isOn: $liveAutoSwingDetectionEnabled)
             } footer: {
-                Text("Experimental. When off, capture still records normally and trim opens without auto-detected swing ranges.")
+                Text("Experimental. When off, capture still records normally and trim opens without model-detected swing ranges.")
             }
 
             Section {

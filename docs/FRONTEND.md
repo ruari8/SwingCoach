@@ -69,10 +69,9 @@ Implemented feature set:
   - `60fps 4K` (ball-tracer future mode scaffold)
 - Runtime mode switching without full session teardown.
 - Tap-to-focus and exposure targeting.
-- Live auto swing-detection is experimental and can be turned off from Library > Experiments. When enabled, it samples the camera feed, scores multiple Vision body-pose observations to keep tracking the primary golfer, smooths Vision hand-speed jitter, uses a rolling address-to-takeaway state machine, searches a pose-derived address ROI for a stable compact bright ball candidate, and treats ball disappearance, ball-region luma change, or strong full-swing pose motion as swing evidence with lower confidence when impact is not confirmed.
-- When live auto-detection is off, capture still records normally and the trim editor opens without generated ranges so the user can mark clips manually.
-- When live auto-detection is enabled but no live swing windows are found during recording, captured trim runs the local on-device post-pass as a fallback before asking the user to mark ranges manually.
-- During recording, the capture badge shows live auto-detection state (`Finding ball`, `Ball locked`, `Swing started`, `Impact detected`, or detected count).
+- Model swing-detection is experimental and can be turned off from Library > Experiments. When enabled, capture still records normally and Trim runs the bundled YOLO11n/Core ML golf-object model after recording stops.
+- When model detection is off, capture still records normally and the trim editor opens without generated ranges so the user can mark clips manually.
+- During recording, the capture badge only indicates that model detection will run after stop. The older Vision/bright-blob live fallback is not used for production trim ranges.
 - Recording state handling with immediate post-stop playback of the captured high-fps asset.
 - Stopping a new recording opens the trim editor automatically instead of requiring the post-stop scissors action.
 - Active recording disables the iOS idle timer so solo range sessions do not Auto-Lock while the golfer walks into frame, then restores the prior idle-timer state after stop, error, or leaving capture.
@@ -86,8 +85,9 @@ Files:
 - [TrimView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/TrimView/TrimView.swift)
 - [ThumbnailTimeline.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/TrimView/ThumbnailTimeline.swift)
 - [VideoTrimmer.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/VideoTrimmer.swift)
-- [OnDeviceSwingDetector.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/OnDeviceSwingDetector.swift)
-- [LiveSwingDetector.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/LiveSwingDetector.swift)
+- [ModelBackedSwingDetector.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/ModelBackedSwingDetector.swift)
+- [GolfObjectDetector.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/GolfObjectDetector.swift)
+- [SwingObjectsYOLO11n.mlpackage](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/MLModels/SwingObjectsYOLO11n.mlpackage)
 
 Implemented feature set:
 - Timeline opens immediately with placeholder/progressive thumbnail loading.
@@ -95,10 +95,10 @@ Implemented feature set:
 - Library imports hand trim a lightweight Photos-backed source first, then load a fast preview asset in-editor and defer high-quality asset resolution until export.
 - High-fps capture timelines display slow-playback timing while keeping selection mapped to the original source frames.
 - Start/end range selection for clip creation.
-- Captured recordings pass live-detected swing timestamps into trim immediately. If live detection is enabled and returns no ranges, captured trim runs the local on-device detector as a fallback; if the experiment is disabled, captured trim opens for manual marking only.
-- Imported/library videos can still use on-device Vision body-pose swing detection against the local preview asset when trim opens. Candidate full-swing windows are preselected as clips without calling the backend.
+- Captured recordings and imported/library videos run the model-backed on-device detector against the local preview asset when Trim opens. Candidate swing windows are preselected as clips without calling the backend.
 - Auto-detected clips can be reviewed one at a time by tapping their thumbnail, adjusted with the existing start/end trim handles, updated in place, or discarded with the clip delete control.
-- The imported-video detector uses adaptive hand-speed thresholds plus hand-travel, pose-coverage, body-stability, and duration heuristics to find candidate full-swing windows without calling the backend. The live capture/debug detector adds lightweight primary-golfer tracking and ball-region impact evidence, but the feature remains experimental and editable because messy range footage can still produce likely-swing detections without confirmed ball contact.
+- The model-backed detector samples the video at roughly `2 fps`, runs the bundled YOLO11n golf-object model, proposes object/motion windows, confirms windows through lower-strike-area ball disappearance, estimates impact from sustained ball disappearance, and trims the suggested clip around that impact estimate.
+- The older Vision-only post-pass and live Vision/bright-blob detector are not used as production fallbacks for trim ranges. If the model is missing or fails, Trim reports model detection unavailable and leaves manual trim controls available.
 - When no clip ranges are marked, the footer offers an explicit full-video path so already-trimmed imports can be added as-is; Photos-backed imports reuse the existing asset instead of creating a duplicate.
 - Multi-clip extraction from a long source video.
 - MVP clip export defaults to down-the-line capture; face-on remains in the data model but is not exposed as an equal capture path in the trim header.
@@ -167,7 +167,7 @@ File: [ExperimentalSettingsView.swift](/Users/ruari/Documents/Startups/SwingCoac
 
 Implemented feature set:
 - Library toolbar gear opens Experiments.
-- Toggle live auto swing detection on/off for capture recordings.
+- Toggle model swing detection on/off for capture recordings and imported Trim sessions.
 - Toggle the DEBUG Replay Debug tab on/off.
 - Configure Replay Debug speed multiplier for normal-speed and slow-motion source videos.
 

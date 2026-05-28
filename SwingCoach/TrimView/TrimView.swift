@@ -67,7 +67,7 @@ struct TrimView: View {
     @State private var activeSeekDirection: Int?
 
     private let trimmer = VideoTrimmer()
-    private let swingDetector = OnDeviceSwingDetector()
+    private let swingDetector = ModelBackedSwingDetector()
 
     private var displayTimeScale: Double {
         sourceCaptureMode.map { $0.targetFPS / 30.0 } ?? 1.0
@@ -328,11 +328,11 @@ struct TrimView: View {
         case .idle:
             return ""
         case .detecting:
-            return "Detecting swings on device..."
+            return "Detecting swings with model on device..."
         case .finished(let count):
             return count == 0 ? "No full swing detected" : "\(count) swing\(count == 1 ? "" : "s") detected"
         case .failed:
-            return "Swing detection unavailable"
+            return "Model swing detection unavailable"
         }
     }
 
@@ -465,7 +465,7 @@ struct TrimView: View {
         } else if rangeStart != nil {
             return "Navigate to end, tap ✂️ again"
         } else if autoDetectionState == .detecting && clips.isEmpty {
-            return "Detecting swings on device..."
+            return "Detecting swings with model on device..."
         } else if autoDetectionState == .finished(count: 0) && clips.isEmpty {
             return "Tap ✂️ to trim, or use the full video"
         } else if clips.isEmpty {
