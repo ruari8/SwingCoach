@@ -650,9 +650,11 @@ Interpretation:
 
 - The object model is useful enough to build around.
 - Ball disappearance is currently the strongest visual confirmation signal.
-- The app now bundles the YOLO11n Core ML package and uses a Swift port of this detector for post-record/import Trim preselection.
+- The app now bundles the YOLO11n Core ML package and uses a Swift port of this detector for live capture-time Trim preselection and imported-video Trim preselection.
 - The shipped app path is model-only for trim ranges. The older Vision-only detector is not used as a production fallback.
-- Live camera-time Core ML scheduling and Apple Vision fusion remain future work; the current app integration runs after recording stops or when an import opens in Trim.
+- During capture, the app samples camera frames at roughly `2 fps`, runs the object model while recording is active, and stores detected swing ranges. When recording stops, Trim opens with those already-collected ranges and does not run the old fallback detector.
+- Imported/library videos still run the same model-backed detector as a local post-pass when Trim opens.
+- Audio confirmation and Apple Vision pose fusion remain future work; the current app path uses model detections, visual/club motion, and lower-strike-area ball disappearance.
 
 ## Public Datasets And Models
 

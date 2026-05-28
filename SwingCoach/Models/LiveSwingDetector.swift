@@ -9,7 +9,7 @@ import AVFoundation
 import CoreVideo
 import Vision
 
-enum LiveSwingDetectionStatus: Equatable {
+nonisolated enum LiveSwingDetectionStatus: Equatable {
     case idle
     case disabled
     case searchingBall
@@ -20,7 +20,7 @@ enum LiveSwingDetectionStatus: Equatable {
     case unavailable
 }
 
-struct LiveSwingDetectionSnapshot: Equatable {
+nonisolated struct LiveSwingDetectionSnapshot: Equatable {
     var status: LiveSwingDetectionStatus = .idle
     var primaryMessage: String = "Auto detect ready"
     var detailMessage: String = "Looking for setup once recording starts."

@@ -10,7 +10,7 @@ import CoreGraphics
 import CoreML
 import Vision
 
-enum GolfObjectClass: Int, CaseIterable {
+nonisolated enum GolfObjectClass: Int, CaseIterable {
     case clubShaft = 0
     case clubhead = 1
     case golfBallCandidate = 2
@@ -27,7 +27,7 @@ enum GolfObjectClass: Int, CaseIterable {
     }
 }
 
-struct GolfObjectDetection {
+nonisolated struct GolfObjectDetection {
     let objectClass: GolfObjectClass
     let confidence: Double
     let rect: CGRect
@@ -37,7 +37,7 @@ struct GolfObjectDetection {
     }
 }
 
-final class GolfObjectDetector {
+nonisolated final class GolfObjectDetector {
     enum DetectorError: Error {
         case modelNotFound
         case invalidOutput

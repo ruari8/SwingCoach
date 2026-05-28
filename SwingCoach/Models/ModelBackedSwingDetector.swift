@@ -516,7 +516,523 @@ actor ModelBackedSwingDetector {
     }
 }
 
-private struct ObjectFrameFeature {
+nonisolated final class LiveModelSwingDetector {
+    private let targetSampleInterval = 0.50
+    private let motionThreshold = 0.55
+    private let minWindowDuration = 10.0
+    private let maxWindowDuration = 24.0
+    private let acceptanceMinPeakMotion = 1.10
+    private let minBallAnchorY = 0.66
+    private let impactPreRoll = 13.0
+    private let impactPostRoll = 4.5
+
+    private var detector: GolfObjectDetector?
+    private var previousGray: [UInt8]?
+    private var previousClubPoint: CGPoint?
+    private var features: [ObjectFrameFeature] = []
+    private var detections: [DetectedSwing] = []
+    private var lastProcessedTime = -Double.greatestFiniteMagnitude
+    private var lastSnapshot = LiveSwingDetectionSnapshot.idle
+    private var modelLoadError: Error?
+
+    func reset(enabled: Bool) {
+        previousGray = nil
+        previousClubPoint = nil
+        features = []
+        detections = []
+        lastProcessedTime = -Double.greatestFiniteMagnitude
+        modelLoadError = nil
+
+        guard enabled else {
+            detector = nil
+            lastSnapshot = LiveSwingDetectionSnapshot(
+                status: .disabled,
+                primaryMessage: "Auto detect off",
+                detailMessage: "Recording normally; trim manually after stop."
+            )
+            return
+        }
+
+        do {
+            detector = try GolfObjectDetector()
+            lastSnapshot = LiveSwingDetectionSnapshot(
+                status: .searchingBall,
+                primaryMessage: "Model detector ready",
+                detailMessage: "Scanning sampled frames while recording."
+            )
+        } catch {
+            detector = nil
+            modelLoadError = error
+            lastSnapshot = LiveSwingDetectionSnapshot(
+                status: .unavailable,
+                primaryMessage: "Model detector unavailable",
+                detailMessage: "The YOLO Core ML model could not be loaded."
+            )
+        }
+    }
+
+    func process(
+        sampleBuffer: CMSampleBuffer,
+        recordingTime: Double,
+        orientation: CGImagePropertyOrientation,
+        orientedImageSize: CGSize
+    ) -> LiveSwingDetectionSnapshot {
+        guard recordingTime.isFinite,
+              recordingTime - lastProcessedTime >= targetSampleInterval
+        else {
+            return lastSnapshot
+        }
+        lastProcessedTime = recordingTime
+
+        guard let detector else {
+            lastSnapshot = LiveSwingDetectionSnapshot(
+                status: .unavailable,
+                primaryMessage: "Model detector unavailable",
+                detailMessage: modelLoadError == nil ? "Model detector has not been started." : "The YOLO Core ML model could not be loaded.",
+                detectedSwingCount: detections.count
+            )
+            return lastSnapshot
+        }
+
+        do {
+            let gray = Self.downsampledLuma(from: sampleBuffer)
+            let visualMotion = Self.visualMotion(current: gray, previous: previousGray)
+            previousGray = gray
+
+            let objects = try detector.detect(
+                in: sampleBuffer,
+                orientation: orientation,
+                orientedImageSize: orientedImageSize
+            )
+            let feature = ObjectFrameFeature(
+                time: recordingTime,
+                detections: objects,
+                visualMotion: visualMotion,
+                clubMotion: Self.clubMotion(detections: objects, previousClubPoint: previousClubPoint)
+            )
+            if let point = feature.bestClubPoint {
+                previousClubPoint = point
+            }
+            features.append(feature)
+            if features.count > 1_600 {
+                features.removeFirst(features.count - 1_600)
+            }
+
+            let updatedDetections = buildDetections(videoDuration: recordingTime)
+            if updatedDetections.count > detections.count {
+                detections = updatedDetections
+                lastSnapshot = snapshot(
+                    status: .swingDetected,
+                    primary: "\(detections.count) swing\(detections.count == 1 ? "" : "s") detected",
+                    detail: "Model confirmed ball disappearance near impact."
+                )
+            } else {
+                detections = updatedDetections
+                lastSnapshot = liveSnapshot(for: feature)
+            }
+        } catch {
+            modelLoadError = error
+            lastSnapshot = LiveSwingDetectionSnapshot(
+                status: .unavailable,
+                primaryMessage: "Model detector unavailable",
+                detailMessage: "The YOLO model failed on a camera frame.",
+                detectedSwingCount: detections.count
+            )
+        }
+
+        return lastSnapshot
+    }
+
+    func finish(recordingTime: Double?) -> [DetectedSwing] {
+        if let recordingTime, recordingTime.isFinite {
+            detections = buildDetections(videoDuration: recordingTime)
+        }
+        return detections
+    }
+
+    func currentDetections() -> [DetectedSwing] {
+        detections
+    }
+
+    private func liveSnapshot(for feature: ObjectFrameFeature) -> LiveSwingDetectionSnapshot {
+        let motion = smoothedMotion(Array(features.suffix(5))).last ?? 0
+        let hasBall = !feature.foregroundBalls.isEmpty
+        let hasClub = feature.clubScore >= 0.35
+
+        if motion >= motionThreshold, hasClub {
+            return snapshot(
+                status: .swingInProgress,
+                primary: "Model sees swing motion",
+                detail: "Waiting for ball disappearance confirmation."
+            )
+        }
+
+        if hasBall, hasClub {
+            return snapshot(
+                status: .ballLocked,
+                primary: "Model sees ball and club",
+                detail: "Scanning for a real strike."
+            )
+        }
+
+        return snapshot(
+            status: .searchingBall,
+            primary: "Model scanning",
+            detail: hasClub ? "Club visible; looking for strike-area ball." : "Looking for club and ball candidates."
+        )
+    }
+
+    private func snapshot(
+        status: LiveSwingDetectionStatus,
+        primary: String,
+        detail: String
+    ) -> LiveSwingDetectionSnapshot {
+        LiveSwingDetectionSnapshot(
+            status: status,
+            primaryMessage: primary,
+            detailMessage: detail,
+            detectedSwingCount: detections.count,
+            hasBallLock: features.last?.foregroundBalls.isEmpty == false,
+            hasBallMovement: status == .swingDetected || status == .hitDetected,
+            poseObservationCount: 0,
+            handSpeed: features.last?.visualMotion ?? 0,
+            peakHandSpeed: smoothedMotion(Array(features.suffix(12))).max() ?? 0,
+            handTravel: features.last?.clubMotion ?? 0,
+            setupDuration: 0,
+            ballCandidateScore: features.last?.foregroundBalls.map(\.confidence).max(),
+            ballLumaDelta: nil,
+            lastRejectionReason: nil
+        )
+    }
+
+    private func buildDetections(videoDuration: Double) -> [DetectedSwing] {
+        let proposals = proposeWindows(from: features)
+        var nextDetections: [DetectedSwing] = []
+
+        for proposal in proposals {
+            guard let evidence = validate(proposal, features: features) else {
+                continue
+            }
+
+            var start = proposal.start
+            var end = proposal.end
+            if let impactTime = evidence.impactTime {
+                start = max(0, min(start, impactTime - impactPreRoll))
+                end = max(start, min(end, impactTime + impactPostRoll))
+            }
+
+            end = min(videoDuration, end)
+            guard end > start else { continue }
+
+            if let last = nextDetections.last,
+               CMTimeGetSeconds(last.endTime) + 0.8 >= start {
+                continue
+            }
+
+            nextDetections.append(
+                DetectedSwing(
+                    startTime: CMTime(seconds: start, preferredTimescale: 600),
+                    endTime: CMTime(seconds: end, preferredTimescale: 600),
+                    confidence: evidence.confidence
+                )
+            )
+        }
+
+        return nextDetections
+            .sorted { CMTimeCompare($0.startTime, $1.startTime) < 0 }
+            .prefix(24)
+            .map { $0 }
+    }
+
+    private func proposeWindows(from features: [ObjectFrameFeature]) -> [ObjectCandidateWindow] {
+        guard !features.isEmpty else { return [] }
+
+        let motion = smoothedMotion(features)
+        var candidates: [ObjectCandidateWindow] = []
+        var activeStart: Int?
+        var lastActiveIndex: Int?
+        let gapTolerance = 1.8
+
+        for index in features.indices {
+            let isActive = motion[index] >= motionThreshold && features[index].clubScore >= 0.35
+            if isActive {
+                if activeStart == nil {
+                    activeStart = index
+                }
+                lastActiveIndex = index
+                continue
+            }
+
+            if let startIndex = activeStart, let endIndex = lastActiveIndex {
+                if features[index].time - features[endIndex].time <= gapTolerance {
+                    continue
+                }
+                appendCandidate(startIndex: startIndex, endIndex: endIndex, motion: motion, features: features, candidates: &candidates)
+                activeStart = nil
+                lastActiveIndex = nil
+            }
+        }
+
+        if let startIndex = activeStart, let endIndex = lastActiveIndex {
+            appendCandidate(startIndex: startIndex, endIndex: endIndex, motion: motion, features: features, candidates: &candidates)
+        }
+
+        return merge(candidates)
+            .filter { $0.end - $0.start >= minWindowDuration }
+    }
+
+    private func appendCandidate(
+        startIndex: Int,
+        endIndex: Int,
+        motion: [Double],
+        features: [ObjectFrameFeature],
+        candidates: inout [ObjectCandidateWindow]
+    ) {
+        let start = max(0, features[startIndex].time - 2.2)
+        let end = features[endIndex].time + 2.0
+        guard end - start <= maxWindowDuration else { return }
+        candidates.append(
+            ObjectCandidateWindow(
+                start: start,
+                end: end,
+                peakMotion: motion[startIndex...endIndex].max() ?? 0
+            )
+        )
+    }
+
+    private func validate(_ window: ObjectCandidateWindow, features: [ObjectFrameFeature]) -> ObjectWindowEvidence? {
+        let windowDuration = window.end - window.start
+        let preStart = max(0, window.start - 4.5)
+        let preEnd = window.start + windowDuration * 0.45
+        let postStart = window.start + windowDuration * 0.58
+        let postEnd = window.end + 2.2
+        let anchors = ballAnchors(features: features, start: preStart, end: preEnd)
+        guard !anchors.isEmpty else { return nil }
+
+        let anchorEvidence = anchors
+            .map { anchor in
+                let pre = anchorPresenceRatio(features: features, start: preStart, end: preEnd, anchor: anchor)
+                let post = anchorPresenceRatio(features: features, start: postStart, end: postEnd, anchor: anchor)
+                let clubhead = clubheadEvidence(features: features, start: max(0, window.start - 2.5), end: window.start + 3.0, anchor: anchor)
+                return ObjectAnchorEvidence(anchor: anchor, pre: pre, post: post, clubhead: clubhead)
+            }
+            .sorted {
+                if $0.clubhead.near != $1.clubhead.near {
+                    return $0.clubhead.near && !$1.clubhead.near
+                }
+                if $0.drop != $1.drop {
+                    return $0.drop > $1.drop
+                }
+                return $0.pre > $1.pre
+            }
+
+        guard let best = anchorEvidence.first else { return nil }
+
+        let inWindow = features.filter { $0.time >= window.start && $0.time <= window.end }
+        let peakMotion = smoothedMotion(inWindow).max() ?? 0
+        let ballDisappearance = best.pre >= 0.18 && best.post <= max(0.12, best.pre * 0.45)
+        guard ballDisappearance, peakMotion >= acceptanceMinPeakMotion else { return nil }
+
+        let impactAnchor = anchorEvidence
+            .sorted {
+                if $0.clubhead.nearRatio != $1.clubhead.nearRatio {
+                    return $0.clubhead.nearRatio > $1.clubhead.nearRatio
+                }
+                return $0.clubhead.minDistance < $1.clubhead.minDistance
+            }
+            .first { evidence in
+                let closeEnough = evidence.clubhead.nearRatio >= 0.35 || evidence.clubhead.minDistance <= 0.08
+                return closeEnough && estimateDisappearanceTime(features: features, start: window.start, end: postEnd, anchor: evidence.anchor) != nil
+            }
+
+        let impactTime = impactAnchor
+            .flatMap { estimateDisappearanceTime(features: features, start: window.start, end: postEnd, anchor: $0.anchor) }
+            ?? estimateDisappearanceTime(features: features, start: window.start, end: postEnd, anchor: best.anchor)
+
+        let confidence = min(
+            0.96,
+            0.22
+            + min(0.32, peakMotion * 0.22)
+            + 0.22
+            + 0.28
+            + (best.clubhead.near ? 0.08 : 0)
+        )
+
+        return ObjectWindowEvidence(confidence: confidence, impactTime: impactTime)
+    }
+
+    private func ballAnchors(features: [ObjectFrameFeature], start: Double, end: Double) -> [CGPoint] {
+        var points: [(point: CGPoint, confidence: Double)] = []
+
+        for feature in features where feature.time >= start && feature.time <= end {
+            for ball in feature.foregroundBalls where ball.confidence >= 0.35 && Double(ball.center.y) >= minBallAnchorY {
+                points.append((ball.center, ball.confidence))
+            }
+        }
+
+        guard !points.isEmpty else { return [] }
+
+        var buckets: [ObjectBallBucket: [(point: CGPoint, confidence: Double)]] = [:]
+        for item in points {
+            let bucket = ObjectBallBucket(x: Int((item.point.x * 18).rounded()), y: Int((item.point.y * 18).rounded()))
+            buckets[bucket, default: []].append(item)
+        }
+
+        return buckets
+            .sorted { lhs, rhs in lhs.value.count > rhs.value.count }
+            .prefix(5)
+            .compactMap { _, bucketPoints in
+                let totalWeight = bucketPoints.reduce(0) { $0 + $1.confidence }
+                guard totalWeight > 0 else { return nil }
+                let x = bucketPoints.reduce(0) { $0 + $1.point.x * $1.confidence } / totalWeight
+                let y = bucketPoints.reduce(0) { $0 + $1.point.y * $1.confidence } / totalWeight
+                return CGPoint(x: x, y: y)
+            }
+    }
+
+    private func anchorPresenceRatio(features: [ObjectFrameFeature], start: Double, end: Double, anchor: CGPoint) -> Double {
+        let window = features.filter { $0.time >= start && $0.time <= end }
+        guard !window.isEmpty else { return 0 }
+
+        let present = window.filter { feature in
+            feature.foregroundBalls.contains { $0.center.distance(to: anchor) <= 0.055 }
+        }.count
+
+        return Double(present) / Double(window.count)
+    }
+
+    private func clubheadEvidence(features: [ObjectFrameFeature], start: Double, end: Double, anchor: CGPoint) -> ObjectClubheadEvidence {
+        let window = features.filter { $0.time >= start && $0.time <= end }
+        guard !window.isEmpty else { return ObjectClubheadEvidence(minDistance: .greatestFiniteMagnitude, nearRatio: 0) }
+
+        var minDistance = Double.greatestFiniteMagnitude
+        var nearCount = 0
+
+        for feature in window {
+            let clubheads = feature.detections.filter { $0.objectClass == .clubhead && $0.confidence >= 0.30 }
+            guard !clubheads.isEmpty else { continue }
+
+            let frameMin = clubheads.map { $0.center.distance(to: anchor) }.min() ?? .greatestFiniteMagnitude
+            minDistance = min(minDistance, frameMin)
+            if frameMin <= 0.18 {
+                nearCount += 1
+            }
+        }
+
+        return ObjectClubheadEvidence(
+            minDistance: minDistance,
+            nearRatio: Double(nearCount) / Double(window.count)
+        )
+    }
+
+    private func estimateDisappearanceTime(features: [ObjectFrameFeature], start: Double, end: Double, anchor: CGPoint) -> Double? {
+        let timeline = features
+            .filter { $0.time >= start && $0.time <= end }
+            .map { feature in
+                (
+                    time: feature.time,
+                    present: feature.foregroundBalls.contains { $0.center.distance(to: anchor) <= 0.055 }
+                )
+            }
+
+        guard timeline.count >= 4 else { return nil }
+
+        for index in timeline.indices where !timeline[index].present {
+            let previous = timeline[max(0, index - 6)..<index]
+            let following = timeline[index..<min(timeline.count, index + 4)]
+            let previousPresent = previous.filter { $0.present }.count
+            let followingAbsent = following.filter { !$0.present }.count
+
+            if previousPresent >= 2, followingAbsent >= 2 {
+                return timeline[index].time
+            }
+        }
+
+        return nil
+    }
+
+    private func smoothedMotion(_ features: [ObjectFrameFeature]) -> [Double] {
+        let raw = features.map { feature in
+            (feature.visualMotion * 8.0)
+            + (feature.clubMotion * 5.5)
+            + (feature.clubScore >= 0.60 ? 0.35 : 0.0)
+        }
+
+        return raw.indices.map { index in
+            let lower = max(0, index - 2)
+            let upper = min(raw.count, index + 3)
+            return raw[lower..<upper].reduce(0, +) / Double(max(1, upper - lower))
+        }
+    }
+
+    private func merge(_ windows: [ObjectCandidateWindow]) -> [ObjectCandidateWindow] {
+        var merged: [ObjectCandidateWindow] = []
+
+        for window in windows.sorted(by: { $0.start < $1.start }) {
+            guard let last = merged.last else {
+                merged.append(window)
+                continue
+            }
+
+            if window.start > last.end + 2.4 {
+                merged.append(window)
+            } else {
+                merged[merged.count - 1] = ObjectCandidateWindow(
+                    start: last.start,
+                    end: max(last.end, window.end),
+                    peakMotion: max(last.peakMotion, window.peakMotion)
+                )
+            }
+        }
+
+        return merged
+    }
+
+    private static func clubMotion(detections: [GolfObjectDetection], previousClubPoint: CGPoint?) -> Double {
+        guard let previousClubPoint else { return 0 }
+        let clubBoxes = detections
+            .filter { $0.objectClass == .clubhead || $0.objectClass == .clubShaft }
+            .sorted { $0.confidence > $1.confidence }
+        guard let best = clubBoxes.first else { return 0 }
+        return best.center.distance(to: previousClubPoint)
+    }
+
+    private static func downsampledLuma(from sampleBuffer: CMSampleBuffer) -> [UInt8]? {
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return nil }
+
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+
+        guard let baseAddress = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0) else { return nil }
+
+        let sourceWidth = CVPixelBufferGetWidthOfPlane(pixelBuffer, 0)
+        let sourceHeight = CVPixelBufferGetHeightOfPlane(pixelBuffer, 0)
+        let bytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0)
+        let pixels = baseAddress.assumingMemoryBound(to: UInt8.self)
+        let width = 80
+        let height = 120
+
+        return (0..<(width * height)).map { index in
+            let x = index % width
+            let y = index / width
+            let sourceX = min(sourceWidth - 1, x * sourceWidth / width)
+            let sourceY = min(sourceHeight - 1, y * sourceHeight / height)
+            return pixels[sourceY * bytesPerRow + sourceX]
+        }
+    }
+
+    private static func visualMotion(current: [UInt8]?, previous: [UInt8]?) -> Double {
+        guard let current, let previous, current.count == previous.count else { return 0 }
+
+        let total = zip(current, previous).reduce(0) { partial, pair in
+            partial + abs(Int(pair.0) - Int(pair.1))
+        }
+
+        return Double(total) / Double(current.count) / 255.0
+    }
+}
+
+nonisolated private struct ObjectFrameFeature {
     let time: Double
     let detections: [GolfObjectDetection]
     let visualMotion: Double
@@ -543,18 +1059,18 @@ private struct ObjectFrameFeature {
     }
 }
 
-private struct ObjectCandidateWindow {
+nonisolated private struct ObjectCandidateWindow {
     let start: Double
     let end: Double
     let peakMotion: Double
 }
 
-private struct ObjectWindowEvidence {
+nonisolated private struct ObjectWindowEvidence {
     let confidence: Double
     let impactTime: Double?
 }
 
-private struct ObjectAnchorEvidence {
+nonisolated private struct ObjectAnchorEvidence {
     let anchor: CGPoint
     let pre: Double
     let post: Double
@@ -565,7 +1081,7 @@ private struct ObjectAnchorEvidence {
     }
 }
 
-private struct ObjectClubheadEvidence {
+nonisolated private struct ObjectClubheadEvidence {
     let minDistance: Double
     let nearRatio: Double
 
@@ -574,12 +1090,12 @@ private struct ObjectClubheadEvidence {
     }
 }
 
-private struct ObjectBallBucket: Hashable {
+nonisolated private struct ObjectBallBucket: Hashable {
     let x: Int
     let y: Int
 }
 
-private extension CGPoint {
+nonisolated private extension CGPoint {
     func distance(to other: CGPoint) -> Double {
         let dx = Double(x - other.x)
         let dy = Double(y - other.y)

@@ -10,7 +10,7 @@ import CoreGraphics
 import ImageIO
 import Vision
 
-struct DetectedSwing: Identifiable {
+nonisolated struct DetectedSwing: Identifiable {
     let id = UUID()
     let startTime: CMTime
     let endTime: CMTime

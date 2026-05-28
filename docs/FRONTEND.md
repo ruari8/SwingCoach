@@ -69,9 +69,9 @@ Implemented feature set:
   - `60fps 4K` (ball-tracer future mode scaffold)
 - Runtime mode switching without full session teardown.
 - Tap-to-focus and exposure targeting.
-- Model swing-detection is experimental and can be turned off from Library > Experiments. When enabled, capture still records normally and Trim runs the bundled YOLO11n/Core ML golf-object model after recording stops.
+- Model swing-detection is experimental and can be turned off from Library > Experiments. When enabled, capture samples camera frames during recording and runs the bundled YOLO11n/Core ML golf-object model on-device while the video is still being captured.
 - When model detection is off, capture still records normally and the trim editor opens without generated ranges so the user can mark clips manually.
-- During recording, the capture badge only indicates that model detection will run after stop. The older Vision/bright-blob live fallback is not used for production trim ranges.
+- During recording, the capture badge reflects the live model state: scanning, club/ball visible, swing motion, or detected swings. The older Vision/bright-blob live fallback is not used for production trim ranges.
 - Recording state handling with immediate post-stop playback of the captured high-fps asset.
 - Stopping a new recording opens the trim editor automatically instead of requiring the post-stop scissors action.
 - Active recording disables the iOS idle timer so solo range sessions do not Auto-Lock while the golfer walks into frame, then restores the prior idle-timer state after stop, error, or leaving capture.
@@ -95,10 +95,11 @@ Implemented feature set:
 - Library imports hand trim a lightweight Photos-backed source first, then load a fast preview asset in-editor and defer high-quality asset resolution until export.
 - High-fps capture timelines display slow-playback timing while keeping selection mapped to the original source frames.
 - Start/end range selection for clip creation.
-- Captured recordings and imported/library videos run the model-backed on-device detector against the local preview asset when Trim opens. Candidate swing windows are preselected as clips without calling the backend.
+- Captured recordings pass the live model detections collected during recording into Trim, so candidate swing windows are preselected as soon as the editor opens. Imported/library videos still run the same model-backed on-device detector against the local preview asset when Trim opens. Neither path calls the backend.
 - Auto-detected clips can be reviewed one at a time by tapping their thumbnail, adjusted with the existing start/end trim handles, updated in place, or discarded with the clip delete control.
-- The model-backed detector samples the video at roughly `2 fps`, runs the bundled YOLO11n golf-object model, proposes object/motion windows, confirms windows through lower-strike-area ball disappearance, estimates impact from sustained ball disappearance, and trims the suggested clip around that impact estimate.
-- The older Vision-only post-pass and live Vision/bright-blob detector are not used as production fallbacks for trim ranges. If the model is missing or fails, Trim reports model detection unavailable and leaves manual trim controls available.
+- The model-backed detector samples at roughly `2 fps`, runs the bundled YOLO11n golf-object model, proposes object/motion windows, confirms windows through lower-strike-area ball disappearance, estimates impact from sustained ball disappearance, and trims the suggested clip around that impact estimate.
+- The older Vision-only post-pass and live Vision/bright-blob detector are not used as production fallbacks for trim ranges. If the model is missing or fails, captured recordings open Trim without generated ranges after the live badge reports the issue; imported/library videos report model detection unavailable in Trim and leave manual trim controls available.
+- Audio confirmation and Apple Vision pose fusion remain planned detector inputs, but they are not part of the current production capture path.
 - When no clip ranges are marked, the footer offers an explicit full-video path so already-trimmed imports can be added as-is; Photos-backed imports reuse the existing asset instead of creating a duplicate.
 - Multi-clip extraction from a long source video.
 - MVP clip export defaults to down-the-line capture; face-on remains in the data model but is not exposed as an equal capture path in the trim header.

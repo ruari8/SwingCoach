@@ -11,6 +11,7 @@ import AVKit
 import Combine
 import AVFoundation
 import Photos
+import ImageIO
 
 enum SloMoMode {
     case standard    // 120 fps @ 1080p
@@ -54,6 +55,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private let qualityQueue = DispatchQueue(label: "camera.quality.queue")
     private let movieOutput = AVCaptureMovieFileOutput()
     private let videoDataOutput = AVCaptureVideoDataOutput()
+    private let liveModelSwingDetector = LiveModelSwingDetector()
+    private var recordingStartSampleTime: CMTime?
+    private var lastLiveSwingSampleTime = -Double.greatestFiniteMagnitude
     @Published var lastRecordingURL: URL?
     @Published var lastRecordingSwingDetections: [DetectedSwing] = []
     @Published var recordingError: Error?
@@ -214,12 +218,18 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     private func resetLiveSwingDetection() {
+        qualityQueue.async {
+            self.recordingStartSampleTime = nil
+            self.lastLiveSwingSampleTime = -Double.greatestFiniteMagnitude
+            self.liveModelSwingDetector.reset(enabled: self.isLiveSwingDetectionEnabled)
+        }
+
         DispatchQueue.main.async {
             self.lastRecordingSwingDetections = []
             self.liveSwingDetection = self.isLiveSwingDetectionEnabled ? LiveSwingDetectionSnapshot(
                 status: .idle,
-                primaryMessage: "Model detect ready",
-                detailMessage: "Swing windows will be detected after recording stops."
+                primaryMessage: "Model detect starting",
+                detailMessage: "Scanning sampled frames while recording."
             ) : LiveSwingDetectionSnapshot(
                 status: .disabled,
                 primaryMessage: "Auto detect off",
@@ -230,6 +240,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         qualityQueue.async {
+            let detections = self.isLiveSwingDetectionEnabled
+                ? self.liveModelSwingDetector.finish(recordingTime: self.lastLiveSwingSampleTime.isFinite ? self.lastLiveSwingSampleTime : nil)
+                : []
+
             DispatchQueue.main.async {
                 guard error == nil else {
                     self.recordingError = error
@@ -239,15 +253,50 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 }
 
                 self.recordingError = nil
-                self.lastRecordingSwingDetections = []
+                self.lastRecordingSwingDetections = detections
                 self.lastRecordingURL = outputFileURL
             }
         }
     }
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        // Model-backed swing detection currently runs on the recorded asset when
-        // Trim opens. Do not use the older live Vision/bright-blob fallback here.
+        if movieOutput.isRecording, isLiveSwingDetectionEnabled {
+            processLiveModelSwingFrame(sampleBuffer)
+        }
+    }
+
+    private func processLiveModelSwingFrame(_ sampleBuffer: CMSampleBuffer) {
+        let sampleTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+
+        if recordingStartSampleTime == nil {
+            recordingStartSampleTime = sampleTime
+        }
+
+        guard let recordingStartSampleTime,
+              let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
+        else {
+            return
+        }
+
+        let relativeTime = CMTimeGetSeconds(CMTimeSubtract(sampleTime, recordingStartSampleTime))
+        guard relativeTime.isFinite, relativeTime - lastLiveSwingSampleTime >= 0.50 else { return }
+        lastLiveSwingSampleTime = relativeTime
+
+        let orientation: CGImagePropertyOrientation = .right
+        let orientedImageSize = CGSize(
+            width: CVPixelBufferGetHeight(pixelBuffer),
+            height: CVPixelBufferGetWidth(pixelBuffer)
+        )
+        let snapshot = liveModelSwingDetector.process(
+            sampleBuffer: sampleBuffer,
+            recordingTime: relativeTime,
+            orientation: orientation,
+            orientedImageSize: orientedImageSize
+        )
+
+        DispatchQueue.main.async {
+            self.liveSwingDetection = snapshot
+        }
     }
 
 }
@@ -517,8 +566,8 @@ struct CaptureView: View {
                 TrimView(
                     source: .capturedFile(url: url),
                     sourceCaptureMode: currentRecordingMode,
-                    initialDetectedSwings: [],
-                    runsPostRecordDetection: liveAutoSwingDetectionEnabled,
+                    initialDetectedSwings: liveAutoSwingDetectionEnabled ? camera.lastRecordingSwingDetections : [],
+                    runsPostRecordDetection: false,
                     onComplete: { clips, exportedURLs in
                         // Handle exported clips
                         print("✅ Exported \(clips.count) clips:")
