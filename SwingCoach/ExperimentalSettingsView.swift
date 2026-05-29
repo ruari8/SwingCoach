@@ -38,9 +38,9 @@ enum LiveCaptureDetectionMode: String, CaseIterable {
         case .contact:
             return "Strict model/contact validation. Lower recall, fewer false positives."
         case .impact:
-            return "Experimental fixed-window impact detector. Higher recall, noisier."
+            return "Experimental addressed-ball impact detector. Requires ball departure plus club contact."
         case .hybrid:
-            return "Experimental impact detector with sparse Apple Vision pose gating. Best current V2 result, but heavier."
+            return "Addressed-ball impact detector with sparse Apple Vision pose rejection. Heavier, lower recall."
         }
     }
 }

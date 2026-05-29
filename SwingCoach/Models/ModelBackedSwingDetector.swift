@@ -116,6 +116,24 @@ nonisolated struct ObjectSwingFeatureSummary: Encodable, Equatable {
     let maxClubMotion: Double
 }
 
+nonisolated struct ObjectSwingImpactDebugReport: Encodable, Equatable {
+    let anchorX: Double?
+    let anchorY: Double?
+    let result: String
+    let disappearanceTime: Double?
+    let preFeatureCount: Int
+    let postFeatureCount: Int
+    let prePresence: Double?
+    let postPresence: Double?
+    let clubMinDistance: Double?
+    let clubNearRatio: Double?
+    let localPeakMotion: Double?
+    let localMeanClubMotion: Double?
+    let windowPeakMotion: Double?
+    let windowMeanClubMotion: Double?
+    let clubPathSpan: Double?
+}
+
 nonisolated struct ObjectSwingImpactCandidate: Encodable, Equatable {
     let start: Double
     let end: Double
@@ -1133,8 +1151,10 @@ nonisolated final class LiveModelSwingDetector {
     private var previousClubPoint: CGPoint?
     private var features: [ObjectFrameFeature] = []
     private var detections: [DetectedSwing] = []
+    private var impactCandidates: [ObjectSwingImpactCandidate] = []
     private var detectionDiagnostics: [ObjectSwingWindowDiagnostics] = []
     private var lastProcessedTime = -Double.greatestFiniteMagnitude
+    private var lastImpactCandidateRefreshTime = -Double.greatestFiniteMagnitude
     private var lastSnapshot = LiveSwingDetectionSnapshot.idle
     private var modelLoadError: Error?
     private var processedFrameCount = 0
@@ -1164,8 +1184,10 @@ nonisolated final class LiveModelSwingDetector {
         previousClubPoint = nil
         features = []
         detections = []
+        impactCandidates = []
         detectionDiagnostics = []
         lastProcessedTime = -Double.greatestFiniteMagnitude
+        lastImpactCandidateRefreshTime = -Double.greatestFiniteMagnitude
         modelLoadError = nil
         processedFrameCount = 0
         skippedFrameCount = 0
@@ -1211,7 +1233,7 @@ nonisolated final class LiveModelSwingDetector {
         orientedImageSize: CGSize
     ) -> LiveSwingDetectionSnapshot {
         guard recordingTime.isFinite,
-              recordingTime - lastProcessedTime >= configuration.targetSampleInterval
+              recordingTime - lastProcessedTime + 0.001 >= configuration.targetSampleInterval
         else {
             skippedFrameCount += 1
             return lastSnapshot
@@ -1267,6 +1289,10 @@ nonisolated final class LiveModelSwingDetector {
                 existing: detections,
                 new: buildDetections(videoDuration: recordingTime)
             )
+            refreshImpactCandidates(
+                videoDuration: recordingTime,
+                declaredAt: recordingTime
+            )
             let updatedDiagnostics = diagnosticsForUpdatedDetections(
                 previousDetections: previousDetections,
                 previousDiagnostics: previousDiagnostics,
@@ -1314,6 +1340,11 @@ nonisolated final class LiveModelSwingDetector {
                 existing: detections,
                 new: buildDetections(videoDuration: recordingTime)
             )
+            refreshImpactCandidates(
+                videoDuration: recordingTime,
+                declaredAt: recordingTime,
+                force: true
+            )
             detectionDiagnostics = diagnosticsForUpdatedDetections(
                 previousDetections: previousDetections,
                 previousDiagnostics: previousDiagnostics,
@@ -1358,10 +1389,18 @@ nonisolated final class LiveModelSwingDetector {
         videoDuration: Double,
         declaredAt: Double? = nil
     ) -> [ObjectSwingImpactCandidate] {
-        buildImpactCenteredDetections(
+        refreshImpactCandidates(
             videoDuration: videoDuration,
             declaredAt: declaredAt ?? features.last?.time ?? 0
         )
+        return impactCandidates
+    }
+
+    func currentImpactDebugReports(
+        videoDuration: Double,
+        declaredAt: Double
+    ) -> [ObjectSwingImpactDebugReport] {
+        impactDebugReports(videoDuration: videoDuration, declaredAt: declaredAt)
     }
 
     func diagnostics(for detections: [DetectedSwing]) -> [ObjectSwingWindowDiagnostics] {
@@ -1531,6 +1570,70 @@ nonisolated final class LiveModelSwingDetector {
             .map { $0 }
     }
 
+    private func mergedImpactCandidates(
+        existing: [ObjectSwingImpactCandidate],
+        new: [ObjectSwingImpactCandidate]
+    ) -> [ObjectSwingImpactCandidate] {
+        var merged = existing
+        let sameImpactTolerance = max(1.45, configuration.minWindowDuration * 0.90)
+            + configuration.targetSampleInterval * 0.50
+
+        for candidate in new {
+            if let index = merged.firstIndex(where: { existingCandidate in
+                abs(existingCandidate.impactTime - candidate.impactTime) <= sameImpactTolerance
+            }) {
+                let previous = merged[index]
+                let isSameSampledPeak = abs(previous.impactTime - candidate.impactTime) <= configuration.targetSampleInterval
+                let declaredAt = isSameSampledPeak
+                    ? min(previous.declaredAt, candidate.declaredAt)
+                    : candidate.declaredAt
+                let candidateExtendsWindow = isSameSampledPeak
+                    && (candidate.end > previous.end + 0.01 || candidate.start < previous.start - 0.01)
+                let candidateIsStronger = candidate.confidence > previous.confidence + 0.03
+                let candidateIsLaterComparablePeak = candidate.impactTime > previous.impactTime
+                    && candidate.confidence + 0.08 >= previous.confidence
+
+                if candidateExtendsWindow || candidateIsStronger || candidateIsLaterComparablePeak {
+                    merged[index] = ObjectSwingImpactCandidate(
+                        start: candidate.start,
+                        end: candidate.end,
+                        impactTime: candidate.impactTime,
+                        declaredAt: declaredAt,
+                        confidence: max(previous.confidence, candidate.confidence),
+                        diagnostics: candidate.diagnostics
+                    )
+                }
+            } else {
+                merged.append(candidate)
+            }
+        }
+
+        return merged
+            .sorted { $0.impactTime < $1.impactTime }
+            .prefix(128)
+            .map { $0 }
+    }
+
+    private func refreshImpactCandidates(
+        videoDuration: Double,
+        declaredAt: Double,
+        force: Bool = false
+    ) {
+        let refreshInterval = max(0.35, configuration.targetSampleInterval * 3.0)
+        guard force || declaredAt - lastImpactCandidateRefreshTime + 0.001 >= refreshInterval else {
+            return
+        }
+
+        impactCandidates = mergedImpactCandidates(
+            existing: impactCandidates,
+            new: buildImpactCenteredDetections(
+                videoDuration: videoDuration,
+                declaredAt: declaredAt
+            )
+        )
+        lastImpactCandidateRefreshTime = declaredAt
+    }
+
     private func buildDetections(videoDuration: Double) -> [DetectedSwing] {
         let proposals = proposeWindows(from: features)
         var nextDetections: [DetectedSwing] = []
@@ -1579,72 +1682,507 @@ nonisolated final class LiveModelSwingDetector {
     ) -> [ObjectSwingImpactCandidate] {
         guard !features.isEmpty else { return [] }
 
-        let motion = smoothedMotion(features)
         let confirmationPostRoll = max(0.18, configuration.impactConfirmationPostRoll)
         let minimumImpactGap = max(1.45, configuration.minWindowDuration * 0.90)
-        var selected: [(index: Int, motion: Double)] = []
+        let firstTime = features.first?.time ?? 0
+        let anchorLookback = max(
+            configuration.maxWindowDuration * 3.0,
+            configuration.validationPreRoll + configuration.impactPostRoll + confirmationPostRoll + 1.0
+        )
+        let anchors = ballAnchors(
+            features: features,
+            start: max(firstTime, declaredAt - anchorLookback),
+            end: declaredAt
+        )
+        let detections = anchors
+            .flatMap { anchor in
+                confirmedImpactCandidates(
+                    anchor: anchor,
+                    videoDuration: videoDuration,
+                    declaredAt: declaredAt,
+                    confirmationPostRoll: confirmationPostRoll
+                )
+            }
+            .sorted { $0.impactTime < $1.impactTime }
 
-        for index in features.indices {
-            let impactTime = features[index].time
-            guard impactTime >= 0.55 else { continue }
-            guard impactTime + confirmationPostRoll <= declaredAt else { continue }
-
-            let lower = max(features.startIndex, index - 2)
-            let upper = min(features.endIndex - 1, index + 2)
-            let localMax = (lower...upper).allSatisfy { motion[index] >= motion[$0] }
-            guard localMax else { continue }
-
-            let start = max(0, impactTime - configuration.impactPreRoll)
-            let end = min(videoDuration, impactTime + configuration.impactPostRoll)
-            guard end > start else { continue }
-
-            let diagnostics = windowDiagnostics(start: start, end: end)
-            let hasClubEvidence = diagnostics.clubFrameRatio >= 0.22
-                && diagnostics.clubPathSpan >= 0.28
-                && diagnostics.meanClubMotion >= 0.025
-            let hasMotionEvidence = diagnostics.peakMotion >= 0.70
-                || diagnostics.strongMotionFrameCount >= 1
-            guard hasClubEvidence, hasMotionEvidence else { continue }
-
-            if let last = selected.last, impactTime - features[last.index].time < minimumImpactGap {
-                if motion[index] > last.motion {
-                    selected[selected.count - 1] = (index, motion[index])
+        var separatedDetections: [ObjectSwingImpactCandidate] = []
+        for detection in detections {
+            if let last = separatedDetections.last,
+               detection.impactTime - last.impactTime < minimumImpactGap {
+                if detection.confidence > last.confidence {
+                    separatedDetections[separatedDetections.count - 1] = detection
                 }
                 continue
             }
 
-            selected.append((index, motion[index]))
+            separatedDetections.append(detection)
         }
 
-        let detections = selected.prefix(48).compactMap { item -> ObjectSwingImpactCandidate? in
-            let impactTime = features[item.index].time
-            let start = max(0, impactTime - configuration.impactPreRoll)
-            let end = min(videoDuration, impactTime + configuration.impactPostRoll)
-            guard end > start else { return nil }
-
-            let diagnostics = windowDiagnostics(start: start, end: end)
-            let confidence = min(
-                0.92,
-                0.30
-                + min(0.26, diagnostics.peakMotion * 0.16)
-                + min(0.18, diagnostics.clubPathSpan * 0.18)
-                + min(0.12, diagnostics.clubFrameRatio * 0.12)
-                + min(0.06, diagnostics.ballFrameRatio * 0.10)
-            )
-
-            return ObjectSwingImpactCandidate(
-                start: start,
-                end: end,
-                impactTime: impactTime,
-                declaredAt: impactTime + confirmationPostRoll,
-                confidence: confidence,
-                diagnostics: diagnostics
-            )
-        }
-
-        return mergeImpactCandidates(detections)
+        return mergeImpactCandidates(separatedDetections)
             .prefix(32)
             .map { $0 }
+    }
+
+    private func impactDebugReports(
+        videoDuration: Double,
+        declaredAt: Double
+    ) -> [ObjectSwingImpactDebugReport] {
+        guard !features.isEmpty else {
+            return [
+                ObjectSwingImpactDebugReport(
+                    anchorX: nil,
+                    anchorY: nil,
+                    result: "no_sampled_features",
+                    disappearanceTime: nil,
+                    preFeatureCount: 0,
+                    postFeatureCount: 0,
+                    prePresence: nil,
+                    postPresence: nil,
+                    clubMinDistance: nil,
+                    clubNearRatio: nil,
+                    localPeakMotion: nil,
+                    localMeanClubMotion: nil,
+                    windowPeakMotion: nil,
+                    windowMeanClubMotion: nil,
+                    clubPathSpan: nil
+                )
+            ]
+        }
+
+        let firstTime = features.first?.time ?? 0
+        let anchors = ballAnchors(features: features, start: firstTime, end: declaredAt)
+        guard !anchors.isEmpty else {
+            return [
+                ObjectSwingImpactDebugReport(
+                    anchorX: nil,
+                    anchorY: nil,
+                    result: "no_ball_anchor",
+                    disappearanceTime: nil,
+                    preFeatureCount: 0,
+                    postFeatureCount: 0,
+                    prePresence: nil,
+                    postPresence: nil,
+                    clubMinDistance: nil,
+                    clubNearRatio: nil,
+                    localPeakMotion: nil,
+                    localMeanClubMotion: nil,
+                    windowPeakMotion: nil,
+                    windowMeanClubMotion: nil,
+                    clubPathSpan: nil
+                )
+            ]
+        }
+
+        return anchors.prefix(8).map { anchor in
+            impactDebugReport(anchor: anchor, videoDuration: videoDuration, declaredAt: declaredAt)
+        }
+    }
+
+    private func impactDebugReport(
+        anchor: CGPoint,
+        videoDuration: Double,
+        declaredAt: Double
+    ) -> ObjectSwingImpactDebugReport {
+        let firstTime = features.first?.time ?? 0
+        let confirmationPostRoll = max(0.18, configuration.impactConfirmationPostRoll)
+        let disappearanceTimes = estimateDisappearanceTimes(
+            features: features,
+            start: firstTime,
+            end: declaredAt,
+            anchor: anchor
+        )
+
+        if let confirmed = confirmedImpactCandidate(
+            anchor: anchor,
+            videoDuration: videoDuration,
+            declaredAt: declaredAt,
+            confirmationPostRoll: confirmationPostRoll
+        ) {
+            let disappearedAt = confirmed.impactTime
+            let beforeEnd = max(0, disappearedAt - configuration.targetSampleInterval * 0.5)
+            let beforeStart = max(0, disappearedAt - max(configuration.validationPreRoll, configuration.targetSampleInterval * 4.0))
+            let afterStart = disappearedAt + configuration.targetSampleInterval * 0.5
+            let afterDuration = max(
+                configuration.validationPostRoll,
+                configuration.impactPostRoll,
+                configuration.targetSampleInterval * 8.0
+            )
+            let afterEnd = disappearedAt + afterDuration
+            let contactTolerance = max(0.30, configuration.targetSampleInterval * 3.0)
+            let club = clubContactEvidence(
+                features: features,
+                start: disappearedAt - contactTolerance,
+                end: disappearedAt + contactTolerance,
+                anchor: anchor
+            )
+            let localDiagnostics = windowDiagnostics(
+                start: disappearedAt - contactTolerance,
+                end: disappearedAt + contactTolerance
+            )
+
+            return impactDebugReport(
+                anchor: anchor,
+                result: "confirmed",
+                disappearanceTime: disappearedAt,
+                preFeatureCount: featureCount(start: beforeStart, end: beforeEnd),
+                postFeatureCount: featureCount(start: afterStart, end: afterEnd),
+                prePresence: anchorPresenceRatio(features: features, start: beforeStart, end: beforeEnd, anchor: anchor),
+                postPresence: anchorPresenceRatio(features: features, start: afterStart, end: afterEnd, anchor: anchor),
+                clubMinDistance: club.minDistance.isFinite ? club.minDistance : nil,
+                clubNearRatio: club.nearRatio,
+                localPeakMotion: localDiagnostics.peakMotion,
+                localMeanClubMotion: localDiagnostics.meanClubMotion,
+                windowPeakMotion: confirmed.diagnostics.peakMotion,
+                windowMeanClubMotion: confirmed.diagnostics.meanClubMotion,
+                clubPathSpan: confirmed.diagnostics.clubPathSpan
+            )
+        }
+
+        guard let disappearedAt = disappearanceTimes.first else {
+            return impactDebugReport(
+                anchor: anchor,
+                result: "no_sustained_departure",
+                disappearanceTime: nil
+            )
+        }
+
+        if disappearedAt + confirmationPostRoll > declaredAt {
+            return impactDebugReport(
+                anchor: anchor,
+                result: "pending_confirmation_wait",
+                disappearanceTime: disappearedAt
+            )
+        }
+
+        let beforeEnd = max(0, disappearedAt - configuration.targetSampleInterval * 0.5)
+        let beforeStart = max(0, disappearedAt - max(configuration.validationPreRoll, configuration.targetSampleInterval * 4.0))
+        let afterStart = disappearedAt + configuration.targetSampleInterval * 0.5
+        let afterDuration = max(
+            configuration.validationPostRoll,
+            configuration.impactPostRoll,
+            configuration.targetSampleInterval * 8.0
+        )
+        let afterEnd = disappearedAt + afterDuration
+        let preFeatureCount = featureCount(start: beforeStart, end: beforeEnd)
+        let postFeatureCount = featureCount(start: afterStart, end: afterEnd)
+
+        if preFeatureCount < 2 {
+            return impactDebugReport(
+                anchor: anchor,
+                result: "insufficient_pre_frames",
+                disappearanceTime: disappearedAt,
+                preFeatureCount: preFeatureCount,
+                postFeatureCount: postFeatureCount
+            )
+        }
+        if postFeatureCount < 3 {
+            return impactDebugReport(
+                anchor: anchor,
+                result: "insufficient_post_frames",
+                disappearanceTime: disappearedAt,
+                preFeatureCount: preFeatureCount,
+                postFeatureCount: postFeatureCount
+            )
+        }
+
+        let prePresence = anchorPresenceRatio(features: features, start: beforeStart, end: beforeEnd, anchor: anchor)
+        let postPresence = anchorPresenceRatio(features: features, start: afterStart, end: afterEnd, anchor: anchor)
+        let ballDeparted = prePresence >= 0.30 && postPresence <= max(0.10, prePresence * 0.40)
+        let strongBallDeparture = prePresence >= 0.75 && postPresence <= 0.05
+        if !ballDeparted {
+            return impactDebugReport(
+                anchor: anchor,
+                result: "ball_departure_not_confirmed",
+                disappearanceTime: disappearedAt,
+                preFeatureCount: preFeatureCount,
+                postFeatureCount: postFeatureCount,
+                prePresence: prePresence,
+                postPresence: postPresence
+            )
+        }
+
+        let contactTolerance = max(0.30, configuration.targetSampleInterval * 3.0)
+        let club = clubContactEvidence(
+            features: features,
+            start: disappearedAt - contactTolerance,
+            end: disappearedAt + contactTolerance,
+            anchor: anchor
+        )
+        let clubAtBall = club.minDistance <= 0.055
+            || club.nearRatio >= 0.20
+            || (strongBallDeparture && club.minDistance <= 0.12)
+        if !clubAtBall {
+            return impactDebugReport(
+                anchor: anchor,
+                result: "no_club_contact_at_anchor",
+                disappearanceTime: disappearedAt,
+                preFeatureCount: preFeatureCount,
+                postFeatureCount: postFeatureCount,
+                prePresence: prePresence,
+                postPresence: postPresence,
+                clubMinDistance: club.minDistance.isFinite ? club.minDistance : nil,
+                clubNearRatio: club.nearRatio
+            )
+        }
+
+        let localDiagnostics = windowDiagnostics(
+            start: disappearedAt - contactTolerance,
+            end: disappearedAt + contactTolerance
+        )
+        let localStrikeMotionThreshold = max(
+            configuration.motionThreshold,
+            configuration.acceptanceMinPeakMotion * 0.55
+        )
+        let hasLocalStrikeMotion = localDiagnostics.peakMotion >= localStrikeMotionThreshold
+            && localDiagnostics.meanClubMotion >= configuration.acceptanceMinMeanClubMotion * 0.50
+        if !hasLocalStrikeMotion {
+            return impactDebugReport(
+                anchor: anchor,
+                result: "low_local_strike_motion",
+                disappearanceTime: disappearedAt,
+                preFeatureCount: preFeatureCount,
+                postFeatureCount: postFeatureCount,
+                prePresence: prePresence,
+                postPresence: postPresence,
+                clubMinDistance: club.minDistance.isFinite ? club.minDistance : nil,
+                clubNearRatio: club.nearRatio,
+                localPeakMotion: localDiagnostics.peakMotion,
+                localMeanClubMotion: localDiagnostics.meanClubMotion
+            )
+        }
+
+        let start = max(0, disappearedAt - configuration.impactPreRoll)
+        let end = min(videoDuration, disappearedAt + configuration.impactPostRoll)
+        let diagnostics = windowDiagnostics(start: start, end: end)
+        if diagnostics.meanClubMotion < 0.025 || diagnostics.clubPathSpan < 0.20 {
+            return impactDebugReport(
+                anchor: anchor,
+                result: "low_window_club_motion",
+                disappearanceTime: disappearedAt,
+                preFeatureCount: preFeatureCount,
+                postFeatureCount: postFeatureCount,
+                prePresence: prePresence,
+                postPresence: postPresence,
+                clubMinDistance: club.minDistance.isFinite ? club.minDistance : nil,
+                clubNearRatio: club.nearRatio,
+                localPeakMotion: localDiagnostics.peakMotion,
+                localMeanClubMotion: localDiagnostics.meanClubMotion,
+                windowPeakMotion: diagnostics.peakMotion,
+                windowMeanClubMotion: diagnostics.meanClubMotion,
+                clubPathSpan: diagnostics.clubPathSpan
+            )
+        }
+        if diagnostics.peakMotion < 0.70 && diagnostics.strongMotionFrameCount < 1 {
+            return impactDebugReport(
+                anchor: anchor,
+                result: "low_window_motion",
+                disappearanceTime: disappearedAt,
+                preFeatureCount: preFeatureCount,
+                postFeatureCount: postFeatureCount,
+                prePresence: prePresence,
+                postPresence: postPresence,
+                clubMinDistance: club.minDistance.isFinite ? club.minDistance : nil,
+                clubNearRatio: club.nearRatio,
+                localPeakMotion: localDiagnostics.peakMotion,
+                localMeanClubMotion: localDiagnostics.meanClubMotion,
+                windowPeakMotion: diagnostics.peakMotion,
+                windowMeanClubMotion: diagnostics.meanClubMotion,
+                clubPathSpan: diagnostics.clubPathSpan
+            )
+        }
+
+        return impactDebugReport(
+            anchor: anchor,
+            result: "confirmed",
+            disappearanceTime: disappearedAt,
+            preFeatureCount: preFeatureCount,
+            postFeatureCount: postFeatureCount,
+            prePresence: prePresence,
+            postPresence: postPresence,
+            clubMinDistance: club.minDistance.isFinite ? club.minDistance : nil,
+            clubNearRatio: club.nearRatio,
+            localPeakMotion: localDiagnostics.peakMotion,
+            localMeanClubMotion: localDiagnostics.meanClubMotion,
+            windowPeakMotion: diagnostics.peakMotion,
+            windowMeanClubMotion: diagnostics.meanClubMotion,
+            clubPathSpan: diagnostics.clubPathSpan
+        )
+    }
+
+    private func impactDebugReport(
+        anchor: CGPoint,
+        result: String,
+        disappearanceTime: Double?,
+        preFeatureCount: Int = 0,
+        postFeatureCount: Int = 0,
+        prePresence: Double? = nil,
+        postPresence: Double? = nil,
+        clubMinDistance: Double? = nil,
+        clubNearRatio: Double? = nil,
+        localPeakMotion: Double? = nil,
+        localMeanClubMotion: Double? = nil,
+        windowPeakMotion: Double? = nil,
+        windowMeanClubMotion: Double? = nil,
+        clubPathSpan: Double? = nil
+    ) -> ObjectSwingImpactDebugReport {
+        ObjectSwingImpactDebugReport(
+            anchorX: Double(anchor.x),
+            anchorY: Double(anchor.y),
+            result: result,
+            disappearanceTime: disappearanceTime,
+            preFeatureCount: preFeatureCount,
+            postFeatureCount: postFeatureCount,
+            prePresence: prePresence,
+            postPresence: postPresence,
+            clubMinDistance: clubMinDistance,
+            clubNearRatio: clubNearRatio,
+            localPeakMotion: localPeakMotion,
+            localMeanClubMotion: localMeanClubMotion,
+            windowPeakMotion: windowPeakMotion,
+            windowMeanClubMotion: windowMeanClubMotion,
+            clubPathSpan: clubPathSpan
+        )
+    }
+
+    private func confirmedImpactCandidate(
+        anchor: CGPoint,
+        videoDuration: Double,
+        declaredAt: Double,
+        confirmationPostRoll: Double
+    ) -> ObjectSwingImpactCandidate? {
+        confirmedImpactCandidates(
+            anchor: anchor,
+            videoDuration: videoDuration,
+            declaredAt: declaredAt,
+            confirmationPostRoll: confirmationPostRoll
+        ).first
+    }
+
+    private func confirmedImpactCandidates(
+        anchor: CGPoint,
+        videoDuration: Double,
+        declaredAt: Double,
+        confirmationPostRoll: Double
+    ) -> [ObjectSwingImpactCandidate] {
+        let firstTime = features.first?.time ?? 0
+        let searchEnd = max(firstTime, declaredAt - confirmationPostRoll)
+        let disappearanceTimes = estimateDisappearanceTimes(
+            features: features,
+            start: firstTime,
+            end: searchEnd,
+            anchor: anchor
+        )
+        var candidates: [ObjectSwingImpactCandidate] = []
+
+        for disappearedAt in disappearanceTimes {
+            guard disappearedAt >= 0.55 else { continue }
+            guard disappearedAt + confirmationPostRoll <= declaredAt else { continue }
+
+            let beforeEnd = max(0, disappearedAt - configuration.targetSampleInterval * 0.5)
+            let beforeStart = max(0, disappearedAt - max(configuration.validationPreRoll, configuration.targetSampleInterval * 4.0))
+            let afterStart = disappearedAt + configuration.targetSampleInterval * 0.5
+            let afterDuration = max(
+                configuration.validationPostRoll,
+                configuration.impactPostRoll,
+                configuration.targetSampleInterval * 8.0
+            )
+            let afterEnd = disappearedAt + afterDuration
+            guard featureCount(start: beforeStart, end: beforeEnd) >= 2 else { continue }
+            guard featureCount(start: afterStart, end: afterEnd) >= 3 else { continue }
+
+            let prePresence = anchorPresenceRatio(features: features, start: beforeStart, end: beforeEnd, anchor: anchor)
+            let postPresence = anchorPresenceRatio(features: features, start: afterStart, end: afterEnd, anchor: anchor)
+            let ballDeparted = prePresence >= 0.30 && postPresence <= max(0.10, prePresence * 0.40)
+            guard ballDeparted else { continue }
+            let strongBallDeparture = prePresence >= 0.75 && postPresence <= 0.05
+
+            let contactTolerance = max(0.30, configuration.targetSampleInterval * 3.0)
+            let club = clubContactEvidence(
+                features: features,
+                start: disappearedAt - contactTolerance,
+                end: disappearedAt + contactTolerance,
+                anchor: anchor
+            )
+            let clubAtBall = club.minDistance <= 0.055
+                || club.nearRatio >= 0.20
+                || (strongBallDeparture && club.minDistance <= 0.12)
+            guard clubAtBall else { continue }
+
+            let localDiagnostics = windowDiagnostics(
+                start: disappearedAt - contactTolerance,
+                end: disappearedAt + contactTolerance
+            )
+            // Ball departure and club contact are the primary proof. Keep local
+            // motion as a softer sanity check because club boxes are sparse near impact.
+            let localStrikeMotionThreshold = max(
+                configuration.motionThreshold,
+                configuration.acceptanceMinPeakMotion * 0.55
+            )
+            let hasLocalStrikeMotion = localDiagnostics.peakMotion >= localStrikeMotionThreshold
+                && localDiagnostics.meanClubMotion >= configuration.acceptanceMinMeanClubMotion * 0.50
+            guard hasLocalStrikeMotion else { continue }
+
+            let start = max(0, disappearedAt - configuration.impactPreRoll)
+            let end = min(videoDuration, disappearedAt + configuration.impactPostRoll)
+            guard end > start else { continue }
+
+            let diagnostics = windowDiagnostics(start: start, end: end)
+            let hasClubMotion = diagnostics.meanClubMotion >= 0.025
+                && diagnostics.clubPathSpan >= 0.20
+            let hasMotion = diagnostics.peakMotion >= 0.70
+                || diagnostics.strongMotionFrameCount >= 1
+            guard hasClubMotion, hasMotion else { continue }
+
+            let departureScore = max(0, prePresence - postPresence)
+            let contactScore = max(0, 1 - club.minDistance / 0.12)
+            let departureComponent = min(0.24, departureScore * 0.36)
+            let contactComponent = min(0.20, contactScore * 0.20)
+            let motionComponent = min(0.16, diagnostics.peakMotion * 0.08)
+            let pathComponent = min(0.10, diagnostics.clubPathSpan * 0.10)
+            let confidence = min(0.96, 0.30 + departureComponent + contactComponent + motionComponent + pathComponent)
+
+            candidates.append(
+                ObjectSwingImpactCandidate(
+                    start: start,
+                    end: end,
+                    impactTime: disappearedAt,
+                    declaredAt: disappearedAt + confirmationPostRoll,
+                    confidence: confidence,
+                    diagnostics: diagnostics
+                )
+            )
+        }
+
+        return candidates
+    }
+
+    private func clubContactEvidence(features: [ObjectFrameFeature], start: Double, end: Double, anchor: CGPoint) -> ObjectClubheadEvidence {
+        let window = features.filter { $0.time >= start && $0.time <= end }
+        guard !window.isEmpty else { return ObjectClubheadEvidence(minDistance: .greatestFiniteMagnitude, nearRatio: 0) }
+
+        var minDistance = Double.greatestFiniteMagnitude
+        var nearCount = 0
+
+        for feature in window {
+            let clubObjects = feature.detections.filter {
+                ($0.objectClass == .clubhead || $0.objectClass == .clubShaft)
+                    && $0.confidence >= 0.30
+            }
+            guard !clubObjects.isEmpty else { continue }
+
+            let frameMin = clubObjects
+                .map { Self.distance(from: anchor, to: $0.rect) }
+                .min() ?? .greatestFiniteMagnitude
+            minDistance = min(minDistance, frameMin)
+            if frameMin <= 0.055 {
+                nearCount += 1
+            }
+        }
+
+        return ObjectClubheadEvidence(
+            minDistance: minDistance,
+            nearRatio: Double(nearCount) / Double(window.count)
+        )
     }
 
     private func mergeImpactCandidates(
@@ -1888,6 +2426,10 @@ nonisolated final class LiveModelSwingDetector {
     }
 
     private func estimateDisappearanceTime(features: [ObjectFrameFeature], start: Double, end: Double, anchor: CGPoint) -> Double? {
+        estimateDisappearanceTimes(features: features, start: start, end: end, anchor: anchor).first
+    }
+
+    private func estimateDisappearanceTimes(features: [ObjectFrameFeature], start: Double, end: Double, anchor: CGPoint) -> [Double] {
         let timeline = features
             .filter { $0.time >= start && $0.time <= end }
             .map { feature in
@@ -1897,8 +2439,9 @@ nonisolated final class LiveModelSwingDetector {
                 )
             }
 
-        guard timeline.count >= 4 else { return nil }
+        guard timeline.count >= 4 else { return [] }
 
+        var times: [Double] = []
         for index in timeline.indices where !timeline[index].present {
             let previous = timeline[max(0, index - 6)..<index]
             let following = timeline[index..<min(timeline.count, index + 4)]
@@ -1906,11 +2449,15 @@ nonisolated final class LiveModelSwingDetector {
             let followingAbsent = following.filter { !$0.present }.count
 
             if previousPresent >= 2, followingAbsent >= 2 {
-                return timeline[index].time
+                times.append(timeline[index].time)
             }
         }
 
-        return nil
+        return times
+    }
+
+    private func featureCount(start: Double, end: Double) -> Int {
+        features.filter { $0.time >= start && $0.time <= end }.count
     }
 
     private func smoothedMotion(_ features: [ObjectFrameFeature]) -> [Double] {
@@ -1991,6 +2538,16 @@ nonisolated final class LiveModelSwingDetector {
         }
 
         return Double(total) / Double(current.count) / 255.0
+    }
+
+    private static func distance(from point: CGPoint, to rect: CGRect) -> Double {
+        if rect.contains(point) {
+            return 0
+        }
+
+        let clampedX = min(max(point.x, rect.minX), rect.maxX)
+        let clampedY = min(max(point.y, rect.minY), rect.maxY)
+        return point.distance(to: CGPoint(x: clampedX, y: clampedY))
     }
 }
 

@@ -37,6 +37,7 @@ private struct ImpactDetectionOutput: Encodable {
     let impactTime: Double
     let confidence: Double
     let declaredAt: Double?
+    let latencyFromImpact: Double?
     let latencyFromEnd: Double?
     let latencyFromMatchedLabelEnd: Double?
     let matchedLabelIndices: [Int]
@@ -44,9 +45,22 @@ private struct ImpactDetectionOutput: Encodable {
     let poseDiagnostics: PoseWindowDiagnostics?
 }
 
+private struct PerformanceSample: Encodable {
+    let sourceTime: Double
+    let detectorTime: Double
+    let elapsedWallTime: Double
+    let processingLag: Double
+    let decodedFrames: Int
+    let processedFrames: Int
+    let poseSampledFrames: Int
+    let detectorThroughputFPS: Double
+    let realtimeRatio: Double
+}
+
 private struct EvaluationOutput: Encodable {
     let video: String
     let model: String
+    let computeUnits: String
     let duration: Double
     let evaluatedStart: Double
     let evaluatedEnd: Double
@@ -55,15 +69,28 @@ private struct EvaluationOutput: Encodable {
     let detectorTimelineScale: Double
     let configuration: String
     let targetSampleFPS: Double
+    let targetSourceSampleFPS: Double
     let impactConfirmationPostRoll: Double
+    let declarationPollInterval: Double
     let acceptanceMaxClubTopY: Double
+    let wallClockElapsedSeconds: Double
+    let realtimeRatio: Double
+    let finalProcessingLagSeconds: Double
+    let decodedFrames: Int
+    let skippedDecodedFrames: Int
     let processedFrames: Int
+    let effectiveDetectorFPS: Double
+    let detectorThroughputFPS: Double
     let poseSampledFrames: Int
     let poseValidFrames: Int
     let averageProcessingTimeMS: Double
     let lastProcessingTimeMS: Double
+    let averagePoseProcessingTimeMS: Double
+    let lastPoseProcessingTimeMS: Double
+    let performanceSamples: [PerformanceSample]
     let featureSummary: ObjectSwingFeatureSummary
     let candidateWindows: [ObjectSwingWindowDiagnostics]
+    let impactDebugReports: [ObjectSwingImpactDebugReport]
     let detections: [DetectionOutput]
     let impactCenteredDetections: [ImpactDetectionOutput]
     let hybridImpactDetections: [ImpactDetectionOutput]
@@ -99,7 +126,7 @@ struct EvaluateLiveModelDetector {
         do {
             let arguments = Array(CommandLine.arguments.dropFirst())
             guard let videoPath = arguments.first else {
-                fputs("usage: evaluate_live_model_detector <video-path> [model-path] [sample-fps] [source-time-scale] [max-frames] [labels-path] [min-strong-motion-frames] [min-mean-club-motion] [min-club-path-span] [max-club-top-y] [detector-timeline-scale] [source-start] [source-end] [impact-confirmation-post-roll]\n", stderr)
+                fputs("usage: evaluate_live_model_detector <video-path> [model-path] [sample-fps] [source-time-scale] [max-frames] [labels-path] [min-strong-motion-frames] [min-mean-club-motion] [min-club-path-span] [max-club-top-y] [detector-timeline-scale] [source-start] [source-end] [impact-confirmation-post-roll] [compute-units: all|cpu|cpuOnly|cpuAndGPU|cpuAndNeuralEngine] [declaration-poll-interval]\n", stderr)
                 exit(2)
             }
 
@@ -151,6 +178,8 @@ struct EvaluateLiveModelDetector {
             if arguments.count > 13 {
                 configuration.impactConfirmationPostRoll = max(0.10, Double(arguments[13]) ?? configuration.impactConfirmationPostRoll)
             }
+            let computeUnits = arguments.count > 14 ? computeUnits(named: arguments[14]) : .all
+            let declarationPollInterval = arguments.count > 15 ? max(0, Double(arguments[15]) ?? 0) : 0
             let modelURL = URL(fileURLWithPath: modelPath)
 
             let result = try await detectSwings(
@@ -164,6 +193,8 @@ struct EvaluateLiveModelDetector {
                 detectorDuration: detectorDuration,
                 sourceTimeScale: sourceTimeScale,
                 configuration: configuration,
+                computeUnits: computeUnits,
+                declarationPollInterval: declarationPollInterval,
                 labelsPath: labelsPath
             )
 
@@ -188,16 +219,14 @@ struct EvaluateLiveModelDetector {
         detectorDuration: Double,
         sourceTimeScale: Double,
         configuration: ObjectSwingDetectorConfiguration,
+        computeUnits: MLComputeUnits,
+        declarationPollInterval: Double,
         labelsPath: String?
     ) async throws -> EvaluationOutput {
         guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
             throw EvaluationError.noVideoTrack
         }
 
-        let transform = try await videoTrack.load(.preferredTransform)
-        let naturalSize = try await videoTrack.load(.naturalSize)
-        let orientation = orientation(for: transform)
-        let orientedSize = orientedSize(naturalSize: naturalSize, orientation: orientation)
         let reader = try AVAssetReader(asset: asset)
         if evaluatedStart > 0 || evaluatedEnd < durationSeconds {
             reader.timeRange = CMTimeRange(
@@ -205,13 +234,17 @@ struct EvaluateLiveModelDetector {
                 duration: CMTime(seconds: max(0.0, evaluatedEnd - evaluatedStart), preferredTimescale: 600)
             )
         }
-        let output = AVAssetReaderTrackOutput(
-            track: videoTrack,
-            outputSettings: [
+        let output = AVAssetReaderVideoCompositionOutput(
+            videoTracks: [videoTrack],
+            videoSettings: [
                 kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
             ]
         )
         output.alwaysCopiesSampleData = false
+        output.videoComposition = try await orientedVideoComposition(
+            for: videoTrack,
+            duration: CMTime(seconds: durationSeconds, preferredTimescale: 600)
+        )
 
         guard reader.canAdd(output) else {
             throw EvaluationError.readerSetupFailed
@@ -225,7 +258,7 @@ struct EvaluateLiveModelDetector {
         let detector = LiveModelSwingDetector(
             configuration: configuration,
             modelURL: modelURL,
-            computeUnits: .cpuOnly
+            computeUnits: computeUnits
         )
         detector.reset(enabled: true, configuration: configuration)
         var firstSampleTime: CMTime?
@@ -235,12 +268,21 @@ struct EvaluateLiveModelDetector {
         var strictDeclarations: [DeclarationRecord] = []
         var impactDeclarations: [DeclarationRecord] = []
         let poseRequest = VNDetectHumanBodyPoseRequest()
-        var lastPoseSampleTime = -Double.greatestFiniteMagnitude
+        var lastPoseDetectorTime = -Double.greatestFiniteMagnitude
         var poseAttemptTimes: [Double] = []
         var poseFeatures: [PoseFeature] = []
+        var decodedFrameCount = 0
+        var poseProcessingTotalMS = 0.0
+        var poseProcessingSampleCount = 0
+        var lastPoseProcessingTimeMS = 0.0
+        var performanceSamples: [PerformanceSample] = []
+        var nextPerformanceSampleDetectorTime = 0.0
+        var lastDeclarationPollDetectorTime = -Double.greatestFiniteMagnitude
+        let startedAt = Date()
 
         while reader.status == .reading, let sampleBuffer = output.copyNextSampleBuffer() {
             try Task.checkCancellation()
+            decodedFrameCount += 1
 
             let sampleTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
             if firstSampleTime == nil {
@@ -252,44 +294,67 @@ struct EvaluateLiveModelDetector {
             guard sourceTime.isFinite else { continue }
 
             let detectorTime = sourceTime / max(1.0, sourceTimeScale)
-            guard detectorTime - lastSubmittedDetectorTime >= configuration.targetSampleInterval else { continue }
+            guard detectorTime - lastSubmittedDetectorTime + 0.001 >= configuration.targetSampleInterval else { continue }
 
             lastSubmittedDetectorTime = detectorTime
             lastDetectorTime = detectorTime
             lastSourceTime = sourceTime
+            let orientedSize = orientedImageSize(from: sampleBuffer)
             _ = detector.process(
                 sampleBuffer: sampleBuffer,
                 recordingTime: detectorTime,
-                orientation: orientation,
+                orientation: .up,
                 orientedImageSize: orientedSize
             )
-            if sourceTime - lastPoseSampleTime >= 0.12 {
-                lastPoseSampleTime = sourceTime
-                poseAttemptTimes.append(sourceTime)
+            let poseSampleInterval = max(0.12, configuration.targetSampleInterval * 2.0)
+            if detectorTime - lastPoseDetectorTime >= poseSampleInterval {
+                lastPoseDetectorTime = detectorTime
+                poseAttemptTimes.append(detectorTime)
+                let poseStartedAt = Date()
                 if let feature = poseFeature(
                     from: sampleBuffer,
-                    at: sourceTime,
-                    orientation: orientation,
+                    at: detectorTime,
+                    orientation: .up,
                     request: poseRequest
                 ) {
                     poseFeatures.append(feature)
                 }
+                lastPoseProcessingTimeMS = Date().timeIntervalSince(poseStartedAt) * 1_000
+                poseProcessingTotalMS += lastPoseProcessingTimeMS
+                poseProcessingSampleCount += 1
             }
-            recordDeclarations(
-                sourceTimelineDetections(detector.currentDetections(), timeScale: sourceTimeScale),
-                declaredAt: sourceTime,
-                records: &strictDeclarations
-            )
-            recordImpactDeclarations(
-                sourceTimelineImpactCandidates(
-                    detector.currentImpactCenteredDetections(
-                        videoDuration: detectorTime,
-                        declaredAt: detectorTime
+            if declarationPollInterval == 0
+                || detectorTime - lastDeclarationPollDetectorTime >= declarationPollInterval {
+                lastDeclarationPollDetectorTime = detectorTime
+                recordDeclarations(
+                    sourceTimelineDetections(detector.currentDetections(), timeScale: sourceTimeScale),
+                    declaredAt: sourceTime,
+                    records: &strictDeclarations
+                )
+                recordImpactDeclarations(
+                    sourceTimelineImpactCandidates(
+                        detector.currentImpactCenteredDetections(
+                            videoDuration: detectorTime,
+                            declaredAt: detectorTime
+                        ),
+                        timeScale: sourceTimeScale
                     ),
-                    timeScale: sourceTimeScale
-                ),
-                records: &impactDeclarations
-            )
+                    records: &impactDeclarations
+                )
+            }
+            if detectorTime >= nextPerformanceSampleDetectorTime {
+                performanceSamples.append(
+                    performanceSample(
+                        sourceTime: sourceTime,
+                        detectorTime: detectorTime,
+                        startedAt: startedAt,
+                        decodedFrameCount: decodedFrameCount,
+                        processedFrameCount: detector.currentSnapshot().processedFrameCount,
+                        poseSampledFrameCount: poseAttemptTimes.count
+                    )
+                )
+                nextPerformanceSampleDetectorTime = detectorTime + 10.0
+            }
         }
 
         if reader.status == .failed {
@@ -304,24 +369,37 @@ struct EvaluateLiveModelDetector {
             declaredAt: lastSourceTime,
             records: &strictDeclarations
         )
+        let detectorImpactCenteredDetections = detector.currentImpactCenteredDetections(
+            videoDuration: lastDetectorTime,
+            declaredAt: lastDetectorTime
+        )
         let impactCenteredDetections = sourceTimelineImpactCandidates(
-            detector.currentImpactCenteredDetections(
-                videoDuration: lastDetectorTime,
-                declaredAt: lastDetectorTime
-            ),
+            detectorImpactCenteredDetections,
             timeScale: sourceTimeScale
         )
         recordImpactDeclarations(
             impactCenteredDetections,
             records: &impactDeclarations
         )
-        let impactPoseDiagnostics = impactCenteredDetections.map {
+        let impactPoseDiagnostics = detectorImpactCenteredDetections.map {
             poseDiagnostics(for: $0, attempts: poseAttemptTimes, features: poseFeatures)
         }
         let snapshot = detector.currentSnapshot()
+        let wallClockElapsed = Date().timeIntervalSince(startedAt)
+        let finalProcessingLag = wallClockElapsed - max(0.001, lastDetectorTime)
+        let averagePoseProcessingTimeMS = poseProcessingSampleCount > 0
+            ? poseProcessingTotalMS / Double(poseProcessingSampleCount)
+            : 0
         let featureSummary = detector.currentFeatureSummary()
         let candidateWindows = sourceTimelineDiagnostics(
             detector.currentCandidateDiagnostics(),
+            timeScale: sourceTimeScale
+        )
+        let impactDebugReports = sourceTimelineImpactDebugReports(
+            detector.currentImpactDebugReports(
+                videoDuration: lastDetectorTime,
+                declaredAt: lastDetectorTime
+            ),
             timeScale: sourceTimeScale
         )
         let labels = try labelsPath.map { try loadLabels(path: $0) }
@@ -337,12 +415,16 @@ struct EvaluateLiveModelDetector {
             declarations: impactDeclarations,
             poseDiagnostics: impactPoseDiagnostics
         )
-        let hybridImpactCandidates = ObjectSwingImpactSelector.hybridImpactCandidates(
-            impactCenteredDetections,
+        let detectorHybridImpactCandidates = ObjectSwingImpactSelector.hybridImpactCandidates(
+            detectorImpactCenteredDetections,
             attemptTimes: poseAttemptTimes,
             poseFeatures: poseFeatures
         )
-        let hybridPoseDiagnostics = hybridImpactCandidates.map {
+        let hybridImpactCandidates = sourceTimelineImpactCandidates(
+            detectorHybridImpactCandidates,
+            timeScale: sourceTimeScale
+        )
+        let hybridPoseDiagnostics = detectorHybridImpactCandidates.map {
             poseDiagnostics(for: $0, attempts: poseAttemptTimes, features: poseFeatures)
         }
         let scoredHybridImpactDetections = scoreImpactDetections(
@@ -359,6 +441,7 @@ struct EvaluateLiveModelDetector {
         return EvaluationOutput(
             video: videoPath,
             model: modelPath,
+            computeUnits: computeUnitsDescription(computeUnits),
             duration: durationSeconds,
             evaluatedStart: evaluatedStart,
             evaluatedEnd: evaluatedEnd,
@@ -367,15 +450,28 @@ struct EvaluateLiveModelDetector {
             detectorTimelineScale: configuration.timelineScale,
             configuration: configuration.name,
             targetSampleFPS: configuration.targetSampleFPS,
+            targetSourceSampleFPS: configuration.targetSampleFPS / max(1.0, sourceTimeScale),
             impactConfirmationPostRoll: configuration.impactConfirmationPostRoll,
+            declarationPollInterval: declarationPollInterval,
             acceptanceMaxClubTopY: configuration.acceptanceMaxClubTopY,
+            wallClockElapsedSeconds: wallClockElapsed,
+            realtimeRatio: wallClockElapsed / max(0.001, detectorDuration),
+            finalProcessingLagSeconds: finalProcessingLag,
+            decodedFrames: decodedFrameCount,
+            skippedDecodedFrames: max(0, decodedFrameCount - snapshot.processedFrameCount),
             processedFrames: snapshot.processedFrameCount,
+            effectiveDetectorFPS: lastDetectorTime > 0 ? Double(snapshot.processedFrameCount) / lastDetectorTime : 0,
+            detectorThroughputFPS: wallClockElapsed > 0 ? Double(snapshot.processedFrameCount) / wallClockElapsed : 0,
             poseSampledFrames: poseAttemptTimes.count,
             poseValidFrames: poseFeatures.count,
             averageProcessingTimeMS: snapshot.averageProcessingTimeMS,
             lastProcessingTimeMS: snapshot.lastProcessingTimeMS,
+            averagePoseProcessingTimeMS: averagePoseProcessingTimeMS,
+            lastPoseProcessingTimeMS: lastPoseProcessingTimeMS,
+            performanceSamples: performanceSamples,
             featureSummary: featureSummary,
             candidateWindows: candidateWindows,
+            impactDebugReports: impactDebugReports,
             detections: scoredDetections,
             impactCenteredDetections: scoredImpactDetections,
             hybridImpactDetections: scoredHybridImpactDetections,
@@ -437,6 +533,7 @@ struct EvaluateLiveModelDetector {
                 impactTime: detection.impactTime,
                 confidence: detection.confidence,
                 declaredAt: declaredAt,
+                latencyFromImpact: max(0, declaredAt - detection.impactTime),
                 latencyFromEnd: max(0, declaredAt - detection.end),
                 latencyFromMatchedLabelEnd: labelEndLatency(
                     declaredAt: declaredAt,
@@ -676,34 +773,121 @@ struct EvaluateLiveModelDetector {
         }
     }
 
-    private static func orientation(for transform: CGAffineTransform) -> CGImagePropertyOrientation {
-        let epsilon: CGFloat = 0.001
-
-        func equals(_ lhs: CGFloat, _ rhs: CGFloat) -> Bool {
-            abs(lhs - rhs) < epsilon
+    private static func sourceTimelineImpactDebugReports(
+        _ reports: [ObjectSwingImpactDebugReport],
+        timeScale: Double
+    ) -> [ObjectSwingImpactDebugReport] {
+        reports.map { report in
+            ObjectSwingImpactDebugReport(
+                anchorX: report.anchorX,
+                anchorY: report.anchorY,
+                result: report.result,
+                disappearanceTime: report.disappearanceTime.map { $0 * timeScale },
+                preFeatureCount: report.preFeatureCount,
+                postFeatureCount: report.postFeatureCount,
+                prePresence: report.prePresence,
+                postPresence: report.postPresence,
+                clubMinDistance: report.clubMinDistance,
+                clubNearRatio: report.clubNearRatio,
+                localPeakMotion: report.localPeakMotion,
+                localMeanClubMotion: report.localMeanClubMotion,
+                windowPeakMotion: report.windowPeakMotion,
+                windowMeanClubMotion: report.windowMeanClubMotion,
+                clubPathSpan: report.clubPathSpan
+            )
         }
-
-        if equals(transform.a, 0), equals(transform.b, 1), equals(transform.c, -1), equals(transform.d, 0) {
-            return .right
-        }
-
-        if equals(transform.a, 0), equals(transform.b, -1), equals(transform.c, 1), equals(transform.d, 0) {
-            return .left
-        }
-
-        if equals(transform.a, -1), equals(transform.d, -1) {
-            return .down
-        }
-
-        return .up
     }
 
-    private static func orientedSize(naturalSize: CGSize, orientation: CGImagePropertyOrientation) -> CGSize {
-        switch orientation {
-        case .left, .leftMirrored, .right, .rightMirrored:
-            return CGSize(width: naturalSize.height, height: naturalSize.width)
+    private static func performanceSample(
+        sourceTime: Double,
+        detectorTime: Double,
+        startedAt: Date,
+        decodedFrameCount: Int,
+        processedFrameCount: Int,
+        poseSampledFrameCount: Int
+    ) -> PerformanceSample {
+        let elapsed = Date().timeIntervalSince(startedAt)
+        let safeDetectorTime = max(0.001, detectorTime)
+        let elapsedForRate = max(0.001, elapsed)
+        return PerformanceSample(
+            sourceTime: sourceTime,
+            detectorTime: safeDetectorTime,
+            elapsedWallTime: elapsed,
+            processingLag: elapsed - safeDetectorTime,
+            decodedFrames: decodedFrameCount,
+            processedFrames: processedFrameCount,
+            poseSampledFrames: poseSampledFrameCount,
+            detectorThroughputFPS: Double(processedFrameCount) / elapsedForRate,
+            realtimeRatio: elapsed / safeDetectorTime
+        )
+    }
+
+    private static func orientedImageSize(from sampleBuffer: CMSampleBuffer) -> CGSize {
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+            return .zero
+        }
+
+        return CGSize(
+            width: CVPixelBufferGetWidth(pixelBuffer),
+            height: CVPixelBufferGetHeight(pixelBuffer)
+        )
+    }
+
+    private static func orientedVideoComposition(for track: AVAssetTrack, duration: CMTime) async throws -> AVVideoComposition {
+        let naturalSize = try await track.load(.naturalSize)
+        let preferredTransform = try await track.load(.preferredTransform)
+        let nominalFrameRate = try await track.load(.nominalFrameRate)
+        let transformedRect = CGRect(origin: .zero, size: naturalSize).applying(preferredTransform)
+        let renderSize = CGSize(width: abs(transformedRect.width), height: abs(transformedRect.height))
+        let renderTransform = preferredTransform.concatenating(
+            CGAffineTransform(
+                translationX: -transformedRect.minX,
+                y: -transformedRect.minY
+            )
+        )
+
+        let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: track)
+        layerInstruction.setTransform(renderTransform, at: .zero)
+
+        let instruction = AVMutableVideoCompositionInstruction()
+        instruction.timeRange = CMTimeRange(start: .zero, duration: duration)
+        instruction.layerInstructions = [layerInstruction]
+
+        let composition = AVMutableVideoComposition()
+        composition.renderSize = renderSize
+        composition.frameDuration = CMTime(
+            value: 1,
+            timescale: CMTimeScale(max(30, Int32(nominalFrameRate.rounded())))
+        )
+        composition.instructions = [instruction]
+        return composition
+    }
+
+    private static func computeUnits(named value: String) -> MLComputeUnits {
+        switch value.lowercased() {
+        case "cpu", "cpuonly":
+            return .cpuOnly
+        case "cpuandgpu", "cpu+gpu", "gpu":
+            return .cpuAndGPU
+        case "cpuandneuralengine", "cpu+ne", "ne", "neuralengine":
+            return .cpuAndNeuralEngine
         default:
-            return naturalSize
+            return .all
+        }
+    }
+
+    private static func computeUnitsDescription(_ computeUnits: MLComputeUnits) -> String {
+        switch computeUnits {
+        case .cpuOnly:
+            return "cpuOnly"
+        case .cpuAndGPU:
+            return "cpuAndGPU"
+        case .cpuAndNeuralEngine:
+            return "cpuAndNeuralEngine"
+        case .all:
+            return "all"
+        @unknown default:
+            return "unknown"
         }
     }
 }
