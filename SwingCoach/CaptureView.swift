@@ -12,6 +12,7 @@ import Combine
 import AVFoundation
 import Photos
 import ImageIO
+import Vision
 
 enum SloMoMode {
     case standard    // 120 fps @ 1080p
@@ -56,14 +57,26 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private let movieOutput = AVCaptureMovieFileOutput()
     private let videoDataOutput = AVCaptureVideoDataOutput()
     private let liveModelSwingDetector = LiveModelSwingDetector()
+    private let livePoseRequest = VNDetectHumanBodyPoseRequest()
     private var recordingStartSampleTime: CMTime?
+    private var recordingStartWallTime: Date?
     private var lastLiveSwingSampleTime = -Double.greatestFiniteMagnitude
+    private var lastLivePoseSampleTime = -Double.greatestFiniteMagnitude
+    private var livePoseAttemptTimes: [Double] = []
+    private var livePoseFeatures: [ObjectSwingPoseFeature] = []
+    private var livePoseProcessingTotalMS = 0.0
+    private var livePoseProcessingSampleCount = 0
+    private var liveLastPoseProcessingTimeMS = 0.0
     @Published var lastRecordingURL: URL?
     @Published var lastRecordingSwingDetections: [DetectedSwing] = []
+    @Published var lastRecordingSwingDetectionSummary: LiveSwingDetectionSnapshot?
     @Published var recordingError: Error?
     @Published var captureMode: SloMoMode = .ultra  // Default to 240 fps
     @Published var liveSwingDetection = LiveSwingDetectionSnapshot.idle
     var isLiveSwingDetectionEnabled = true
+    var liveModelDetectorSampleFPS = 16.0
+    var hybridImpactConfirmationPostRoll = 0.20
+    var liveCaptureDetectionMode: LiveCaptureDetectionMode = .hybrid
 
     /// The mode that was active when recording started (for correct playback rate)
     private(set) var recordedMode: SloMoMode = .ultra
@@ -88,6 +101,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
         // Add input and output FIRST
         session.addInput(input)
+        configureAudioInput()
         if session.canAddOutput(movieOutput) {
             session.addOutput(movieOutput)
         }
@@ -98,6 +112,17 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         configureHighFPS(device: device, mode: captureMode)
 
         session.commitConfiguration()
+    }
+
+    private func configureAudioInput() {
+        guard let audioDevice = AVCaptureDevice.default(for: .audio),
+              let audioInput = try? AVCaptureDeviceInput(device: audioDevice),
+              session.canAddInput(audioInput)
+        else {
+            return
+        }
+
+        session.addInput(audioInput)
     }
 
     private func configureQualityOutput() {
@@ -220,42 +245,150 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private func resetLiveSwingDetection() {
         qualityQueue.async {
             self.recordingStartSampleTime = nil
+            self.recordingStartWallTime = nil
             self.lastLiveSwingSampleTime = -Double.greatestFiniteMagnitude
-            self.liveModelSwingDetector.reset(enabled: self.isLiveSwingDetectionEnabled)
+            self.lastLivePoseSampleTime = -Double.greatestFiniteMagnitude
+            self.livePoseAttemptTimes = []
+            self.livePoseFeatures = []
+            self.livePoseProcessingTotalMS = 0
+            self.livePoseProcessingSampleCount = 0
+            self.liveLastPoseProcessingTimeMS = 0
+            self.liveModelSwingDetector.reset(
+                enabled: self.isLiveSwingDetectionEnabled,
+                configuration: self.liveModelConfiguration()
+            )
         }
 
         DispatchQueue.main.async {
+            let configuration = self.liveModelConfiguration()
             self.lastRecordingSwingDetections = []
+            self.lastRecordingSwingDetectionSummary = nil
             self.liveSwingDetection = self.isLiveSwingDetectionEnabled ? LiveSwingDetectionSnapshot(
                 status: .idle,
                 primaryMessage: "Model detect starting",
-                detailMessage: "Scanning sampled frames while recording."
+                detailMessage: "Scanning sampled frames while recording.",
+                targetSampleFPS: configuration.targetSampleFPS,
+                detectorConfigurationName: configuration.name
             ) : LiveSwingDetectionSnapshot(
                 status: .disabled,
                 primaryMessage: "Auto detect off",
-                detailMessage: "Recording normally; trim manually after stop."
+                detailMessage: "Recording normally; trim manually after stop.",
+                detectorConfigurationName: configuration.name
             )
         }
     }
 
+    private func liveModelConfiguration() -> ObjectSwingDetectorConfiguration {
+        ObjectSwingDetectorConfiguration.liveObjectModel(
+            sampleFPS: liveModelDetectorSampleFPS,
+            timelineScale: recordedMode.targetFPS / 30.0,
+            impactConfirmationPostRoll: hybridImpactConfirmationPostRoll
+        )
+    }
+
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         qualityQueue.async {
-            let detections = self.isLiveSwingDetectionEnabled
-                ? self.liveModelSwingDetector.finish(recordingTime: self.lastLiveSwingSampleTime.isFinite ? self.lastLiveSwingSampleTime : nil)
-                : []
+            let detectionResult: (items: [DetectedSwing], summary: LiveSwingDetectionSnapshot?)
+            if self.isLiveSwingDetectionEnabled {
+                let finished = self.finishLiveSwingDetection()
+                detectionResult = (finished.items, finished.summary)
+            } else {
+                detectionResult = ([], nil)
+            }
 
             DispatchQueue.main.async {
                 guard error == nil else {
                     self.recordingError = error
                     self.lastRecordingURL = nil
                     self.lastRecordingSwingDetections = []
+                    self.lastRecordingSwingDetectionSummary = nil
                     return
                 }
 
                 self.recordingError = nil
-                self.lastRecordingSwingDetections = detections
+                self.lastRecordingSwingDetections = detectionResult.items
+                self.lastRecordingSwingDetectionSummary = detectionResult.summary
                 self.lastRecordingURL = outputFileURL
             }
+        }
+    }
+
+    private func finishLiveSwingDetection() -> (items: [DetectedSwing], summary: LiveSwingDetectionSnapshot) {
+        let recordingTime = lastLiveSwingSampleTime.isFinite ? lastLiveSwingSampleTime : nil
+        let finalTime = recordingTime ?? 0
+
+        func finalizedSummary(
+            base snapshot: LiveSwingDetectionSnapshot,
+            detections: [DetectedSwing],
+            recordingTime: Double
+        ) -> LiveSwingDetectionSnapshot {
+            var snapshot = liveTelemetrySnapshot(base: snapshot, recordingTime: recordingTime)
+            snapshot.detectedSwingCount = detections.count
+            if detections.isEmpty {
+                snapshot.primaryMessage = "No swings detected"
+            } else {
+                snapshot.status = .swingDetected
+                snapshot.primaryMessage = "\(detections.count) swing\(detections.count == 1 ? "" : "s") detected"
+            }
+            return snapshot
+        }
+
+        switch liveCaptureDetectionMode {
+        case .contact:
+            let detections = liveModelSwingDetector.finish(recordingTime: recordingTime)
+            return (
+                detections,
+                finalizedSummary(
+                    base: liveModelSwingDetector.currentSnapshot(),
+                    detections: detections,
+                    recordingTime: finalTime
+                )
+            )
+        case .impact:
+            _ = liveModelSwingDetector.finish(recordingTime: recordingTime)
+            let detections = liveModelSwingDetector.currentImpactCenteredDetections(
+                videoDuration: finalTime,
+                declaredAt: finalTime
+            ).map { candidate in
+                DetectedSwing(
+                    startTime: CMTime(seconds: candidate.start, preferredTimescale: 600),
+                    endTime: CMTime(seconds: candidate.end, preferredTimescale: 600),
+                    confidence: candidate.confidence,
+                    impactTime: candidate.impactTime,
+                    declaredAt: candidate.declaredAt
+                )
+            }
+            return (
+                detections,
+                finalizedSummary(
+                    base: liveModelSwingDetector.currentSnapshot(),
+                    detections: detections,
+                    recordingTime: finalTime
+                )
+            )
+        case .hybrid:
+            _ = liveModelSwingDetector.finish(recordingTime: recordingTime)
+            let candidates = hybridImpactCandidates(
+                videoDuration: finalTime,
+                declaredAt: finalTime
+            )
+            let detections = candidates.map { candidate in
+                DetectedSwing(
+                    startTime: CMTime(seconds: candidate.start, preferredTimescale: 600),
+                    endTime: CMTime(seconds: candidate.end, preferredTimescale: 600),
+                    confidence: candidate.confidence,
+                    impactTime: candidate.impactTime,
+                    declaredAt: candidate.declaredAt
+                )
+            }
+            return (
+                detections,
+                finalizedSummary(
+                    base: hybridSnapshot(base: liveModelSwingDetector.currentSnapshot(), recordingTime: finalTime),
+                    detections: detections,
+                    recordingTime: finalTime
+                )
+            )
         }
     }
 
@@ -270,6 +403,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
         if recordingStartSampleTime == nil {
             recordingStartSampleTime = sampleTime
+            recordingStartWallTime = Date()
         }
 
         guard let recordingStartSampleTime,
@@ -279,7 +413,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         }
 
         let relativeTime = CMTimeGetSeconds(CMTimeSubtract(sampleTime, recordingStartSampleTime))
-        guard relativeTime.isFinite, relativeTime - lastLiveSwingSampleTime >= 0.50 else { return }
+        guard relativeTime.isFinite,
+              relativeTime - lastLiveSwingSampleTime >= liveModelSwingDetector.targetSampleInterval
+        else { return }
         lastLiveSwingSampleTime = relativeTime
 
         let orientation: CGImagePropertyOrientation = .right
@@ -287,15 +423,126 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             width: CVPixelBufferGetHeight(pixelBuffer),
             height: CVPixelBufferGetWidth(pixelBuffer)
         )
-        let snapshot = liveModelSwingDetector.process(
+        var snapshot = liveModelSwingDetector.process(
             sampleBuffer: sampleBuffer,
             recordingTime: relativeTime,
             orientation: orientation,
             orientedImageSize: orientedImageSize
         )
+        if liveCaptureDetectionMode == .hybrid {
+            updateLivePoseFeatures(
+                sampleBuffer: sampleBuffer,
+                recordingTime: relativeTime,
+                orientation: orientation
+            )
+            snapshot = hybridSnapshot(base: snapshot, recordingTime: relativeTime)
+        }
+        snapshot = liveTelemetrySnapshot(base: snapshot, recordingTime: relativeTime)
 
         DispatchQueue.main.async {
             self.liveSwingDetection = snapshot
+        }
+    }
+
+    private func liveTelemetrySnapshot(
+        base snapshot: LiveSwingDetectionSnapshot,
+        recordingTime: Double
+    ) -> LiveSwingDetectionSnapshot {
+        var snapshot = snapshot
+        if recordingTime > 0, snapshot.processedFrameCount > 0 {
+            snapshot.effectiveSampleFPS = Double(snapshot.processedFrameCount) / recordingTime
+        }
+        if let recordingStartWallTime {
+            let wallElapsed = Date().timeIntervalSince(recordingStartWallTime)
+            snapshot.analysisLagMS = max(0, wallElapsed - recordingTime) * 1_000
+        }
+        snapshot.lastPoseProcessingTimeMS = liveLastPoseProcessingTimeMS
+        if livePoseProcessingSampleCount > 0 {
+            snapshot.averagePoseProcessingTimeMS = livePoseProcessingTotalMS / Double(livePoseProcessingSampleCount)
+        }
+        return snapshot
+    }
+
+    private func hybridSnapshot(
+        base snapshot: LiveSwingDetectionSnapshot,
+        recordingTime: Double
+    ) -> LiveSwingDetectionSnapshot {
+        let candidates = hybridImpactCandidates(videoDuration: recordingTime, declaredAt: recordingTime)
+        var snapshot = snapshot
+        snapshot.poseObservationCount = livePoseFeatures.count
+        snapshot.detectedSwingCount = candidates.count
+
+        guard let latest = candidates.last else {
+            if livePoseFeatures.isEmpty {
+                snapshot.primaryMessage = "Hybrid scanning"
+                snapshot.detailMessage = "Sampling model frames and sparse pose."
+            } else if snapshot.status == .swingInProgress {
+                snapshot.primaryMessage = "Hybrid sees motion"
+                snapshot.detailMessage = "Waiting for a pose-gated impact window."
+            } else {
+                snapshot.primaryMessage = "Hybrid scanning"
+                snapshot.detailMessage = "Pose samples \(livePoseFeatures.count); waiting for impact."
+            }
+            return snapshot
+        }
+
+        let impactLag = max(0, latest.declaredAt - latest.impactTime)
+        let endLag = max(0, latest.declaredAt - latest.end)
+        snapshot.status = .swingDetected
+        snapshot.primaryMessage = "\(candidates.count) hybrid swing\(candidates.count == 1 ? "" : "s") detected"
+        snapshot.detailMessage = String(
+            format: "Last impact %.1fs, imp +%.1fs, end +%.1fs, pose %d.",
+            latest.impactTime,
+            impactLag,
+            endLag,
+            livePoseFeatures.count
+        )
+        return snapshot
+    }
+
+    private func hybridImpactCandidates(
+        videoDuration: Double,
+        declaredAt: Double
+    ) -> [ObjectSwingImpactCandidate] {
+        ObjectSwingImpactSelector.hybridImpactCandidates(
+            liveModelSwingDetector.currentImpactCenteredDetections(
+                videoDuration: videoDuration,
+                declaredAt: declaredAt
+            ),
+            attemptTimes: livePoseAttemptTimes,
+            poseFeatures: livePoseFeatures
+        )
+    }
+
+    private func updateLivePoseFeatures(
+        sampleBuffer: CMSampleBuffer,
+        recordingTime: Double,
+        orientation: CGImagePropertyOrientation
+    ) {
+        let minimumInterval = max(0.12, liveModelSwingDetector.targetSampleInterval * 2.0)
+        guard recordingTime - lastLivePoseSampleTime >= minimumInterval else { return }
+
+        lastLivePoseSampleTime = recordingTime
+        livePoseAttemptTimes.append(recordingTime)
+        let poseStartedAt = Date()
+        if let poseFeature = ObjectSwingImpactSelector.poseFeature(
+            from: sampleBuffer,
+            at: recordingTime,
+            orientation: orientation,
+            request: livePoseRequest
+        ) {
+            livePoseFeatures.append(poseFeature)
+        }
+        liveLastPoseProcessingTimeMS = Date().timeIntervalSince(poseStartedAt) * 1_000
+        livePoseProcessingTotalMS += liveLastPoseProcessingTimeMS
+        livePoseProcessingSampleCount += 1
+
+        let retentionLimit = 1_200
+        if livePoseAttemptTimes.count > retentionLimit {
+            livePoseAttemptTimes.removeFirst(livePoseAttemptTimes.count - retentionLimit)
+        }
+        if livePoseFeatures.count > retentionLimit {
+            livePoseFeatures.removeFirst(livePoseFeatures.count - retentionLimit)
         }
     }
 
@@ -360,6 +607,9 @@ struct CaptureView: View {
 
     @StateObject private var camera = CameraSession()
     @AppStorage(ExperimentalSettingKey.liveAutoSwingDetectionEnabled) private var liveAutoSwingDetectionEnabled = true
+    @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 16.0
+    @AppStorage(ExperimentalSettingKey.hybridImpactConfirmationPostRoll) private var hybridImpactConfirmationPostRoll = 0.20
+    @AppStorage(ExperimentalSettingKey.liveCaptureDetectionMode) private var liveCaptureDetectionModeRaw = LiveCaptureDetectionMode.hybrid.rawValue
     @State private var isRecording = false
     @State private var previewPlayerItem: AVPlayerItem?
     @State private var currentRecordingURL: URL?
@@ -529,11 +779,26 @@ struct CaptureView: View {
             .frame(maxHeight: .infinity)
         }
         .onAppear {
+            if let captureModeRaw = ExperimentalDetectorDefaults.migrateIfNeeded().captureModeRaw {
+                liveCaptureDetectionModeRaw = captureModeRaw
+            }
             camera.isLiveSwingDetectionEnabled = liveAutoSwingDetectionEnabled
+            camera.liveModelDetectorSampleFPS = liveModelDetectorSampleFPS
+            camera.hybridImpactConfirmationPostRoll = hybridImpactConfirmationPostRoll
+            camera.liveCaptureDetectionMode = liveCaptureDetectionMode
             camera.start()
         }
         .onChange(of: liveAutoSwingDetectionEnabled) { _, isEnabled in
             camera.isLiveSwingDetectionEnabled = isEnabled
+        }
+        .onChange(of: liveModelDetectorSampleFPS) { _, sampleFPS in
+            camera.liveModelDetectorSampleFPS = sampleFPS
+        }
+        .onChange(of: hybridImpactConfirmationPostRoll) { _, wait in
+            camera.hybridImpactConfirmationPostRoll = wait
+        }
+        .onChange(of: liveCaptureDetectionModeRaw) { _, _ in
+            camera.liveCaptureDetectionMode = liveCaptureDetectionMode
         }
         .onDisappear {
             camera.stop()
@@ -567,6 +832,7 @@ struct CaptureView: View {
                     source: .capturedFile(url: url),
                     sourceCaptureMode: currentRecordingMode,
                     initialDetectedSwings: liveAutoSwingDetectionEnabled ? camera.lastRecordingSwingDetections : [],
+                    detectorSummary: liveAutoSwingDetectionEnabled ? camera.lastRecordingSwingDetectionSummary : nil,
                     runsPostRecordDetection: false,
                     onComplete: { clips, exportedURLs in
                         // Handle exported clips
@@ -604,6 +870,10 @@ struct CaptureView: View {
                 showFocusIndicator = false
             }
         }
+    }
+
+    private var liveCaptureDetectionMode: LiveCaptureDetectionMode {
+        LiveCaptureDetectionMode(rawValue: liveCaptureDetectionModeRaw) ?? .hybrid
     }
 
     private func toggleRecording() {
@@ -649,6 +919,7 @@ struct CaptureView: View {
         currentRecordingURL = nil
         currentRecordingMode = nil
         camera.lastRecordingURL = nil
+        camera.lastRecordingSwingDetectionSummary = nil
     }
 
     private func saveToPhotoLibrary() {
@@ -782,6 +1053,14 @@ struct LiveSwingDetectionBadge: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.white.opacity(0.78))
                     .lineLimit(2)
+
+                if let performanceLine {
+                    Text(performanceLine)
+                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        .foregroundColor(performanceColor)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                }
             }
 
             Spacer(minLength: 0)
@@ -811,6 +1090,38 @@ struct LiveSwingDetectionBadge: View {
         case .unavailable:
             return "exclamationmark.triangle.fill"
         }
+    }
+
+    private var performanceLine: String? {
+        guard snapshot.targetSampleFPS > 0, snapshot.processedFrameCount > 0 else { return nil }
+
+        var parts = [
+            String(format: "%.0f/%.1ffps", snapshot.targetSampleFPS, snapshot.effectiveSampleFPS),
+            String(format: "model %.0f/%.0fms", snapshot.lastProcessingTimeMS, snapshot.averageProcessingTimeMS)
+        ]
+
+        if snapshot.averagePoseProcessingTimeMS > 0 {
+            parts.append(String(format: "pose %.0f/%.0fms", snapshot.lastPoseProcessingTimeMS, snapshot.averagePoseProcessingTimeMS))
+        }
+
+        if snapshot.analysisLagMS >= 50 {
+            parts.append(String(format: "lag %.0fms", snapshot.analysisLagMS))
+        }
+
+        return parts.joined(separator: " · ")
+    }
+
+    private var performanceColor: Color {
+        let sampleRateRatio = snapshot.targetSampleFPS > 0
+            ? snapshot.effectiveSampleFPS / snapshot.targetSampleFPS
+            : 1
+        if snapshot.analysisLagMS > 500 || sampleRateRatio < 0.70 {
+            return .red.opacity(0.86)
+        }
+        if snapshot.analysisLagMS > 180 || sampleRateRatio < 0.88 {
+            return .yellow.opacity(0.90)
+        }
+        return .white.opacity(0.58)
     }
 
     private var iconColor: Color {

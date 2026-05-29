@@ -588,9 +588,9 @@ Purpose:
 
 Evaluate whether the trained golf-object model can act as the visual confirmation layer for swing detection on the long range-session video, without using the label timestamps during detection.
 
-Algorithm used in the current experiment:
+Algorithm used in the current offline experiment:
 
-1. Sample the video sequentially at `2 fps`, simulating a live-style pass over the recording.
+1. Sample the slow-motion source video sequentially at `2 fps`, simulating a live-style pass over the already-stretched playback timeline.
 2. Run the YOLO11n golf-object model on each sampled frame.
 3. Build a motion signal from:
    - frame-to-frame visual difference
@@ -651,10 +651,193 @@ Interpretation:
 - The object model is useful enough to build around.
 - Ball disappearance is currently the strongest visual confirmation signal.
 - The app now bundles the YOLO11n Core ML package and uses a Swift port of this detector for live capture-time Trim preselection and imported-video Trim preselection.
-- The shipped app path is model-only for trim ranges. The older Vision-only detector is not used as a production fallback.
-- During capture, the app samples camera frames at roughly `2 fps`, runs the object model while recording is active, and stores detected swing ranges. When recording stops, Trim opens with those already-collected ranges and does not run the old fallback detector.
-- Imported/library videos still run the same model-backed detector as a local post-pass when Trim opens.
-- Audio confirmation and Apple Vision pose fusion remain future work; the current app path uses model detections, visual/club motion, and lower-strike-area ball disappearance.
+- The shipped app path is model-first for trim ranges. The older Vision-only detector is not used as a production fallback. The experimental `Hybrid` capture path uses sparse Apple Vision pose as a gate on top of model impact candidates.
+- During capture, the app samples camera frames at the configured real-time rate (`16 fps` by default), runs the object model while recording is active, and stores detected swing ranges. When recording stops, Trim opens with those already-collected ranges and does not run the old fallback detector.
+- Replay Debug now uses the same Core ML live detector as capture. Visible playback speed is only playback pacing; the separate source timing selector (`normal`, `120`, `240`) controls whether source timestamps are divided before feeding the detector, then mapped back to the source timeline for display and Trim review. This keeps saved slow-motion exports from being confused with normal-speed camera input.
+- The Python `2 fps` source-timeline result is an upper-information baseline for the model logic. In an `8x` real-time replay, the equivalent real-time rate is about `16` YOLO samples per second, so the app exposes `2`, `4`, `8`, and `16 fps` real-time settings for throughput/recall experiments.
+- The live acceptance gate now requires ball disappearance plus sustained object motion, average club motion, broad club path span, and high-club evidence. A second post-trim guard verifies that the returned clip itself still contains those motion/club-travel signals, which removes the stale setup/ball-management detection from the continuous Core ML pass.
+- Imported/library videos still run a model-backed detector as a local post-pass when Trim opens. The post-pass now uses the selected Experiments detector mode/sample-rate/confirmation-wait settings, so the default Library Trim path uses the same `Hybrid` strategy as live capture and Replay Debug instead of silently falling back to strict contact.
+- Audio confirmation remains future work for live capture. The current app path can use model detections, visual/club motion, lower-strike-area ball disappearance, and sparse Apple Vision pose in the experimental `Hybrid` mode.
+
+Current app detector structures:
+
+| Mode | Purpose | Acceptance rule | Start/end rule | Main failure mode |
+| --- | --- | --- | --- | --- |
+| `contact` | High-precision production-style trim preselection | model motion + club evidence + addressed-ball disappearance/contact guards | estimate impact from ball disappearance, then use configured pre/post impact trim | misses real swings when the ball is yellow, occluded, too small, one of several balls, or not consistently detected |
+| `impact` | Higher-recall live/debug experiment | local motion peak + club evidence, without requiring ball disappearance | fixed window around likely impact: `impact - impactPreRoll` to `impact + impactPostRoll`; very close neighboring peaks are merged | can mark setup, waggles, rehearsals, or ball-management motion |
+| audio + model | Debug Replay mode + strategy harness | audio transient must fall inside/near an impact-mode visual window | keep the matched model impact window in Debug Replay; strategy harness also scores a short fixed window around audio impact | misses screen recordings or clips with weak/no useful impact audio; can false-positive on nearby bays |
+| Apple Vision pose gate | Debug Replay mode + strategy harness | impact-mode visual window must also contain plausible primary-golfer hand motion/address-to-finish change | keep the impact-mode fixed window | reduces static/setup false positives, but can miss swings when Vision sees a mostly static or partial body |
+| hybrid pose/cadence | Experimental live capture mode, Replay Debug mode, and strategy harness | pose-gated impact windows, nearby weaker pose duplicate suppression, plus a narrow low-pose/cadence fallback after a previously accepted swing | keep the impact-mode fixed window | tuned on the current V2 clips; needs more real range sessions before it can be trusted as production behavior |
+
+The current `contact` detector is sequential, not a set of long post-processing jobs running in parallel. Each sampled frame appends one feature row, then rescans the retained feature buffer to see whether any new completed window can be declared. The feature row contains:
+
+- YOLO/Core ML object detections: `club_shaft`, `clubhead`, `golf_ball_candidate`
+- visual motion from luma difference: the average absolute difference between the current and previous downsampled Y-plane frame (`80x120`, normalized to `0-1`)
+- club motion: normalized movement of the best detected club/clubhead point between sampled frames
+- smoothed motion: weighted visual motion + club motion + a club-confidence bonus
+
+The distinction between candidate and swing is intentional:
+
+```text
+candidate = sustained smoothed motion AND club evidence
+swing     = candidate AND ball/contact validation AND club path/motion guards
+```
+
+In `contact` mode, a motion run starts when smoothed motion passes the threshold and the frame has enough club evidence. The candidate gets a small pre/post pad. It only becomes a detected swing if validation finds a lower-strike-area ball anchor before the motion, that same anchor mostly disappears after the motion, the clip has enough peak motion, enough strong-motion samples, enough average club motion, enough club path span, and the club travels high enough in frame. When impact can be estimated, the returned trim is centered on that impact estimate instead of the full candidate span.
+
+Live Capture can now be switched between `contact`, `impact`, and `hybrid` from Library > Experiments. New installs and devices still carrying the old default `contact` setting migrate once to `hybrid`; the user can still switch back afterward for comparison. Replay Debug now has one footage timing selector (`30/1x`, `120/4x`, `240/8x`) instead of separate playback-speed and source-speed controls. The hybrid impact confirmation wait is configurable from Experiments and Replay Debug Advanced controls (`0.20s`, `0.28s`, `0.35s`, or `0.55s`) so phone testing can compare faster declaration against safer/slower waits without another build. In `hybrid`, capture runs the same YOLO sampling path and also samples Apple Vision pose sparsely on the capture frame queue. The live badge recomputes the shared hybrid selector on each sampled frame so the golfer can see hybrid detection count, latest impact time, impact-to-declaration delay, returned-window-end delay, and pose sample count while recording. It also shows `target/effective fps`, model last/average milliseconds, pose last/average milliseconds, and camera-to-analysis lag. When recording stops, the same selector is applied to the retained impact candidates before Trim opens, and the final detector timing snapshot is shown under the Trim timeline. `pose` and `audio` remain Replay Debug modes.
+
+This explains the confusing debug UX from the failing clips:
+
+```text
+candidate found
+  -> model saw club/motion
+  -> contact validator could not prove addressed-ball disappearance
+  -> no detected swing emitted
+```
+
+It also explains the delay that appeared in the app: the detector cannot confirm a contact swing until enough post-impact samples exist to decide that the ball disappeared. The strict contact path should still declare close to the end of the swing, but if the candidate stretches too long or the post-impact evidence is weak, declaration can lag. The hybrid impact path now has an explicit confirmation wait, `impactConfirmationPostRoll`, which defaults to `0.20s` of detector time instead of the older implicit `0.55s`. That is roughly three 16fps detector samples after estimated impact; shorter waits are intentionally not the default because the local motion peak has too little post-impact context. The evaluator records `impactTime`, `declaredAt`, `latencyFromEnd`, and `latencyFromMatchedLabelEnd`; Debug Replay detected-swing chips show impact and returned-window lag; captured Trim auto-detected thumbnails show `imp +Xs / end +Ys` for declaration delay from estimated impact and returned clip end.
+
+Generalization check with `.detectorTestV2`:
+
+The `.detectorTestV2` folder now contains five local videos. The strategy harness uses rough visual labels embedded in `tools/evaluate_detector_test_v2.py`, including the first 120 seconds of `IMG_2622.mov` where four visible swing windows were marked. These labels are rough scoring anchors, not final ground truth.
+
+Command:
+
+```text
+python3 tools/evaluate_detector_test_v2.py > .detectorTestV2/strategy_report.json
+```
+
+The harness accepts `--sample-fps` for detector-rate sweeps and `--impact-confirmation-post-roll` for declaration-latency sweeps.
+
+Aggregate result:
+
+| Strategy | Matched rough swings | False positives | Duplicate windows | Detection count | Interpretation |
+| --- | ---: | ---: | ---: | ---: | --- |
+| strict `contact` | 1/9 | 0 | 0 | 1 | precise but far too brittle |
+| `impact` | 9/9 | 12 | 4 | 25 | high recall, still too noisy for production without more gates |
+| pose-gated `impact` | 8/9 | 1 | 2 | 11 | Vision removes most static/setup false positives, but misses one rough long-session swing |
+| audio + model | 5/9 | 1 | 0 | 6 | promising on real recordings with useful audio, poor on screen recordings |
+| hybrid pose/cadence | 9/9 | 0 | 0 | 9 | best current V2 strategy; uses sparse pose gating plus one low-pose/cadence escape hatch |
+
+Per-case result:
+
+| Video | Rough swings | `contact` | `impact` | pose-gated `impact` | audio + model | hybrid pose/cadence |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `1cde87c1-420b-4a92-8d4d-adde03917ae9.MP4` | 1 | 0/1, 0 FP | 1/1, 0 FP | 1/1, 0 FP | 1/1, 0 FP | 1/1, 0 FP |
+| `ScreenRecording_04-01-2026 16-13-45_1.MP4` | 1 | 0/1, 0 FP | 1/1, 1 FP | 1/1, 0 FP | 0/1, 0 FP | 1/1, 0 FP |
+| `ScreenRecording_05-13-2026 06-46-28_1.MP4` | 2 | 0/2, 0 FP | 2/2, 1 FP | 2/2, 1 FP | 0/2, 0 FP | 2/2, 0 FP |
+| `eb5a91a1830f4dc894afbe2ffafa3a45.MOV` | 1 | 0/1, 0 FP | 1/1, 0 FP | 1/1, 0 FP | 1/1, 0 FP | 1/1, 0 FP |
+| `IMG_2622.mov` first 120s | 4 | 1/4, 0 FP | 4/4, 10 FP | 3/4, 0 FP | 3/4, 1 FP | 4/4, 0 FP |
+
+Observed local Mac CPU Core ML time is about `54-55 ms` per sampled model frame in this run. The evaluator also sampled Apple Vision pose at roughly half the model cadence (`900` pose attempts over the first `120s` of `IMG_2622.mov`, with `804` valid pose frames). The wall-clock run became several minutes, so Vision should be treated as a sparse confirmation/gating experiment, not something to run naively at every model frame during live capture. The app uses Core ML `.all` compute units on device, so Mac CPU fallback timing is a correctness/debug signal, not the final phone throughput claim.
+
+Sample-rate sweep:
+
+| Sample rate | V2 hybrid result | V2 false positives | V2 duplicates | 18-swing fixture result | Fixture negative false positives | Decision |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `2 fps` | 5/9 | 1 | 1 | not rerun | not rerun | too sparse |
+| `4 fps` | 8/9 | 1 | 1 | not rerun | not rerun | too noisy |
+| `8 fps` | 8/9 | 0 | 0 | 16/18 | 1/8 | misses swings |
+| `12 fps` | 8/9 | 1 | 1 | 18/18 | 1/8 | not clean enough |
+| `16 fps` | 9/9 | 0 | 0 | 18/18 | 0/8 | current default |
+
+The lower-rate failures are useful: the original 18-swing fixture alone would make `12 fps` look acceptable on positives, but V2 and the negative-gap clips show that coarser sampling changes which model/pose peaks win. For now, `16 fps` remains the live default even though it is heavier.
+
+Confirmation-latency sweep:
+
+| Confirmation wait | V2 hybrid result | V2 false positives | V2 duplicates | V2 label-end latency | 18-swing fixture result | Fixture negative false positives | Decision |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `0.55s` | 9/9 | 0 | 0 | not recorded | 18/18 | 0/8 | previous implicit wait, accurate but slower |
+| `0.35s` | 9/9 | 0 | 0 | not recorded | 18/18 | 0/8 | accurate, but no longer fastest validated setting |
+| `0.28s` | 9/9 | 0 | 0 | not recorded | 18/18 | 0/8 | accurate |
+| `0.20s` | 9/9 | 0 | 0 | 0.0s | 18/18 | 0/8 | current default; roughly three 16fps samples after impact |
+
+Real-device throughput check:
+
+The capture badge, and then the captured-video Trim screen, now report enough timing to test whether `16 fps` is actually real time on phone:
+
+```text
+16/15.8fps · model 22/24ms · pose 8/9ms · lag 35ms
+```
+
+The first number is configured/effective detector sample FPS. `model` and `pose` are last/average per-sampled-frame costs. `lag` is wall-clock delay between the camera frame timestamp and completed analysis. Healthy live capture should keep effective FPS close to the configured rate and keep lag from steadily growing. If lag climbs above a few hundred milliseconds during a normal range recording, the detector is falling behind even if the offline evaluator still scores well.
+
+Current interpretation:
+
+- The YOLO model is useful for club/motion evidence, but the strict addressed-ball/contact validator is the brittle part.
+- Fixed-window impact detection is worth exposing in Debug Replay because it answers the user's proposed method directly: find likely impact, then use pre/post timing. It finds the V2 swings, but it needs stronger false-positive gates before it can be the production trim path.
+- Apple Vision pose helps as a gate. On V2 it cuts impact false positives from `12` to `1`, but it is not a standalone answer because it misses one rough long-session swing and still leaves duplicate windows in several clips.
+- The hybrid pose/cadence strategy is the best current V2 strategy and is now the live-capture default. It keeps pose-gated impact detections, removes nearby weaker pose duplicates, and accepts one low-pose model-impact candidate only when it appears after a long enough gap from the previous accepted swing and has very quiet body/hand pose but enough model motion/club evidence. The pose gate now accepts clear address-to-finish displacement at a slightly lower peak hand speed (`0.50` body-heights/s) because the 12th long-session swing had strong displacement but a smoothed Vision speed of only about `0.54`. On the current V2 set this scores `9/9`, `0` false positives, and `0` duplicate windows. At the default confirmation wait, every V2 hybrid detection declares `0.20s` after estimated impact and before the rough labelled swing window ends (`0.0s` label-end latency).
+- The same hybrid stream was rescored on the original 18-swing fixture after that gate adjustment: `18/18` positives matched, `0` positive false positives, and `0/8` negative-gap false positives. Mean source-timeline label-end latency is `0.061s`; after dividing the slow-motion source by `8x`, mean real-time label-end latency is `0.008s`, with the worst positive case at `0.138s` real time. Report: `.videos/live_model_detector_fixture_eval_hybrid/results/live_model_detector_fixture_report.json`.
+- Audio is the best next confirmation signal for real camera recordings because impact transients are often sharper than visual ball evidence. It cannot be trusted alone, and it does not help screen recordings with weak or altered audio. Capture now adds a microphone input when available so new recordings can carry audio; live audio-fused capture trimming is still not the production path.
+- Apple Vision pose should remain a gate, not a replacement detector: require a primary golfer and plausible address-to-finish body/hand motion around model/audio candidates, then reject setup/waggle windows.
+- The original labelled long-session fixture remains a regression test, not proof that the detector generalizes to screen recordings, indoor bays, multiple-ball drills, yellow balls, or grass-ball visibility.
+
+Rejected fusion scratch result:
+
+Before adding another app mode, the current V2 report was rescored with two fused rules:
+
+| Prototype rule | Matched rough swings | False positives | Duplicate windows | Detection count | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| pose gate OR nearby audio impact | 8/9 | 2 | 3 | 13 | worse than pose alone |
+| pose gate OR relaxed model-only escape hatch | 9/9 | 6 | 3 | 18 | restores recall but brings back too much noise |
+
+The useful next fusion work is narrower: make audio a true live capture stream and test this hybrid decision layer on more real camera recordings with known audio rather than screen recordings.
+
+Swift/Core ML live evaluator:
+
+```text
+xcrun swiftc -parse-as-library \
+  -framework AVFoundation -framework CoreML -framework Vision \
+  -framework CoreGraphics -framework CoreVideo -framework ImageIO \
+  SwingCoach/Models/OnDeviceSwingDetector.swift \
+  SwingCoach/Models/LiveSwingDetector.swift \
+  SwingCoach/Models/GolfObjectDetector.swift \
+  SwingCoach/Models/ModelBackedSwingDetector.swift \
+  tools/evaluate_live_model_detector.swift \
+  -o .videos/bin/evaluate_live_model_detector
+
+.videos/bin/evaluate_live_model_detector \
+  .videos/IMG_2592.mov \
+  SwingCoach/MLModels/SwingObjectsYOLO11n.mlpackage \
+  16 8 10000 \
+  .videos/IMG_2592.labels.json
+```
+
+Fixture-level Core ML live scoring:
+
+```text
+./backend/venv/bin/python tools/evaluate_live_model_detector_fixtures.py \
+  --output-dir .videos/live_model_detector_fixture_eval_hybrid \
+  --detection-stream hybridImpactDetections
+```
+
+Current `16fps / 8x` hybrid fixture result:
+
+| Fixture set | Matched positives | Positive false positives | Negative false positives | Mean label-end latency |
+| --- | ---: | ---: | ---: | ---: |
+| 18 labelled swing clips + 8 negative clips | 18/18 | 0 | 0 | 0.008s real time |
+
+Report:
+
+```text
+.videos/live_model_detector_fixture_eval_hybrid/results/live_model_detector_fixture_report.json
+```
+
+Continuous long-session Core ML live result:
+
+| Source | Matched positives | Missed positives | False positives | Processed frames | Avg CPU-only model time |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `.videos/IMG_2592.mov` at `16fps / 8x` | 18/18 | 0 | 0 | 9040 | 60.2 ms |
+
+Report:
+
+```text
+.videos/live_model_detector_full_16fps_8x_post_trim_guard.json
+```
+
+The setup/ball-management window `1391.507s-1409.013s` was the last false positive in the earlier continuous pass. It passed initial live proposal logic but did not retain enough motion/club-travel evidence inside the final returned clip, so the post-trim guard rejects it. On this Mac's CPU-only Core ML fallback, the fixture and full-session runs are correctness checks, not phone performance claims, because the app path uses Core ML `.all` compute units on device.
 
 ## Public Datasets And Models
 

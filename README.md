@@ -53,6 +53,6 @@ cd backend
 
 ## Current State
 
-- Frontend capture/library/trim flows are implemented, including live on-device preselection of likely full-swing clips during capture and editable preselected clips in the trim editor. DEBUG builds include a replay harness that runs saved videos through the live detector for development.
+- Frontend capture/library/trim flows are implemented, including experimental live YOLO/Core ML preselection of likely swing clips during capture and editable preselected clips in the trim editor. Live capture defaults to the current hybrid impact/Apple Vision pose gate, while DEBUG builds include a replay harness that runs saved videos through the same live detector with configurable real-time sample rates, contact/impact/pose/audio/hybrid comparison modes, and separate motion-candidate diagnostics.
 - Backend unified pipeline (`/analyze` + artifacts + `/chat`) is implemented.
 - Frontend analysis decoding uses the lightweight MVP `/analyze` response: summary, display metrics, annotated video URL, and drills.

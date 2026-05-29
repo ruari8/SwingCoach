@@ -62,7 +62,7 @@ Implemented feature set:
 File: [CaptureView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/CaptureView.swift)
 
 Implemented feature set:
-- AVFoundation recording session.
+- AVFoundation recording session with video input and microphone input when available, so newly captured clips can carry audio for export and detector experiments.
 - Capture mode support:
   - `120fps HD`
   - `240fps HD`
@@ -70,8 +70,12 @@ Implemented feature set:
 - Runtime mode switching without full session teardown.
 - Tap-to-focus and exposure targeting.
 - Model swing-detection is experimental and can be turned off from Library > Experiments. When enabled, capture samples camera frames during recording and runs the bundled YOLO11n/Core ML golf-object model on-device while the video is still being captured.
+- Library > Experiments can choose the capture detector mode. New/old-default installs now migrate to `Hybrid` once because it is the best current live detector on both the V2 clips and the labelled range fixture:
+  - `Contact`: strict model/contact validation. This is the lower-recall, lower-noise path.
+  - `Impact`: experimental fixed-window impact detection. This is higher-recall and noisier, intended for range testing.
+  - `Hybrid`: experimental fixed-window impact detection with sparse Apple Vision pose gating and duplicate suppression. This is the best current `.detectorTestV2` strategy, but it is heavier than model-only capture.
 - When model detection is off, capture still records normally and the trim editor opens without generated ranges so the user can mark clips manually.
-- During recording, the capture badge reflects the live model state: scanning, club/ball visible, swing motion, or detected swings. The older Vision/bright-blob live fallback is not used for production trim ranges.
+- During recording, the capture badge reflects the live model state: scanning, club/ball visible, swing motion, detected swings, sampled-frame processing cost, effective sampled FPS, sparse pose cost, and camera-to-analysis lag. In `Hybrid` mode, the badge recomputes the shared hybrid selector on each sampled frame and shows hybrid detection count, latest impact time, impact-to-declaration delay, returned-window-end delay, and sparse pose sample count. The final timing snapshot is also passed into Trim for captured recordings so the golfer can inspect detector throughput after stopping. The older Vision/bright-blob live fallback is not used for production trim ranges.
 - Recording state handling with immediate post-stop playback of the captured high-fps asset.
 - Stopping a new recording opens the trim editor automatically instead of requiring the post-stop scissors action.
 - Active recording disables the iOS idle timer so solo range sessions do not Auto-Lock while the golfer walks into frame, then restores the prior idle-timer state after stop, error, or leaving capture.
@@ -95,11 +99,11 @@ Implemented feature set:
 - Library imports hand trim a lightweight Photos-backed source first, then load a fast preview asset in-editor and defer high-quality asset resolution until export.
 - High-fps capture timelines display slow-playback timing while keeping selection mapped to the original source frames.
 - Start/end range selection for clip creation.
-- Captured recordings pass the live model detections collected during recording into Trim, so candidate swing windows are preselected as soon as the editor opens. Imported/library videos still run the same model-backed on-device detector against the local preview asset when Trim opens. Neither path calls the backend.
-- Auto-detected clips can be reviewed one at a time by tapping their thumbnail, adjusted with the existing start/end trim handles, updated in place, or discarded with the clip delete control.
-- The model-backed detector samples at roughly `2 fps`, runs the bundled YOLO11n golf-object model, proposes object/motion windows, confirms windows through lower-strike-area ball disappearance, estimates impact from sustained ball disappearance, and trims the suggested clip around that impact estimate.
+- Captured recordings pass the live model detections collected during recording into Trim, so candidate swing windows are preselected as soon as the editor opens. Imported/library videos run a local model-backed post-pass against the preview asset when Trim opens, using the same Experiments detector mode/sample-rate/confirmation-wait settings as capture (`Hybrid` by default). Neither path calls the backend.
+- Auto-detected clips can be reviewed one at a time by tapping their thumbnail, adjusted with the existing start/end trim handles, updated in place, or discarded with the clip delete control. Auto-detected clip thumbnails preserve detector impact/declaration timestamps and show `imp +Xs / end +Ys`, the delay from estimated impact and returned clip end to the moment the detector declared that swing. Captured recordings also show the final detector summary under the timeline, including detected count, effective sample FPS, model/pose processing cost, and final analysis lag.
+- Captured recordings use the configurable live detector sample rate (`16 fps` by default, adjustable in Experiments). That default is evidence-backed: current V2 sweeps miss or duplicate swings at `8 fps` and `12 fps`, and the original fixture gains a sampled negative-gap false positive below `16 fps`. The default `Hybrid` capture mode samples Apple Vision pose sparsely while recording and applies the shared hybrid pose/cadence gate to likely model/club-motion impact peaks when recording stops. Hybrid impact candidates wait for the configurable impact-confirmation time (`0.20s` by default, adjustable in Experiments and Replay Debug), then keep the fixed pre/post impact trim window for review. The live badge performance line is `target/effective fps · model last/avg ms · pose last/avg ms · lag ms`; sustained effective FPS far below target or lag above a few hundred milliseconds means the device is not keeping up in real time. `Contact` proposes object/motion windows, confirms them through lower-strike-area ball disappearance plus club-motion/path-span guards, estimates impact from sustained ball disappearance, and trims the suggested clip around that impact estimate. `Impact` emits fixed pre/post windows around likely model/club-motion impact peaks, trading more recall for more false positives. Imported/library post-pass detection now follows the selected Experiments mode instead of always using strict contact. Contact-confirmed clips must still contain sustained motion, club travel/path span, and high-club evidence, which prevents stale setup detections from being kept after the live window settles.
 - The older Vision-only post-pass and live Vision/bright-blob detector are not used as production fallbacks for trim ranges. If the model is missing or fails, captured recordings open Trim without generated ranges after the live badge reports the issue; imported/library videos report model detection unavailable in Trim and leave manual trim controls available.
-- Audio confirmation and Apple Vision pose fusion remain planned detector inputs, but they are not part of the current production capture path.
+- Audio confirmation remains a research/debug detector input exposed in Replay Debug and the local evaluator; it is not part of the current production capture path. Apple Vision pose is now used by the experimental `Hybrid` capture mode.
 - When no clip ranges are marked, the footer offers an explicit full-video path so already-trimmed imports can be added as-is; Photos-backed imports reuse the existing asset instead of creating a duplicate.
 - Multi-clip extraction from a long source video.
 - MVP clip export defaults to down-the-line capture; face-on remains in the data model but is not exposed as an equal capture path in the trim header.
@@ -141,24 +145,35 @@ File: [DebugReplayView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCo
 Implemented feature set:
 - DEBUG-only tab for home/range development of live swing detection, controlled from Library > Experiments.
 - Selects a video from Photos, copies it into temporary app storage, and displays the video as the primary replay surface using a custom player layer so iOS default playback controls do not overlap detector instrumentation.
-- Replays decoded frames through `LiveSwingDetector` on a paced clock so the selected video behaves like a substitute camera feed instead of an offline batch job.
-- Supports in-screen configurable replay speed (`1x`, `2x`, `4x`, `8x`; default `8x`) for faster long-session review while detector timestamps remain on the selected video's source timeline.
-- Shows replay progress, detector state, ball-lock/movement state, and detected swing windows as an overlay on the video while replay runs.
-- Shows detector evidence fields in the replay overlay: Vision pose count, current/peak hand speed, normalized hand travel, stable setup duration, ball-candidate score, ball-region luma shift, and the latest rejection reason.
+- Replays decoded frames through the same YOLO/Core ML `LiveModelSwingDetector` used by capture, on a paced clock so the selected video behaves like a substitute camera feed instead of an offline batch job.
+- Uses one in-screen footage selector for replay timing: `30/1x`, `120/4x`, or `240/8x`. This simultaneously sets the visible playback speed and the detector source-time scale, so a 240-fps slow-motion range session is replayed at `8x` and fed to the detector as real-time swing motion.
+- Keeps detector sample-rate selection (`2`, `4`, `8`, or `16` YOLO samples per real-time second) and impact-confirmation wait under an Advanced disclosure. The current default remains `16fps / 0.20s`.
+- Supports an in-screen detector mode selector:
+  - `contact`: current strict model/contact detector. Motion candidates must pass ball-disappearance/contact validation before they become detections.
+  - `impact`: experimental impact-centered detector. It uses model/club/motion evidence to pick an impact-like moment, then emits a fixed pre/post impact clip window. This has higher recall but can mark setup, waggles, or practice swings.
+  - `pose`: experimental Apple Vision-gated impact detector. Replay samples Vision body pose sparsely and only keeps impact windows with plausible primary-golfer hand motion/address-to-finish change.
+  - `audio`: experimental audio-gated impact detector. Replay extracts audio transients from the selected asset, then only keeps model impact windows once a matching impact-like audio peak has occurred on the replay timeline. This simulates real-time gating but still does an up-front debug audio scan.
+  - `hybrid`: experimental pose/cadence impact detector. It starts from pose-gated impact windows, suppresses nearby weaker pose duplicates, and has a narrow low-pose/cadence fallback for real swings where Apple Vision sees very little hand movement. The same decision layer is available as a live capture mode.
+- Shows replay progress, detected-swing count, motion-candidate count, and separate motion-candidate windows as an overlay on the video while replay runs. The older fast-changing detector status copy and contact-only Ball/Still chips are hidden because they were misleading in Hybrid mode.
+- Shows stable detector evidence fields in the replay overlay: target/effective sample FPS, processed frames, average model processing time, average pose processing time, current motion score, current club-motion score, current ball score, and lag/rejection only when those fields are available.
 - The replay pause control pauses both visible video playback and detector pacing.
 - Detector overlay updates are throttled so fast state churn does not flicker continuously during long range videos.
-- Detected swing chips can be tapped to open a looping preview sheet for that detected window while the main replay/detector continues behind the sheet.
+- Detected swing chips and motion-candidate chips can be tapped to open a looping preview sheet for that exact timestamp range while the main replay/detector continues behind the sheet. Detected swing chips show confidence plus `imp +Xs / end +Ys` when the detector can report when that window was declared; slow-motion sources display these as real-time detector delays rather than stretched source-timeline delays.
 - Opens trim with replay-detected timestamps preselected and disables the trim view's post-open detector scan, matching the intended capture path where detections are already known when recording stops.
 - This tool is not a production import path. It exists to tune and validate live detector behavior with saved long-session videos without repeatedly recording fresh device-camera sessions.
 
 Local detector fixture workflow:
 - Keep heavy videos and generated clips in ignored `.videos/`.
 - Compile the local evaluator with `xcrun swiftc -parse-as-library -framework AVFoundation -framework Vision -framework CoreGraphics -framework ImageIO SwingCoach/Models/OnDeviceSwingDetector.swift tools/evaluate_on_device_detector.swift -o .videos/bin/evaluate_on_device_detector`.
-- Compile the live-detector comparison harness with `xcrun swiftc -parse-as-library -framework AVFoundation -framework Vision -framework CoreGraphics -framework CoreVideo -framework ImageIO SwingCoach/Models/OnDeviceSwingDetector.swift SwingCoach/Models/LiveSwingDetector.swift tools/evaluate_live_detector.swift -o .videos/bin/evaluate_live_detector`.
+- Compile the YOLO live-detector comparison harness with `xcrun swiftc -parse-as-library -framework AVFoundation -framework CoreML -framework Vision -framework CoreGraphics -framework CoreVideo -framework ImageIO SwingCoach/Models/OnDeviceSwingDetector.swift SwingCoach/Models/LiveSwingDetector.swift SwingCoach/Models/GolfObjectDetector.swift SwingCoach/Models/ModelBackedSwingDetector.swift tools/evaluate_live_model_detector.swift -o .videos/bin/evaluate_live_model_detector`.
 - Store rough labels beside the local video, for example `.videos/IMG_2592.labels.json`.
 - Run `python3 tools/evaluate_detector_fixtures.py --limit 3` to trim labelled windows, execute the same post-pass detector, and write `.videos/detector_eval/results/detector_fixture_report.json`.
-- Use `--evaluator .videos/bin/evaluate_live_detector --output-dir .videos/live_detector_eval` to score the live state machine against the same fixtures. This is a comparison harness, not a production import path.
-- The fixture report includes positive-window recall, detections outside the positive labels, and sampled negative-gap false positives. Practice swings in negative gaps are expected to expose the limitation of pose-only detection; imported-video detection still needs a validated ball/contact cue before it can reliably reject practice swings.
+- Run `.videos/bin/evaluate_live_model_detector .videos/IMG_2592.mov SwingCoach/MLModels/SwingObjectsYOLO11n.mlpackage 16 8 10000 .videos/IMG_2592.labels.json` to score the app's Core ML live detector on the full 8x slow-motion range fixture. This is a comparison harness, not a production import path.
+- For normal-speed test files, pass source timing `1` and detector timeline scale `8`, for example `.videos/bin/evaluate_live_model_detector <video> SwingCoach/MLModels/SwingObjectsYOLO11n.mlpackage 16 1 18000 "" 2 0.05 0.32 0.58 8`. The evaluator output includes both contact-confirmed detections and motion-candidate diagnostics.
+- Run `python3 tools/evaluate_detector_test_v2.py --sample-fps 16` to compare strict contact, experimental impact-centered detection, Apple Vision pose-gated impact detection, audio+model gating, and the hybrid pose/cadence strategy on the local `.detectorTestV2` clips. This writes no app data; it is a local strategy harness using rough visual labels embedded in the tool. The report includes missed rough labels, false positives, duplicate windows, declaration latency from impact, declaration latency from rough label end, model frame counts, and Vision pose sample counts.
+- Run `./backend/venv/bin/python tools/evaluate_live_model_detector_fixtures.py --output-dir .videos/live_model_detector_fixture_eval_hybrid --detection-stream hybridImpactDetections` to score the shared hybrid detector on the labelled fixture clips. The current `16fps / 8x` hybrid fixture report detects `18/18` labelled swings with `0` positive false positives, `0/8` negative-gap false positives, and `0.008s` mean real-time latency from rough label end.
+- The full continuous `.videos/IMG_2592.mov` run at `16fps / 8x` detects `18/18` labelled swings with `0` false positives; the report is `.videos/live_model_detector_full_16fps_8x_post_trim_guard.json`.
+- The fixture report includes positive-window recall, detections outside the positive labels, and sampled negative-gap false positives. This is still one labelled range session plus sampled negatives, so Apple Vision pose and audio/contact fusion remain useful next experiments before treating the detector as general across camera angles, clubs, and range environments.
 - Run `python3 tools/analyze_contact_evidence.py --report .videos/detector_eval/results/detector_fixture_report.json` to prototype ball/contact validation on the same fixtures. The current scorer looks for compact bright blobs on the mat that persistently darken after a candidate event, with optional shaft/clubhead proximity filtering via `--require-club-proximity`.
 - The contact scorer is diagnostic, not production behavior. It can require pre-event patch stability, optional shaft-line support, and optional lower-body exclusion, but current real-video evidence still shows that broad mat-pixel evidence can confuse shoes/socks or other foreground occlusions with balls. The production hit validator should combine mat/contact evidence with primary-golfer pose exclusion and stronger clubhead-derived strike-spot localization.
 
@@ -169,8 +184,12 @@ File: [ExperimentalSettingsView.swift](/Users/ruari/Documents/Startups/SwingCoac
 Implemented feature set:
 - Library toolbar gear opens Experiments.
 - Toggle model swing detection on/off for capture recordings and imported Trim sessions.
+- Configure the capture detector mode used when a new recording stops (`Hybrid` by default, plus `Contact` and experimental `Impact` for comparison).
+- Configure the YOLO/Core ML live detector sample rate used by capture and Replay Debug.
+- Configure the hybrid impact confirmation wait used by capture and Replay Debug (`0.20s`, `0.28s`, `0.35s`, or `0.55s`).
 - Toggle the DEBUG Replay Debug tab on/off.
-- Configure Replay Debug speed multiplier for normal-speed and slow-motion source videos.
+- Replay Debug visible playback speed and source timing are configured inside the Replay Debug tab, not in the shared Experiments screen.
+- Capture records microphone audio when the session can add the audio input, but live audio-fused capture detection is still experimental. Audio fusion is currently exposed in Replay Debug and the local evaluator, not as the production capture trim path.
 
 ## Data and Models
 

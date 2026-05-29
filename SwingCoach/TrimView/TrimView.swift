@@ -22,6 +22,7 @@ struct TrimView: View {
     let source: TrimVideoSource
     var sourceCaptureMode: SloMoMode? = nil
     var initialDetectedSwings: [DetectedSwing] = []
+    var detectorSummary: LiveSwingDetectionSnapshot? = nil
     var runsPostRecordDetection = true
     let onComplete: ([SwingClip], [URL]) -> Void
     let onCancel: () -> Void
@@ -65,12 +66,22 @@ struct TrimView: View {
     @State private var frameStep = CMTime(value: 1, timescale: 30)
     @State private var seekRepeatTask: Task<Void, Never>?
     @State private var activeSeekDirection: Int?
+    @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 16.0
+    @AppStorage(ExperimentalSettingKey.hybridImpactConfirmationPostRoll) private var hybridImpactConfirmationPostRoll = 0.20
+    @AppStorage(ExperimentalSettingKey.liveCaptureDetectionMode) private var liveCaptureDetectionModeRaw = LiveCaptureDetectionMode.hybrid.rawValue
 
     private let trimmer = VideoTrimmer()
-    private let swingDetector = ModelBackedSwingDetector()
 
     private var displayTimeScale: Double {
         sourceCaptureMode.map { $0.targetFPS / 30.0 } ?? 1.0
+    }
+
+    private var detectorTimelineScale: Double {
+        sourceCaptureMode.map { $0.targetFPS / 30.0 } ?? 8.0
+    }
+
+    private var liveCaptureDetectionMode: LiveCaptureDetectionMode {
+        LiveCaptureDetectionMode(rawValue: liveCaptureDetectionModeRaw) ?? .hybrid
     }
 
     var body: some View {
@@ -268,6 +279,10 @@ struct TrimView: View {
                 autoDetectionStatusRow
             }
 
+            if let detectorSummary {
+                detectorSummaryRow(detectorSummary)
+            }
+
             // Add clip button (when range is selected)
             if rangeStart != nil && rangeEnd != nil {
                 Button {
@@ -358,6 +373,64 @@ struct TrimView: View {
         }
     }
 
+    private func detectorSummaryRow(_ summary: LiveSwingDetectionSnapshot) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: detectorSummaryIcon(summary))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(detectorSummaryColor(summary))
+
+            Text(detectorSummaryText(summary))
+                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .foregroundColor(.white.opacity(0.72))
+                .lineLimit(2)
+                .minimumScaleFactor(0.75)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.white.opacity(0.08))
+        )
+        .padding(.horizontal, 4)
+    }
+
+    private func detectorSummaryText(_ summary: LiveSwingDetectionSnapshot) -> String {
+        var parts = [
+            "\(summary.detectedSwingCount) swing\(summary.detectedSwingCount == 1 ? "" : "s")",
+            String(format: "%.0f/%.1ffps", summary.targetSampleFPS, summary.effectiveSampleFPS),
+            String(format: "model %.0f/%.0fms", summary.lastProcessingTimeMS, summary.averageProcessingTimeMS)
+        ]
+
+        if summary.averagePoseProcessingTimeMS > 0 {
+            parts.append(String(format: "pose %.0f/%.0fms", summary.lastPoseProcessingTimeMS, summary.averagePoseProcessingTimeMS))
+        }
+
+        if summary.analysisLagMS >= 50 {
+            parts.append(String(format: "lag %.0fms", summary.analysisLagMS))
+        }
+
+        return parts.joined(separator: " · ")
+    }
+
+    private func detectorSummaryIcon(_ summary: LiveSwingDetectionSnapshot) -> String {
+        summary.detectedSwingCount > 0 ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+    }
+
+    private func detectorSummaryColor(_ summary: LiveSwingDetectionSnapshot) -> Color {
+        let sampleRateRatio = summary.targetSampleFPS > 0
+            ? summary.effectiveSampleFPS / summary.targetSampleFPS
+            : 1
+        if summary.analysisLagMS > 500 || sampleRateRatio < 0.70 {
+            return .red.opacity(0.90)
+        }
+        if summary.detectedSwingCount == 0 || summary.analysisLagMS > 180 || sampleRateRatio < 0.88 {
+            return .yellow
+        }
+        return .green
+    }
+
     // MARK: - Clips Section
 
     private var clipsSection: some View {
@@ -439,6 +512,13 @@ struct TrimView: View {
             Text(clipDurationText(clip))
                 .font(.caption2)
                 .foregroundColor(.white.opacity(0.7))
+
+            if let declarationDelayText = clipDeclarationDelayText(clip) {
+                Text(declarationDelayText)
+                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                    .foregroundColor(declarationDelayColor(clip))
+                    .lineLimit(1)
+            }
         }
         .onTapGesture {
             selectClipForEditing(clip)
@@ -447,6 +527,35 @@ struct TrimView: View {
 
     private func clipDurationText(_ clip: SwingClip) -> String {
         formatDurationSeconds(clip.duration * displayTimeScale)
+    }
+
+    private func clipDeclarationDelayText(_ clip: SwingClip) -> String? {
+        guard autoDetectedClipIDs.contains(clip.id),
+              let declaredAt = clip.detectionDeclaredAt
+        else { return nil }
+
+        let endDelay = max(0, declaredAt - clip.endTime)
+        if let impactTime = clip.detectionImpactTime {
+            let impactDelay = max(0, declaredAt - impactTime)
+            return String(format: "imp +%.1fs / end +%.1fs", impactDelay, endDelay)
+        }
+        return String(format: "end +%.1fs", endDelay)
+    }
+
+    private func declarationDelayColor(_ clip: SwingClip) -> Color {
+        guard let declaredAt = clip.detectionDeclaredAt else { return .white.opacity(0.55) }
+
+        let delay = max(
+            max(0, declaredAt - clip.endTime),
+            clip.detectionImpactTime.map { max(0, declaredAt - $0) } ?? 0
+        )
+        if delay > 2.0 {
+            return .red.opacity(0.86)
+        }
+        if delay > 0.75 {
+            return .yellow.opacity(0.90)
+        }
+        return .green.opacity(0.86)
     }
 
     private func formatDurationSeconds(_ seconds: Double) -> String {
@@ -676,7 +785,22 @@ struct TrimView: View {
 
         swingDetectionTask = Task {
             do {
-                let detections = try await swingDetector.detectSwings(in: asset)
+                let detector = ModelBackedSwingDetector(
+                    configuration: ObjectSwingDetectorConfiguration.liveObjectModel(
+                        sampleFPS: liveModelDetectorSampleFPS,
+                        timelineScale: detectorTimelineScale,
+                        impactConfirmationPostRoll: hybridImpactConfirmationPostRoll
+                    )
+                )
+                let detections: [DetectedSwing]
+                switch liveCaptureDetectionMode {
+                case .contact:
+                    detections = try await detector.detectSwings(in: asset)
+                case .impact:
+                    detections = try await detector.detectImpactSwings(in: asset, usesHybridGate: false)
+                case .hybrid:
+                    detections = try await detector.detectImpactSwings(in: asset, usesHybridGate: true)
+                }
                 await MainActor.run {
                     applyDetectedSwings(detections, asset: asset)
                 }
@@ -707,7 +831,9 @@ struct TrimView: View {
             SwingClip(
                 startTime: $0.startTime,
                 endTime: $0.endTime,
-                vantage: selectedVantage
+                vantage: selectedVantage,
+                detectionImpactTime: $0.impactTime,
+                detectionDeclaredAt: $0.declaredAt
             )
         }
 

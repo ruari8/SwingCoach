@@ -33,6 +33,8 @@ struct SwingClip: Identifiable, Codable {
     var endTime: Double
     var vantage: Vantage
     var notes: String?
+    var detectionImpactTime: Double?
+    var detectionDeclaredAt: Double?
     var createdAt: Date
     
     // Not persisted - loaded at runtime
@@ -44,6 +46,8 @@ struct SwingClip: Identifiable, Codable {
         endTime: CMTime,
         vantage: Vantage = .dtl,
         notes: String? = nil,
+        detectionImpactTime: Double? = nil,
+        detectionDeclaredAt: Double? = nil,
         createdAt: Date = Date()
     ) {
         self.id = id
@@ -51,6 +55,8 @@ struct SwingClip: Identifiable, Codable {
         self.endTime = CMTimeGetSeconds(endTime)
         self.vantage = vantage
         self.notes = notes
+        self.detectionImpactTime = detectionImpactTime
+        self.detectionDeclaredAt = detectionDeclaredAt
         self.createdAt = createdAt
     }
     
@@ -74,7 +80,7 @@ struct SwingClip: Identifiable, Codable {
     
     // Codable conformance (exclude thumbnail)
     enum CodingKeys: String, CodingKey {
-        case id, startTime, endTime, vantage, notes, createdAt
+        case id, startTime, endTime, vantage, notes, detectionImpactTime, detectionDeclaredAt, createdAt
     }
 }
 
@@ -92,7 +98,5 @@ struct TrimSession {
         self.defaultVantage = defaultVantage
     }
 }
-
-
 
 

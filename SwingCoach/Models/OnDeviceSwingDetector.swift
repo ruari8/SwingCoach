@@ -15,6 +15,22 @@ nonisolated struct DetectedSwing: Identifiable {
     let startTime: CMTime
     let endTime: CMTime
     let confidence: Double
+    let impactTime: Double?
+    let declaredAt: Double?
+
+    init(
+        startTime: CMTime,
+        endTime: CMTime,
+        confidence: Double,
+        impactTime: Double? = nil,
+        declaredAt: Double? = nil
+    ) {
+        self.startTime = startTime
+        self.endTime = endTime
+        self.confidence = confidence
+        self.impactTime = impactTime
+        self.declaredAt = declaredAt
+    }
 }
 
 actor OnDeviceSwingDetector {

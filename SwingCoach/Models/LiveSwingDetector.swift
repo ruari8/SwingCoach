@@ -35,6 +35,16 @@ nonisolated struct LiveSwingDetectionSnapshot: Equatable {
     var ballCandidateScore: Double?
     var ballLumaDelta: Double?
     var lastRejectionReason: String?
+    var processedFrameCount = 0
+    var skippedFrameCount = 0
+    var targetSampleFPS = 0.0
+    var effectiveSampleFPS = 0.0
+    var analysisLagMS = 0.0
+    var averageProcessingTimeMS = 0.0
+    var lastProcessingTimeMS = 0.0
+    var averagePoseProcessingTimeMS = 0.0
+    var lastPoseProcessingTimeMS = 0.0
+    var detectorConfigurationName: String?
 
     static let idle = LiveSwingDetectionSnapshot()
 }

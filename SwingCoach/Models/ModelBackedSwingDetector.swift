@@ -7,24 +7,467 @@
 
 import AVFoundation
 import CoreGraphics
+import CoreML
 import ImageIO
+import Vision
+
+nonisolated struct ObjectSwingDetectorConfiguration: Equatable {
+    var name: String
+    var targetSampleInterval: Double
+    var maxProcessedFrames: Int
+    var motionThreshold: Double
+    var acceptanceMinPeakMotion: Double
+    var acceptanceMinStrongMotionFrames: Int
+    var acceptanceMinMeanClubMotion: Double
+    var acceptanceMinClubPathSpan: Double
+    var acceptanceMaxClubTopY: Double
+    var minBallAnchorY: Double
+    var featureRetentionLimit: Int
+    var timelineScale: Double
+    var minWindowDuration: Double
+    var maxWindowDuration: Double
+    var impactPreRoll: Double
+    var impactPostRoll: Double
+    var impactConfirmationPostRoll: Double
+    var candidatePreRoll: Double
+    var candidatePostRoll: Double
+    var proposalGapTolerance: Double
+    var mergeMaxGap: Double
+    var validationPreRoll: Double
+    var validationPostRoll: Double
+    var addressPreRoll: Double
+    var addressPostOffset: Double
+
+    var targetSampleFPS: Double {
+        guard targetSampleInterval > 0 else { return 0 }
+        return 1 / targetSampleInterval
+    }
+
+    static func liveObjectModel(
+        sampleFPS: Double = 16.0,
+        timelineScale: Double = 8.0,
+        impactConfirmationPostRoll: Double = 0.20
+    ) -> ObjectSwingDetectorConfiguration {
+        let clampedSampleFPS = min(24.0, max(1.0, sampleFPS))
+        let clampedTimelineScale = min(12.0, max(1.0, timelineScale))
+        let clampedImpactConfirmationPostRoll = min(0.80, max(0.18, impactConfirmationPostRoll))
+        let scale = { (seconds: Double) in seconds / clampedTimelineScale }
+        return ObjectSwingDetectorConfiguration(
+            name: "YOLO \(Self.formatFPS(clampedSampleFPS))fps / \(Self.formatScale(clampedTimelineScale))x",
+            targetSampleInterval: 1 / clampedSampleFPS,
+            maxProcessedFrames: 18_000,
+            motionThreshold: 0.55,
+            acceptanceMinPeakMotion: 1.10,
+            acceptanceMinStrongMotionFrames: 2,
+            acceptanceMinMeanClubMotion: 0.05,
+            acceptanceMinClubPathSpan: 0.32,
+            acceptanceMaxClubTopY: 0.58,
+            minBallAnchorY: 0.66,
+            featureRetentionLimit: 2_400,
+            timelineScale: clampedTimelineScale,
+            minWindowDuration: scale(10.0),
+            maxWindowDuration: scale(24.0),
+            impactPreRoll: scale(13.0),
+            impactPostRoll: scale(4.5),
+            impactConfirmationPostRoll: clampedImpactConfirmationPostRoll,
+            candidatePreRoll: scale(2.2),
+            candidatePostRoll: scale(2.0),
+            proposalGapTolerance: scale(1.8),
+            mergeMaxGap: scale(2.4),
+            validationPreRoll: scale(4.5),
+            validationPostRoll: scale(2.2),
+            addressPreRoll: scale(2.5),
+            addressPostOffset: scale(3.0)
+        )
+    }
+
+    static func sourceTimelineObjectModel(sampleFPS: Double = 2.0) -> ObjectSwingDetectorConfiguration {
+        liveObjectModel(sampleFPS: sampleFPS, timelineScale: 1.0)
+    }
+
+    private static func formatFPS(_ value: Double) -> String {
+        value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
+    }
+
+    private static func formatScale(_ value: Double) -> String {
+        value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
+    }
+}
+
+nonisolated struct ObjectSwingWindowDiagnostics: Encodable, Equatable {
+    let start: Double
+    let end: Double
+    let peakMotion: Double
+    let strongMotionFrameCount: Int
+    let meanClubMotion: Double
+    let clubPathSpan: Double
+    let clubTopY: Double
+    let clubFrameRatio: Double
+    let ballFrameRatio: Double
+}
+
+nonisolated struct ObjectSwingFeatureSummary: Encodable, Equatable {
+    let frameCount: Int
+    let clubFrameCount: Int
+    let ballFrameCount: Int
+    let maxClubScore: Double
+    let maxBallScore: Double
+    let maxMotion: Double
+    let maxClubMotion: Double
+}
+
+nonisolated struct ObjectSwingImpactCandidate: Encodable, Equatable {
+    let start: Double
+    let end: Double
+    let impactTime: Double
+    let declaredAt: Double
+    let confidence: Double
+    let diagnostics: ObjectSwingWindowDiagnostics
+}
+
+nonisolated struct ObjectSwingPoseFeature: Equatable {
+    let time: Double
+    let relativeHands: CGPoint
+    let bodyCenter: CGPoint
+    let bodyHeight: Double
+    let validJointCount: Int
+}
+
+nonisolated struct ObjectSwingPoseWindowMetrics: Equatable {
+    let attemptedCount: Int
+    let validCount: Int
+    let coverage: Double
+    let handTravel: Double
+    let peakHandSpeed: Double
+    let addressToFinishDistance: Double
+    let bodyDrift: Double
+}
+
+nonisolated enum ObjectSwingImpactSelector {
+    static func poseGatedImpactCandidates(
+        _ detections: [ObjectSwingImpactCandidate],
+        attemptTimes: [Double],
+        poseFeatures: [ObjectSwingPoseFeature]
+    ) -> [ObjectSwingImpactCandidate] {
+        detections.filter { detection in
+            passesPoseGate(
+                detection: detection,
+                attemptTimes: attemptTimes,
+                poseFeatures: poseFeatures
+            )
+        }
+    }
+
+    static func hybridImpactCandidates(
+        _ detections: [ObjectSwingImpactCandidate],
+        attemptTimes: [Double],
+        poseFeatures: [ObjectSwingPoseFeature]
+    ) -> [ObjectSwingImpactCandidate] {
+        var accepted: [(candidate: ObjectSwingImpactCandidate, reason: String)] = []
+        var lastCoreImpactTime: Double?
+
+        for detection in detections {
+            guard detection.impactTime >= 1.15 else { continue }
+
+            if passesPoseGate(
+                detection: detection,
+                attemptTimes: attemptTimes,
+                poseFeatures: poseFeatures
+            ) {
+                accepted.append((detection, "pose"))
+                lastCoreImpactTime = detection.impactTime
+            } else if passesLowPoseCadenceFallback(
+                detection: detection,
+                lastCoreImpactTime: lastCoreImpactTime,
+                attemptTimes: attemptTimes,
+                poseFeatures: poseFeatures
+            ) {
+                accepted.append((detection, "lowPoseCadence"))
+                lastCoreImpactTime = detection.impactTime
+            }
+        }
+
+        var keep = Array(repeating: true, count: accepted.count)
+        for index in accepted.indices {
+            let detection = accepted[index]
+            for nextIndex in accepted.indices.dropFirst(index + 1) {
+                let nextDetection = accepted[nextIndex]
+                let impactGap = nextDetection.candidate.impactTime - detection.candidate.impactTime
+                if impactGap > 8.0 {
+                    break
+                }
+                let laterIsCleanerPoseSwing = detection.reason == "pose"
+                    && nextDetection.reason == "pose"
+                    && poseQuality(
+                        detection: nextDetection.candidate,
+                        attemptTimes: attemptTimes,
+                        poseFeatures: poseFeatures
+                    ) - poseQuality(
+                        detection: detection.candidate,
+                        attemptTimes: attemptTimes,
+                        poseFeatures: poseFeatures
+                    ) >= 0.45
+                if laterIsCleanerPoseSwing {
+                    keep[index] = false
+                    break
+                }
+            }
+        }
+
+        return accepted.enumerated().compactMap { index, item in
+            keep[index] ? item.candidate : nil
+        }
+    }
+
+    static func poseFeature(
+        from sampleBuffer: CMSampleBuffer,
+        at time: Double,
+        orientation: CGImagePropertyOrientation,
+        request: VNDetectHumanBodyPoseRequest
+    ) -> ObjectSwingPoseFeature? {
+        let handler = VNImageRequestHandler(
+            cmSampleBuffer: sampleBuffer,
+            orientation: orientation,
+            options: [:]
+        )
+
+        do {
+            try handler.perform([request])
+            let features = try (request.results ?? []).compactMap { observation in
+                try poseFeature(from: observation, at: time)
+            }
+            return features.max { lhs, rhs in
+                poseScore(lhs) < poseScore(rhs)
+            }
+        } catch {
+            return nil
+        }
+    }
+
+    static func poseFeature(
+        from observation: VNHumanBodyPoseObservation,
+        at time: Double
+    ) throws -> ObjectSwingPoseFeature? {
+        let points = try observation.recognizedPoints(.all)
+
+        func point(_ joint: VNHumanBodyPoseObservation.JointName, minimumConfidence: Float = 0.25) -> CGPoint? {
+            guard let recognizedPoint = points[joint],
+                  recognizedPoint.confidence >= minimumConfidence else {
+                return nil
+            }
+            return recognizedPoint.location
+        }
+
+        let confidentPoints = points.values
+            .filter { $0.confidence >= 0.25 }
+            .map(\.location)
+        guard confidentPoints.count >= 6 else { return nil }
+
+        let bodyBounds = imageBounds(for: confidentPoints)
+        let bodyHeight = Double(bodyBounds.height)
+        guard bodyHeight >= 0.16 else { return nil }
+
+        let wrists = [point(.leftWrist), point(.rightWrist)].compactMap { $0 }
+        guard let hands = averagePoint(wrists) else { return nil }
+
+        let shoulders = [point(.leftShoulder), point(.rightShoulder)].compactMap { $0 }
+        let hips = [point(.leftHip), point(.rightHip)].compactMap { $0 }
+        let center: CGPoint
+        if let shoulderCenter = averagePoint(shoulders), let hipCenter = averagePoint(hips) {
+            center = CGPoint(
+                x: (shoulderCenter.x + hipCenter.x) / 2,
+                y: (shoulderCenter.y + hipCenter.y) / 2
+            )
+        } else {
+            center = CGPoint(x: bodyBounds.midX, y: bodyBounds.midY)
+        }
+
+        return ObjectSwingPoseFeature(
+            time: time,
+            relativeHands: CGPoint(
+                x: Double(hands.x - center.x) / bodyHeight,
+                y: Double(hands.y - center.y) / bodyHeight
+            ),
+            bodyCenter: center,
+            bodyHeight: bodyHeight,
+            validJointCount: confidentPoints.count
+        )
+    }
+
+    private static func passesPoseGate(
+        detection: ObjectSwingImpactCandidate,
+        attemptTimes: [Double],
+        poseFeatures: [ObjectSwingPoseFeature]
+    ) -> Bool {
+        guard let metrics = poseWindowMetrics(
+            detection: detection,
+            attemptTimes: attemptTimes,
+            poseFeatures: poseFeatures
+        ) else {
+            return false
+        }
+
+        guard metrics.validCount >= 3, metrics.coverage >= 0.40 else { return false }
+        guard metrics.bodyDrift <= 0.18 else { return false }
+
+        let sustainedHandMotion = metrics.handTravel >= 0.22 && metrics.peakHandSpeed >= 0.70
+        let addressToFinishChange = metrics.addressToFinishDistance >= 0.38 && metrics.peakHandSpeed >= 0.50
+        let largeSwingShape = metrics.handTravel >= 0.65 && metrics.addressToFinishDistance >= 0.45
+        return sustainedHandMotion || addressToFinishChange || largeSwingShape
+    }
+
+    private static func passesLowPoseCadenceFallback(
+        detection: ObjectSwingImpactCandidate,
+        lastCoreImpactTime: Double?,
+        attemptTimes: [Double],
+        poseFeatures: [ObjectSwingPoseFeature]
+    ) -> Bool {
+        guard let lastCoreImpactTime,
+              detection.impactTime - lastCoreImpactTime >= 14.0,
+              let metrics = poseWindowMetrics(
+                detection: detection,
+                attemptTimes: attemptTimes,
+                poseFeatures: poseFeatures
+              )
+        else {
+            return false
+        }
+
+        let diagnostics = detection.diagnostics
+        return metrics.coverage >= 0.80
+            && metrics.validCount >= 8
+            && metrics.handTravel <= 0.08
+            && metrics.peakHandSpeed <= 0.15
+            && metrics.bodyDrift <= 0.03
+            && diagnostics.peakMotion >= 1.0
+            && diagnostics.strongMotionFrameCount >= 3
+            && diagnostics.meanClubMotion >= 0.045
+            && diagnostics.clubFrameRatio >= 0.90
+    }
+
+    private static func poseQuality(
+        detection: ObjectSwingImpactCandidate,
+        attemptTimes: [Double],
+        poseFeatures: [ObjectSwingPoseFeature]
+    ) -> Double {
+        guard let metrics = poseWindowMetrics(
+            detection: detection,
+            attemptTimes: attemptTimes,
+            poseFeatures: poseFeatures
+        ) else {
+            return 0
+        }
+
+        return metrics.handTravel + metrics.addressToFinishDistance + metrics.peakHandSpeed * 0.10
+    }
+
+    private static func poseWindowMetrics(
+        detection: ObjectSwingImpactCandidate,
+        attemptTimes: [Double],
+        poseFeatures: [ObjectSwingPoseFeature]
+    ) -> ObjectSwingPoseWindowMetrics? {
+        let attemptedCount = attemptTimes.filter { $0 >= detection.start && $0 <= detection.end }.count
+        guard attemptedCount > 0 else { return nil }
+
+        let windowFeatures = poseFeatures.filter { $0.time >= detection.start && $0.time <= detection.end }
+        guard !windowFeatures.isEmpty else { return nil }
+
+        let handBounds = pointBounds(windowFeatures.map(\.relativeHands))
+        let bodyBounds = pointBounds(windowFeatures.map(\.bodyCenter))
+        return ObjectSwingPoseWindowMetrics(
+            attemptedCount: attemptedCount,
+            validCount: windowFeatures.count,
+            coverage: Double(windowFeatures.count) / Double(attemptedCount),
+            handTravel: handBounds.diagonal,
+            peakHandSpeed: peakHandSpeed(windowFeatures),
+            addressToFinishDistance: addressToFinishHandDistance(windowFeatures),
+            bodyDrift: bodyBounds.diagonal
+        )
+    }
+
+    private static func poseScore(_ feature: ObjectSwingPoseFeature) -> Double {
+        Double(feature.validJointCount) * 0.08 + feature.bodyHeight * 2.8
+    }
+
+    private static func peakHandSpeed(_ features: [ObjectSwingPoseFeature]) -> Double {
+        guard features.count >= 2 else { return 0 }
+
+        var peak = 0.0
+        for index in 1..<features.count {
+            let dt = features[index].time - features[index - 1].time
+            guard dt > 0, dt <= 0.6 else { continue }
+            peak = max(peak, distance(features[index].relativeHands, features[index - 1].relativeHands) / dt)
+        }
+        return peak
+    }
+
+    private static func addressToFinishHandDistance(_ features: [ObjectSwingPoseFeature]) -> Double {
+        guard features.count >= 2 else { return 0 }
+
+        let sampleCount = max(1, min(3, features.count / 3))
+        guard let addressPoint = averagePoint(Array(features.prefix(sampleCount)).map(\.relativeHands)),
+              let finishPoint = averagePoint(Array(features.suffix(sampleCount)).map(\.relativeHands))
+        else {
+            return 0
+        }
+
+        return distance(addressPoint, finishPoint)
+    }
+
+    private static func pointBounds(_ points: [CGPoint]) -> (width: Double, height: Double, diagonal: Double) {
+        guard !points.isEmpty else { return (0, 0, 0) }
+
+        let xs = points.map(\.x)
+        let ys = points.map(\.y)
+        let width = Double((xs.max() ?? 0) - (xs.min() ?? 0))
+        let height = Double((ys.max() ?? 0) - (ys.min() ?? 0))
+        return (width, height, sqrt(width * width + height * height))
+    }
+
+    private static func imageBounds(for points: [CGPoint]) -> CGRect {
+        let xs = points.map(\.x)
+        let ys = points.map(\.y)
+        let minX = xs.min() ?? 0
+        let maxX = xs.max() ?? 0
+        let minY = ys.min() ?? 0
+        let maxY = ys.max() ?? 0
+        return CGRect(
+            x: minX,
+            y: minY,
+            width: max(0.001, maxX - minX),
+            height: max(0.001, maxY - minY)
+        )
+    }
+
+    private static func averagePoint(_ points: [CGPoint]) -> CGPoint? {
+        guard !points.isEmpty else { return nil }
+
+        let sum = points.reduce(CGPoint.zero) { partial, point in
+            CGPoint(x: partial.x + point.x, y: partial.y + point.y)
+        }
+
+        return CGPoint(
+            x: sum.x / CGFloat(points.count),
+            y: sum.y / CGFloat(points.count)
+        )
+    }
+
+    private static func distance(_ lhs: CGPoint, _ rhs: CGPoint) -> Double {
+        let dx = Double(lhs.x - rhs.x)
+        let dy = Double(lhs.y - rhs.y)
+        return sqrt(dx * dx + dy * dy)
+    }
+}
 
 actor ModelBackedSwingDetector {
     enum DetectionError: Error {
         case invalidDuration
         case noVideoTrack
         case readerSetupFailed
+        case modelUnavailable
     }
 
-    private let targetSampleInterval: Double
-    private let maxProcessedFrames: Int
-    private let motionThreshold: Double
-    private let minWindowDuration: Double
-    private let maxWindowDuration: Double
-    private let acceptanceMinPeakMotion: Double
-    private let minBallAnchorY: Double
-    private let impactPreRoll: Double
-    private let impactPostRoll: Double
+    private let configuration: ObjectSwingDetectorConfiguration
 
     init(
         targetSampleInterval: Double = 0.50,
@@ -35,17 +478,146 @@ actor ModelBackedSwingDetector {
         acceptanceMinPeakMotion: Double = 1.10,
         minBallAnchorY: Double = 0.66,
         impactPreRoll: Double = 13.0,
-        impactPostRoll: Double = 4.5
+        impactPostRoll: Double = 4.5,
+        impactConfirmationPostRoll: Double = 0.20
     ) {
-        self.targetSampleInterval = targetSampleInterval
-        self.maxProcessedFrames = max(12, maxProcessedFrames)
-        self.motionThreshold = motionThreshold
-        self.minWindowDuration = minWindowDuration
-        self.maxWindowDuration = maxWindowDuration
-        self.acceptanceMinPeakMotion = acceptanceMinPeakMotion
-        self.minBallAnchorY = minBallAnchorY
-        self.impactPreRoll = impactPreRoll
-        self.impactPostRoll = impactPostRoll
+        self.configuration = ObjectSwingDetectorConfiguration(
+            name: "YOLO source timeline",
+            targetSampleInterval: targetSampleInterval,
+            maxProcessedFrames: max(12, maxProcessedFrames),
+            motionThreshold: motionThreshold,
+            acceptanceMinPeakMotion: acceptanceMinPeakMotion,
+            acceptanceMinStrongMotionFrames: 2,
+            acceptanceMinMeanClubMotion: 0.05,
+            acceptanceMinClubPathSpan: 0.32,
+            acceptanceMaxClubTopY: 0.58,
+            minBallAnchorY: minBallAnchorY,
+            featureRetentionLimit: 12_000,
+            timelineScale: 1.0,
+            minWindowDuration: minWindowDuration,
+            maxWindowDuration: maxWindowDuration,
+            impactPreRoll: impactPreRoll,
+            impactPostRoll: impactPostRoll,
+            impactConfirmationPostRoll: impactConfirmationPostRoll,
+            candidatePreRoll: 2.2,
+            candidatePostRoll: 2.0,
+            proposalGapTolerance: 1.8,
+            mergeMaxGap: 2.4,
+            validationPreRoll: 4.5,
+            validationPostRoll: 2.2,
+            addressPreRoll: 2.5,
+            addressPostOffset: 3.0
+        )
+    }
+
+    init(configuration: ObjectSwingDetectorConfiguration) {
+        self.configuration = configuration
+    }
+
+    func detectImpactSwings(in asset: AVAsset, usesHybridGate: Bool) async throws -> [DetectedSwing] {
+        let duration = try await asset.load(.duration)
+        let durationSeconds = CMTimeGetSeconds(duration)
+        guard durationSeconds.isFinite, durationSeconds > 0 else {
+            throw DetectionError.invalidDuration
+        }
+
+        guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
+            throw DetectionError.noVideoTrack
+        }
+
+        let transform = try await videoTrack.load(.preferredTransform)
+        let naturalSize = try await videoTrack.load(.naturalSize)
+        let orientation = Self.orientation(for: transform)
+        let orientedSize = Self.orientedSize(naturalSize: naturalSize, orientation: orientation)
+        let sampleInterval = max(configuration.targetSampleInterval, durationSeconds / Double(configuration.maxProcessedFrames))
+        let poseSampleInterval = max(0.12, sampleInterval * 2.0)
+
+        let reader = try AVAssetReader(asset: asset)
+        let output = AVAssetReaderTrackOutput(
+            track: videoTrack,
+            outputSettings: [
+                kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
+            ]
+        )
+        output.alwaysCopiesSampleData = false
+
+        guard reader.canAdd(output) else {
+            throw DetectionError.readerSetupFailed
+        }
+        reader.add(output)
+
+        guard reader.startReading() else {
+            throw reader.error ?? DetectionError.readerSetupFailed
+        }
+
+        let detector = LiveModelSwingDetector(configuration: configuration)
+        detector.reset(enabled: true, configuration: configuration)
+        guard detector.currentSnapshot().status != .unavailable else {
+            throw DetectionError.modelUnavailable
+        }
+        let poseRequest = VNDetectHumanBodyPoseRequest()
+        var poseAttemptTimes: [Double] = []
+        var poseFeatures: [ObjectSwingPoseFeature] = []
+        var lastSubmittedTime = -Double.greatestFiniteMagnitude
+        var lastPoseTime = -Double.greatestFiniteMagnitude
+        var lastDetectorTime = 0.0
+
+        while reader.status == .reading, let sampleBuffer = output.copyNextSampleBuffer() {
+            try Task.checkCancellation()
+
+            let time = CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(sampleBuffer))
+            guard time.isFinite, time - lastSubmittedTime >= sampleInterval else { continue }
+
+            lastSubmittedTime = time
+            lastDetectorTime = time
+            _ = detector.process(
+                sampleBuffer: sampleBuffer,
+                recordingTime: time,
+                orientation: orientation,
+                orientedImageSize: orientedSize
+            )
+
+            if time - lastPoseTime >= poseSampleInterval {
+                lastPoseTime = time
+                poseAttemptTimes.append(time)
+                if let poseFeature = ObjectSwingImpactSelector.poseFeature(
+                    from: sampleBuffer,
+                    at: time,
+                    orientation: orientation,
+                    request: poseRequest
+                ) {
+                    poseFeatures.append(poseFeature)
+                }
+            }
+        }
+
+        if reader.status == .failed {
+            throw reader.error ?? DetectionError.readerSetupFailed
+        }
+
+        let candidates = detector.currentImpactCenteredDetections(
+            videoDuration: durationSeconds,
+            declaredAt: lastDetectorTime
+        )
+        let selected = usesHybridGate
+            ? ObjectSwingImpactSelector.hybridImpactCandidates(
+                candidates,
+                attemptTimes: poseAttemptTimes,
+                poseFeatures: poseFeatures
+            )
+            : candidates
+
+        return selected
+            .prefix(32)
+            .map { candidate in
+                DetectedSwing(
+                    startTime: CMTime(seconds: candidate.start, preferredTimescale: 600),
+                    endTime: CMTime(seconds: candidate.end, preferredTimescale: 600),
+                    confidence: candidate.confidence,
+                    impactTime: candidate.impactTime,
+                    declaredAt: candidate.declaredAt
+                )
+            }
     }
 
     func detectSwings(in asset: AVAsset) async throws -> [DetectedSwing] {
@@ -63,7 +635,7 @@ actor ModelBackedSwingDetector {
         let naturalSize = try await videoTrack.load(.naturalSize)
         let orientation = Self.orientation(for: transform)
         let orientedSize = Self.orientedSize(naturalSize: naturalSize, orientation: orientation)
-        let sampleInterval = max(targetSampleInterval, durationSeconds / Double(maxProcessedFrames))
+        let sampleInterval = max(configuration.targetSampleInterval, durationSeconds / Double(configuration.maxProcessedFrames))
         let detector = try GolfObjectDetector()
         let features = try readObjectFeatures(
             from: asset,
@@ -156,12 +728,13 @@ actor ModelBackedSwingDetector {
             var start = proposal.start
             var end = proposal.end
             if let impactTime = evidence.impactTime {
-                start = max(0, min(start, impactTime - impactPreRoll))
-                end = max(start, min(end, impactTime + impactPostRoll))
+                start = max(0, min(start, impactTime - configuration.impactPreRoll))
+                end = max(start, min(end, impactTime + configuration.impactPostRoll))
             }
 
             end = min(videoDuration, end)
             guard end > start else { continue }
+            guard finalWindowMeetsAcceptance(start: start, end: end, features: features) else { continue }
 
             if let last = detections.last,
                CMTimeGetSeconds(last.endTime) + 0.8 >= start {
@@ -172,7 +745,9 @@ actor ModelBackedSwingDetector {
                 DetectedSwing(
                     startTime: CMTime(seconds: start, preferredTimescale: 600),
                     endTime: CMTime(seconds: end, preferredTimescale: 600),
-                    confidence: evidence.confidence
+                    confidence: evidence.confidence,
+                    impactTime: evidence.impactTime,
+                    declaredAt: features.last?.time
                 )
             )
         }
@@ -190,10 +765,10 @@ actor ModelBackedSwingDetector {
         var candidates: [ObjectCandidateWindow] = []
         var activeStart: Int?
         var lastActiveIndex: Int?
-        let gapTolerance = 1.8
+        let gapTolerance = configuration.proposalGapTolerance
 
         for index in features.indices {
-            let isActive = motion[index] >= motionThreshold && features[index].clubScore >= 0.35
+            let isActive = motion[index] >= configuration.motionThreshold && features[index].clubScore >= 0.35
             if isActive {
                 if activeStart == nil {
                     activeStart = index
@@ -230,7 +805,7 @@ actor ModelBackedSwingDetector {
         }
 
         return merge(candidates)
-            .filter { $0.end - $0.start >= minWindowDuration }
+            .filter { $0.end - $0.start >= configuration.minWindowDuration }
     }
 
     private func appendCandidate(
@@ -240,9 +815,9 @@ actor ModelBackedSwingDetector {
         features: [ObjectFrameFeature],
         candidates: inout [ObjectCandidateWindow]
     ) {
-        let start = max(0, features[startIndex].time - 2.2)
-        let end = features[endIndex].time + 2.0
-        guard end - start <= maxWindowDuration else { return }
+        let start = max(0, features[startIndex].time - configuration.candidatePreRoll)
+        let end = features[endIndex].time + configuration.candidatePostRoll
+        guard end - start <= configuration.maxWindowDuration else { return }
 
         candidates.append(
             ObjectCandidateWindow(
@@ -255,10 +830,10 @@ actor ModelBackedSwingDetector {
 
     private func validate(_ window: ObjectCandidateWindow, features: [ObjectFrameFeature]) -> ObjectWindowEvidence? {
         let windowDuration = window.end - window.start
-        let preStart = max(0, window.start - 4.5)
+        let preStart = max(0, window.start - configuration.validationPreRoll)
         let preEnd = window.start + windowDuration * 0.45
         let postStart = window.start + windowDuration * 0.58
-        let postEnd = window.end + 2.2
+        let postEnd = window.end + configuration.validationPostRoll
         let anchors = ballAnchors(features: features, start: preStart, end: preEnd)
         guard !anchors.isEmpty else { return nil }
 
@@ -266,7 +841,12 @@ actor ModelBackedSwingDetector {
             .map { anchor in
                 let pre = anchorPresenceRatio(features: features, start: preStart, end: preEnd, anchor: anchor)
                 let post = anchorPresenceRatio(features: features, start: postStart, end: postEnd, anchor: anchor)
-                let clubhead = clubheadEvidence(features: features, start: max(0, window.start - 2.5), end: window.start + 3.0, anchor: anchor)
+                let clubhead = clubheadEvidence(
+                    features: features,
+                    start: max(0, window.start - configuration.addressPreRoll),
+                    end: window.start + configuration.addressPostOffset,
+                    anchor: anchor
+                )
                 return ObjectAnchorEvidence(anchor: anchor, pre: pre, post: post, clubhead: clubhead)
             }
             .sorted {
@@ -282,9 +862,22 @@ actor ModelBackedSwingDetector {
         guard let best = anchorEvidence.first else { return nil }
 
         let inWindow = features.filter { $0.time >= window.start && $0.time <= window.end }
-        let peakMotion = smoothedMotion(inWindow).max() ?? 0
+        let motionSeries = smoothedMotion(inWindow)
+        let peakMotion = motionSeries.max() ?? 0
+        let strongMotionFrameCount = motionSeries.filter { $0 >= configuration.acceptanceMinPeakMotion }.count
+        let meanClubMotion = inWindow.isEmpty
+            ? 0
+            : inWindow.reduce(0.0) { $0 + $1.clubMotion } / Double(inWindow.count)
+        let clubPathSpan = objectClubPathSpan(inWindow)
+        let clubTopY = objectClubTopY(inWindow)
         let ballDisappearance = best.pre >= 0.18 && best.post <= max(0.12, best.pre * 0.45)
-        guard ballDisappearance, peakMotion >= acceptanceMinPeakMotion else { return nil }
+        guard ballDisappearance,
+              peakMotion >= configuration.acceptanceMinPeakMotion,
+              strongMotionFrameCount >= configuration.acceptanceMinStrongMotionFrames,
+              meanClubMotion >= configuration.acceptanceMinMeanClubMotion,
+              clubPathSpan >= configuration.acceptanceMinClubPathSpan,
+              clubTopY <= configuration.acceptanceMaxClubTopY
+        else { return nil }
 
         let impactAnchor = anchorEvidence
             .sorted {
@@ -314,11 +907,26 @@ actor ModelBackedSwingDetector {
         return ObjectWindowEvidence(confidence: confidence, impactTime: impactTime)
     }
 
+    private func finalWindowMeetsAcceptance(start: Double, end: Double, features: [ObjectFrameFeature]) -> Bool {
+        let inWindow = features.filter { $0.time >= start && $0.time <= end }
+        guard !inWindow.isEmpty else { return false }
+
+        let motionSeries = smoothedMotion(inWindow)
+        let peakMotion = motionSeries.max() ?? 0
+        let strongMotionFrameCount = motionSeries.filter { $0 >= configuration.acceptanceMinPeakMotion }.count
+        let meanClubMotion = inWindow.reduce(0.0) { $0 + $1.clubMotion } / Double(inWindow.count)
+        return peakMotion >= configuration.acceptanceMinPeakMotion
+            && strongMotionFrameCount >= configuration.acceptanceMinStrongMotionFrames
+            && meanClubMotion >= configuration.acceptanceMinMeanClubMotion
+            && objectClubPathSpan(inWindow) >= configuration.acceptanceMinClubPathSpan
+            && objectClubTopY(inWindow) <= configuration.acceptanceMaxClubTopY
+    }
+
     private func ballAnchors(features: [ObjectFrameFeature], start: Double, end: Double) -> [CGPoint] {
         var points: [(point: CGPoint, confidence: Double)] = []
 
         for feature in features where feature.time >= start && feature.time <= end {
-            for ball in feature.foregroundBalls where ball.confidence >= 0.35 && Double(ball.center.y) >= minBallAnchorY {
+            for ball in feature.foregroundBalls where ball.confidence >= 0.35 && Double(ball.center.y) >= configuration.minBallAnchorY {
                 points.append((ball.center, ball.confidence))
             }
         }
@@ -427,7 +1035,7 @@ actor ModelBackedSwingDetector {
                 continue
             }
 
-            if window.start > last.end + 2.4 {
+            if window.start > last.end + configuration.mergeMaxGap {
                 merged.append(window)
             } else {
                 merged[merged.count - 1] = ObjectCandidateWindow(
@@ -517,48 +1125,72 @@ actor ModelBackedSwingDetector {
 }
 
 nonisolated final class LiveModelSwingDetector {
-    private let targetSampleInterval = 0.50
-    private let motionThreshold = 0.55
-    private let minWindowDuration = 10.0
-    private let maxWindowDuration = 24.0
-    private let acceptanceMinPeakMotion = 1.10
-    private let minBallAnchorY = 0.66
-    private let impactPreRoll = 13.0
-    private let impactPostRoll = 4.5
-
+    private var configuration: ObjectSwingDetectorConfiguration
+    private let modelURL: URL?
+    private let computeUnits: MLComputeUnits
     private var detector: GolfObjectDetector?
     private var previousGray: [UInt8]?
     private var previousClubPoint: CGPoint?
     private var features: [ObjectFrameFeature] = []
     private var detections: [DetectedSwing] = []
+    private var detectionDiagnostics: [ObjectSwingWindowDiagnostics] = []
     private var lastProcessedTime = -Double.greatestFiniteMagnitude
     private var lastSnapshot = LiveSwingDetectionSnapshot.idle
     private var modelLoadError: Error?
+    private var processedFrameCount = 0
+    private var skippedFrameCount = 0
+    private var totalProcessingTimeMS = 0.0
+    private var lastProcessingTimeMS = 0.0
 
-    func reset(enabled: Bool) {
+    init(
+        configuration: ObjectSwingDetectorConfiguration = .liveObjectModel(),
+        modelURL: URL? = nil,
+        computeUnits: MLComputeUnits = .all
+    ) {
+        self.configuration = configuration
+        self.modelURL = modelURL
+        self.computeUnits = computeUnits
+    }
+
+    var targetSampleInterval: Double {
+        configuration.targetSampleInterval
+    }
+
+    func reset(enabled: Bool, configuration: ObjectSwingDetectorConfiguration? = nil) {
+        if let configuration {
+            self.configuration = configuration
+        }
         previousGray = nil
         previousClubPoint = nil
         features = []
         detections = []
+        detectionDiagnostics = []
         lastProcessedTime = -Double.greatestFiniteMagnitude
         modelLoadError = nil
+        processedFrameCount = 0
+        skippedFrameCount = 0
+        totalProcessingTimeMS = 0
+        lastProcessingTimeMS = 0
 
         guard enabled else {
             detector = nil
             lastSnapshot = LiveSwingDetectionSnapshot(
                 status: .disabled,
                 primaryMessage: "Auto detect off",
-                detailMessage: "Recording normally; trim manually after stop."
+                detailMessage: "Recording normally; trim manually after stop.",
+                detectorConfigurationName: self.configuration.name
             )
             return
         }
 
         do {
-            detector = try GolfObjectDetector()
+            detector = try GolfObjectDetector(modelURL: modelURL, computeUnits: computeUnits)
             lastSnapshot = LiveSwingDetectionSnapshot(
                 status: .searchingBall,
                 primaryMessage: "Model detector ready",
-                detailMessage: "Scanning sampled frames while recording."
+                detailMessage: "Scanning sampled frames while recording.",
+                targetSampleFPS: self.configuration.targetSampleFPS,
+                detectorConfigurationName: self.configuration.name
             )
         } catch {
             detector = nil
@@ -566,7 +1198,8 @@ nonisolated final class LiveModelSwingDetector {
             lastSnapshot = LiveSwingDetectionSnapshot(
                 status: .unavailable,
                 primaryMessage: "Model detector unavailable",
-                detailMessage: "The YOLO Core ML model could not be loaded."
+                detailMessage: "The YOLO Core ML model could not be loaded.",
+                detectorConfigurationName: self.configuration.name
             )
         }
     }
@@ -578,8 +1211,9 @@ nonisolated final class LiveModelSwingDetector {
         orientedImageSize: CGSize
     ) -> LiveSwingDetectionSnapshot {
         guard recordingTime.isFinite,
-              recordingTime - lastProcessedTime >= targetSampleInterval
+              recordingTime - lastProcessedTime >= configuration.targetSampleInterval
         else {
+            skippedFrameCount += 1
             return lastSnapshot
         }
         lastProcessedTime = recordingTime
@@ -589,11 +1223,19 @@ nonisolated final class LiveModelSwingDetector {
                 status: .unavailable,
                 primaryMessage: "Model detector unavailable",
                 detailMessage: modelLoadError == nil ? "Model detector has not been started." : "The YOLO Core ML model could not be loaded.",
-                detectedSwingCount: detections.count
+                detectedSwingCount: detections.count,
+                processedFrameCount: processedFrameCount,
+                skippedFrameCount: skippedFrameCount,
+                targetSampleFPS: configuration.targetSampleFPS,
+                effectiveSampleFPS: effectiveSampleFPS,
+                averageProcessingTimeMS: averageProcessingTimeMS,
+                lastProcessingTimeMS: lastProcessingTimeMS,
+                detectorConfigurationName: configuration.name
             )
             return lastSnapshot
         }
 
+        let processingStartedAt = Date()
         do {
             let gray = Self.downsampledLuma(from: sampleBuffer)
             let visualMotion = Self.visualMotion(current: gray, previous: previousGray)
@@ -614,13 +1256,25 @@ nonisolated final class LiveModelSwingDetector {
                 previousClubPoint = point
             }
             features.append(feature)
-            if features.count > 1_600 {
-                features.removeFirst(features.count - 1_600)
+            if features.count > configuration.featureRetentionLimit {
+                features.removeFirst(features.count - configuration.featureRetentionLimit)
             }
+            recordProcessingTime(startedAt: processingStartedAt)
 
-            let updatedDetections = buildDetections(videoDuration: recordingTime)
+            let previousDetections = detections
+            let previousDiagnostics = detectionDiagnostics
+            let updatedDetections = mergedDetections(
+                existing: detections,
+                new: buildDetections(videoDuration: recordingTime)
+            )
+            let updatedDiagnostics = diagnosticsForUpdatedDetections(
+                previousDetections: previousDetections,
+                previousDiagnostics: previousDiagnostics,
+                updatedDetections: updatedDetections
+            )
             if updatedDetections.count > detections.count {
                 detections = updatedDetections
+                detectionDiagnostics = updatedDiagnostics
                 lastSnapshot = snapshot(
                     status: .swingDetected,
                     primary: "\(detections.count) swing\(detections.count == 1 ? "" : "s") detected",
@@ -628,15 +1282,24 @@ nonisolated final class LiveModelSwingDetector {
                 )
             } else {
                 detections = updatedDetections
+                detectionDiagnostics = updatedDiagnostics
                 lastSnapshot = liveSnapshot(for: feature)
             }
         } catch {
             modelLoadError = error
+            recordProcessingTime(startedAt: processingStartedAt)
             lastSnapshot = LiveSwingDetectionSnapshot(
                 status: .unavailable,
                 primaryMessage: "Model detector unavailable",
                 detailMessage: "The YOLO model failed on a camera frame.",
-                detectedSwingCount: detections.count
+                detectedSwingCount: detections.count,
+                processedFrameCount: processedFrameCount,
+                skippedFrameCount: skippedFrameCount,
+                targetSampleFPS: configuration.targetSampleFPS,
+                effectiveSampleFPS: effectiveSampleFPS,
+                averageProcessingTimeMS: averageProcessingTimeMS,
+                lastProcessingTimeMS: lastProcessingTimeMS,
+                detectorConfigurationName: configuration.name
             )
         }
 
@@ -645,7 +1308,17 @@ nonisolated final class LiveModelSwingDetector {
 
     func finish(recordingTime: Double?) -> [DetectedSwing] {
         if let recordingTime, recordingTime.isFinite {
-            detections = buildDetections(videoDuration: recordingTime)
+            let previousDetections = detections
+            let previousDiagnostics = detectionDiagnostics
+            detections = mergedDetections(
+                existing: detections,
+                new: buildDetections(videoDuration: recordingTime)
+            )
+            detectionDiagnostics = diagnosticsForUpdatedDetections(
+                previousDetections: previousDetections,
+                previousDiagnostics: previousDiagnostics,
+                updatedDetections: detections
+            )
         }
         return detections
     }
@@ -654,12 +1327,111 @@ nonisolated final class LiveModelSwingDetector {
         detections
     }
 
+    func currentSnapshot() -> LiveSwingDetectionSnapshot {
+        lastSnapshot
+    }
+
+    func currentDetectionDiagnostics() -> [ObjectSwingWindowDiagnostics] {
+        detectionDiagnostics
+    }
+
+    func currentFeatureSummary() -> ObjectSwingFeatureSummary {
+        let motionSeries = smoothedMotion(features)
+        return ObjectSwingFeatureSummary(
+            frameCount: features.count,
+            clubFrameCount: features.filter { $0.clubScore >= 0.35 }.count,
+            ballFrameCount: features.filter { !$0.foregroundBalls.isEmpty }.count,
+            maxClubScore: features.map(\.clubScore).max() ?? 0,
+            maxBallScore: features.compactMap { $0.foregroundBalls.map(\.confidence).max() }.max() ?? 0,
+            maxMotion: motionSeries.max() ?? 0,
+            maxClubMotion: features.map(\.clubMotion).max() ?? 0
+        )
+    }
+
+    func currentCandidateDiagnostics() -> [ObjectSwingWindowDiagnostics] {
+        proposeWindows(from: features).map { window in
+            windowDiagnostics(start: window.start, end: window.end)
+        }
+    }
+
+    func currentImpactCenteredDetections(
+        videoDuration: Double,
+        declaredAt: Double? = nil
+    ) -> [ObjectSwingImpactCandidate] {
+        buildImpactCenteredDetections(
+            videoDuration: videoDuration,
+            declaredAt: declaredAt ?? features.last?.time ?? 0
+        )
+    }
+
+    func diagnostics(for detections: [DetectedSwing]) -> [ObjectSwingWindowDiagnostics] {
+        detections.map { detection in
+            windowDiagnostics(
+                start: CMTimeGetSeconds(detection.startTime),
+                end: CMTimeGetSeconds(detection.endTime)
+            )
+        }
+    }
+
+    private func diagnosticsForUpdatedDetections(
+        previousDetections: [DetectedSwing],
+        previousDiagnostics: [ObjectSwingWindowDiagnostics],
+        updatedDetections: [DetectedSwing]
+    ) -> [ObjectSwingWindowDiagnostics] {
+        updatedDetections.map { detection in
+            let start = CMTimeGetSeconds(detection.startTime)
+            let end = CMTimeGetSeconds(detection.endTime)
+            if let previousIndex = previousDetections.firstIndex(where: { previous in
+                abs(CMTimeGetSeconds(previous.startTime) - start) < 0.01
+                && abs(CMTimeGetSeconds(previous.endTime) - end) < 0.01
+            }), previousDiagnostics.indices.contains(previousIndex) {
+                return previousDiagnostics[previousIndex]
+            }
+            return windowDiagnostics(start: start, end: end)
+        }
+    }
+
+    private var averageProcessingTimeMS: Double {
+        guard processedFrameCount > 0 else { return 0 }
+        return totalProcessingTimeMS / Double(processedFrameCount)
+    }
+
+    private func recordProcessingTime(startedAt: Date) {
+        lastProcessingTimeMS = Date().timeIntervalSince(startedAt) * 1_000
+        totalProcessingTimeMS += lastProcessingTimeMS
+        processedFrameCount += 1
+    }
+
+    private func windowDiagnostics(start: Double, end: Double) -> ObjectSwingWindowDiagnostics {
+        let inWindow = features.filter { $0.time >= start && $0.time <= end }
+        let motionSeries = smoothedMotion(inWindow)
+        let peakMotion = motionSeries.max() ?? 0
+        let strongMotionFrameCount = motionSeries.filter { $0 >= configuration.acceptanceMinPeakMotion }.count
+        let meanClubMotion = inWindow.isEmpty
+            ? 0
+            : inWindow.reduce(0.0) { $0 + $1.clubMotion } / Double(inWindow.count)
+        let clubFrames = inWindow.filter { $0.clubScore >= 0.35 }.count
+        let ballFrames = inWindow.filter { !$0.foregroundBalls.isEmpty }.count
+
+        return ObjectSwingWindowDiagnostics(
+            start: start,
+            end: end,
+            peakMotion: peakMotion,
+            strongMotionFrameCount: strongMotionFrameCount,
+            meanClubMotion: meanClubMotion,
+            clubPathSpan: objectClubPathSpan(inWindow),
+            clubTopY: objectClubTopY(inWindow),
+            clubFrameRatio: inWindow.isEmpty ? 0 : Double(clubFrames) / Double(inWindow.count),
+            ballFrameRatio: inWindow.isEmpty ? 0 : Double(ballFrames) / Double(inWindow.count)
+        )
+    }
+
     private func liveSnapshot(for feature: ObjectFrameFeature) -> LiveSwingDetectionSnapshot {
         let motion = smoothedMotion(Array(features.suffix(5))).last ?? 0
         let hasBall = !feature.foregroundBalls.isEmpty
         let hasClub = feature.clubScore >= 0.35
 
-        if motion >= motionThreshold, hasClub {
+        if motion >= configuration.motionThreshold, hasClub {
             return snapshot(
                 status: .swingInProgress,
                 primary: "Model sees swing motion",
@@ -701,8 +1473,62 @@ nonisolated final class LiveModelSwingDetector {
             setupDuration: 0,
             ballCandidateScore: features.last?.foregroundBalls.map(\.confidence).max(),
             ballLumaDelta: nil,
-            lastRejectionReason: nil
+            lastRejectionReason: nil,
+            processedFrameCount: processedFrameCount,
+            skippedFrameCount: skippedFrameCount,
+            targetSampleFPS: configuration.targetSampleFPS,
+            effectiveSampleFPS: effectiveSampleFPS,
+            averageProcessingTimeMS: averageProcessingTimeMS,
+            lastProcessingTimeMS: lastProcessingTimeMS,
+            detectorConfigurationName: configuration.name
         )
+    }
+
+    private var effectiveSampleFPS: Double {
+        guard features.count >= 2,
+              let firstTime = features.first?.time,
+              let lastTime = features.last?.time
+        else { return 0 }
+
+        let duration = lastTime - firstTime
+        guard duration > 0 else { return 0 }
+        return Double(features.count - 1) / duration
+    }
+
+    private func mergedDetections(existing: [DetectedSwing], new: [DetectedSwing]) -> [DetectedSwing] {
+        var merged = existing
+
+        for detection in new {
+            let detectionStart = CMTimeGetSeconds(detection.startTime)
+            let detectionEnd = CMTimeGetSeconds(detection.endTime)
+            if let overlapIndex = merged.firstIndex(where: { existingDetection in
+                let existingStart = CMTimeGetSeconds(existingDetection.startTime)
+                let existingEnd = CMTimeGetSeconds(existingDetection.endTime)
+                return detectionStart <= existingEnd + 0.8 && existingStart <= detectionEnd + 0.8
+            }) {
+                if detection.confidence >= merged[overlapIndex].confidence {
+                    let previousDeclaredAt = merged[overlapIndex].declaredAt
+                    let nextDeclaredAt = detection.declaredAt
+                    let declaredAt = [previousDeclaredAt, nextDeclaredAt]
+                        .compactMap { $0 }
+                        .min()
+                    merged[overlapIndex] = DetectedSwing(
+                        startTime: detection.startTime,
+                        endTime: detection.endTime,
+                        confidence: detection.confidence,
+                        impactTime: detection.impactTime ?? merged[overlapIndex].impactTime,
+                        declaredAt: declaredAt
+                    )
+                }
+            } else {
+                merged.append(detection)
+            }
+        }
+
+        return merged
+            .sorted { CMTimeCompare($0.startTime, $1.startTime) < 0 }
+            .prefix(32)
+            .map { $0 }
     }
 
     private func buildDetections(videoDuration: Double) -> [DetectedSwing] {
@@ -717,12 +1543,13 @@ nonisolated final class LiveModelSwingDetector {
             var start = proposal.start
             var end = proposal.end
             if let impactTime = evidence.impactTime {
-                start = max(0, min(start, impactTime - impactPreRoll))
-                end = max(start, min(end, impactTime + impactPostRoll))
+                start = max(0, min(start, impactTime - configuration.impactPreRoll))
+                end = max(start, min(end, impactTime + configuration.impactPostRoll))
             }
 
             end = min(videoDuration, end)
             guard end > start else { continue }
+            guard finalWindowMeetsAcceptance(start: start, end: end, features: features) else { continue }
 
             if let last = nextDetections.last,
                CMTimeGetSeconds(last.endTime) + 0.8 >= start {
@@ -733,7 +1560,9 @@ nonisolated final class LiveModelSwingDetector {
                 DetectedSwing(
                     startTime: CMTime(seconds: start, preferredTimescale: 600),
                     endTime: CMTime(seconds: end, preferredTimescale: 600),
-                    confidence: evidence.confidence
+                    confidence: evidence.confidence,
+                    impactTime: evidence.impactTime,
+                    declaredAt: features.last?.time
                 )
             )
         }
@@ -744,6 +1573,106 @@ nonisolated final class LiveModelSwingDetector {
             .map { $0 }
     }
 
+    private func buildImpactCenteredDetections(
+        videoDuration: Double,
+        declaredAt: Double
+    ) -> [ObjectSwingImpactCandidate] {
+        guard !features.isEmpty else { return [] }
+
+        let motion = smoothedMotion(features)
+        let confirmationPostRoll = max(0.18, configuration.impactConfirmationPostRoll)
+        let minimumImpactGap = max(1.45, configuration.minWindowDuration * 0.90)
+        var selected: [(index: Int, motion: Double)] = []
+
+        for index in features.indices {
+            let impactTime = features[index].time
+            guard impactTime >= 0.55 else { continue }
+            guard impactTime + confirmationPostRoll <= declaredAt else { continue }
+
+            let lower = max(features.startIndex, index - 2)
+            let upper = min(features.endIndex - 1, index + 2)
+            let localMax = (lower...upper).allSatisfy { motion[index] >= motion[$0] }
+            guard localMax else { continue }
+
+            let start = max(0, impactTime - configuration.impactPreRoll)
+            let end = min(videoDuration, impactTime + configuration.impactPostRoll)
+            guard end > start else { continue }
+
+            let diagnostics = windowDiagnostics(start: start, end: end)
+            let hasClubEvidence = diagnostics.clubFrameRatio >= 0.22
+                && diagnostics.clubPathSpan >= 0.28
+                && diagnostics.meanClubMotion >= 0.025
+            let hasMotionEvidence = diagnostics.peakMotion >= 0.70
+                || diagnostics.strongMotionFrameCount >= 1
+            guard hasClubEvidence, hasMotionEvidence else { continue }
+
+            if let last = selected.last, impactTime - features[last.index].time < minimumImpactGap {
+                if motion[index] > last.motion {
+                    selected[selected.count - 1] = (index, motion[index])
+                }
+                continue
+            }
+
+            selected.append((index, motion[index]))
+        }
+
+        let detections = selected.prefix(48).compactMap { item -> ObjectSwingImpactCandidate? in
+            let impactTime = features[item.index].time
+            let start = max(0, impactTime - configuration.impactPreRoll)
+            let end = min(videoDuration, impactTime + configuration.impactPostRoll)
+            guard end > start else { return nil }
+
+            let diagnostics = windowDiagnostics(start: start, end: end)
+            let confidence = min(
+                0.92,
+                0.30
+                + min(0.26, diagnostics.peakMotion * 0.16)
+                + min(0.18, diagnostics.clubPathSpan * 0.18)
+                + min(0.12, diagnostics.clubFrameRatio * 0.12)
+                + min(0.06, diagnostics.ballFrameRatio * 0.10)
+            )
+
+            return ObjectSwingImpactCandidate(
+                start: start,
+                end: end,
+                impactTime: impactTime,
+                declaredAt: impactTime + confirmationPostRoll,
+                confidence: confidence,
+                diagnostics: diagnostics
+            )
+        }
+
+        return mergeImpactCandidates(detections)
+            .prefix(32)
+            .map { $0 }
+    }
+
+    private func mergeImpactCandidates(
+        _ detections: [ObjectSwingImpactCandidate]
+    ) -> [ObjectSwingImpactCandidate] {
+        var merged: [ObjectSwingImpactCandidate] = []
+        let nearbyGap = min(1.20, max(0.25, configuration.impactPostRoll * 2.1))
+
+        for detection in detections.sorted(by: { $0.start < $1.start }) {
+            guard let last = merged.last else {
+                merged.append(detection)
+                continue
+            }
+
+            if detection.start > last.end + nearbyGap {
+                merged.append(detection)
+                continue
+            }
+
+            let shouldReplace = detection.confidence > last.confidence + 0.08
+            if shouldReplace {
+                merged[merged.count - 1] = detection
+            }
+        }
+
+        return merged
+    }
+
     private func proposeWindows(from features: [ObjectFrameFeature]) -> [ObjectCandidateWindow] {
         guard !features.isEmpty else { return [] }
 
@@ -751,10 +1680,10 @@ nonisolated final class LiveModelSwingDetector {
         var candidates: [ObjectCandidateWindow] = []
         var activeStart: Int?
         var lastActiveIndex: Int?
-        let gapTolerance = 1.8
+        let gapTolerance = configuration.proposalGapTolerance
 
         for index in features.indices {
-            let isActive = motion[index] >= motionThreshold && features[index].clubScore >= 0.35
+            let isActive = motion[index] >= configuration.motionThreshold && features[index].clubScore >= 0.35
             if isActive {
                 if activeStart == nil {
                     activeStart = index
@@ -778,7 +1707,7 @@ nonisolated final class LiveModelSwingDetector {
         }
 
         return merge(candidates)
-            .filter { $0.end - $0.start >= minWindowDuration }
+            .filter { $0.end - $0.start >= configuration.minWindowDuration }
     }
 
     private func appendCandidate(
@@ -788,9 +1717,9 @@ nonisolated final class LiveModelSwingDetector {
         features: [ObjectFrameFeature],
         candidates: inout [ObjectCandidateWindow]
     ) {
-        let start = max(0, features[startIndex].time - 2.2)
-        let end = features[endIndex].time + 2.0
-        guard end - start <= maxWindowDuration else { return }
+        let start = max(0, features[startIndex].time - configuration.candidatePreRoll)
+        let end = features[endIndex].time + configuration.candidatePostRoll
+        guard end - start <= configuration.maxWindowDuration else { return }
         candidates.append(
             ObjectCandidateWindow(
                 start: start,
@@ -802,10 +1731,10 @@ nonisolated final class LiveModelSwingDetector {
 
     private func validate(_ window: ObjectCandidateWindow, features: [ObjectFrameFeature]) -> ObjectWindowEvidence? {
         let windowDuration = window.end - window.start
-        let preStart = max(0, window.start - 4.5)
+        let preStart = max(0, window.start - configuration.validationPreRoll)
         let preEnd = window.start + windowDuration * 0.45
         let postStart = window.start + windowDuration * 0.58
-        let postEnd = window.end + 2.2
+        let postEnd = window.end + configuration.validationPostRoll
         let anchors = ballAnchors(features: features, start: preStart, end: preEnd)
         guard !anchors.isEmpty else { return nil }
 
@@ -813,7 +1742,12 @@ nonisolated final class LiveModelSwingDetector {
             .map { anchor in
                 let pre = anchorPresenceRatio(features: features, start: preStart, end: preEnd, anchor: anchor)
                 let post = anchorPresenceRatio(features: features, start: postStart, end: postEnd, anchor: anchor)
-                let clubhead = clubheadEvidence(features: features, start: max(0, window.start - 2.5), end: window.start + 3.0, anchor: anchor)
+                let clubhead = clubheadEvidence(
+                    features: features,
+                    start: max(0, window.start - configuration.addressPreRoll),
+                    end: window.start + configuration.addressPostOffset,
+                    anchor: anchor
+                )
                 return ObjectAnchorEvidence(anchor: anchor, pre: pre, post: post, clubhead: clubhead)
             }
             .sorted {
@@ -829,9 +1763,22 @@ nonisolated final class LiveModelSwingDetector {
         guard let best = anchorEvidence.first else { return nil }
 
         let inWindow = features.filter { $0.time >= window.start && $0.time <= window.end }
-        let peakMotion = smoothedMotion(inWindow).max() ?? 0
+        let motionSeries = smoothedMotion(inWindow)
+        let peakMotion = motionSeries.max() ?? 0
+        let strongMotionFrameCount = motionSeries.filter { $0 >= configuration.acceptanceMinPeakMotion }.count
+        let meanClubMotion = inWindow.isEmpty
+            ? 0
+            : inWindow.reduce(0.0) { $0 + $1.clubMotion } / Double(inWindow.count)
+        let clubPathSpan = objectClubPathSpan(inWindow)
+        let clubTopY = objectClubTopY(inWindow)
         let ballDisappearance = best.pre >= 0.18 && best.post <= max(0.12, best.pre * 0.45)
-        guard ballDisappearance, peakMotion >= acceptanceMinPeakMotion else { return nil }
+        guard ballDisappearance,
+              peakMotion >= configuration.acceptanceMinPeakMotion,
+              strongMotionFrameCount >= configuration.acceptanceMinStrongMotionFrames,
+              meanClubMotion >= configuration.acceptanceMinMeanClubMotion,
+              clubPathSpan >= configuration.acceptanceMinClubPathSpan,
+              clubTopY <= configuration.acceptanceMaxClubTopY
+        else { return nil }
 
         let impactAnchor = anchorEvidence
             .sorted {
@@ -861,11 +1808,26 @@ nonisolated final class LiveModelSwingDetector {
         return ObjectWindowEvidence(confidence: confidence, impactTime: impactTime)
     }
 
+    private func finalWindowMeetsAcceptance(start: Double, end: Double, features: [ObjectFrameFeature]) -> Bool {
+        let inWindow = features.filter { $0.time >= start && $0.time <= end }
+        guard !inWindow.isEmpty else { return false }
+
+        let motionSeries = smoothedMotion(inWindow)
+        let peakMotion = motionSeries.max() ?? 0
+        let strongMotionFrameCount = motionSeries.filter { $0 >= configuration.acceptanceMinPeakMotion }.count
+        let meanClubMotion = inWindow.reduce(0.0) { $0 + $1.clubMotion } / Double(inWindow.count)
+        return peakMotion >= configuration.acceptanceMinPeakMotion
+            && strongMotionFrameCount >= configuration.acceptanceMinStrongMotionFrames
+            && meanClubMotion >= configuration.acceptanceMinMeanClubMotion
+            && objectClubPathSpan(inWindow) >= configuration.acceptanceMinClubPathSpan
+            && objectClubTopY(inWindow) <= configuration.acceptanceMaxClubTopY
+    }
+
     private func ballAnchors(features: [ObjectFrameFeature], start: Double, end: Double) -> [CGPoint] {
         var points: [(point: CGPoint, confidence: Double)] = []
 
         for feature in features where feature.time >= start && feature.time <= end {
-            for ball in feature.foregroundBalls where ball.confidence >= 0.35 && Double(ball.center.y) >= minBallAnchorY {
+            for ball in feature.foregroundBalls where ball.confidence >= 0.35 && Double(ball.center.y) >= configuration.minBallAnchorY {
                 points.append((ball.center, ball.confidence))
             }
         }
@@ -974,7 +1936,7 @@ nonisolated final class LiveModelSwingDetector {
                 continue
             }
 
-            if window.start > last.end + 2.4 {
+            if window.start > last.end + configuration.mergeMaxGap {
                 merged.append(window)
             } else {
                 merged[merged.count - 1] = ObjectCandidateWindow(
@@ -1063,6 +2025,21 @@ nonisolated private struct ObjectCandidateWindow {
     let start: Double
     let end: Double
     let peakMotion: Double
+}
+
+nonisolated private func objectClubPathSpan(_ features: [ObjectFrameFeature]) -> Double {
+    let points = features.compactMap(\.bestClubPoint)
+    guard !points.isEmpty else { return 0 }
+
+    let xs = points.map(\.x)
+    let ys = points.map(\.y)
+    let xSpan = Double((xs.max() ?? 0) - (xs.min() ?? 0))
+    let ySpan = Double((ys.max() ?? 0) - (ys.min() ?? 0))
+    return sqrt(xSpan * xSpan + ySpan * ySpan)
+}
+
+nonisolated private func objectClubTopY(_ features: [ObjectFrameFeature]) -> Double {
+    features.compactMap(\.bestClubPoint?.y).min() ?? 1.0
 }
 
 nonisolated private struct ObjectWindowEvidence {

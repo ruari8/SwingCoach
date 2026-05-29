@@ -48,12 +48,17 @@ nonisolated final class GolfObjectDetector {
     private let confidenceThreshold = 0.25
     private let iouThreshold = 0.70
 
-    init() throws {
+    init(
+        modelURL explicitModelURL: URL? = nil,
+        computeUnits: MLComputeUnits = .all
+    ) throws {
         let configuration = MLModelConfiguration()
-        configuration.computeUnits = .all
+        configuration.computeUnits = computeUnits
 
         let modelURL: URL
-        if let compiledURL = Bundle.main.url(forResource: "SwingObjectsYOLO11n", withExtension: "mlmodelc") {
+        if let explicitModelURL {
+            modelURL = try Self.loadableModelURL(from: explicitModelURL)
+        } else if let compiledURL = Bundle.main.url(forResource: "SwingObjectsYOLO11n", withExtension: "mlmodelc") {
             modelURL = compiledURL
         } else if let packageURL = Bundle.main.url(forResource: "SwingObjectsYOLO11n", withExtension: "mlpackage") {
             modelURL = try MLModel.compileModel(at: packageURL)
@@ -66,6 +71,14 @@ nonisolated final class GolfObjectDetector {
         let request = VNCoreMLRequest(model: visionModel)
         request.imageCropAndScaleOption = .scaleFit
         self.request = request
+    }
+
+    private static func loadableModelURL(from url: URL) throws -> URL {
+        if url.pathExtension == "mlmodelc" {
+            return url
+        }
+
+        return try MLModel.compileModel(at: url)
     }
 
     func detect(

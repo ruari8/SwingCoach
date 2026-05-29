@@ -19,3 +19,5 @@ build/
 # Video testing
 .videos/
 detector_model/
+.detectorTestV2
+.detectorTestV3
