@@ -28,6 +28,23 @@ def run(command: list[str], *, capture: bool = False) -> subprocess.CompletedPro
     )
 
 
+def duration_seconds(path: Path) -> float:
+    completed = run(
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "default=nokey=1:noprint_wrappers=1",
+            str(path),
+        ],
+        capture=True,
+    )
+    return float(completed.stdout.strip())
+
+
 def proxy_path(sample_fps: float, source_scale: float) -> Path:
     source_fps = sample_fps / max(1.0, source_scale)
     label = f"{source_fps:g}".replace(".", "p")
@@ -177,6 +194,10 @@ def evaluate(args: argparse.Namespace) -> dict[str, Any]:
     poll = f"poll{args.declaration_poll_interval:g}s"
     report_path = WORK_DIR / f"{args.input}_{args.compute}_{args.sample_fps:g}fps_{poll}.json"
     summary_path = WORK_DIR / f"{args.input}_{args.compute}_{args.sample_fps:g}fps_{poll}.summary.json"
+    # The evaluator intentionally uses the app's video-composition reader path.
+    # On macOS this path can fail when asked to read exactly to the asset's final
+    # timestamp, so keep the reproducible full-file run a fraction short.
+    safe_source_end = max(0.0, duration_seconds(input_path) - 0.10)
 
     command = [
         str(EVALUATOR),
@@ -192,7 +213,7 @@ def evaluate(args: argparse.Namespace) -> dict[str, Any]:
         "0.58",
         f"{args.timeline_scale:.3f}",
         "0",
-        "",
+        f"{safe_source_end:.3f}",
         "0.20",
         args.compute,
         f"{args.declaration_poll_interval:.3f}",

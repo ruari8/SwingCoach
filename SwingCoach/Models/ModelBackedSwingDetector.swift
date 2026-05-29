@@ -1901,44 +1901,49 @@ nonisolated final class LiveModelSwingDetector {
             )
         }
 
-        let contactTolerance = max(0.30, configuration.targetSampleInterval * 3.0)
-        let club = clubContactEvidence(
-            features: features,
-            start: disappearedAt - contactTolerance,
-            end: disappearedAt + contactTolerance,
-            anchor: anchor
-        )
-        let clubAtBall = club.minDistance <= 0.055
-            || club.nearRatio >= 0.20
-            || (strongBallDeparture && club.minDistance <= 0.12)
-        if !clubAtBall {
-            return impactDebugReport(
-                anchor: anchor,
-                result: "no_club_contact_at_anchor",
-                disappearanceTime: disappearedAt,
-                preFeatureCount: preFeatureCount,
-                postFeatureCount: postFeatureCount,
-                prePresence: prePresence,
-                postPresence: postPresence,
-                clubMinDistance: club.minDistance.isFinite ? club.minDistance : nil,
-                clubNearRatio: club.nearRatio
+            let contactTolerance = max(0.30, configuration.targetSampleInterval * 3.0)
+            let club = clubContactEvidence(
+                features: features,
+                start: disappearedAt - contactTolerance,
+                end: disappearedAt + contactTolerance,
+                anchor: anchor
             )
-        }
+            let localDiagnostics = windowDiagnostics(
+                start: disappearedAt - contactTolerance,
+                end: disappearedAt + contactTolerance
+            )
+            let start = max(0, disappearedAt - configuration.impactPreRoll)
+            let end = min(videoDuration, disappearedAt + configuration.impactPostRoll)
+            let diagnostics = windowDiagnostics(start: start, end: end)
+            let directClubAtBall = club.minDistance <= 0.055 || club.nearRatio >= 0.20
+            let looseClubAtBall = strongBallDeparture && club.minDistance <= 0.12
+            let clubAtBall = directClubAtBall || looseClubAtBall
+            let strongSwingMotion = hasStrongImpactSwingMotion(diagnostics)
+            let strikeMotion = hasLocalStrikeMotion(localDiagnostics) || strongSwingMotion
+            let missedContactStrike = strongBallDeparture && strongSwingMotion
 
-        let localDiagnostics = windowDiagnostics(
-            start: disappearedAt - contactTolerance,
-            end: disappearedAt + contactTolerance
-        )
-        let localStrikeMotionThreshold = max(
-            configuration.motionThreshold,
-            configuration.acceptanceMinPeakMotion * 0.55
-        )
-        let hasLocalStrikeMotion = localDiagnostics.peakMotion >= localStrikeMotionThreshold
-            && localDiagnostics.meanClubMotion >= configuration.acceptanceMinMeanClubMotion * 0.50
-        if !hasLocalStrikeMotion {
-            return impactDebugReport(
-                anchor: anchor,
-                result: "low_local_strike_motion",
+            if !clubAtBall, !missedContactStrike {
+                return impactDebugReport(
+                    anchor: anchor,
+                    result: "no_club_contact_at_anchor",
+                    disappearanceTime: disappearedAt,
+                    preFeatureCount: preFeatureCount,
+                    postFeatureCount: postFeatureCount,
+                    prePresence: prePresence,
+                    postPresence: postPresence,
+                    clubMinDistance: club.minDistance.isFinite ? club.minDistance : nil,
+                    clubNearRatio: club.nearRatio,
+                    localPeakMotion: localDiagnostics.peakMotion,
+                    localMeanClubMotion: localDiagnostics.meanClubMotion,
+                    windowPeakMotion: diagnostics.peakMotion,
+                    windowMeanClubMotion: diagnostics.meanClubMotion,
+                    clubPathSpan: diagnostics.clubPathSpan
+                )
+            }
+            if clubAtBall, !strikeMotion {
+                return impactDebugReport(
+                    anchor: anchor,
+                    result: "low_local_strike_motion",
                 disappearanceTime: disappearedAt,
                 preFeatureCount: preFeatureCount,
                 postFeatureCount: postFeatureCount,
@@ -1946,17 +1951,14 @@ nonisolated final class LiveModelSwingDetector {
                 postPresence: postPresence,
                 clubMinDistance: club.minDistance.isFinite ? club.minDistance : nil,
                 clubNearRatio: club.nearRatio,
-                localPeakMotion: localDiagnostics.peakMotion,
-                localMeanClubMotion: localDiagnostics.meanClubMotion
-            )
-        }
+                    localPeakMotion: localDiagnostics.peakMotion,
+                    localMeanClubMotion: localDiagnostics.meanClubMotion
+                )
+            }
 
-        let start = max(0, disappearedAt - configuration.impactPreRoll)
-        let end = min(videoDuration, disappearedAt + configuration.impactPostRoll)
-        let diagnostics = windowDiagnostics(start: start, end: end)
-        if diagnostics.meanClubMotion < 0.025 || diagnostics.clubPathSpan < 0.20 {
-            return impactDebugReport(
-                anchor: anchor,
+            if diagnostics.meanClubMotion < 0.025 || diagnostics.clubPathSpan < 0.20 {
+                return impactDebugReport(
+                    anchor: anchor,
                 result: "low_window_club_motion",
                 disappearanceTime: disappearedAt,
                 preFeatureCount: preFeatureCount,
@@ -2096,6 +2098,11 @@ nonisolated final class LiveModelSwingDetector {
             guard ballDeparted else { continue }
             let strongBallDeparture = prePresence >= 0.75 && postPresence <= 0.05
 
+            let start = max(0, disappearedAt - configuration.impactPreRoll)
+            let end = min(videoDuration, disappearedAt + configuration.impactPostRoll)
+            guard end > start else { continue }
+
+            let diagnostics = windowDiagnostics(start: start, end: end)
             let contactTolerance = max(0.30, configuration.targetSampleInterval * 3.0)
             let club = clubContactEvidence(
                 features: features,
@@ -2103,30 +2110,18 @@ nonisolated final class LiveModelSwingDetector {
                 end: disappearedAt + contactTolerance,
                 anchor: anchor
             )
-            let clubAtBall = club.minDistance <= 0.055
-                || club.nearRatio >= 0.20
-                || (strongBallDeparture && club.minDistance <= 0.12)
-            guard clubAtBall else { continue }
-
             let localDiagnostics = windowDiagnostics(
                 start: disappearedAt - contactTolerance,
                 end: disappearedAt + contactTolerance
             )
-            // Ball departure and club contact are the primary proof. Keep local
-            // motion as a softer sanity check because club boxes are sparse near impact.
-            let localStrikeMotionThreshold = max(
-                configuration.motionThreshold,
-                configuration.acceptanceMinPeakMotion * 0.55
-            )
-            let hasLocalStrikeMotion = localDiagnostics.peakMotion >= localStrikeMotionThreshold
-                && localDiagnostics.meanClubMotion >= configuration.acceptanceMinMeanClubMotion * 0.50
-            guard hasLocalStrikeMotion else { continue }
+            let directClubAtBall = club.minDistance <= 0.055 || club.nearRatio >= 0.20
+            let looseClubAtBall = strongBallDeparture && club.minDistance <= 0.12
+            let clubAtBall = directClubAtBall || looseClubAtBall
+            let strongSwingMotion = hasStrongImpactSwingMotion(diagnostics)
+            let strikeMotion = hasLocalStrikeMotion(localDiagnostics) || strongSwingMotion
+            let missedContactStrike = strongBallDeparture && strongSwingMotion
+            guard (clubAtBall && strikeMotion) || missedContactStrike else { continue }
 
-            let start = max(0, disappearedAt - configuration.impactPreRoll)
-            let end = min(videoDuration, disappearedAt + configuration.impactPostRoll)
-            guard end > start else { continue }
-
-            let diagnostics = windowDiagnostics(start: start, end: end)
             let hasClubMotion = diagnostics.meanClubMotion >= 0.025
                 && diagnostics.clubPathSpan >= 0.20
             let hasMotion = diagnostics.peakMotion >= 0.70
@@ -2154,6 +2149,20 @@ nonisolated final class LiveModelSwingDetector {
         }
 
         return candidates
+    }
+
+    private func hasLocalStrikeMotion(_ diagnostics: ObjectSwingWindowDiagnostics) -> Bool {
+        diagnostics.peakMotion >= max(1.55, configuration.acceptanceMinPeakMotion * 1.35)
+            && diagnostics.meanClubMotion >= max(0.08, configuration.acceptanceMinMeanClubMotion * 1.60)
+    }
+
+    private func hasStrongImpactSwingMotion(_ diagnostics: ObjectSwingWindowDiagnostics) -> Bool {
+        diagnostics.peakMotion >= max(2.0, configuration.acceptanceMinPeakMotion * 1.80)
+            && diagnostics.meanClubMotion >= max(0.12, configuration.acceptanceMinMeanClubMotion * 2.40)
+            && diagnostics.clubPathSpan >= max(0.68, configuration.acceptanceMinClubPathSpan * 2.10)
+            && diagnostics.clubTopY <= min(0.40, configuration.acceptanceMaxClubTopY * 0.70)
+            && diagnostics.clubFrameRatio >= 0.80
+            && diagnostics.strongMotionFrameCount >= max(6, configuration.acceptanceMinStrongMotionFrames * 3)
     }
 
     private func clubContactEvidence(features: [ObjectFrameFeature], start: Double, end: Double, anchor: CGPoint) -> ObjectClubheadEvidence {

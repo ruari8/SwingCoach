@@ -87,6 +87,23 @@ def video_duration_seconds(case: Case) -> float:
         return float("inf")
 
 
+def media_duration_seconds(path: Path) -> float:
+    completed = run(
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "default=nokey=1:noprint_wrappers=1",
+            str(path),
+        ],
+        capture=True,
+    )
+    return float(completed.stdout.strip())
+
+
 def proxy_path(case: Case, sample_fps: float) -> Path:
     source_fps = sample_fps / max(1.0, case.source_scale)
     label = f"{source_fps:g}".replace(".", "p")
@@ -271,6 +288,8 @@ def evaluate_case(case: Case, args: argparse.Namespace) -> dict[str, Any]:
         summary["report"] = str(report_path)
         return summary
 
+    safe_source_end = max(0.0, media_duration_seconds(input_path) - 0.10)
+
     command = [
         str(EVALUATOR),
         str(input_path),
@@ -285,7 +304,7 @@ def evaluate_case(case: Case, args: argparse.Namespace) -> dict[str, Any]:
         "0.58",
         f"{args.timeline_scale:.3f}",
         "0",
-        "",
+        f"{safe_source_end:.3f}",
         f"{args.impact_confirmation_post_roll:.3f}",
         args.compute,
         f"{args.declaration_poll_interval:.3f}",
