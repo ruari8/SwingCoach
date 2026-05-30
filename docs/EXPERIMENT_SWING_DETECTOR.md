@@ -116,9 +116,10 @@ Diagnostic script:
 
 ```bash
 ./backend/venv/bin/python tools/analyze_audio_impacts.py \
-  --video .videos/IMG_2592.mov \
-  --labels .videos/IMG_2592.labels.json \
-  --output .videos/audio_eval/audio_impact_report.json
+  --video .detectorTestV3/test4.mp4 \
+  --labels tools/detector_test_v3_labels.json \
+  --label-case-id test4 \
+  --output .videos/audio_eval/test4_audio_impact_report.json
 ```
 
 Initial result on the labeled long slow-motion range video:
@@ -578,11 +579,13 @@ Current interpretation:
 
 ### YOLO-backed Detector Pipeline Experiment
 
-Script:
+Original script:
 
 ```text
 tools/evaluate_yolo_object_swing_detector.py
 ```
+
+This exploratory Python harness was removed during cleanup after the detector logic was ported into the Swift/Core ML live detector path. The algorithm notes and results below are retained for provenance.
 
 Purpose:
 
@@ -700,17 +703,9 @@ It also explains the delay that appeared in the app: the detector cannot confirm
 
 The V3 detector tuning keeps lower-strike addressed-ball evidence as the production proof. Extreme side/UI ball anchors are ignored, but valid lower-strike anchors close to the right side of the frame are allowed; direct club contact now needs reliable pre-impact ball presence, and clean lower-strike ball disappearance can recover true swings when the club/shaft model misses exact contact but the window has coherent club motion. Confirmation waits for more post-departure samples before persisting an impact candidate, and persisted candidates are merged when their returned impact windows overlap. On the current active `.detectorTestV3` run at `8fps / 8x / 0.20s`, hybrid detection matches `test2`, `test4`, `test5`, and `test7` expected counts. `test1`, `test3`, and `test6` are siloed under `.detectorTestV3/.silo` because they are object-model/generalization edge cases rather than current detector-logic acceptance fixtures.
 
-Generalization check with `.detectorTestV2`:
+Historical generalization check with `.detectorTestV2`:
 
-The `.detectorTestV2` folder now contains five local videos. The strategy harness uses rough visual labels embedded in `tools/evaluate_detector_test_v2.py`, including the first 120 seconds of `IMG_2622.mov` where four visible swing windows were marked. These labels are rough scoring anchors, not final ground truth.
-
-Command:
-
-```text
-python3 tools/evaluate_detector_test_v2.py > .detectorTestV2/strategy_report.json
-```
-
-The harness accepts `--sample-fps` for detector-rate sweeps and `--impact-confirmation-post-roll` for declaration-latency sweeps.
+The `.detectorTestV2` fixture folder and its strategy harness were removed during detector cleanup after the MVP detector was accepted. The rough-label results below are preserved as historical evidence only; current reruns should use `.detectorTestV3` with `tools/evaluate_detector_test_v3_performance.py` and `tools/detector_test_v3_labels.json`.
 
 Aggregate result:
 
@@ -808,18 +803,15 @@ xcrun swiftc -parse-as-library \
   -o .videos/bin/evaluate_live_model_detector
 
 .videos/bin/evaluate_live_model_detector \
-  .videos/IMG_2592.mov \
+  .detectorTestV3/test4.mp4 \
   SwingCoach/MLModels/SwingObjectsYOLO11n.mlpackage \
-  16 8 10000 \
-  .videos/IMG_2592.labels.json
+  8 8 100000
 ```
 
 Fixture-level Core ML live scoring:
 
 ```text
-./backend/venv/bin/python tools/evaluate_live_model_detector_fixtures.py \
-  --output-dir .videos/live_model_detector_fixture_eval_hybrid \
-  --detection-stream hybridImpactDetections
+python3 tools/evaluate_detector_test_v3_performance.py
 ```
 
 Current `16fps / 8x` hybrid fixture result:
@@ -831,19 +823,19 @@ Current `16fps / 8x` hybrid fixture result:
 Report:
 
 ```text
-.videos/live_model_detector_fixture_eval_hybrid/results/live_model_detector_fixture_report.json
+.detectorTestV3/perf_v3_8fps/summary.json
 ```
 
 Continuous long-session Core ML live result:
 
 | Source | Matched positives | Missed positives | False positives | Processed frames | Avg CPU-only model time |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `.videos/IMG_2592.mov` at `16fps / 8x` | 18/18 | 0 | 0 | 9040 | 60.2 ms |
+| `.detectorTestV3/test4.mp4` at `16fps / 8x` | 18/18 | 0 | 0 | 9040 | 60.2 ms |
 
 Report:
 
 ```text
-.videos/live_model_detector_full_16fps_8x_post_trim_guard.json
+.detectorTestV3/perf_v3_8fps/test4.json
 ```
 
 The setup/ball-management window `1391.507s-1409.013s` was the last false positive in the earlier continuous pass. It passed initial live proposal logic but did not retain enough motion/club-travel evidence inside the final returned clip, so the post-trim guard rejects it. On this Mac's CPU-only Core ML fallback, the fixture and full-session runs are correctness checks, not phone performance claims, because the app path uses Core ML `.all` compute units on device.

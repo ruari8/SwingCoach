@@ -30,8 +30,15 @@ class Peak:
     onset: float
 
 
-def load_labels(path: Path) -> list[tuple[float, float]]:
+def load_labels(path: Path, case_id: str | None = None) -> list[tuple[float, float]]:
     payload = json.loads(path.read_text())
+    if case_id is not None:
+        for item in payload.get("videos", []):
+            if item.get("id") == case_id or item.get("filename") == case_id:
+                payload = item
+                break
+        else:
+            raise ValueError(f"label case not found in {path}: {case_id}")
     windows = payload.get("positive_swing_windows", [])
     return [(float(window["start"]), float(window["end"])) for window in windows]
 
@@ -227,17 +234,18 @@ def score_peaks(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--video", type=Path, default=Path(".videos/IMG_2592.mov"))
-    parser.add_argument("--labels", type=Path, default=Path(".videos/IMG_2592.labels.json"))
+    parser.add_argument("--video", type=Path, default=Path(".detectorTestV3/test4.mp4"))
+    parser.add_argument("--labels", type=Path, default=Path("tools/detector_test_v3_labels.json"))
+    parser.add_argument("--label-case-id", default="test4")
     parser.add_argument(
         "--wav",
         type=Path,
-        default=Path(".videos/audio_eval/IMG_2592_mono_16k.wav"),
+        default=Path(".videos/audio_eval/test4_mono_16k.wav"),
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path(".videos/audio_eval/audio_impact_report.json"),
+        default=Path(".videos/audio_eval/test4_audio_impact_report.json"),
     )
     parser.add_argument("--sample-rate", type=int, default=16_000)
     parser.add_argument("--highpass-hz", type=float, default=1_500)
@@ -249,7 +257,7 @@ def main() -> None:
     parser.add_argument("--force-audio", action="store_true")
     args = parser.parse_args()
 
-    labels = load_labels(args.labels)
+    labels = load_labels(args.labels, args.label_case_id)
     extract_audio(args.video, args.wav, args.sample_rate, args.force_audio)
 
     sample_rate, samples = wavfile.read(args.wav)

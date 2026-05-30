@@ -4,7 +4,7 @@
   "notes": [
     "Impact labels are rough QuickTime-visible second buckets: a label shown as 3s means the impact is somewhere in [3.0, 4.0] on the source video timeline.",
     "For 8x slow-motion videos, real-time equivalent seconds are source seconds divided by source_time_scale.",
-    "test4 also carries the older rough positive swing windows from .videos/IMG_2592.labels.json; it now has 18 user-provided rough impact labels.",
+    "test4 also carries the older rough positive swing windows formerly stored beside .videos/IMG_2592.mov; it now has 18 user-provided rough impact labels.",
     "test1, test3, and test6 are siloed under .detectorTestV3/.silo and excluded from active V3 acceptance scoring."
   ],
   "videos": [
