@@ -211,6 +211,29 @@ class AnalyzeResponse(BaseModel):
     drills: List[AnalysisDrill] = Field(default_factory=list)
 
 
+class AnalysisRunCreateResponse(BaseModel):
+    """Response returned after queuing an async analysis run."""
+    run_id: str
+    status: str
+    status_url: str
+    events_url: str
+
+
+class AnalysisRunStatusResponse(BaseModel):
+    """Current state for an async analysis run."""
+    run_id: str
+    status: str
+    stage: str
+    progress: float = Field(..., ge=0.0, le=1.0)
+    message: str
+    error: Optional[str] = None
+    result: Optional[AnalyzeResponse] = None
+    created_at: float
+    started_at: Optional[float] = None
+    completed_at: Optional[float] = None
+    sequence: int
+
+
 class ArtifactURLRequest(BaseModel):
     """Request a fresh signed URL for a stored artifact."""
     key: str

@@ -20,6 +20,8 @@ Model Loading Options:
 
 import io
 import os
+import sys
+from contextlib import redirect_stdout
 from typing import List, Dict, Optional, Tuple, Any
 from dataclasses import dataclass
 from pathlib import Path
@@ -29,21 +31,31 @@ logger = logging.getLogger(__name__)
 
 # Environment variable for local model path (optional)
 SAM3_MODEL_PATH_ENV = "SAM3_MODEL_PATH"
+SAM3_RUNTIME_ENV = "SAM3_RUNTIME"
+MLX_SAM3_REPO_ENV = "MLX_SAM3_REPO"
+MLX_SAM3_WEIGHTS_DIR_ENV = "MLX_SAM3_WEIGHTS_DIR"
+MLX_SAM3_MAX_SIDE_ENV = "MLX_SAM3_MAX_SIDE"
 
 # Default local model path relative to backend directory
 DEFAULT_LOCAL_MODEL_PATH = Path(__file__).parent.parent / "models" / "models--facebook--sam3"
+DEFAULT_MLX_REPO_PATH = Path(__file__).resolve().parents[2] / "detector_model" / "mlx_sam3"
 
 # Lazy imports for optional SAM3 dependency
 SAM3_AVAILABLE = False
+MLX_SAM3_AVAILABLE = False
+MLX_SAM3_IMPORT_ATTEMPTED = False
 torch: Any = None
 np: Any = None
 Image: Any = None
 build_sam3_image_model: Any = None
 Sam3Processor: Any = None
+mlx_build_sam3_image_model: Any = None
+MlxSam3Processor: Any = None
+mx: Any = None
 
 
-def _init_sam3():
-    """Lazy initialization of SAM3 dependencies."""
+def _init_torch_sam3():
+    """Lazy initialization of the Meta PyTorch SAM3 dependency."""
     global SAM3_AVAILABLE, torch, np, Image, build_sam3_image_model, Sam3Processor
 
     if SAM3_AVAILABLE:
@@ -65,6 +77,74 @@ def _init_sam3():
         return True
     except ImportError as e:
         logger.warning(f"SAM3 not available: {e}")
+        return False
+
+
+def _remove_sam3_modules() -> None:
+    """Remove cached sam3 modules so the chosen runtime can own the package name."""
+    for name in list(sys.modules):
+        if name == "sam3" or name.startswith("sam3."):
+            del sys.modules[name]
+
+
+def _init_mlx_sam3(repo_path: Optional[Path] = None):
+    """Lazy initialization of the MLX SAM3 image runtime."""
+    global MLX_SAM3_AVAILABLE, MLX_SAM3_IMPORT_ATTEMPTED
+    global np, Image, mlx_build_sam3_image_model, MlxSam3Processor, mx
+
+    if MLX_SAM3_AVAILABLE:
+        return True
+    if MLX_SAM3_IMPORT_ATTEMPTED:
+        return False
+
+    MLX_SAM3_IMPORT_ATTEMPTED = True
+    resolved_repo = Path(
+        os.environ.get(MLX_SAM3_REPO_ENV)
+        or repo_path
+        or DEFAULT_MLX_REPO_PATH
+    ).resolve()
+    if not resolved_repo.exists():
+        logger.info("MLX SAM3 repo not found at %s", resolved_repo)
+        return False
+
+    repo_str = str(resolved_repo)
+    added_to_path = False
+    if repo_str not in sys.path:
+        sys.path.insert(0, repo_str)
+        added_to_path = True
+
+    existing = sys.modules.get("sam3")
+    if existing is not None:
+        existing_file = Path(getattr(existing, "__file__", "")).resolve()
+        if repo_str not in str(existing_file):
+            _remove_sam3_modules()
+
+    try:
+        import numpy as _np
+        from PIL import Image as _Image
+        import mlx.core as _mx
+        from sam3 import build_sam3_image_model as _mlx_build
+        from sam3.model.sam3_image_processor import Sam3Processor as _MlxProcessor
+
+        module_file = Path(sys.modules["sam3"].__file__).resolve()
+        if repo_str not in str(module_file):
+            raise ImportError(f"sam3 resolved to {module_file}, not MLX repo {resolved_repo}")
+
+        np = _np
+        Image = _Image
+        mx = _mx
+        mlx_build_sam3_image_model = _mlx_build
+        MlxSam3Processor = _MlxProcessor
+        MLX_SAM3_AVAILABLE = True
+        return True
+    except Exception as e:
+        logger.warning("MLX SAM3 not available: %s", e)
+        if added_to_path:
+            try:
+                sys.path.remove(repo_str)
+            except ValueError:
+                pass
+        _remove_sam3_modules()
         return False
 
 
@@ -108,7 +188,7 @@ class BallDetection:
 
 def get_device() -> str:
     """Auto-detect best available device."""
-    if not _init_sam3():
+    if not _init_torch_sam3():
         return "cpu"
 
     if torch.backends.mps.is_available():
@@ -125,7 +205,10 @@ class EquipmentTracker:
         self,
         device: Optional[str] = None,
         confidence_threshold: float = 0.3,
-        model_path: Optional[str] = None
+        model_path: Optional[str] = None,
+        runtime: Optional[str] = None,
+        mlx_repo_path: Optional[str] = None,
+        mlx_max_side: Optional[int] = None,
     ):
         """
         Initialize the equipment tracker.
@@ -136,8 +219,37 @@ class EquipmentTracker:
             model_path: Path to local SAM3 model directory. If None, checks 
                         SAM3_MODEL_PATH env var, then falls back to HuggingFace 
                         cache (~/.cache/huggingface/).
+            runtime: 'auto', 'mlx', or 'torch'. Auto prefers MLX when available.
+            mlx_repo_path: Optional path to the local MLX SAM3 repo.
+            mlx_max_side: Resize longest image side before MLX inference for speed.
         """
-        if not _init_sam3():
+        requested_runtime = (runtime or os.environ.get(SAM3_RUNTIME_ENV) or "auto").lower()
+        self.confidence_threshold = confidence_threshold
+        self.runtime_name = self._select_runtime(requested_runtime, mlx_repo_path)
+
+        if self.runtime_name == "mlx":
+            self.device = "mlx"
+            self.mlx_max_side = int(
+                mlx_max_side
+                or os.environ.get(MLX_SAM3_MAX_SIDE_ENV)
+                or 960
+            )
+            weights_dir = os.environ.get(MLX_SAM3_WEIGHTS_DIR_ENV)
+            logger.info(
+                "Initializing EquipmentTracker with MLX SAM3 runtime (max_side=%s)",
+                self.mlx_max_side,
+            )
+            self.model = mlx_build_sam3_image_model(
+                local_weights_dir=weights_dir,
+            )
+            self.processor = MlxSam3Processor(
+                self.model,
+                confidence_threshold=self.confidence_threshold,
+            )
+            logger.info("EquipmentTracker initialized successfully with MLX SAM3")
+            return
+
+        if not _init_torch_sam3():
             raise RuntimeError(
                 "SAM3 not installed or not available. "
                 "Run: pip install 'git+https://github.com/facebookresearch/sam3.git' "
@@ -145,7 +257,6 @@ class EquipmentTracker:
             )
 
         self.device = device or get_device()
-        self.confidence_threshold = confidence_threshold
 
         # Resolve model path: explicit arg > env var > default local path > HuggingFace
         resolved_path: Optional[Path] = None
@@ -158,7 +269,7 @@ class EquipmentTracker:
             resolved_path = DEFAULT_LOCAL_MODEL_PATH
             logger.info(f"Found local SAM3 model at default location: {resolved_path}")
 
-        logger.info(f"Initializing EquipmentTracker on device: {self.device}")
+        logger.info(f"Initializing EquipmentTracker with PyTorch SAM3 on device: {self.device}")
 
         # Build SAM3 model
         if resolved_path:
@@ -188,6 +299,26 @@ class EquipmentTracker:
         self.processor = Sam3Processor(self.model)
 
         logger.info("EquipmentTracker initialized successfully")
+
+    def _select_runtime(self, requested_runtime: str, mlx_repo_path: Optional[str]) -> str:
+        """Select the SAM3 runtime, preferring MLX for local Apple Silicon analysis."""
+        if requested_runtime not in {"auto", "mlx", "torch", "pytorch"}:
+            logger.warning("Unknown SAM3_RUNTIME=%s; falling back to auto", requested_runtime)
+            requested_runtime = "auto"
+
+        if requested_runtime in {"torch", "pytorch"}:
+            return "torch"
+
+        if _init_mlx_sam3(Path(mlx_repo_path) if mlx_repo_path else None):
+            return "mlx"
+
+        if requested_runtime == "mlx":
+            raise RuntimeError(
+                "SAM3_RUNTIME=mlx was requested, but MLX SAM3 could not be initialized. "
+                f"Set {MLX_SAM3_REPO_ENV} or clone the repo to {DEFAULT_MLX_REPO_PATH}."
+            )
+
+        return "torch"
 
     def _resolve_checkpoint_path(self, model_path: Path) -> Optional[Path]:
         """
@@ -232,6 +363,82 @@ class EquipmentTracker:
     def _bytes_to_pil(self, frame_bytes: bytes) -> Any:
         """Convert frame bytes to PIL Image."""
         return Image.open(io.BytesIO(frame_bytes)).convert("RGB")
+
+    def _resize_for_mlx(self, image: Any) -> Tuple[Any, float]:
+        """Resize large frames before MLX prompting and return image plus scale."""
+        width, height = image.size
+        longest = max(width, height)
+        if longest <= self.mlx_max_side:
+            return image, 1.0
+        scale = self.mlx_max_side / longest
+        resized = image.resize(
+            (int(round(width * scale)), int(round(height * scale))),
+            Image.Resampling.BILINEAR,
+        )
+        return resized, scale
+
+    def _resize_mask(self, mask: Any, width: int, height: int) -> Any:
+        """Resize a binary mask back to the source frame size."""
+        mask_np = np.array(mask > 0, dtype=np.uint8) * 255
+        mask_image = Image.fromarray(mask_np)
+        resized = mask_image.resize((width, height), Image.Resampling.NEAREST)
+        return np.array(resized) > 0
+
+    def _scores_to_numpy(self, scores: Any, count: int) -> Any:
+        if scores is None or len(scores) == 0:
+            return np.full(count, 0.5, dtype=np.float32)
+        if hasattr(scores, 'cpu'):
+            scores = scores.cpu().numpy()
+        return np.array(scores, dtype=np.float32)
+
+    def _run_prompt(self, frame_bytes: bytes, prompt: str, frame_index: int) -> Optional[Tuple[Any, float, int, int]]:
+        """Run the configured SAM3 runtime for one text prompt."""
+        image = self._bytes_to_pil(frame_bytes)
+        width, height = image.size
+
+        try:
+            if self.runtime_name == "mlx":
+                sam_image, scale = self._resize_for_mlx(image)
+                sam_width, sam_height = sam_image.size
+                with redirect_stdout(io.StringIO()):
+                    inference_state = self.processor.set_image(sam_image)
+                output = self.processor.set_text_prompt(prompt, inference_state)
+                mask_width, mask_height = sam_width, sam_height
+            else:
+                inference_state = self.processor.set_image(image)
+                output = self.processor.set_text_prompt(
+                    state=inference_state,
+                    prompt=prompt,
+                )
+                scale = 1.0
+                mask_width, mask_height = width, height
+
+            masks = output.get("masks", [])
+            scores = output.get("scores", [])
+            if len(masks) == 0:
+                logger.debug("No %s detected in frame %s", prompt, frame_index)
+                return None
+
+            scores_np = self._scores_to_numpy(scores, len(masks))
+            best_idx = int(np.argmax(scores_np)) if len(scores_np) else 0
+            confidence = float(scores_np[best_idx]) if len(scores_np) > best_idx else 0.5
+            if confidence < self.confidence_threshold:
+                logger.debug(
+                    "%s detection below threshold in frame %s: %.2f",
+                    prompt,
+                    frame_index,
+                    confidence,
+                )
+                return None
+
+            mask = self._normalize_mask(masks[best_idx], mask_width, mask_height)
+            if self.runtime_name == "mlx" and scale != 1.0:
+                mask = self._resize_mask(mask, width, height)
+
+            return mask, confidence, width, height
+        except Exception as e:
+            logger.error("Error detecting %s in frame %s: %s", prompt, frame_index, e)
+            return None
 
     def _normalize_mask(self, mask: Any, image_width: int, image_height: int) -> Any:
         """
@@ -305,60 +512,17 @@ class EquipmentTracker:
         Returns:
             ClubDetection or None if no club detected
         """
-        try:
-            image = self._bytes_to_pil(frame_bytes)
-            width, height = image.size
-
-            # Set image and run text-prompted segmentation
-            inference_state = self.processor.set_image(image)
-            output = self.processor.set_text_prompt(
-                state=inference_state,
-                prompt="golf club"
-            )
-
-            masks = output.get("masks", [])
-            scores = output.get("scores", [])
-            boxes = output.get("boxes", [])
-
-            if len(masks) == 0:
-                logger.debug(f"No club detected in frame {frame_index}")
-                return None
-
-            # Get best detection
-            best_idx = 0
-            if len(scores) > 0:
-                if hasattr(scores, 'cpu'):
-                    scores_np = scores.cpu().numpy()
-                else:
-                    scores_np = np.array(scores)
-                best_idx = int(np.argmax(scores_np))
-
-            mask = masks[best_idx]
-            confidence = float(scores_np[best_idx]) if len(scores_np) > best_idx else 0.5
-
-            if confidence < self.confidence_threshold:
-                logger.debug(f"Club detection below threshold in frame {frame_index}: {confidence:.2f}")
-                return None
-
-            # Normalize mask to (height, width) format
-            mask = self._normalize_mask(mask, width, height)
-
-            bbox = self._mask_to_bbox(mask)
-            centroid = self._mask_centroid(mask, width, height)
-
-            return ClubDetection(
-                mask=mask,
-                centroid=centroid,
-                bbox=bbox,
-                confidence=confidence,
-                frame_index=frame_index
-            )
-
-        except Exception as e:
-            logger.error(f"Error detecting club in frame {frame_index}: {e}")
-            import traceback
-            traceback.print_exc()
+        result = self._run_prompt(frame_bytes, "golf club", frame_index)
+        if result is None:
             return None
+        mask, confidence, width, height = result
+        return ClubDetection(
+            mask=mask,
+            centroid=self._mask_centroid(mask, width, height),
+            bbox=self._mask_to_bbox(mask),
+            confidence=confidence,
+            frame_index=frame_index,
+        )
 
     def detect_ball(
         self,
@@ -375,56 +539,17 @@ class EquipmentTracker:
         Returns:
             BallDetection or None if no ball detected
         """
-        try:
-            image = self._bytes_to_pil(frame_bytes)
-            width, height = image.size
-
-            # Set image and run text-prompted segmentation
-            inference_state = self.processor.set_image(image)
-            output = self.processor.set_text_prompt(
-                state=inference_state,
-                prompt="golf ball"
-            )
-
-            masks = output.get("masks", [])
-            scores = output.get("scores", [])
-
-            if len(masks) == 0:
-                logger.debug(f"No ball detected in frame {frame_index}")
-                return None
-
-            # Get best detection
-            best_idx = 0
-            if len(scores) > 0:
-                if hasattr(scores, 'cpu'):
-                    scores_np = scores.cpu().numpy()
-                else:
-                    scores_np = np.array(scores)
-                best_idx = int(np.argmax(scores_np))
-
-            mask = masks[best_idx]
-            confidence = float(scores_np[best_idx]) if len(scores_np) > best_idx else 0.5
-
-            if confidence < self.confidence_threshold:
-                return None
-
-            # Normalize mask to (height, width) format
-            mask = self._normalize_mask(mask, width, height)
-
-            bbox = self._mask_to_bbox(mask)
-            centroid = self._mask_centroid(mask, width, height)
-
-            return BallDetection(
-                mask=mask,
-                centroid=centroid,
-                bbox=bbox,
-                confidence=confidence,
-                frame_index=frame_index
-            )
-
-        except Exception as e:
-            logger.error(f"Error detecting ball in frame {frame_index}: {e}")
+        result = self._run_prompt(frame_bytes, "golf ball", frame_index)
+        if result is None:
             return None
+        mask, confidence, width, height = result
+        return BallDetection(
+            mask=mask,
+            centroid=self._mask_centroid(mask, width, height),
+            bbox=self._mask_to_bbox(mask),
+            confidence=confidence,
+            frame_index=frame_index,
+        )
 
     def detect_club_batch(
         self,
@@ -471,54 +596,15 @@ class EquipmentTracker:
         Returns:
             ShaftDetection or None if no shaft detected
         """
-        try:
-            image = self._bytes_to_pil(frame_bytes)
-
-            inference_state = self.processor.set_image(image)
-            output = self.processor.set_text_prompt(
-                state=inference_state,
-                prompt="club shaft"
-            )
-
-            masks = output.get("masks", [])
-            scores = output.get("scores", [])
-
-            if len(masks) == 0:
-                logger.debug(f"No shaft detected in frame {frame_index}")
-                return None
-
-            # Get best detection
-            best_idx = 0
-            if len(scores) > 0:
-                if hasattr(scores, 'cpu'):
-                    scores_np = scores.cpu().numpy()
-                else:
-                    scores_np = np.array(scores)
-                best_idx = int(np.argmax(scores_np))
-
-            mask = masks[best_idx]
-            confidence = float(scores_np[best_idx]) if len(scores_np) > best_idx else 0.5
-
-            if confidence < self.confidence_threshold:
-                logger.debug(f"Shaft detection below threshold: {confidence:.2f}")
-                return None
-
-            # Get image dimensions for mask normalization
-            image = self._bytes_to_pil(frame_bytes)
-            width, height = image.size
-
-            # Normalize mask to (height, width) format
-            mask = self._normalize_mask(mask, width, height)
-
-            return ShaftDetection(
-                mask=mask,
-                confidence=confidence,
-                frame_index=frame_index
-            )
-
-        except Exception as e:
-            logger.error(f"Error detecting shaft in frame {frame_index}: {e}")
+        result = self._run_prompt(frame_bytes, "club shaft", frame_index)
+        if result is None:
             return None
+        mask, confidence, _, _ = result
+        return ShaftDetection(
+            mask=mask,
+            confidence=confidence,
+            frame_index=frame_index,
+        )
 
     def detect_clubhead(
         self,
@@ -537,61 +623,23 @@ class EquipmentTracker:
         Returns:
             ClubheadDetection or None if no clubhead detected
         """
-        try:
-            image = self._bytes_to_pil(frame_bytes)
-            width, height = image.size
-
-            inference_state = self.processor.set_image(image)
-            output = self.processor.set_text_prompt(
-                state=inference_state,
-                prompt="clubhead"
-            )
-
-            masks = output.get("masks", [])
-            scores = output.get("scores", [])
-
-            if len(masks) == 0:
-                logger.debug(f"No clubhead detected in frame {frame_index}")
-                return None
-
-            # Get best detection
-            best_idx = 0
-            if len(scores) > 0:
-                if hasattr(scores, 'cpu'):
-                    scores_np = scores.cpu().numpy()
-                else:
-                    scores_np = np.array(scores)
-                best_idx = int(np.argmax(scores_np))
-
-            mask = masks[best_idx]
-            confidence = float(scores_np[best_idx]) if len(scores_np) > best_idx else 0.5
-
-            if confidence < self.confidence_threshold:
-                logger.debug(f"Clubhead detection below threshold: {confidence:.2f}")
-                return None
-
-            # Normalize mask to (height, width) format
-            mask = self._normalize_mask(mask, width, height)
-
-            # Calculate centroid
-            centroid_norm = self._mask_centroid(mask, width, height)
-            coords = np.argwhere(mask > 0)
-            if len(coords) > 0:
-                centroid_px = (int(coords[:, 1].mean()), int(coords[:, 0].mean()))
-            else:
-                centroid_px = (width // 2, height // 2)
-
-            return ClubheadDetection(
-                mask=mask,
-                centroid=centroid_norm,
-                centroid_pixels=centroid_px,
-                confidence=confidence,
-                frame_index=frame_index
-            )
-
-        except Exception as e:
-            logger.error(f"Error detecting clubhead in frame {frame_index}: {e}")
+        result = self._run_prompt(frame_bytes, "clubhead", frame_index)
+        if result is None:
             return None
+        mask, confidence, width, height = result
+        coords = np.argwhere(mask > 0)
+        if len(coords) > 0:
+            centroid_px = (int(coords[:, 1].mean()), int(coords[:, 0].mean()))
+        else:
+            centroid_px = (width // 2, height // 2)
+
+        return ClubheadDetection(
+            mask=mask,
+            centroid=self._mask_centroid(mask, width, height),
+            centroid_pixels=centroid_px,
+            confidence=confidence,
+            frame_index=frame_index,
+        )
 
     def detect_clubhead_batch(
         self,
@@ -632,6 +680,8 @@ class EquipmentTracker:
         if torch is not None:
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
+        if mx is not None and hasattr(mx, "clear_cache"):
+            mx.clear_cache()
 
     def __enter__(self):
         return self

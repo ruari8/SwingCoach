@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
 import numpy as np
 
@@ -127,7 +127,13 @@ class Club3DFuser:
         target = xy_points[idx]
         return int(target[0]), int(target[1])
 
-    def fuse(self, frame_bytes: List[bytes], frame_indices: List[int], poses3d: List[Optional[Any]]) -> ClubFusionResult:
+    def fuse(
+        self,
+        frame_bytes: List[bytes],
+        frame_indices: List[int],
+        poses3d: List[Optional[Any]],
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+    ) -> ClubFusionResult:
         club2d_frames: List[Club2DFrame] = []
         club3d_frames: List[Club3DFrame] = []
 
@@ -140,6 +146,9 @@ class Club3DFuser:
             prev_confidence = 0.0
 
             for idx, frame in enumerate(frame_bytes):
+                if progress_callback and (idx == 0 or idx % 4 == 0):
+                    progress_callback(idx, len(frame_bytes))
+
                 frame_index = frame_indices[idx]
                 pose3d = poses3d[idx] if idx < len(poses3d) else None
 
@@ -202,6 +211,9 @@ class Club3DFuser:
 
                 prev_dir3d = shaft_unit
                 prev_head3d = clubhead
+
+        if progress_callback:
+            progress_callback(len(frame_bytes), len(frame_bytes))
 
         return ClubFusionResult(
             club_2d=club2d_frames,

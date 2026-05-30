@@ -19,6 +19,7 @@ struct SwingDetailView: View {
     @State private var playbackError: String?
     @State private var analysisStatus: SwingAnalysis.AnalysisStatus = .pending
     @State private var analysisProgressText: String?
+    @State private var analysisProgressValue: Float?
     @State private var showTechnicalDetails = false
     @State private var isOriginalExpanded = false
 
@@ -204,18 +205,26 @@ struct SwingDetailView: View {
     private var analysisSection: some View {
         switch analysisStatus {
         case .analyzing:
-            statusPanel(
-                icon: "arrow.triangle.2.circlepath",
-                title: analysisProgressText ?? "Analyzing swing...",
-                message: "You can leave this screen open while SwingCoach prepares the coach result."
-            )
+            VStack(alignment: .leading, spacing: 10) {
+                statusPanel(
+                    icon: "arrow.triangle.2.circlepath",
+                    title: analysisProgressTitle,
+                    message: "You can leave this screen open while SwingCoach prepares the coach result."
+                )
+
+                if let analysisProgressValue {
+                    ProgressView(value: Double(analysisProgressValue))
+                } else {
+                    ProgressView()
+                }
+            }
 
         case .failed(let error):
             VStack(alignment: .leading, spacing: 10) {
                 statusPanel(
                     icon: "exclamationmark.circle.fill",
                     title: "Analysis failed",
-                    message: "Check your connection and try again."
+                    message: "Open details for the exact error, then try again."
                 )
 
                 Button {
@@ -260,12 +269,22 @@ struct SwingDetailView: View {
 
     private var actionTitle: String {
         if isAnalyzing {
-            return analysisProgressText ?? "Analyzing..."
+            return "Analyzing..."
         }
         if case .failed = analysisStatus {
             return "Retry Analysis"
         }
         return "Analyze Swing"
+    }
+
+    private var analysisProgressTitle: String {
+        if let analysisProgressText {
+            if let analysisProgressValue {
+                return "\(analysisProgressText) \(Int(analysisProgressValue * 100))%"
+            }
+            return analysisProgressText
+        }
+        return "Analyzing swing..."
     }
 
     private func metadataRow(_ title: String, _ value: String) -> some View {
@@ -328,6 +347,7 @@ struct SwingDetailView: View {
     private func startAnalysis() {
         analysisStatus = .analyzing
         analysisProgressText = "Preparing video..."
+        analysisProgressValue = nil
         showTechnicalDetails = false
 
         Task {
@@ -335,9 +355,11 @@ struct SwingDetailView: View {
                 let response = try await SwingCoachAPI.shared.analyzeSwing(currentSwing) { stage, progress in
                     Task { @MainActor in
                         if let progress {
-                            analysisProgressText = "\(stage) \(Int(progress * 100))%"
+                            analysisProgressText = stage
+                            analysisProgressValue = progress
                         } else {
                             analysisProgressText = stage
+                            analysisProgressValue = nil
                         }
                     }
                 }
@@ -346,12 +368,14 @@ struct SwingDetailView: View {
                     _ = analysisLibrary.save(response, for: currentSwing)
                     library.markAnalyzed(currentSwing)
                     analysisProgressText = nil
+                    analysisProgressValue = nil
                     analysisStatus = .complete
                 }
             } catch {
                 await MainActor.run {
                     analysisProgressText = nil
-                    analysisStatus = .failed(error.localizedDescription)
+                    analysisProgressValue = nil
+                    analysisStatus = .failed(SwingCoachAPI.displayMessage(for: error))
                 }
             }
         }

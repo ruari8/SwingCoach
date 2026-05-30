@@ -66,6 +66,8 @@ Response shape:
 
 ### `POST /analyze`
 
+Legacy synchronous endpoint. The iOS app now uses async analysis runs for real analysis so the request does not need to stay open for the full model/render/upload pipeline.
+
 Request shape:
 - `video_key: str`
 - `vantage: "DTL" | "FO"`
@@ -78,7 +80,38 @@ Response shape (`AnalyzeResponse`):
 - `annotated_video` (`key`, fresh signed `url`, optional `base_key` / `base_url`, optional `tracks_key` / `tracks_url`, rendered `layers[]`)
 - `drills[]` (lightweight `title`, `summary` suggestions)
 
-The pipeline still records richer internal data such as confidence, warnings, timings, 3D artifacts, annotation metadata, and raw files. The mobile MVP contract exposes the fields needed by the current Coach tab plus annotation layer metadata, a clean base video, and a normalized overlay-track artifact for client-side toggles, including club plane, ball/contact evidence, P1-P10 phase markers, and confidence evidence when detected.
+The pipeline still records richer internal data such as confidence, warnings, timings, 3D artifacts, annotation metadata, and raw files. The mobile MVP contract exposes the fields needed by the current Coach tab plus annotation layer metadata, a clean base video, and a normalized overlay-track artifact for client-side toggles, including club plane, ball/contact evidence, P1-P10 phase markers, confidence evidence, and generic guide shapes for setup/head/hip/hand/shaft checkpoint overlays when detected.
+
+Phase detection is confidence and window gated. If the dense analysis window does not contain enough post-top motion to find impact/follow-through phases, those phases are omitted instead of raising an analysis failure.
+
+### `POST /analysis-runs`
+
+Primary mobile analysis entry point. Queues a background analysis job and returns immediately.
+
+Request shape:
+- `video_key: str`
+- `vantage: "DTL" | "FO"`
+- `fps: Optional[float]`
+
+Response shape:
+- `run_id`
+- `status`
+- `status_url`
+- `events_url`
+
+### `GET /analysis-runs/{run_id}`
+
+Returns the current run state:
+- `status`: `queued`, `running`, `succeeded`, or `failed`
+- `stage`
+- `progress` from `0.0` to `1.0`
+- `message`
+- `error` when failed
+- `result` when succeeded, using the same `AnalyzeResponse` shape as `/analyze`
+
+### `GET /analysis-runs/{run_id}/events`
+
+Streams Server-Sent Events for run progress. Events contain `run_id`, `sequence`, `status`, `stage`, `progress`, `message`, and optional `error`. The terminal SSE event does not carry the full result; clients fetch `GET /analysis-runs/{run_id}` when `status == "succeeded"`.
 
 ### `POST /mock/analyze`
 
@@ -90,6 +123,8 @@ Response shape:
 - Same `AnalyzeResponse` shape as `/analyze`
 
 Mock analysis is for mobile MVP testing. It verifies the uploaded source `video_key` exists in R2, uploads `output/full_annotation.mp4` to `mock/full_annotation.mp4` if needed, and returns a signed R2 URL for that dummy annotated video without running the model pipeline.
+
+The iOS DEBUG app defaults to a local backend URL and real async analysis runs. Library > Experiments can switch the app to the deployed backend, a custom LAN URL, or `/mock/analyze`.
 
 ### `POST /artifact-url`
 
@@ -121,7 +156,7 @@ Response shape:
 4. Optional 3D body recovery (SAM 3D Body)
 5. Club 2D/3D fusion
 6. Metrics build (base + club delivery)
-7. Artifact rendering (annotated MP4 + optional GLTF)
+7. Artifact rendering (clean base video, flattened annotated MP4 fallback, normalized overlay tracks, optional GLTF)
 8. Coaching bundle generation
 9. Persist run artifacts and timings
 
@@ -164,6 +199,9 @@ python test_full_annotation.py --sample
 # Annotation track contract test
 python test_annotation_tracks.py
 
+# Async run lifecycle test
+python test_analysis_runs.py
+
 # Annotation rendered-overlay visual regression
 python test_annotation_visuals.py
 
@@ -176,7 +214,17 @@ python test_temporal_smoothing.py
 
 ## SAM3 Runtime Notes
 
-For Mac-side pseudo-labeling, prefer the MLX SAM3 image path over the current Meta PyTorch SAM3 CPU path. Local testing found that the official PyTorch package is CUDA-first: selecting `mps` did not move model weights or the processor to Apple GPU, while forcing MPS required community patches and still fell back to CPU for unsupported operations.
+For Mac-side pseudo-labeling and local annotation analysis, prefer the MLX SAM3 image path over the current Meta PyTorch SAM3 CPU path. Local testing found that the official PyTorch package is CUDA-first: selecting `mps` did not move model weights or the processor to Apple GPU, while forcing MPS required community patches and still fell back to CPU for unsupported operations.
+
+`EquipmentTracker` now selects the runtime from `SAM3_RUNTIME`:
+- `auto` (default): use MLX SAM3 when `detector_model/mlx_sam3` is present, otherwise fall back to PyTorch SAM3.
+- `mlx`: require MLX SAM3 and fail fast if unavailable.
+- `torch`: force the existing Meta PyTorch SAM3 path.
+
+Useful MLX settings:
+- `MLX_SAM3_REPO`: override the local MLX repo path.
+- `MLX_SAM3_WEIGHTS_DIR`: override converted weight cache/download location.
+- `MLX_SAM3_MAX_SIDE`: resize longest frame side before prompting, default `960`.
 
 Current recommendation:
 
@@ -191,4 +239,4 @@ See [Experimental Swing Detector](/Users/ruari/Documents/Startups/SwingCoach/doc
 
 1. Some metrics are confidence-gated and may be absent if detection confidence is low.
 2. Club and impact-related metrics depend on club tracking quality and event alignment.
-3. `/analyze` is still synchronous and should move to an async analysis-run lifecycle before broader beta use.
+3. Async run state is currently in-memory; production deployment should persist run state if jobs need to survive process restarts.

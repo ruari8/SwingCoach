@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import io
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import numpy as np
 from PIL import Image
@@ -100,10 +100,16 @@ class SwingCoachPipeline3D:
         requested_fps: Optional[float] = None,
         student_goal: Optional[str] = None,
         max_dense_frames: Optional[int] = None,
+        progress_callback: Optional[Callable[[str, float, str], None]] = None,
     ) -> Pipeline3DResult:
         run_store = RunStore(self.output_root)
         warnings: List[str] = []
 
+        def emit(stage: str, progress: float, message: str) -> None:
+            if progress_callback:
+                progress_callback(stage, max(0.0, min(1.0, progress)), message)
+
+        emit("video_info", 0.02, "Reading video metadata")
         with run_store.stage("video_info"):
             video_info = self.frame_extractor.get_video_info(video_bytes)
             fps = float(requested_fps or video_info.get("fps") or 30.0)
@@ -125,6 +131,7 @@ class SwingCoachPipeline3D:
 
         sparse_rate = choose_sparse_sample_rate(fps)
 
+        emit("sparse_scan", 0.07, "Finding rough swing phases")
         with run_store.stage("sparse_scan", {"sparse_rate": sparse_rate}):
             sparse_frames = self.frame_extractor.extract_frames(video_bytes, sample_rate=sparse_rate)
             with PoseDetector() as pose_detector:
@@ -160,6 +167,7 @@ class SwingCoachPipeline3D:
             dense_indices = list(range(0, min(frame_count, max(12, sparse_rate * 2))))
             warnings.append("Dense window fallback used because event-derived window was empty.")
 
+        emit("dense_scan", 0.18, "Analyzing the swing window")
         with run_store.stage("dense_scan", {"dense_frame_count": len(dense_indices)}):
             dense_frames = self.frame_extractor.extract_frames_at_indices(video_bytes, dense_indices)
             with PoseDetector() as pose_detector:
@@ -192,6 +200,7 @@ class SwingCoachPipeline3D:
         )
 
         poses3d: List[Optional[Any]] = [None] * len(dense_frames)
+        emit("body_3d", 0.32, "Estimating body motion")
         with run_store.stage("body_3d"):
             try:
                 dense_rgb = [self._frame_bytes_to_rgb(frame) for frame in dense_frames]
@@ -217,10 +226,20 @@ class SwingCoachPipeline3D:
         club2d_frames: List[Any] = []
         club3d_frames: List[Any] = []
         club_confidence = 0.0
+        emit("club_3d_fusion", 0.48, "Tracking club and shaft")
         with run_store.stage("club_3d_fusion"):
             try:
                 fuser = Club3DFuser()
-                fusion = fuser.fuse(frame_bytes=dense_frames, frame_indices=dense_indices, poses3d=poses3d)
+                fusion = fuser.fuse(
+                    frame_bytes=dense_frames,
+                    frame_indices=dense_indices,
+                    poses3d=poses3d,
+                    progress_callback=lambda done, total: emit(
+                        "club_3d_fusion",
+                        0.48 + (0.14 * (done / max(1, total))),
+                        f"Tracking club and shaft ({done}/{total})",
+                    ),
+                )
                 club2d_frames = fusion.club_2d
                 club3d_frames = fusion.club_3d
                 if club2d_frames:
@@ -239,6 +258,7 @@ class SwingCoachPipeline3D:
         run_store.save_npz("club_2d.npz", frames=[item.__dict__ for item in club2d_frames])
         run_store.save_npz("club_3d.npz", frames=[item.__dict__ for item in club3d_frames])
 
+        emit("metrics", 0.64, "Calculating coachable metrics")
         with run_store.stage("metrics"):
             key_poses = self._key_poses_from_events(dense_poses, dense_events)
             base_metrics = MetricsCalculator(frame_width=frame_width, frame_height=frame_height).calculate_metrics(
@@ -261,6 +281,7 @@ class SwingCoachPipeline3D:
             },
         )
 
+        emit("artifacts", 0.76, "Rendering annotation overlays")
         with run_store.stage("artifacts"):
             rendered = self.artifact_renderer.render(
                 run_store=run_store,
@@ -276,6 +297,7 @@ class SwingCoachPipeline3D:
                 swing_phases=dense_phases,
             )
 
+        emit("coaching", 0.88, "Building coach summary")
         with run_store.stage("coaching"):
             coaching = self.coach_builder.build_coaching_bundle(
                 metric_cards=metrics_result.metrics,
@@ -299,6 +321,7 @@ class SwingCoachPipeline3D:
             "timings": run_store.timings,
         }
 
+        emit("pipeline_complete", 0.90, "Pipeline complete")
         return Pipeline3DResult(
             run_id=run_store.run_id,
             metrics=metrics_result.metrics,

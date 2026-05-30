@@ -33,7 +33,7 @@ SwingCoach/
 
 1. Open [SwingCoach.xcodeproj](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach.xcodeproj) in Xcode.
 2. Build and run the `SwingCoach` target on device.
-3. Configure backend base URL in [SwingCoachAPI.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingCoachAPI.swift) for your environment.
+3. DEBUG builds default to the local backend at `http://127.0.0.1:8000` and real async analysis runs. Use Library > Experiments to switch to the deployed backend, a custom LAN URL, or mock analysis.
 
 ### Backend
 
@@ -43,6 +43,8 @@ python3 -m venv venv
 ./venv/bin/pip install -r requirements.txt
 ./venv/bin/python main.py
 ```
+
+For Simulator, the default local app target reaches this server directly. For a physical iPhone, set a custom backend URL in Experiments using your Mac's LAN IP, for example `http://192.168.1.23:8000`.
 
 Optional 3D stack:
 
@@ -54,5 +56,5 @@ cd backend
 ## Current State
 
 - Frontend capture/library/trim flows are implemented, including experimental live YOLO/Core ML preselection of likely swing clips during capture and editable preselected clips in the trim editor. Live capture defaults to the current hybrid impact/Apple Vision pose gate, while DEBUG builds include a replay harness that runs saved videos through the same live detector with configurable real-time sample rates, contact/impact/pose/audio/hybrid comparison modes, and separate motion-candidate diagnostics.
-- Backend unified pipeline (`/analyze` + artifacts + `/chat`) is implemented.
-- Frontend analysis decoding uses the lightweight MVP `/analyze` response: summary, display metrics, annotated video URL, and drills.
+- Backend unified pipeline (`/analysis-runs` + SSE progress + artifacts + `/chat`) is implemented, with legacy synchronous `/analyze` still available.
+- Frontend analysis decoding uses the lightweight MVP analysis response: summary, display metrics, annotated/base video artifacts, normalized overlay tracks, and drills. Swing Detail can render server guide overlays over the clean base video and supports local manual drawing annotations for self-analysis.

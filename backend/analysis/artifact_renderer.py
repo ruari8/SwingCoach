@@ -11,7 +11,7 @@ from PIL import Image
 
 from .animation_exporter import export_swing_animation
 from .video_exporter import VideoExporter
-from .visualization_config import LAYER_DEFINITIONS, VisualizationConfig, VisualizationMetadata
+from .visualization_config import GUIDE_LAYER_NAMES, LAYER_DEFINITIONS, VisualizationConfig, VisualizationMetadata
 from .visualizer import HIDDEN_SKELETON_LANDMARKS, POSE_CONNECTIONS, SwingVisualizer
 
 
@@ -38,8 +38,14 @@ class ArtifactRenderer:
 
     def _normalize_point(self, x: float, y: float, frame_width: int, frame_height: int) -> Dict[str, float]:
         return {
-            "x": round(float(x) / max(frame_width, 1), 6),
-            "y": round(float(y) / max(frame_height, 1), 6),
+            "x": round(max(0.0, min(1.0, float(x) / max(frame_width, 1))), 6),
+            "y": round(max(0.0, min(1.0, float(y) / max(frame_height, 1))), 6),
+        }
+
+    def _normalized_point(self, x: float, y: float) -> Dict[str, float]:
+        return {
+            "x": round(max(0.0, min(1.0, float(x))), 6),
+            "y": round(max(0.0, min(1.0, float(y))), 6),
         }
 
     def _pose_keypoints(self, pose: Any, min_visibility: float) -> Dict[str, Dict[str, float]]:
@@ -63,6 +69,49 @@ class ArtifactRenderer:
             for start, end in POSE_CONNECTIONS
             if start in keypoints and end in keypoints
         ]
+
+    def _pose_point(
+        self,
+        pose: Optional[Any],
+        name: str,
+        min_visibility: float = 0.5,
+    ) -> Optional[Dict[str, float]]:
+        if pose is None:
+            return None
+        kp = pose.keypoints.get(name)
+        if kp is None or float(kp.visibility) < min_visibility:
+            return None
+        return {
+            "x": round(float(kp.x), 6),
+            "y": round(float(kp.y), 6),
+            "visibility": round(float(kp.visibility), 4),
+        }
+
+    def _midpoint(self, *points: Optional[Dict[str, float]]) -> Optional[Dict[str, float]]:
+        present = [point for point in points if point is not None]
+        if not present:
+            return None
+        return self._normalized_point(
+            sum(point["x"] for point in present) / len(present),
+            sum(point["y"] for point in present) / len(present),
+        )
+
+    def _phase_relative_frames(
+        self,
+        swing_phases: Optional[Any],
+        frame_indices: List[int],
+    ) -> Dict[int, int]:
+        if swing_phases is None:
+            return {}
+        source_to_relative = {int(source): idx for idx, source in enumerate(frame_indices)}
+        result: Dict[int, int] = {}
+        for phase in getattr(swing_phases, "phases", []):
+            phase_number = int(getattr(phase, "phase_number", -1))
+            raw_frame = int(getattr(phase, "frame_index", -1))
+            relative_frame = self._dense_relative_frame(raw_frame, frame_indices, source_to_relative)
+            if relative_frame is not None:
+                result[phase_number] = relative_frame
+        return result
 
     def _extend_normalized_line(
         self,
@@ -200,8 +249,19 @@ class ArtifactRenderer:
         frame_width: int,
         frame_height: int,
         swing_phases: Optional[Any],
+        shaft_track: Optional[Dict[str, Any]] = None,
         min_confidence: float = 0.45,
     ) -> Optional[Dict[str, Any]]:
+        if shaft_track is not None and float(shaft_track.get("confidence", 0.0)) >= min_confidence:
+            return {
+                "line": shaft_track["line"],
+                "pixel_line": shaft_track["pixel_line"],
+                "angle_degrees": shaft_track["angle_degrees"],
+                "confidence": shaft_track["confidence"],
+                "frame_index": shaft_track["frame_index"],
+                "source": "shaft_prompt",
+            }
+
         address_frame = self._address_source_frame(swing_phases, frame_indices)
         best_item = None
         best_score = -1.0
@@ -249,6 +309,133 @@ class ArtifactRenderer:
             "angle_degrees": round(angle, 2),
             "confidence": round(float(getattr(best_item, "shaft_confidence", 0.0)), 4),
             "frame_index": int(getattr(best_item, "frame_index", frame_indices[0])),
+            "source": "club_mask_fallback",
+        }
+
+    def _shaft_line_from_mask(
+        self,
+        mask: Any,
+        confidence: float,
+        frame_index: int,
+        frame_width: int,
+        frame_height: int,
+    ) -> Optional[Dict[str, Any]]:
+        if mask is None:
+            return None
+
+        mask_np = np.array(mask)
+        if mask_np.ndim > 2:
+            mask_np = np.squeeze(mask_np)
+        points = np.argwhere(mask_np > 0)
+        if len(points) < 20:
+            return None
+
+        coords = points[:, ::-1].astype(np.float32)  # (x, y)
+        center = coords.mean(axis=0)
+        centered = coords - center
+        cov = np.cov(centered.T)
+        eig_vals, eig_vecs = np.linalg.eig(cov)
+        axis = eig_vecs[:, np.argmax(eig_vals)].astype(np.float32)
+        norm = float(np.linalg.norm(axis))
+        if norm < 1e-8:
+            return None
+
+        direction = axis / norm
+        pixel_line = self._line_across_frame(
+            (float(center[0]), float(center[1])),
+            (float(direction[0]), float(direction[1])),
+            frame_width,
+            frame_height,
+        )
+        if pixel_line is None:
+            return None
+
+        start, end = pixel_line
+        angle = float(np.degrees(np.arctan2(float(direction[1]), float(direction[0]))))
+        return {
+            "line": {
+                "start": self._normalize_point(start[0], start[1], frame_width, frame_height),
+                "end": self._normalize_point(end[0], end[1], frame_width, frame_height),
+            },
+            "pixel_line": pixel_line,
+            "angle_degrees": round(angle, 2),
+            "confidence": round(float(confidence), 4),
+            "frame_index": int(frame_index),
+            "source": "shaft_prompt",
+        }
+
+    def _shaft_prompt_tracks(
+        self,
+        frames: List[bytes],
+        frame_indices: List[int],
+        frame_width: int,
+        frame_height: int,
+        swing_phases: Optional[Any],
+    ) -> Dict[str, Dict[str, Any]]:
+        if not frames or not frame_indices:
+            return {}
+
+        phase_map = self._phase_relative_frames(swing_phases, frame_indices)
+        requested = {
+            "address": phase_map.get(1, 0),
+            "takeaway": phase_map.get(2),
+            "top": phase_map.get(5),
+            "transition": phase_map.get(6),
+            "delivery": phase_map.get(7),
+            "impact": phase_map.get(8),
+        }
+        selected = {
+            name: relative_idx
+            for name, relative_idx in requested.items()
+            if relative_idx is not None and 0 <= int(relative_idx) < len(frames)
+        }
+        if not selected:
+            return {}
+
+        try:
+            from .equipment_tracker import EquipmentTracker
+
+            tracks: Dict[str, Dict[str, Any]] = {}
+            with EquipmentTracker() as tracker:
+                for name, relative_idx in selected.items():
+                    source_frame = int(frame_indices[int(relative_idx)])
+                    detection = tracker.detect_shaft(frames[int(relative_idx)], frame_index=source_frame)
+                    if detection is None:
+                        continue
+                    line = self._shaft_line_from_mask(
+                        getattr(detection, "mask", None),
+                        confidence=float(getattr(detection, "confidence", 0.0)),
+                        frame_index=source_frame,
+                        frame_width=frame_width,
+                        frame_height=frame_height,
+                    )
+                    if line is not None:
+                        line["relative_frame_index"] = int(relative_idx)
+                        line["phase"] = name
+                        tracks[name] = line
+            return tracks
+        except Exception:
+            return {}
+
+    def _short_line_from_center_and_direction(
+        self,
+        center_px: Tuple[int, int],
+        direction: Tuple[float, float],
+        frame_width: int,
+        frame_height: int,
+        half_length_fraction: float = 0.14,
+    ) -> Optional[Dict[str, Any]]:
+        dx, dy = float(direction[0]), float(direction[1])
+        norm = float(np.hypot(dx, dy))
+        if norm < 1e-6:
+            return None
+        dx /= norm
+        dy /= norm
+        length = min(frame_width, frame_height) * half_length_fraction
+        cx, cy = float(center_px[0]), float(center_px[1])
+        return {
+            "start": self._normalize_point(cx - dx * length, cy - dy * length, frame_width, frame_height),
+            "end": self._normalize_point(cx + dx * length, cy + dy * length, frame_width, frame_height),
         }
 
     def _impact_source_frame(self, swing_phases: Optional[Any], frame_indices: List[int]) -> Optional[int]:
@@ -547,6 +734,421 @@ class ArtifactRenderer:
             "badges": badges,
         }
 
+    def _guide_shape(
+        self,
+        *,
+        guide_id: str,
+        layer: str,
+        kind: str,
+        label: str,
+        color: str,
+        confidence: float,
+        points: Optional[List[Dict[str, float]]] = None,
+        rect: Optional[Dict[str, float]] = None,
+        center: Optional[Dict[str, float]] = None,
+        radius: Optional[float] = None,
+        style: str = "solid",
+        min_confidence: float = 0.45,
+    ) -> Optional[Dict[str, Any]]:
+        if float(confidence) < min_confidence:
+            return None
+        shape: Dict[str, Any] = {
+            "id": guide_id,
+            "layer": layer,
+            "kind": kind,
+            "label": label,
+            "color": color,
+            "confidence": round(float(max(0.0, min(1.0, confidence))), 4),
+            "style": style,
+        }
+        if points is not None:
+            shape["points"] = points
+        if rect is not None:
+            shape["rect"] = rect
+        if center is not None:
+            shape["center"] = center
+        if radius is not None:
+            shape["radius"] = round(float(radius), 6)
+        return shape
+
+    def _add_guide(
+        self,
+        frames: Dict[int, List[Dict[str, Any]]],
+        relative_idx: int,
+        shape: Optional[Dict[str, Any]],
+    ) -> None:
+        if shape is None:
+            return
+        frames.setdefault(int(relative_idx), []).append(shape)
+
+    def _add_persistent_guide(
+        self,
+        frames: Dict[int, List[Dict[str, Any]]],
+        frame_count: int,
+        shape: Optional[Dict[str, Any]],
+    ) -> None:
+        if shape is None:
+            return
+        for relative_idx in range(frame_count):
+            self._add_guide(frames, relative_idx, shape)
+
+    def _phase_pose(
+        self,
+        poses2d: List[Optional[Any]],
+        phase_map: Dict[int, int],
+        phase_number: int,
+    ) -> Tuple[Optional[int], Optional[Any]]:
+        relative_idx = phase_map.get(phase_number)
+        if relative_idx is None or not (0 <= relative_idx < len(poses2d)):
+            return None, None
+        return relative_idx, poses2d[relative_idx]
+
+    def _hand_center(self, pose: Optional[Any]) -> Optional[Dict[str, float]]:
+        return self._midpoint(
+            self._pose_point(pose, "left_wrist"),
+            self._pose_point(pose, "right_wrist"),
+        )
+
+    def _head_center(self, pose: Optional[Any]) -> Optional[Dict[str, float]]:
+        nose = self._pose_point(pose, "nose", min_visibility=0.35)
+        if nose is not None:
+            return nose
+        return self._midpoint(
+            self._pose_point(pose, "left_ear", min_visibility=0.35),
+            self._pose_point(pose, "right_ear", min_visibility=0.35),
+        )
+
+    def _hip_center(self, pose: Optional[Any]) -> Optional[Dict[str, float]]:
+        return self._midpoint(
+            self._pose_point(pose, "left_hip"),
+            self._pose_point(pose, "right_hip"),
+        )
+
+    def _guide_tracks(
+        self,
+        poses2d: List[Optional[Any]],
+        frame_indices: List[int],
+        frame_width: int,
+        frame_height: int,
+        club2d_frames: List[Any],
+        path_points: List[Tuple[int, int, int]],
+        club_plane: Optional[Dict[str, Any]],
+        shaft_prompt_tracks: Dict[str, Dict[str, Any]],
+        swing_phases: Optional[Any],
+    ) -> Tuple[Dict[int, List[Dict[str, Any]]], List[str]]:
+        guide_frames: Dict[int, List[Dict[str, Any]]] = {}
+        frame_count = len(poses2d)
+        if frame_count == 0:
+            return guide_frames, []
+
+        phase_map = self._phase_relative_frames(swing_phases, frame_indices)
+        address_idx, address_pose = self._phase_pose(poses2d, phase_map, 1)
+        if address_pose is None and poses2d:
+            address_idx, address_pose = 0, poses2d[0]
+
+        source_to_relative = {int(source): idx for idx, source in enumerate(frame_indices)}
+        club_by_relative = {
+            source_to_relative[int(getattr(item, "frame_index", -1))]: item
+            for item in club2d_frames
+            if int(getattr(item, "frame_index", -1)) in source_to_relative
+        }
+
+        address_conf = float(getattr(address_pose, "confidence", 0.0)) if address_pose is not None else 0.0
+        left_shoulder = self._pose_point(address_pose, "left_shoulder")
+        right_shoulder = self._pose_point(address_pose, "right_shoulder")
+        left_hip = self._pose_point(address_pose, "left_hip")
+        right_hip = self._pose_point(address_pose, "right_hip")
+        left_heel = self._pose_point(address_pose, "left_heel", min_visibility=0.35) or self._pose_point(address_pose, "left_ankle", min_visibility=0.35)
+        right_heel = self._pose_point(address_pose, "right_heel", min_visibility=0.35) or self._pose_point(address_pose, "right_ankle", min_visibility=0.35)
+
+        if left_shoulder and right_shoulder:
+            self._add_guide(
+                guide_frames,
+                address_idx or 0,
+                self._guide_shape(
+                    guide_id="setup_geometry.shoulder_line",
+                    layer="setup_geometry",
+                    kind="line",
+                    label="Shoulder line",
+                    color="#00E5FF",
+                    confidence=address_conf,
+                    points=[left_shoulder, right_shoulder],
+                ),
+            )
+        if left_shoulder and right_shoulder and left_hip and right_hip:
+            shoulder_center = self._midpoint(left_shoulder, right_shoulder)
+            hip_center = self._midpoint(left_hip, right_hip)
+            self._add_guide(
+                guide_frames,
+                address_idx or 0,
+                self._guide_shape(
+                    guide_id="setup_geometry.spine_line",
+                    layer="setup_geometry",
+                    kind="line",
+                    label="Spine line",
+                    color="#00E5FF",
+                    confidence=address_conf,
+                    points=[hip_center, shoulder_center],
+                ),
+            )
+        if left_heel and right_heel:
+            self._add_guide(
+                guide_frames,
+                address_idx or 0,
+                self._guide_shape(
+                    guide_id="setup_geometry.stance_width",
+                    layer="setup_geometry",
+                    kind="line",
+                    label="Stance width",
+                    color="#00E5FF",
+                    confidence=address_conf,
+                    points=[left_heel, right_heel],
+                ),
+            )
+
+        address_head = self._head_center(address_pose)
+        if address_head:
+            self._add_persistent_guide(
+                guide_frames,
+                frame_count,
+                self._guide_shape(
+                    guide_id="head_reference.address_height",
+                    layer="head_reference",
+                    kind="line",
+                    label="Address head height",
+                    color="#FFFFFF",
+                    confidence=address_conf,
+                    points=[
+                        self._normalized_point(0.0, address_head["y"]),
+                        self._normalized_point(1.0, address_head["y"]),
+                    ],
+                    style="dashed",
+                ),
+            )
+            for phase_number, name in [(5, "top"), (8, "impact")]:
+                relative_idx, pose = self._phase_pose(poses2d, phase_map, phase_number)
+                current_head = self._head_center(pose)
+                if relative_idx is not None and current_head is not None:
+                    self._add_guide(
+                        guide_frames,
+                        relative_idx,
+                        self._guide_shape(
+                            guide_id=f"head_reference.{name}_head",
+                            layer="head_reference",
+                            kind="circle",
+                            label=f"{name.title()} head",
+                            color="#FFFFFF",
+                            confidence=float(getattr(pose, "confidence", 0.0)),
+                            center=current_head,
+                            radius=0.025,
+                        ),
+                    )
+
+        address_hip = self._hip_center(address_pose)
+        if address_hip:
+            self._add_persistent_guide(
+                guide_frames,
+                frame_count,
+                self._guide_shape(
+                    guide_id="hip_depth.address_line",
+                    layer="hip_depth",
+                    kind="line",
+                    label="Address hip depth",
+                    color="#FF9500",
+                    confidence=address_conf,
+                    points=[
+                        self._normalized_point(address_hip["x"], 0.0),
+                        self._normalized_point(address_hip["x"], 1.0),
+                    ],
+                    style="dashed",
+                ),
+            )
+            for phase_number, name in [(5, "top"), (8, "impact")]:
+                relative_idx, pose = self._phase_pose(poses2d, phase_map, phase_number)
+                current_hip = self._hip_center(pose)
+                if relative_idx is not None and current_hip is not None:
+                    self._add_guide(
+                        guide_frames,
+                        relative_idx,
+                        self._guide_shape(
+                            guide_id=f"hip_depth.{name}_hip",
+                            layer="hip_depth",
+                            kind="circle",
+                            label=f"{name.title()} hip center",
+                            color="#FF9500",
+                            confidence=float(getattr(pose, "confidence", 0.0)),
+                            center=current_hip,
+                            radius=0.02,
+                        ),
+                    )
+
+        hand_path: List[Dict[str, float]] = []
+        for relative_idx, pose in enumerate(poses2d):
+            hand = self._hand_center(pose)
+            if hand is None:
+                continue
+            hand_path.append(hand)
+            if len(hand_path) >= 2:
+                self._add_guide(
+                    guide_frames,
+                    relative_idx,
+                    self._guide_shape(
+                        guide_id="hand_depth.path",
+                        layer="hand_depth",
+                        kind="polyline",
+                        label="Hand path",
+                        color="#BF5AF2",
+                        confidence=float(getattr(pose, "confidence", 0.0)),
+                        points=list(hand_path),
+                    ),
+                )
+
+        top_idx, top_pose = self._phase_pose(poses2d, phase_map, 5)
+        if top_idx is not None and top_pose is not None:
+            top_hand = self._hand_center(top_pose)
+            if top_hand is not None:
+                self._add_guide(
+                    guide_frames,
+                    top_idx,
+                    self._guide_shape(
+                        guide_id="hand_depth.top_position",
+                        layer="hand_depth",
+                        kind="line",
+                        label="Top hand depth",
+                        color="#BF5AF2",
+                        confidence=float(getattr(top_pose, "confidence", 0.0)),
+                        points=[
+                            self._normalized_point(top_hand["x"], 0.0),
+                            self._normalized_point(top_hand["x"], 1.0),
+                        ],
+                        style="dashed",
+                    ),
+                )
+
+            top_left_shoulder = self._pose_point(top_pose, "left_shoulder")
+            top_right_shoulder = self._pose_point(top_pose, "right_shoulder")
+            top_left_wrist = self._pose_point(top_pose, "left_wrist")
+            if top_left_shoulder and top_right_shoulder:
+                self._add_guide(
+                    guide_frames,
+                    top_idx,
+                    self._guide_shape(
+                        guide_id="lead_arm_plane.shoulder_plane",
+                        layer="lead_arm_plane",
+                        kind="line",
+                        label="Shoulder plane",
+                        color="#34C759",
+                        confidence=float(getattr(top_pose, "confidence", 0.0)),
+                        points=[top_left_shoulder, top_right_shoulder],
+                    ),
+                )
+            if top_left_shoulder and top_left_wrist:
+                self._add_guide(
+                    guide_frames,
+                    top_idx,
+                    self._guide_shape(
+                        guide_id="lead_arm_plane.lead_arm_proxy",
+                        layer="lead_arm_plane",
+                        kind="line",
+                        label="Lead arm plane",
+                        color="#34C759",
+                        confidence=float(getattr(top_pose, "confidence", 0.0)),
+                        points=[top_left_shoulder, top_left_wrist],
+                    ),
+                )
+
+        for phase_name, shaft_track in shaft_prompt_tracks.items():
+            relative_idx = int(shaft_track.get("relative_frame_index", source_to_relative.get(int(shaft_track["frame_index"]), 0)))
+            layer_name = "shaft_checkpoints" if phase_name != "takeaway" else "takeaway_checkpoint"
+            self._add_guide(
+                guide_frames,
+                relative_idx,
+                self._guide_shape(
+                    guide_id=f"{layer_name}.{phase_name}_shaft",
+                    layer=layer_name,
+                    kind="line",
+                    label=f"{phase_name.replace('_', ' ').title()} shaft",
+                    color="#FFD400",
+                    confidence=float(shaft_track.get("confidence", 0.0)),
+                    points=[shaft_track["line"]["start"], shaft_track["line"]["end"]],
+                ),
+            )
+
+        takeaway_idx = phase_map.get(2) or phase_map.get(3)
+        if takeaway_idx is not None and 0 <= takeaway_idx < len(poses2d):
+            takeaway_pose = poses2d[takeaway_idx]
+            takeaway_hand = self._hand_center(takeaway_pose)
+            if takeaway_hand is not None:
+                self._add_guide(
+                    guide_frames,
+                    takeaway_idx,
+                    self._guide_shape(
+                        guide_id="takeaway_checkpoint.hands",
+                        layer="takeaway_checkpoint",
+                        kind="circle",
+                        label="Takeaway hands",
+                        color="#FFD60A",
+                        confidence=float(getattr(takeaway_pose, "confidence", 0.0)),
+                        center=takeaway_hand,
+                        radius=0.02,
+                    ),
+                )
+            club_item = club_by_relative.get(takeaway_idx)
+            if club_item is not None:
+                head = getattr(club_item, "clubhead_centroid_px", None)
+                direction = getattr(club_item, "shaft_direction_2d", None)
+                if head is not None and direction is not None:
+                    line = self._short_line_from_center_and_direction(head, direction, frame_width, frame_height)
+                    if line is not None:
+                        self._add_guide(
+                            guide_frames,
+                            takeaway_idx,
+                            self._guide_shape(
+                                guide_id="takeaway_checkpoint.shaft_to_ball",
+                                layer="takeaway_checkpoint",
+                                kind="line",
+                                label="Shaft direction",
+                                color="#FFD60A",
+                                confidence=float(getattr(club_item, "shaft_confidence", 0.0)),
+                                points=[line["start"], line["end"]],
+                            ),
+                        )
+
+        if path_points:
+            points = [self._normalize_point(x, y, frame_width, frame_height) for _, x, y in path_points]
+            last_relative = max(relative for relative, _, _ in path_points)
+            for relative_idx in range(max(0, last_relative), frame_count):
+                self._add_guide(
+                    guide_frames,
+                    relative_idx,
+                    self._guide_shape(
+                        guide_id="clubhead_path.trace",
+                        layer="clubhead_path",
+                        kind="polyline",
+                        label="Clubhead path",
+                        color="#FF3B30",
+                        confidence=max([float(getattr(item, "clubhead_confidence", 0.0)) for item in club2d_frames] or [0.0]),
+                        points=points,
+                    ),
+                )
+
+        if club_plane is not None:
+            self._add_persistent_guide(
+                guide_frames,
+                frame_count,
+                self._guide_shape(
+                    guide_id="club_plane.address_plane",
+                    layer="club_plane",
+                    kind="line",
+                    label="Address shaft plane",
+                    color="#FFA500",
+                    confidence=float(club_plane.get("confidence", 0.0)),
+                    points=[club_plane["line"]["start"], club_plane["line"]["end"]],
+                ),
+            )
+
+        return guide_frames, list(GUIDE_LAYER_NAMES)
+
     def _annotation_tracks(
         self,
         poses2d: List[Optional[Any]],
@@ -561,6 +1163,8 @@ class ArtifactRenderer:
         visualization_config: VisualizationConfig,
         club_plane: Optional[Dict[str, Any]] = None,
         ball_contact: Optional[Dict[str, Any]] = None,
+        guide_frames: Optional[Dict[int, List[Dict[str, Any]]]] = None,
+        guide_layers: Optional[List[str]] = None,
         swing_phases: Optional[Any] = None,
     ) -> Dict[str, Any]:
         path_by_relative_frame = {
@@ -595,6 +1199,8 @@ class ArtifactRenderer:
             else None
         )
         ball_contact_frames = ball_contact.get("frames", {}) if ball_contact else {}
+        guide_frames = guide_frames or {}
+        guide_layers = guide_layers or []
 
         frames: List[Dict[str, Any]] = []
         for relative_idx, (source_frame, pose) in enumerate(zip(frame_indices, poses2d)):
@@ -632,6 +1238,9 @@ class ArtifactRenderer:
             if visualization_config.draw_ball_contact and relative_idx in ball_contact_frames:
                 layers["ball_contact"] = ball_contact_frames[relative_idx]
 
+            if visualization_config.draw_guides and relative_idx in guide_frames:
+                layers["guides"] = guide_frames[relative_idx]
+
             frame_speed = speed_data.get(source_frame)
             if frame_speed is not None:
                 layers["speed"] = {
@@ -658,6 +1267,7 @@ class ArtifactRenderer:
             "peak_speed_mph": round(float(peak_speed), 2) if peak_speed is not None else None,
             "peak_speed_frame": peak_frame,
             "ball_contact": ball_contact.get("summary") if ball_contact else None,
+            "guide_layers": guide_layers,
             "phase_markers": phase_markers,
             "confidence_evidence": confidence_evidence,
             "frames": frames,
@@ -690,12 +1300,20 @@ class ArtifactRenderer:
                 path_points.append((relative_idx, x, y))
 
         swing_path = _SwingPathProxy(points_with_frame=path_points) if path_points else None
+        shaft_prompt_tracks = self._shaft_prompt_tracks(
+            frames=frames,
+            frame_indices=frame_indices,
+            frame_width=frame_width,
+            frame_height=frame_height,
+            swing_phases=swing_phases,
+        )
         club_plane = self._club_plane_track(
             club2d_frames=club2d_frames,
             frame_indices=frame_indices,
             frame_width=frame_width,
             frame_height=frame_height,
             swing_phases=swing_phases,
+            shaft_track=shaft_prompt_tracks.get("address"),
         )
         club_plane_line = club_plane["pixel_line"] if club_plane is not None else None
         ball_contact = self._ball_contact_track(
@@ -722,8 +1340,20 @@ class ArtifactRenderer:
             draw_ball_contact=ball_contact is not None,
             draw_phase_markers=True,
             draw_confidence=True,
+            draw_guides=True,
             draw_club_mask=False,
             min_visibility=0.5,
+        )
+        guide_frames, guide_layers = self._guide_tracks(
+            poses2d=poses2d,
+            frame_indices=frame_indices,
+            frame_width=frame_width,
+            frame_height=frame_height,
+            club2d_frames=club2d_frames,
+            path_points=path_points,
+            club_plane=club_plane,
+            shaft_prompt_tracks=shaft_prompt_tracks,
+            swing_phases=swing_phases,
         )
 
         exporter = VideoExporter()
@@ -773,6 +1403,10 @@ class ArtifactRenderer:
             metadata.club_plane_angle_degrees = club_plane["angle_degrees"]
         if speed_data and not any(layer.name == "speed" for layer in metadata.layers):
             metadata.layers.append(LAYER_DEFINITIONS["speed"])
+        for layer_name in guide_layers:
+            layer = LAYER_DEFINITIONS.get(layer_name)
+            if layer is not None and not any(existing.name == layer_name for existing in metadata.layers):
+                metadata.layers.append(layer)
         run_store.save_json("annotation_metadata.json", metadata.to_dict())
         annotation_tracks = self._annotation_tracks(
             poses2d=poses2d,
@@ -787,6 +1421,8 @@ class ArtifactRenderer:
             visualization_config=visualization_config,
             club_plane=club_plane,
             ball_contact=ball_contact,
+            guide_frames=guide_frames,
+            guide_layers=guide_layers,
             swing_phases=swing_phases,
         )
         run_store.save_json("annotation_tracks.json", annotation_tracks)

@@ -14,6 +14,8 @@ struct SwingAnalysis: Identifiable {
     let swing: SavedSwing
     var status: AnalysisStatus
     var result: AnalysisResult?
+    var progressText: String?
+    var progress: Float?
 
     enum AnalysisStatus: Equatable {
         case pending
@@ -263,13 +265,18 @@ struct AnalyseView: View {
             for i in analyses.indices where analyses[i].status == .pending {
                 await MainActor.run {
                     analyses[i].status = .analyzing
+                    analyses[i].progressText = "Preparing video..."
+                    analyses[i].progress = nil
                 }
 
                 do {
                     // Real API call
                     let response = try await SwingCoachAPI.shared.analyzeSwing(analyses[i].swing) { stage, progress in
-                        // Could update UI with stage/progress here if we add more granular status
-                        print("📤 \(stage) - \(progress.map { String(format: "%.0f%%", $0 * 100) } ?? "")")
+                        Task { @MainActor in
+                            guard analyses.indices.contains(i) else { return }
+                            analyses[i].progressText = stage
+                            analyses[i].progress = progress
+                        }
                     }
 
                     let savedAnalysis = await MainActor.run {
@@ -280,13 +287,17 @@ struct AnalyseView: View {
                     await MainActor.run {
                         analyses[i].result = result
                         analyses[i].status = .complete
+                        analyses[i].progressText = nil
+                        analyses[i].progress = nil
                     }
 
                     library.markAnalyzed(analyses[i].swing)
 
                 } catch {
                     await MainActor.run {
-                        analyses[i].status = .failed(error.localizedDescription)
+                        analyses[i].status = .failed(SwingCoachAPI.displayMessage(for: error))
+                        analyses[i].progressText = nil
+                        analyses[i].progress = nil
                     }
                 }
             }
@@ -353,7 +364,12 @@ struct AnalysisQueueRow: View {
             Image(systemName: "clock")
                 .foregroundColor(.secondary)
         case .analyzing:
-            ProgressView()
+            if let progress = analysis.progress {
+                ProgressView(value: Double(progress))
+                    .frame(width: 42)
+            } else {
+                ProgressView()
+            }
         case .complete:
             Image(systemName: "checkmark.circle.fill")
                 .foregroundColor(.green)
@@ -371,6 +387,12 @@ struct AnalysisQueueRow: View {
         case .pending:
             return "Waiting to start"
         case .analyzing:
+            if let progressText = analysis.progressText {
+                if let progress = analysis.progress {
+                    return "\(progressText) \(Int(progress * 100))%"
+                }
+                return progressText
+            }
             return "Analyzing swing"
         case .complete:
             return "Complete"
@@ -541,7 +563,7 @@ struct AnalysisCard: View {
                 Text("Analysis failed")
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(.primary)
-                Text("We couldn't finish this swing analysis. Check your connection and try again.")
+                Text("We couldn't finish this swing analysis. Open details for the exact error, then try again.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }

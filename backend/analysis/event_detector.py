@@ -179,6 +179,10 @@ class EventDetector:
     
     def __init__(self, fps: float = 30.0):
         self.fps = fps
+
+    @staticmethod
+    def _in_bounds(idx: Optional[int], values: List) -> bool:
+        return idx is not None and 0 <= idx < len(values)
     
     def detect_events(
         self,
@@ -216,7 +220,7 @@ class EventDetector:
         finish_idx = self._find_finish(valid_poses, motion, impact_idx)
         
         def make_event(name: str, idx: Optional[int]) -> Optional[SwingEvent]:
-            if idx is None:
+            if idx is None or idx < 0 or idx >= len(valid_poses):
                 return None
             frame_idx = valid_poses[idx][0]
             pose = valid_poses[idx][1]
@@ -279,6 +283,9 @@ class EventDetector:
         motion: List[float]
     ) -> Optional[int]:
         """Find address position (first stable frame before motion starts)."""
+        if not motion:
+            return None
+
         window = 3
         threshold = 0.005
         
@@ -298,7 +305,12 @@ class EventDetector:
         address_idx: Optional[int]
     ) -> Optional[int]:
         """Find top of backswing (hands highest relative to body, motion slows)."""
+        if not hand_positions:
+            return None
+
         start = address_idx + 1 if address_idx else 1
+        if start >= len(hand_positions):
+            return len(hand_positions) - 1
         
         min_y = float('inf')
         min_y_idx = start
@@ -322,7 +334,13 @@ class EventDetector:
         top_idx: Optional[int]
     ) -> Optional[int]:
         """Find impact (hands return to address-ish position, maximum speed)."""
+        if not motion:
+            return None
+
         start = top_idx + 1 if top_idx else len(motion) // 2
+        if start >= len(motion):
+            logger.warning("Unable to detect impact: no frames remain after top")
+            return None
         
         max_motion = 0.0
         max_motion_idx = start
@@ -341,7 +359,16 @@ class EventDetector:
         impact_idx: Optional[int]
     ) -> Optional[int]:
         """Find finish position (stable position after impact)."""
+        if not motion:
+            return None
+
+        if impact_idx is not None and (impact_idx < 0 or impact_idx >= len(motion)):
+            return None
+
         start = impact_idx + 1 if impact_idx else len(motion) - 10
+        start = max(0, start)
+        if start >= len(motion):
+            return None
         
         window = 3
         threshold = 0.008
@@ -475,8 +502,13 @@ class EventDetector:
         if address_idx is None or top_idx is None:
             return None
 
+        if not motion or address_idx < 0 or address_idx >= len(motion):
+            return None
+
         start = address_idx + 1
         end = min(top_idx, len(motion))
+        if start >= end:
+            return None
 
         threshold = 0.008  # Motion threshold for "active" movement
         sustained_frames = 2  # Need this many frames above threshold
@@ -503,6 +535,9 @@ class EventDetector:
             return None
 
         if address_idx >= top_idx:
+            return None
+
+        if not self._in_bounds(address_idx, hand_positions) or not self._in_bounds(top_idx, hand_positions):
             return None
 
         address_y = hand_positions[address_idx][1]
@@ -536,9 +571,17 @@ class EventDetector:
         if top_idx is None or impact_idx is None:
             return None
 
+        if top_idx >= impact_idx:
+            return None
+
+        if not self._in_bounds(top_idx, motion) or not self._in_bounds(impact_idx, motion):
+            return None
+
         # Look for minimum motion point after top (the pause)
         # Then return the frame where motion starts increasing
         search_end = min(top_idx + 10, impact_idx)
+        if top_idx + 1 >= search_end:
+            return None
 
         min_motion = float('inf')
         min_idx = top_idx + 1
@@ -565,6 +608,9 @@ class EventDetector:
             return None
 
         if top_idx >= impact_idx:
+            return None
+
+        if not self._in_bounds(top_idx, hand_positions) or not self._in_bounds(impact_idx, hand_positions):
             return None
 
         top_y = hand_positions[top_idx][1]
@@ -600,6 +646,9 @@ class EventDetector:
             return None
 
         if impact_idx >= finish_idx:
+            return None
+
+        if not self._in_bounds(impact_idx, hand_positions) or not self._in_bounds(finish_idx, hand_positions):
             return None
 
         # Find where hands start rising (Y decreasing = hands going up)

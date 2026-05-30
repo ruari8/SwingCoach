@@ -3,18 +3,24 @@
 from __future__ import annotations
 
 import logging
+import asyncio
+import json
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Optional
+from typing import Callable, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
 from analysis import SwingCoachPipeline3D
 from analysis.coach_response_builder import CoachResponseBuilder, CoachingBundle
+from analysis.run_status import AnalysisRunManager
 from models import (
     AnalysisDrill,
     AnalysisMetric,
+    AnalysisRunCreateResponse,
+    AnalysisRunStatusResponse,
     AnalysisVideo,
     AnalyzeRequest,
     AnalyzeResponse,
@@ -44,6 +50,8 @@ except Exception as exc:  # pragma: no cover - startup guard
     _pipeline = None
     logger.warning("Pipeline initialization failed: %s", exc)
 
+_analysis_runs = AnalysisRunManager()
+
 app = FastAPI(
     title="SwingCoach API",
     description="Unified backend for coachable golf swing analysis",
@@ -69,6 +77,9 @@ async def root():
             "health": "/health",
             "upload_url": "/upload-url",
             "analyze": "/analyze",
+            "analysis_runs": "/analysis-runs",
+            "analysis_run_status": "/analysis-runs/{run_id}",
+            "analysis_run_events": "/analysis-runs/{run_id}/events",
             "mock_analyze": "/mock/analyze",
             "artifact_url": "/artifact-url",
             "chat": "/chat",
@@ -258,6 +269,96 @@ def _artifact_video(
     )
 
 
+def _build_analyze_response(result) -> AnalyzeResponse:
+    artifacts = _upload_run_artifacts(result.run_id, Path(result.run_dir))
+    annotation_layers = _layer_info_from_metadata(result.artifacts.get("annotation_metadata"))
+
+    metrics = [
+        AnalysisMetric(
+            key=card.key,
+            name=card.name,
+            value=_format_metric_value(card.value, card.unit),
+        )
+        for card in result.metrics
+        if card.value is not None
+    ]
+
+    return AnalyzeResponse(
+        analysis_id=result.run_id,
+        summary=result.coaching.summary,
+        metrics=metrics,
+        annotated_video=_artifact_video(
+            artifacts.annotated_video_key,
+            artifacts.annotated_video_url,
+            base_key=artifacts.base_video_key,
+            base_url=artifacts.base_video_url,
+            tracks_key=artifacts.annotation_tracks_key,
+            tracks_url=artifacts.annotation_tracks_url,
+            layers=annotation_layers,
+        ),
+        drills=[
+            AnalysisDrill(
+                title=drill.title,
+                summary=drill.summary,
+            )
+            for drill in result.coaching.drills
+        ],
+    )
+
+
+def _run_analysis_for_request(
+    request: AnalyzeRequest,
+    progress_callback: Optional[Callable[[str, float, str], None]] = None,
+) -> AnalyzeResponse:
+    if not ANALYSIS_AVAILABLE or _pipeline is None:
+        raise HTTPException(status_code=503, detail="Analysis pipeline is unavailable")
+
+    r2 = get_r2_client()
+    if not r2.video_exists(request.video_key):
+        raise HTTPException(status_code=404, detail="Video not found in storage")
+
+    if progress_callback:
+        progress_callback("download", 0.01, "Downloading uploaded video")
+    logger.info("Starting analysis for %s", request.video_key)
+    video_bytes = r2.download_video(request.video_key)
+
+    result = _pipeline.analyze_video(
+        video_bytes=video_bytes,
+        vantage=request.vantage.value,
+        requested_fps=request.fps,
+        progress_callback=progress_callback,
+    )
+
+    if progress_callback:
+        progress_callback("artifact_upload", 0.94, "Uploading coach artifacts")
+    response = _build_analyze_response(result)
+    if progress_callback:
+        progress_callback("complete", 1.0, "Analysis complete")
+    return response
+
+
+def _process_analysis_run(run_id: str, request: AnalyzeRequest) -> None:
+    def publish(stage: str, progress: float, message: str) -> None:
+        _analysis_runs.update(
+            run_id,
+            status="running",
+            stage=stage,
+            progress=progress,
+            message=message,
+        )
+
+    try:
+        response = _run_analysis_for_request(request, progress_callback=publish)
+        _analysis_runs.complete(run_id, response)
+    except HTTPException as exc:
+        detail = exc.detail if isinstance(exc.detail, str) else json.dumps(exc.detail)
+        logger.exception("Analysis run %s failed: %s", run_id, detail)
+        _analysis_runs.fail(run_id, detail)
+    except Exception as exc:
+        logger.exception("Analysis run %s failed: %s", run_id, exc)
+        _analysis_runs.fail(run_id, str(exc))
+
+
 @app.post("/artifact-url", response_model=ArtifactURLResponse)
 async def artifact_url(request: ArtifactURLRequest):
     """Return a fresh signed URL for an existing R2 artifact key."""
@@ -314,8 +415,9 @@ async def mock_analyze_swing(request: AnalyzeRequest):
         raise HTTPException(status_code=500, detail=str(exc))
 
 
-@app.post("/analyze", response_model=AnalyzeResponse)
-async def analyze_swing(request: AnalyzeRequest):
+@app.post("/analysis-runs", response_model=AnalysisRunCreateResponse)
+async def create_analysis_run(request: AnalyzeRequest):
+    """Queue an async analysis run and return immediately with a run ID."""
     if not ANALYSIS_AVAILABLE or _pipeline is None:
         raise HTTPException(status_code=503, detail="Analysis pipeline is unavailable")
 
@@ -324,48 +426,99 @@ async def analyze_swing(request: AnalyzeRequest):
         if not r2.video_exists(request.video_key):
             raise HTTPException(status_code=404, detail="Video not found in storage")
 
-        logger.info("Starting analysis for %s", request.video_key)
-        video_bytes = r2.download_video(request.video_key)
-        result = _pipeline.analyze_video(
-            video_bytes=video_bytes,
+        state = _analysis_runs.create(
+            video_key=request.video_key,
             vantage=request.vantage.value,
-            requested_fps=request.fps,
+            fps=request.fps,
         )
+        asyncio.create_task(asyncio.to_thread(_process_analysis_run, state.run_id, request))
+        return AnalysisRunCreateResponse(
+            run_id=state.run_id,
+            status=state.status,
+            status_url=f"/analysis-runs/{state.run_id}",
+            events_url=f"/analysis-runs/{state.run_id}/events",
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to create analysis run: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc))
 
-        artifacts = _upload_run_artifacts(result.run_id, Path(result.run_dir))
-        annotation_layers = _layer_info_from_metadata(result.artifacts.get("annotation_metadata"))
 
-        metrics = [
-            AnalysisMetric(
-                key=card.key,
-                name=card.name,
-                value=_format_metric_value(card.value, card.unit),
+@app.get("/analysis-runs/{run_id}", response_model=AnalysisRunStatusResponse)
+async def analysis_run_status(run_id: str):
+    snapshot = _analysis_runs.snapshot(run_id)
+    if snapshot is None:
+        raise HTTPException(status_code=404, detail="Run ID not found")
+    return AnalysisRunStatusResponse(**snapshot)
+
+
+def _format_sse(event: dict) -> str:
+    return (
+        f"id: {event['sequence']}\n"
+        f"event: {event['status']}\n"
+        f"data: {json.dumps(event)}\n\n"
+    )
+
+
+@app.get("/analysis-runs/{run_id}/events")
+async def analysis_run_events(run_id: str, request: Request):
+    """Stream analysis progress as Server-Sent Events."""
+    if _analysis_runs.get(run_id) is None:
+        raise HTTPException(status_code=404, detail="Run ID not found")
+
+    async def event_stream():
+        last_sequence = 0
+        while True:
+            if await request.is_disconnected():
+                break
+
+            events = await asyncio.to_thread(
+                _analysis_runs.wait_for_events,
+                run_id,
+                last_sequence,
+                15.0,
             )
-            for card in result.metrics
-            if card.value is not None
-        ]
-
-        return AnalyzeResponse(
-            analysis_id=result.run_id,
-            summary=result.coaching.summary,
-            metrics=metrics,
-            annotated_video=_artifact_video(
-                artifacts.annotated_video_key,
-                artifacts.annotated_video_url,
-                base_key=artifacts.base_video_key,
-                base_url=artifacts.base_video_url,
-                tracks_key=artifacts.annotation_tracks_key,
-                tracks_url=artifacts.annotation_tracks_url,
-                layers=annotation_layers,
-            ),
-            drills=[
-                AnalysisDrill(
-                    title=drill.title,
-                    summary=drill.summary,
+            if events is None:
+                yield _format_sse(
+                    {
+                        "run_id": run_id,
+                        "sequence": last_sequence + 1,
+                        "status": "failed",
+                        "stage": "missing",
+                        "progress": 1.0,
+                        "message": "Run ID not found",
+                        "error": "Run ID not found",
+                        "timestamp": 0,
+                    }
                 )
-                for drill in result.coaching.drills
-            ],
-        )
+                break
+
+            if not events:
+                yield ": keep-alive\n\n"
+                continue
+
+            for event in events:
+                last_sequence = int(event["sequence"])
+                yield _format_sse(event)
+                if event["status"] in {"succeeded", "failed"}:
+                    return
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@app.post("/analyze", response_model=AnalyzeResponse)
+async def analyze_swing(request: AnalyzeRequest):
+    try:
+        return _run_analysis_for_request(request)
 
     except HTTPException:
         raise

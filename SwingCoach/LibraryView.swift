@@ -998,6 +998,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     let showsSpeedControls: Bool
     let startsPlaying: Bool
     let allowsFullscreen: Bool
+    let contentOverlayAllowsHitTesting: Bool
 
     private let header: Header
     private let overlayAccessory: OverlayAccessory
@@ -1026,6 +1027,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         showsSpeedControls: Bool = true,
         startsPlaying: Bool = true,
         allowsFullscreen: Bool = true,
+        contentOverlayAllowsHitTesting: Bool = false,
         contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
         @ViewBuilder header: () -> Header,
         @ViewBuilder overlayAccessory: () -> OverlayAccessory
@@ -1036,6 +1038,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         self.showsSpeedControls = showsSpeedControls
         self.startsPlaying = startsPlaying
         self.allowsFullscreen = allowsFullscreen
+        self.contentOverlayAllowsHitTesting = contentOverlayAllowsHitTesting
         self.header = header()
         self.overlayAccessory = overlayAccessory()
         self.contentOverlay = contentOverlay
@@ -1091,9 +1094,11 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
                 contentOverlay(currentTime, geometry.size)
                     .frame(width: geometry.size.width, height: geometry.size.height)
-                    .allowsHitTesting(false)
+                    .allowsHitTesting(contentOverlayAllowsHitTesting)
 
-                transportTouchLayer
+                if !contentOverlayAllowsHitTesting {
+                    transportTouchLayer
+                }
 
                 VStack(spacing: 0) {
                     LinearGradient(
@@ -1215,6 +1220,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 showsSpeedControls: showsSpeedControls,
                 startsPlaying: false,
                 allowsFullscreen: false,
+                contentOverlayAllowsHitTesting: contentOverlayAllowsHitTesting,
                 contentOverlay: contentOverlay
             ) {
                 EmptyView()

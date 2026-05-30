@@ -13,6 +13,9 @@ enum ExperimentalSettingKey {
     static let liveModelDetectorSampleFPS = "experimental.liveModelDetectorSampleFPS"
     static let hybridImpactConfirmationPostRoll = "experimental.hybridImpactConfirmationPostRoll"
     static let liveCaptureDetectionMode = "experimental.liveCaptureDetectionMode"
+    static let backendTarget = "experimental.backendTarget"
+    static let customBackendURL = "experimental.customBackendURL"
+    static let useMockAnalysis = "experimental.useMockAnalysis"
     static let showDebugReplayTab = "experimental.showDebugReplayTab"
     static let debugReplaySpeedMultiplier = "experimental.debugReplaySpeedMultiplier"
     static let debugReplaySourceTiming = "experimental.debugReplaySourceTiming"
@@ -87,6 +90,9 @@ struct ExperimentalSettingsView: View {
     @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
     @AppStorage(ExperimentalSettingKey.hybridImpactConfirmationPostRoll) private var hybridImpactConfirmationPostRoll = 0.20
     @AppStorage(ExperimentalSettingKey.liveCaptureDetectionMode) private var liveCaptureDetectionModeRaw = LiveCaptureDetectionMode.hybrid.rawValue
+    @AppStorage(ExperimentalSettingKey.backendTarget) private var backendTargetRaw = BackendTarget.local.rawValue
+    @AppStorage(ExperimentalSettingKey.customBackendURL) private var customBackendURL = ""
+    @AppStorage(ExperimentalSettingKey.useMockAnalysis) private var useMockAnalysis = false
     @AppStorage(ExperimentalSettingKey.showDebugReplayTab) private var showDebugReplayTab = true
 
     private let detectorSampleOptions = [2.0, 4.0, 8.0, 16.0]
@@ -122,6 +128,27 @@ struct ExperimentalSettingsView: View {
             } footer: {
                 Text("\(liveCaptureDetectionMode.detail) Capture and Replay Debug sample the YOLO model at this real-time rate. Hybrid impact detection waits this long after estimated impact before declaring a swing.")
             }
+
+            #if DEBUG
+            Section {
+                Picker("Backend target", selection: $backendTargetRaw) {
+                    ForEach(BackendTarget.allCases, id: \.rawValue) { target in
+                        Text(target.label).tag(target.rawValue)
+                    }
+                }
+
+                if backendTargetRaw == BackendTarget.custom.rawValue {
+                    TextField("Backend URL", text: $customBackendURL)
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                }
+
+                Toggle("Mock analysis", isOn: $useMockAnalysis)
+            } footer: {
+                Text("Current backend: \(SwingCoachAPI.baseURL). Mock analysis calls /mock/analyze; real analysis calls /analyze.")
+            }
+            #endif
 
             Section {
                 Toggle("Replay Debug tab", isOn: $showDebugReplayTab)

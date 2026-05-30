@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<dict>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Record swing audio.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Import swing videos and show saved swings from your Photos library.</string>
+	<dict>
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<key>NSAllowsLocalNetworking</key>
+			<true/>
+		</dict>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Record swing audio.</string>
+		<key>NSLocalNetworkUsageDescription</key>
+		<string>Connect to a local SwingCoach development backend.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Import swing videos and show saved swings from your Photos library.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Save swing clips back to your Photos library.</string>
 	<key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>

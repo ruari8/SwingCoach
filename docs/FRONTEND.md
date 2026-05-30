@@ -31,6 +31,7 @@ Primary app root: [AppRootView.swift](/Users/ruari/Documents/Startups/SwingCoach
 - Shared analysis result rendering: [AnalysisResultView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AnalysisResultView.swift)
 - API client: [SwingCoachAPI.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingCoachAPI.swift)
 - Persistence: [SwingLibrary.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingLibrary.swift)
+- Local manual analysis drawings: [ManualAnnotationStore.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/ManualAnnotationStore.swift)
 
 ## Feature Inventory
 
@@ -132,7 +133,8 @@ Implemented feature set:
 - Treat a saved swing as the primary product object.
 - Show the original swing as a collapsed thumbnail disclosure by default, with playback and metadata available after expansion.
 - Display original and annotated swing playback using the shared playback chrome, including timeline, compact cycle-through playback speed control, and full-screen viewing.
-- For backend results that include `annotated_video.base_url` and `annotated_video.tracks_url`, the annotated video card plays the clean base video and draws/toggles skeleton, reference-line, swing-path, phase-marker, confidence, and speed overlays over playback. If no base video is available, it falls back to the flattened annotated MP4. The selected overlay state is preserved when the annotated player opens full-screen.
+- For backend results that include `annotated_video.base_url` and `annotated_video.tracks_url`, the annotated video card plays the clean base video and draws/toggles skeleton, reference-line, swing-path, club-plane, ball-contact, phase-marker, confidence, speed, and generic guide overlays over playback. Generic guide toggles currently include shaft checkpoints, clubhead path, setup geometry, head reference, hip depth, hand depth, lead-arm plane, and takeaway checkpoint. If no base video is available, it falls back to the flattened annotated MP4. The selected overlay state is preserved when the annotated player opens full-screen.
+- Annotated playback includes a local Manual layer and canvas mode for self-analysis. Tools are line, arrow, freehand, rectangle, circle, text label, eraser, undo, and clear; controls use icon buttons, color swatches, and a full-swing/moment scope selector. Drawings are stored as normalized video coordinates with timestamp/scope/color/stroke/tool metadata in app Documents through `ManualAnnotationStore`; they are not synced to the backend.
 - Show swing metadata and local analysis status inside the original swing disclosure.
 - Run the current R2-backed analysis flow for a single swing, with retry controls reserved for failed analysis attempts.
 - Attach completed analysis to the swing through `AnalysisLibrary`.
@@ -217,10 +219,20 @@ File: [SwingCoachAPI.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoac
 Current flow:
 1. `GET /upload-url`
 2. Upload MP4 directly to R2 pre-signed URL
-3. `POST /analyze` with `video_key` + `vantage`
-4. Decode analysis result into frontend `AnalysisResponse`
+3. `POST /analysis-runs` with `video_key` + `vantage`
+4. Stream `GET /analysis-runs/{run_id}/events` as Server-Sent Events for stage/progress updates
+5. Fetch `GET /analysis-runs/{run_id}` when the stream reports success, then decode `result` into frontend `AnalysisResponse`
 
-In DEBUG builds, `SwingCoachAPI.useMockAnalysis` is enabled. The app still exports the swing and uploads it to R2, then calls `POST /mock/analyze` instead of the heavy pipeline. The mock endpoint verifies the uploaded R2 object and returns the same lightweight response with a signed dummy annotated-video URL.
+The legacy synchronous `POST /analyze` endpoint remains available, but the app uses async runs for real analysis so the request no longer has to stay open through the full model/render/upload pipeline.
+If a selected backend does not yet expose `/analysis-runs` and returns `404` or `405`, the client falls back to legacy `POST /analyze` for rollout compatibility.
+
+In DEBUG builds, Library > Experiments exposes backend controls:
+- `Backend target`: `Local` (`http://127.0.0.1:8000`), `Deployed` (`https://swingcoach-api.ruari.dev`), or `Custom`.
+- `Mock analysis`: when enabled the app still exports/uploads the swing but calls `POST /mock/analyze`; when disabled it creates a real async analysis run.
+
+DEBUG defaults are `Local` and real analysis so local backend changes can be tested without deploying the VPS. The local target works directly from Simulator. On a physical iPhone, use `Custom` with the Mac's LAN URL, for example `http://192.168.1.23:8000`.
+
+Release builds use the deployed backend and real async analysis runs.
 
 Current frontend `AnalysisResponse` expectation:
 - `analysis_id: String`
@@ -229,25 +241,27 @@ Current frontend `AnalysisResponse` expectation:
 - `annotated_video: {key, url, base_key?, base_url?, tracks_key?, tracks_url?, layers?}?`
 - `drills: [{title, summary}]`
 
-`annotated_video.layers` is metadata for the rendered annotation layers and should list every server-backed toggle layer, including dynamic layers such as `speed` when samples exist. `base_url` points to a clean dense-window video for true client-side toggles, while `url` remains the flattened annotated MP4 fallback. `tracks_url` points to normalized JSON overlay tracks; saved analysis results persist the video key/URL, base key/URL, track key/URL, and layer metadata. The current track decoder supports `skeleton`, `reference_lines`, `club_plane`, `ball_contact`, `swing_path`, top-level `phase_markers`, top-level `confidence_evidence`, and `speed`.
+`annotated_video.layers` is metadata for the rendered annotation layers and should list every server-backed toggle layer, including dynamic layers such as `speed` when samples exist. `base_url` points to a clean dense-window video for true client-side toggles, while `url` remains the flattened annotated MP4 fallback. `tracks_url` points to normalized JSON overlay tracks; saved analysis results persist the video key/URL, base key/URL, track key/URL, and layer metadata. The current track decoder supports `skeleton`, `reference_lines`, `club_plane`, `ball_contact`, `swing_path`, top-level `phase_markers`, top-level `confidence_evidence`, `speed`, top-level `guide_layers`, and per-frame `layers.guides`.
+
+`layers.guides` is a generic shape layer in normalized video space. Supported guide shape kinds are `line`, `arrow`, `polyline`, `rectangle`, `circle`, and `label`; shapes are filtered by their `layer` field against the same toggle set as the legacy overlay layers. When both a generic `club_plane` or `clubhead_path` guide and the legacy track are present, the client prefers the guide drawing to avoid duplicate overlays.
 
 ## Known Gaps and Risks
 
 1. Async analysis lifecycle
-- `/analyze` is still synchronous while the analysis pipeline can be expensive.
-- A future `AnalysisRun` status model should let the app submit work, leave processing, and poll for completion.
+- Run status is currently server-memory-backed. If the backend restarts while a run is active, the app will lose that run and should show the backend error.
+- SSE is one-way progress only. Cancellation, resumable background processing, and persisted run history are future work.
 
 2. Annotated video playback
 - UI embeds the annotated video in the Coach result when available.
 - Saved analyses persist artifact keys and refresh signed video and track URLs through `POST /artifact-url` when stale.
-- Track overlays are a first pass. They cover skeleton, reference lines, club plane, ball/contact evidence, swing path, phase markers, confidence evidence, and speed, but not club masks, ball-flight tracking, or 3D replay controls yet.
+- Track overlays are a first pass. They cover skeleton, reference lines, club plane, ball/contact evidence, swing path, phase markers, confidence evidence, speed, and generic guide shapes, but not club masks, clubface orientation, ball-flight tracking, force/pressure claims, or 3D replay controls yet.
 
 3. Trim-to-analyze handoff
 - The capture trim footer currently shows a single primary action.
 - Automatic analyze handoff after clip export is intentionally left as future work.
 
 4. Environment setup
-- `baseURL` in [SwingCoachAPI.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingCoachAPI.swift) is still hardcoded and should be environment-configurable.
+- DEBUG backend target and mock/real analysis mode are configurable from Experiments. Release remains fixed to the deployed backend until a production environment selector or build configuration is needed.
 
 5. Swing auto-detection validation
 - On-device detection is intentionally conservative and editable, but needs device/video validation with real range sessions before it should be treated as a high-confidence practice-swing filter.
@@ -255,6 +269,6 @@ Current frontend `AnalysisResponse` expectation:
 
 ## Recommended Next Frontend Documentation Additions
 
-1. Add API migration checklist once `/analyze` response mapping is updated.
+1. Add API migration checklist once async analysis-run persistence/cancellation is designed.
 2. Add screen-by-screen state diagrams for capture -> trim -> analyze.
 3. Add QA matrix (permissions, iCloud assets, missing assets, offline behavior).

@@ -16,6 +16,7 @@ class VisualizationConfig:
     draw_ball_contact: bool = True     # Ball/contact evidence near impact
     draw_phase_markers: bool = True    # P1-P10 event markers
     draw_confidence: bool = True       # Confidence and evidence badges
+    draw_guides: bool = True           # Generic checkpoint guide shapes
     draw_club_mask: bool = False       # Semi-transparent mask overlay (disabled by default)
     min_visibility: float = 0.5        # Keypoint visibility threshold
 
@@ -33,6 +34,7 @@ class VisualizationConfig:
             draw_ball_contact=config_dict.get("draw_ball_contact", True),
             draw_phase_markers=config_dict.get("draw_phase_markers", True),
             draw_confidence=config_dict.get("draw_confidence", True),
+            draw_guides=config_dict.get("draw_guides", True),
             draw_club_mask=config_dict.get("draw_club_mask", False),
             min_visibility=config_dict.get("min_visibility", 0.5),
         )
@@ -47,6 +49,7 @@ class VisualizationConfig:
             "draw_ball_contact": self.draw_ball_contact,
             "draw_phase_markers": self.draw_phase_markers,
             "draw_confidence": self.draw_confidence,
+            "draw_guides": self.draw_guides,
             "draw_club_mask": self.draw_club_mask,
             "min_visibility": self.min_visibility,
         }
@@ -120,6 +123,54 @@ LAYER_DEFINITIONS = {
         description="Confidence and evidence badges for phase and impact detection",
         enabled=True,
     ),
+    "shaft_checkpoints": LayerInfo(
+        name="shaft_checkpoints",
+        color="#FFD400",
+        description="Shaft checkpoints at key swing phases",
+        enabled=True,
+    ),
+    "clubhead_path": LayerInfo(
+        name="clubhead_path",
+        color="#FF3B30",
+        description="Clubhead trace through the analyzed swing window",
+        enabled=True,
+    ),
+    "setup_geometry": LayerInfo(
+        name="setup_geometry",
+        color="#00E5FF",
+        description="Setup posture, stance, and alignment references",
+        enabled=True,
+    ),
+    "head_reference": LayerInfo(
+        name="head_reference",
+        color="#FFFFFF",
+        description="Address head reference compared with later swing positions",
+        enabled=True,
+    ),
+    "hip_depth": LayerInfo(
+        name="hip_depth",
+        color="#FF9500",
+        description="Address hip-depth reference for posture and early-extension checks",
+        enabled=True,
+    ),
+    "hand_depth": LayerInfo(
+        name="hand_depth",
+        color="#BF5AF2",
+        description="Hand-depth path and top-position checkpoint",
+        enabled=True,
+    ),
+    "lead_arm_plane": LayerInfo(
+        name="lead_arm_plane",
+        color="#34C759",
+        description="Lead-arm plane compared with shoulder plane at the top",
+        enabled=True,
+    ),
+    "takeaway_checkpoint": LayerInfo(
+        name="takeaway_checkpoint",
+        color="#FFD60A",
+        description="Takeaway hand and shaft relationship checkpoint",
+        enabled=True,
+    ),
     "club_mask": LayerInfo(
         name="club_mask",
         color="#00FF0064",  # Green with alpha
@@ -127,6 +178,18 @@ LAYER_DEFINITIONS = {
         enabled=False,
     ),
 }
+
+GUIDE_LAYER_NAMES = [
+    "club_plane",
+    "shaft_checkpoints",
+    "clubhead_path",
+    "setup_geometry",
+    "head_reference",
+    "hip_depth",
+    "hand_depth",
+    "lead_arm_plane",
+    "takeaway_checkpoint",
+]
 
 
 @dataclass
@@ -159,6 +222,10 @@ class VisualizationMetadata:
             layers.append(LAYER_DEFINITIONS["confidence"])
         if config.draw_club_mask:
             layers.append(LAYER_DEFINITIONS["club_mask"])
+        if config.draw_guides:
+            for layer_name in GUIDE_LAYER_NAMES:
+                if not any(layer.name == layer_name for layer in layers):
+                    layers.append(LAYER_DEFINITIONS[layer_name])
 
         return cls(layers=layers)
 
