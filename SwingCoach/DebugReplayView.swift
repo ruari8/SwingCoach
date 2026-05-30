@@ -83,7 +83,7 @@ private struct DebugReplayAudioImpact {
 
 struct DebugReplayView: View {
     @StateObject private var model = DebugReplayViewModel()
-    @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 16.0
+    @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
     @AppStorage(ExperimentalSettingKey.hybridImpactConfirmationPostRoll) private var hybridImpactConfirmationPostRoll = 0.20
     @AppStorage(ExperimentalSettingKey.debugReplaySourceTiming) private var debugReplaySourceTimingRaw = DebugReplaySourceTiming.realtime.rawValue
     @AppStorage(ExperimentalSettingKey.debugReplayDetectionMode) private var debugReplayDetectionModeRaw = DebugReplayDetectionMode.hybridImpact.rawValue

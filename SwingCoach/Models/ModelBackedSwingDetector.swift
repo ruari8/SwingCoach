@@ -44,7 +44,7 @@ nonisolated struct ObjectSwingDetectorConfiguration: Equatable {
     }
 
     static func liveObjectModel(
-        sampleFPS: Double = 16.0,
+        sampleFPS: Double = 8.0,
         timelineScale: Double = 8.0,
         impactConfirmationPostRoll: Double = 0.20
     ) -> ObjectSwingDetectorConfiguration {
@@ -183,9 +183,15 @@ nonisolated enum ObjectSwingImpactSelector {
     ) -> [ObjectSwingImpactCandidate] {
         var accepted: [(candidate: ObjectSwingImpactCandidate, reason: String)] = []
         var lastCoreImpactTime: Double?
+        let observedDuration = max(
+            attemptTimes.last ?? 0,
+            poseFeatures.last?.time ?? 0,
+            detections.map(\.end).max() ?? 0
+        )
+        let minimumImpactTime = observedDuration <= 3.60 ? 0.55 : 1.15
 
         for detection in detections {
-            guard detection.impactTime >= 1.15 else { continue }
+            guard detection.impactTime >= minimumImpactTime else { continue }
 
             if passesPoseGate(
                 detection: detection,
@@ -1720,9 +1726,114 @@ nonisolated final class LiveModelSwingDetector {
             separatedDetections.append(detection)
         }
 
-        return mergeImpactCandidates(separatedDetections)
+        let mergedDetections = mergeImpactCandidates(separatedDetections)
+        if !mergedDetections.isEmpty {
+            return mergedDetections
+                .prefix(32)
+                .map { $0 }
+        }
+
+        return clippedMotionImpactCandidates(
+            videoDuration: videoDuration,
+            declaredAt: declaredAt
+        )
             .prefix(32)
             .map { $0 }
+    }
+
+    private func clippedMotionImpactCandidates(
+        videoDuration: Double,
+        declaredAt: Double
+    ) -> [ObjectSwingImpactCandidate] {
+        let maximumClippedDuration = configuration.maxWindowDuration + configuration.impactPostRoll
+        guard videoDuration <= maximumClippedDuration + configuration.targetSampleInterval * 2.0,
+              declaredAt >= videoDuration - configuration.targetSampleInterval * 2.0
+        else {
+            return []
+        }
+
+        return proposeWindows(from: features)
+            .compactMap { proposal -> ObjectSwingImpactCandidate? in
+                let windowStart = max(0, proposal.start)
+                let windowEnd = min(videoDuration, proposal.end)
+                guard windowEnd > windowStart else { return nil }
+
+                let diagnostics = windowDiagnostics(start: windowStart, end: windowEnd)
+                guard clippedMotionFallbackAccepts(
+                    diagnostics: diagnostics,
+                    videoDuration: videoDuration
+                ) else {
+                    return nil
+                }
+
+                guard let impactTime = clippedMotionFallbackImpactTime(
+                    start: windowStart,
+                    end: windowEnd
+                ) else {
+                    return nil
+                }
+
+                let start = max(0, impactTime - configuration.impactPreRoll)
+                let end = min(videoDuration, impactTime + configuration.impactPostRoll)
+                guard end > start else { return nil }
+
+                return ObjectSwingImpactCandidate(
+                    start: start,
+                    end: end,
+                    impactTime: impactTime,
+                    declaredAt: min(declaredAt, impactTime + configuration.impactConfirmationPostRoll),
+                    confidence: clippedMotionFallbackConfidence(diagnostics),
+                    diagnostics: diagnostics
+                )
+            }
+            .sorted { $0.impactTime < $1.impactTime }
+    }
+
+    private func clippedMotionFallbackAccepts(
+        diagnostics: ObjectSwingWindowDiagnostics,
+        videoDuration: Double
+    ) -> Bool {
+        let touchesTrimBoundary = diagnostics.start <= configuration.targetSampleInterval * 5.0
+            || diagnostics.end >= videoDuration - configuration.targetSampleInterval * 5.0
+        let strongMotionFrameFloor = max(4, configuration.acceptanceMinStrongMotionFrames * 2)
+        let minimumMeanClubMotion = max(0.075, configuration.acceptanceMinMeanClubMotion * 1.50)
+        let minimumClubPathSpan = max(0.48, configuration.acceptanceMinClubPathSpan * 1.50)
+        let maximumClubTopY = min(configuration.acceptanceMaxClubTopY, 0.42)
+
+        return touchesTrimBoundary
+            && diagnostics.peakMotion >= configuration.acceptanceMinPeakMotion
+            && diagnostics.strongMotionFrameCount >= strongMotionFrameFloor
+            && diagnostics.meanClubMotion >= minimumMeanClubMotion
+            && diagnostics.clubPathSpan >= minimumClubPathSpan
+            && diagnostics.clubTopY <= maximumClubTopY
+            && diagnostics.clubFrameRatio >= 0.75
+    }
+
+    private func clippedMotionFallbackImpactTime(start: Double, end: Double) -> Double? {
+        let windowFeatures = features.filter { $0.time >= start && $0.time <= end }
+        guard !windowFeatures.isEmpty else { return nil }
+
+        let motionSeries = smoothedMotion(windowFeatures)
+        let bestIndex = windowFeatures.indices.max { lhs, rhs in
+            let lhsScore = motionSeries[lhs] + windowFeatures[lhs].clubMotion * 0.40
+            let rhsScore = motionSeries[rhs] + windowFeatures[rhs].clubMotion * 0.40
+            return lhsScore < rhsScore
+        }
+        guard let bestIndex else { return nil }
+
+        let lowerBound = max(0.55, start + configuration.targetSampleInterval)
+        let upperBound = max(lowerBound, min(end, (features.last?.time ?? end)) - configuration.targetSampleInterval * 0.50)
+        return min(max(windowFeatures[bestIndex].time, lowerBound), upperBound)
+    }
+
+    private func clippedMotionFallbackConfidence(_ diagnostics: ObjectSwingWindowDiagnostics) -> Double {
+        min(
+            0.84,
+            0.46
+            + min(0.16, diagnostics.peakMotion * 0.06)
+            + min(0.12, diagnostics.meanClubMotion * 0.90)
+            + min(0.10, diagnostics.clubPathSpan * 0.10)
+        )
     }
 
     private func impactDebugReports(
@@ -1877,7 +1988,12 @@ nonisolated final class LiveModelSwingDetector {
                 postFeatureCount: postFeatureCount
             )
         }
-        if postFeatureCount < minimumPostDepartureFrameCount {
+        let requiredPostFeatureCount = minimumPostDepartureFrameCount(
+            afterStart: afterStart,
+            afterEnd: afterEnd,
+            videoDuration: videoDuration
+        )
+        if postFeatureCount < requiredPostFeatureCount {
             return impactDebugReport(
                 anchor: anchor,
                 result: "insufficient_post_frames",
@@ -2095,7 +2211,13 @@ nonisolated final class LiveModelSwingDetector {
             )
             let afterEnd = disappearedAt + afterDuration
             guard featureCount(start: beforeStart, end: beforeEnd) >= 2 else { continue }
-            guard featureCount(start: afterStart, end: afterEnd) >= minimumPostDepartureFrameCount else { continue }
+            let postFeatureCount = featureCount(start: afterStart, end: afterEnd)
+            let requiredPostFeatureCount = minimumPostDepartureFrameCount(
+                afterStart: afterStart,
+                afterEnd: afterEnd,
+                videoDuration: videoDuration
+            )
+            guard postFeatureCount >= requiredPostFeatureCount else { continue }
 
             let prePresence = anchorPresenceRatio(features: features, start: beforeStart, end: beforeEnd, anchor: anchor)
             let postPresence = anchorPresenceRatio(features: features, start: afterStart, end: afterEnd, anchor: anchor)
@@ -2186,7 +2308,36 @@ nonisolated final class LiveModelSwingDetector {
             && localDiagnostics.meanClubMotion >= 0.09
     }
 
-    private var minimumPostDepartureFrameCount: Int {
+    private func minimumPostDepartureFrameCount(
+        afterStart: Double,
+        afterEnd: Double,
+        videoDuration: Double
+    ) -> Int {
+        let fullWindowCount = minimumFullPostDepartureFrameCount
+        let maximumSingleSwingClipDuration = max(
+            configuration.maxWindowDuration * 2.0,
+            configuration.maxWindowDuration
+            + configuration.impactPostRoll
+            + configuration.targetSampleInterval * 2.0
+        )
+        guard videoDuration <= maximumSingleSwingClipDuration else {
+            return fullWindowCount
+        }
+
+        let isTrimmedByEnd = afterEnd > videoDuration + configuration.targetSampleInterval * 0.50
+        guard isTrimmedByEnd else {
+            return fullWindowCount
+        }
+
+        let availablePostFrames = featureCount(start: afterStart, end: videoDuration)
+        guard availablePostFrames > 0 else {
+            return fullWindowCount
+        }
+
+        return min(fullWindowCount, max(2, availablePostFrames))
+    }
+
+    private var minimumFullPostDepartureFrameCount: Int {
         5
     }
 

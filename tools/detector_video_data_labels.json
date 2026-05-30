@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "timebase": "source video timeline seconds",
+  "default_expected_swing_count": 1,
+  "notes": [
+    "This file adds review overrides for detector_model/video_data. Files not listed here are exported library clips expected to contain one golf swing.",
+    "source_time_scale is inferred by tools/evaluate_detector_video_data.py from clip duration unless explicitly overridden.",
+    "swingcoach_009_dtl_20260401_143143.mp4 was manually reviewed and contains a golfer standing while a foreground person gestures near the camera, not a swing."
+  ],
+  "videos": [
+    {
+      "filename": "swingcoach_009_dtl_20260401_143143.mp4",
+      "expected_swing_count": 0,
+      "notes": "Negative clip: no swing motion by the golfer; foreground occluder/gesture should not be detected as a swing."
+    }
+  ]
+}

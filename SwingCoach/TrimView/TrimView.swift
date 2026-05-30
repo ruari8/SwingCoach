@@ -66,7 +66,7 @@ struct TrimView: View {
     @State private var frameStep = CMTime(value: 1, timescale: 30)
     @State private var seekRepeatTask: Task<Void, Never>?
     @State private var activeSeekDirection: Int?
-    @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 16.0
+    @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
     @AppStorage(ExperimentalSettingKey.hybridImpactConfirmationPostRoll) private var hybridImpactConfirmationPostRoll = 0.20
     @AppStorage(ExperimentalSettingKey.liveCaptureDetectionMode) private var liveCaptureDetectionModeRaw = LiveCaptureDetectionMode.hybrid.rawValue
 

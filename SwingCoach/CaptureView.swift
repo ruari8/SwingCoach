@@ -74,7 +74,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     @Published var captureMode: SloMoMode = .ultra  // Default to 240 fps
     @Published var liveSwingDetection = LiveSwingDetectionSnapshot.idle
     var isLiveSwingDetectionEnabled = true
-    var liveModelDetectorSampleFPS = 16.0
+    var liveModelDetectorSampleFPS = 8.0
     var hybridImpactConfirmationPostRoll = 0.20
     var liveCaptureDetectionMode: LiveCaptureDetectionMode = .hybrid
 
@@ -607,7 +607,7 @@ struct CaptureView: View {
 
     @StateObject private var camera = CameraSession()
     @AppStorage(ExperimentalSettingKey.liveAutoSwingDetectionEnabled) private var liveAutoSwingDetectionEnabled = true
-    @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 16.0
+    @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
     @AppStorage(ExperimentalSettingKey.hybridImpactConfirmationPostRoll) private var hybridImpactConfirmationPostRoll = 0.20
     @AppStorage(ExperimentalSettingKey.liveCaptureDetectionMode) private var liveCaptureDetectionModeRaw = LiveCaptureDetectionMode.hybrid.rawValue
     @State private var isRecording = false

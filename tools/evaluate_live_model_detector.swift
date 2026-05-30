@@ -133,7 +133,7 @@ struct EvaluateLiveModelDetector {
             let modelPath = arguments.count > 1
                 ? arguments[1]
                 : "SwingCoach/MLModels/SwingObjectsYOLO11n.mlpackage"
-            let requestedSampleFPS = arguments.count > 2 ? Double(arguments[2]) ?? 16.0 : 16.0
+            let requestedSampleFPS = arguments.count > 2 ? Double(arguments[2]) ?? 8.0 : 8.0
             let sourceTimeScale = arguments.count > 3 ? Double(arguments[3]) ?? 8.0 : 8.0
             let maxFrames = arguments.count > 4 ? Int(arguments[4]) ?? 18_000 : 18_000
             let labelsPath = arguments.count > 5 && !arguments[5].isEmpty ? arguments[5] : nil

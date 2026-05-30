@@ -46,7 +46,8 @@ enum LiveCaptureDetectionMode: String, CaseIterable {
 }
 
 enum ExperimentalDetectorDefaults {
-    private static let currentRevision = 1
+    private static let currentRevision = 2
+    private static let defaultLiveModelDetectorSampleFPS = 8.0
     private static let debugReplayHybridModeRaw = "hybridImpact"
     private static let debugReplayContactModeRaw = "contact"
 
@@ -71,6 +72,11 @@ enum ExperimentalDetectorDefaults {
             defaults.set(debugReplayHybridModeRaw, forKey: ExperimentalSettingKey.debugReplayDetectionMode)
         }
 
+        let storedSampleFPS = defaults.object(forKey: ExperimentalSettingKey.liveModelDetectorSampleFPS) as? NSNumber
+        if storedSampleFPS == nil || storedSampleFPS?.doubleValue == 16.0 {
+            defaults.set(defaultLiveModelDetectorSampleFPS, forKey: ExperimentalSettingKey.liveModelDetectorSampleFPS)
+        }
+
         defaults.set(currentRevision, forKey: ExperimentalSettingKey.detectorDefaultsRevision)
         return (captureModeRaw, debugReplayModeRaw)
     }
@@ -78,7 +84,7 @@ enum ExperimentalDetectorDefaults {
 
 struct ExperimentalSettingsView: View {
     @AppStorage(ExperimentalSettingKey.liveAutoSwingDetectionEnabled) private var liveAutoSwingDetectionEnabled = true
-    @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 16.0
+    @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
     @AppStorage(ExperimentalSettingKey.hybridImpactConfirmationPostRoll) private var hybridImpactConfirmationPostRoll = 0.20
     @AppStorage(ExperimentalSettingKey.liveCaptureDetectionMode) private var liveCaptureDetectionModeRaw = LiveCaptureDetectionMode.hybrid.rawValue
     @AppStorage(ExperimentalSettingKey.showDebugReplayTab) private var showDebugReplayTab = true
