@@ -17,7 +17,7 @@ ROOT = Path(".detectorTestV3")
 WORK_DIR = ROOT / "perf_v3_8fps"
 EVALUATOR = Path(".videos/bin/evaluate_live_model_detector")
 MODEL = Path("SwingCoach/MLModels/SwingObjectsYOLO11n.mlpackage")
-DEFAULT_LABELS = Path("tools/detector_test_v3_labels.json")
+DEFAULT_LABELS = Path("detector_workbench/validation/labels/detector_test_v3_labels.json")
 
 
 @dataclass(frozen=True)
@@ -333,6 +333,16 @@ def main() -> None:
     args = parser.parse_args()
 
     cases = tuple(sorted(load_cases(args.labels), key=video_duration_seconds))
+    skipped = [
+        {
+            "video": case.name,
+            "filename": case.filename,
+            "reason": "missing fixture video",
+        }
+        for case in cases
+        if not (ROOT / case.filename).exists()
+    ]
+    cases = tuple(case for case in cases if (ROOT / case.filename).exists())
     results = []
     for case in cases:
         print(f"[start] {case.name}", flush=True)
@@ -352,6 +362,7 @@ def main() -> None:
             "impactConfirmationPostRoll": args.impact_confirmation_post_roll,
             "declarationPollInterval": args.declaration_poll_interval,
         },
+        "skippedVideos": skipped,
         "videos": results,
     }
     output_path = WORK_DIR / "summary.json"

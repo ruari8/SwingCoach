@@ -235,7 +235,7 @@ def score_peaks(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--video", type=Path, default=Path(".detectorTestV3/test4.mp4"))
-    parser.add_argument("--labels", type=Path, default=Path("tools/detector_test_v3_labels.json"))
+    parser.add_argument("--labels", type=Path, default=Path("detector_workbench/validation/labels/detector_test_v3_labels.json"))
     parser.add_argument("--label-case-id", default="test4")
     parser.add_argument(
         "--wav",

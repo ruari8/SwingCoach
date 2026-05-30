@@ -21,7 +21,7 @@ from typing import Any
 DEFAULT_VIDEO_DIR = Path("detector_model/video_data")
 DEFAULT_METADATA = DEFAULT_VIDEO_DIR / "metadata.json"
 DEFAULT_FRAME_MANIFEST = Path("detector_model/frame_dataset/dataset_manifest.json")
-DEFAULT_LABELS = Path("tools/detector_video_data_labels.json")
+DEFAULT_LABELS = Path("detector_workbench/validation/labels/detector_video_data_labels.json")
 DEFAULT_EVALUATOR = Path(".videos/bin/evaluate_live_model_detector")
 DEFAULT_MODEL = Path("SwingCoach/MLModels/SwingObjectsYOLO11n.mlpackage")
 DEFAULT_OUTPUT_DIR = Path(".videos/detector_video_data_eval")

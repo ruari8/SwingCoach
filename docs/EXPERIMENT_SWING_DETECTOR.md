@@ -115,9 +115,9 @@ Those offsets should be learned or tuned from labels rather than hard-coded as f
 Diagnostic script:
 
 ```bash
-./backend/venv/bin/python tools/analyze_audio_impacts.py \
+./backend/venv/bin/python detector_workbench/validation/analyze_audio_impacts.py \
   --video .detectorTestV3/test4.mp4 \
-  --labels tools/detector_test_v3_labels.json \
+  --labels detector_workbench/validation/labels/detector_test_v3_labels.json \
   --label-case-id test4 \
   --output .videos/audio_eval/test4_audio_impact_report.json
 ```
@@ -417,7 +417,7 @@ The ball count is intentionally much higher because this run labels all plausibl
 The raw MLX SAM3 labels are too noisy to train directly because the range background contains many tiny golf balls. A filtered training dataset was built with:
 
 ```bash
-./backend/venv/bin/python tools/build_detector_training_dataset.py --overwrite
+./backend/venv/bin/python detector_workbench/modeling/build_detector_training_dataset.py --overwrite
 ```
 
 Output:
@@ -426,17 +426,18 @@ Output:
 detector_model/yolo_swing_objects_v1
 ```
 
-This directory is ignored by git. The tracked builder script is `tools/build_detector_training_dataset.py`.
+This directory is ignored by git. The tracked builder script is `detector_workbench/modeling/build_detector_training_dataset.py`.
 
 Working layout for this experiment:
 
 | Path | Git status | Purpose |
 | --- | --- | --- |
 | `detector_model/` | ignored | heavy local workspace for videos, extracted frames, pseudo-labels, trained checkpoints, Core ML exports, and QA images |
-| `tools/` | tracked | reusable experiment/preprocessing/evaluation scripts |
+| `detector_workbench/modeling/` | tracked | reusable frame extraction, pseudo-labeling, dataset-building, and model QA scripts |
+| `detector_workbench/validation/` | tracked | reusable runtime detector evaluation scripts, Swift evaluator source, and labels |
 | `docs/EXPERIMENT_SWING_DETECTOR.md` | tracked | decisions, results, and current interpretation |
 
-The `tools/` name is generic, but it is already the repo's existing home for detector/build/evaluation utilities. If this work graduates from experiment to product code, move the stable pieces into a more explicit package such as `backend/analysis/detector_training/` or `experiments/swing_detector/`.
+Heavy videos, extracted frames, generated labels, compiled binaries, proxies, and reports remain ignored in local workspaces such as `detector_model/`, `.detectorTestV3/`, and `.videos/`. Tracked scripts and labels stay outside those ignored folders so they are not accidentally deleted with generated data.
 
 The first model dataset deliberately uses three classes:
 
@@ -579,13 +580,7 @@ Current interpretation:
 
 ### YOLO-backed Detector Pipeline Experiment
 
-Original script:
-
-```text
-tools/evaluate_yolo_object_swing_detector.py
-```
-
-This exploratory Python harness was removed during cleanup after the detector logic was ported into the Swift/Core ML live detector path. The algorithm notes and results below are retained for provenance.
+The original exploratory Python harness was removed during cleanup after the detector logic was ported into the Swift/Core ML live detector path. The algorithm notes and results below are retained for provenance.
 
 Purpose:
 
@@ -705,7 +700,7 @@ The V3 detector tuning keeps lower-strike addressed-ball evidence as the product
 
 Historical generalization check with `.detectorTestV2`:
 
-The `.detectorTestV2` fixture folder and its strategy harness were removed during detector cleanup after the MVP detector was accepted. The rough-label results below are preserved as historical evidence only; current reruns should use `.detectorTestV3` with `tools/evaluate_detector_test_v3_performance.py` and `tools/detector_test_v3_labels.json`.
+The `.detectorTestV2` fixture folder and its strategy harness were removed during detector cleanup after the MVP detector was accepted. The rough-label results below are preserved as historical evidence only; current reruns should use `.detectorTestV3` with `detector_workbench/validation/evaluate_detector_test_v3_performance.py` and `detector_workbench/validation/labels/detector_test_v3_labels.json`.
 
 Aggregate result:
 
@@ -799,7 +794,7 @@ xcrun swiftc -parse-as-library \
   SwingCoach/Models/LiveSwingDetector.swift \
   SwingCoach/Models/GolfObjectDetector.swift \
   SwingCoach/Models/ModelBackedSwingDetector.swift \
-  tools/evaluate_live_model_detector.swift \
+  detector_workbench/validation/evaluate_live_model_detector.swift \
   -o .videos/bin/evaluate_live_model_detector
 
 .videos/bin/evaluate_live_model_detector \
@@ -811,7 +806,7 @@ xcrun swiftc -parse-as-library \
 Fixture-level Core ML live scoring:
 
 ```text
-python3 tools/evaluate_detector_test_v3_performance.py
+python3 detector_workbench/validation/evaluate_detector_test_v3_performance.py
 ```
 
 Current `16fps / 8x` hybrid fixture result:
