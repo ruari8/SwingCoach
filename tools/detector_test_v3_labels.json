@@ -4,18 +4,10 @@
   "notes": [
     "Impact labels are rough QuickTime-visible second buckets: a label shown as 3s means the impact is somewhere in [3.0, 4.0] on the source video timeline.",
     "For 8x slow-motion videos, real-time equivalent seconds are source seconds divided by source_time_scale.",
-    "test4 also carries the older rough positive swing windows from .videos/IMG_2592.labels.json; it now has 18 user-provided rough impact labels."
+    "test4 also carries the older rough positive swing windows from .videos/IMG_2592.labels.json; it now has 18 user-provided rough impact labels.",
+    "test1, test3, and test6 are siloed under .detectorTestV3/.silo and excluded from active V3 acceptance scoring."
   ],
   "videos": [
-    {
-      "id": "test1",
-      "filename": "test1.MP4",
-      "source_time_scale": 1.0,
-      "expected_swing_count": 1,
-      "impact_time_labels": [
-        {"start": 3.0, "end": 4.0}
-      ]
-    },
     {
       "id": "test2",
       "filename": "test2.mp4",
@@ -23,16 +15,6 @@
       "expected_swing_count": 1,
       "impact_time_labels": [
         {"start": 2.0, "end": 3.0}
-      ]
-    },
-    {
-      "id": "test3",
-      "filename": "test3.MP4",
-      "source_time_scale": 1.0,
-      "expected_swing_count": 2,
-      "impact_time_labels": [
-        {"start": 4.0, "end": 5.0},
-        {"start": 10.0, "end": 11.0}
       ]
     },
     {
@@ -94,15 +76,6 @@
         {"start": 1723.0, "end": 1724.0}
       ],
       "notes": "User-provided rough impacts; user noted confidence is not 100%."
-    },
-    {
-      "id": "test6",
-      "filename": "test6.MP4",
-      "source_time_scale": 8.0,
-      "expected_swing_count": 1,
-      "impact_time_labels": [
-        {"start": 14.0, "end": 15.0}
-      ]
     },
     {
       "id": "test7",
