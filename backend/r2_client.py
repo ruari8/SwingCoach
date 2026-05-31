@@ -13,6 +13,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+def _env_bool(name: str, default: bool = True) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() not in {"0", "false", "no", "off"}
+
+
 class R2Client:
     """Client for interacting with Cloudflare R2 storage."""
 
@@ -27,16 +34,16 @@ class R2Client:
 
         # R2 endpoint format
         endpoint_url = f"https://{self.account_id}.r2.cloudflarestorage.com"
+        verify_ssl = _env_bool("R2_VERIFY_SSL", default=True)
 
         # Create S3 client configured for R2
-        # Note: verify=False is a workaround for macOS SSL cert issues in dev
         self.s3 = boto3.client(
             's3',
             endpoint_url=endpoint_url,
             aws_access_key_id=self.access_key,
             aws_secret_access_key=self.secret_key,
             region_name='auto',  # R2 uses 'auto' for region
-            verify=False  # Disable SSL verification (dev only!)
+            verify=verify_ssl,
         )
 
     def generate_upload_url(self, video_key: Optional[str] = None, expiration: int = 3600) -> dict:

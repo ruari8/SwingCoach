@@ -47,6 +47,8 @@ cd backend
 cp .env.example .env
 ```
 
+R2 HTTPS certificate verification is enabled by default. If a local machine has a temporary certificate-store problem, set `R2_VERIFY_SSL=false` in `backend/.env`; do not use that setting for deployed backends.
+
 ## API Contract
 
 Main server file: [main.py](/Users/ruari/Documents/Startups/SwingCoach/backend/main.py)
