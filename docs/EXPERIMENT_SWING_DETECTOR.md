@@ -1,5 +1,7 @@
 # Experimental On-Device Swing Detector
 
+For the proposed clean restart architecture, see [Swing Detector Restart Design](/Users/ruari/Documents/Startups/SwingCoach/docs/SWING_DETECTOR_DESIGN.md). This file remains the historical/current experiment record.
+
 ## Decision
 
 The product goal is an on-device swing detector that can find real golf swings in recorded or imported iPhone video.

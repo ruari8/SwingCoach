@@ -9,6 +9,8 @@ This folder and `backend/docs` are the active documentation set.
 - [Market Thesis](/Users/ruari/Documents/Startups/SwingCoach/docs/MARKET.md)
 - [Out Of Scope](/Users/ruari/Documents/Startups/SwingCoach/docs/OUT_OF_SCOPE.md)
 - [Experimental Swing Detector](/Users/ruari/Documents/Startups/SwingCoach/docs/EXPERIMENT_SWING_DETECTOR.md)
+- [Swing Detector Restart Design](/Users/ruari/Documents/Startups/SwingCoach/docs/SWING_DETECTOR_DESIGN.md)
+- [Swing Detector V2 Implementation Plan](/Users/ruari/Documents/Startups/SwingCoach/docs/SWING_DETECTOR_V2_IMPLEMENTATION_PLAN.md)
 
 ## Frontend
 

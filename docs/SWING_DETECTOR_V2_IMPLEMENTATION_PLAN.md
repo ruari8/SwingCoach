@@ -1,0 +1,228 @@
+# Swing Detector V2 Implementation Plan
+
+This is the working plan for building `SwingDetectorV2`. It preserves the fixture-gated sequence agreed during the detector restart so the milestone order does not get lost across context compaction.
+
+The design source of truth remains [Swing Detector Restart Design](/Users/ruari/Documents/Startups/SwingCoach/docs/SWING_DETECTOR_DESIGN.md). This file is the execution plan: what to build, what to run, and when to stop.
+
+## Context
+
+The shipping swing detector, `LiveModelSwingDetector` in [ModelBackedSwingDetector.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/ModelBackedSwingDetector.swift), has become hard to reason about because its accept decision is a set of interacting boolean rescue branches. Tuning one branch can silently change which branch wins on another clip.
+
+`SwingDetectorV2` restarts from first principles:
+
+- lock the addressed-ball patch first
+- detect impact as `ball present -> club sweeps through -> ball gone and stays gone`
+- use one flat evidence vector of continuous scores
+- let only the scorer threshold the final evidence
+- let the state machine own timing and adaptive sampling
+- run one real-time pass, with all durations defined in real swing-time and scaled by `source_time_scale`
+- de-duplicate by time, not screen location
+- treat missing audio or pose as neutral, not zero
+
+## Locked Decisions
+
+- Reuse `GolfObjectDetector` unchanged for per-frame YOLO objects.
+- Patch Watcher v1 is YOLO-only inside the locked patch, with a lower in-patch ball threshold than global detection.
+- Do not add classical luma/template patch fallback unless YOLO-only recall proves insufficient.
+- Keep the legacy detector intact until V2 beats it on the fixture suite.
+- Wire the app only behind an Experiments flag, after the offline V2 path is proven enough to compare on device.
+- Advance one fixture at a time. If a case fails, stop and debug the conflict between the trace and the visible frames before moving on.
+
+## Reused Types And Tools
+
+- [GolfObjectDetector.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/GolfObjectDetector.swift): reused object detector.
+- [OnDeviceSwingDetector.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/OnDeviceSwingDetector.swift): `DetectedSwing` output type.
+- [LiveSwingDetector.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/LiveSwingDetector.swift): live status snapshot/status types.
+- [generate_model_detection_contact_sheet.swift](/Users/ruari/Documents/Startups/SwingCoach/detector_workbench/modeling/generate_model_detection_contact_sheet.swift): contact sheet renderer.
+- [detector_test_v3_labels.json](/Users/ruari/Documents/Startups/SwingCoach/detector_workbench/validation/labels/detector_test_v3_labels.json): fixture labels and `source_time_scale`.
+
+## New V2 Module
+
+All new Swift detector code lives under [SwingDetectorV2](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingDetectorV2/SwingDetectorV2.swift).
+
+| File | Responsibility |
+| --- | --- |
+| `SwingDetectorV2Configuration.swift` | Tunables, timeline scaling, low/burst sampling rates. |
+| `AddressMonitor.swift` | Lock a stationary low ball with nearby club association. |
+| `PatchWatcher.swift` | Report `ballPresent` and `clubOverlapsPatch` for the locked patch. |
+| `ClubTracker.swift` | Emit continuous club proximity, speed, takeaway, sweep, and arc scores. |
+| `SwingStateMachine.swift` | Own `Idle -> Addressed -> Swinging -> ImpactCandidate -> Cooldown`, burst sampling, and candidate timing. |
+| `SwingEvidence.swift` | Flat evidence vector and weighted scorer. |
+| `SwingCandidateTrace.swift` | Debug-only candidate traces with evidence, score, state, lock, and primary failure. |
+| `SwingDetectorV2.swift` | Driver that feeds YOLO objects, motion, trackers, state machine, scorer, detections, and traces. |
+
+The shared interface is [LiveSwingDetecting.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/LiveSwingDetecting.swift). Eventually both `SwingDetectorV2` and the legacy detector should conform.
+
+## Offline Dev Loop
+
+Primary command:
+
+```bash
+python3 detector_workbench/validation/evaluate_swing_detector_v2.py --build --only test2
+```
+
+Contact-sheet command:
+
+```bash
+python3 detector_workbench/validation/evaluate_swing_detector_v2.py --only test2 --contact-sheets
+```
+
+Artifacts are written under `.detectorTestV3/perf_v2/`:
+
+- `summary.json`
+- per-case `result.json`
+- candidate traces
+- contact-sheet JPEGs and detection JSON when requested
+
+The evaluator must fail fast on model-load failure or contact-sheet generation failure. A missing model must never look like a valid zero-detection run.
+
+## Milestones
+
+### M0: Scaffolding
+
+Build:
+
+- V2 module skeleton
+- shared detector protocol
+- config and source-time scaling
+- trace types
+- scorer skeleton
+- Swift evaluator
+- Python wrapper
+- contact-sheet path
+
+Gate:
+
+- project builds
+- V2 evaluator compiles
+- harness runs on `test2`
+- contact sheets render
+- traces are produced even when detections are empty
+- legacy detector remains untouched
+
+Current status: implemented and verified.
+
+### M1: `test2` Green
+
+Build:
+
+- `AddressMonitor`
+- `PatchWatcher`
+- `ClubTracker`
+- `SwingStateMachine`
+- `EvidenceVector`
+- `SwingScorer`
+- accepted/rejected candidate traces
+
+Gate:
+
+- `test2` returns exactly 1 detected swing
+- detected impact is inside `[2.0, 3.0]`
+- no false positives
+- trace shows address lock, departure after sweep, and aligned club-sweep evidence
+- contact sheet visually agrees with the trace
+
+Current status: implemented and verified.
+
+### M2: Real-Time Sessions
+
+Run in this exact order:
+
+1. `test12`: 1 expected swing
+2. `test11`: 3 expected swings
+3. `test7`: 11 expected swings
+
+Purpose:
+
+- validate re-arming after a completed swing
+- validate fresh address locks at fresh locations
+- validate time-based de-duplication
+- catch long real-time-session false positives before slow-motion work begins
+
+Gate for each clip:
+
+- exact expected count
+- zero false positives
+- impact timing inside the rough label tolerance
+
+Stop rule:
+
+- If `test12` fails, do not run `test11`.
+- If `test11` fails, do not run `test7`.
+- If `test7` fails, do not move to M3.
+- On the first failure, generate/inspect trace plus contact sheet and identify the specific mismatch between algorithm belief and visible reality before changing thresholds or logic.
+
+Current status: next.
+
+### M3: Slow-Motion Timeline And Adaptive Burst
+
+Run in this exact order:
+
+1. `test5`: 4 expected swings at `8x`
+2. `test14`: 3 expected swings at `8x`
+3. `test10`: 4 expected swings at `8x`
+4. `test13`: 6 expected swings at `8x`
+
+Purpose:
+
+- validate `source_time_scale` handling
+- validate real-time state durations on slow-motion exports
+- validate post-sweep disappearance persistence under occlusion
+- validate state-driven high-rate burst behavior
+
+Gate:
+
+- exact expected count for each clip
+- zero false positives
+
+### M4: Longest Slow-Motion Session And Throughput
+
+Run:
+
+1. `test4`: 18 expected swings at `8x`
+
+Purpose:
+
+- validate long-session scale
+- validate no runaway candidate accumulation
+- validate throughput at chosen burst rate
+
+Gate:
+
+- exactly 18 detections
+- zero false positives
+- evaluator performance remains bounded enough for the selected sampling profile
+
+### M5: App Wiring Behind Experiments Flag
+
+Build:
+
+- conform the legacy detector to `LiveSwingDetecting`
+- add `ExperimentalSettingKey.useSwingDetectorV2`
+- branch Capture setup between legacy and V2
+- branch Trim/import detection between legacy and V2
+- optionally add V2 Replay Debug mode for on-device trace comparison
+
+Gate:
+
+- flag off: legacy behavior unchanged
+- flag on: V2 runs in Capture, badge updates from V2 snapshots, Trim opens with V2 ranges
+- imported clip path can run V2 without diverging from the shared detector core
+
+## Deferred
+
+- Classical luma/template patch fallback.
+- Soft-import profile for clips that start mid-swing with no visible address.
+- Learned scorer weights from labelled evidence.
+- Hard-negative fixture expansion: ball repositioning, club-over-ball setup, waggles, spare balls, nearby-bay audio, walk-ins.
+- Removing or rewriting the legacy detector.
+
+## Verification Discipline
+
+Use this sequence:
+
+```text
+test2 -> test12 -> test11 -> test7 -> test5 -> test14 -> test10 -> test13 -> test4
+```
+
+Do not score the whole suite and tune to the average. A failure on the current milestone means the detector is disagreeing with reality at one layer. Fix that layer before advancing.
