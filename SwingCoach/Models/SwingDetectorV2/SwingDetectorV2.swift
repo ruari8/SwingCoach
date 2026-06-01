@@ -157,6 +157,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
         let realTime = configuration.realTime(fromSource: recordingTime)
         let burstActiveForFrame = stateMachine.wantsBurst(atRealTime: realTime)
         let targetFPSForFrame = burstActiveForFrame ? configuration.burstSampleFPS : configuration.lowSampleFPS
+        let stateBeforeFrame = stateMachine.state.rawValue
 
         let gray = Self.downsampledLuma(from: sampleBuffer)
         let lumaMotion = Self.visualMotion(current: gray, previous: previousGray)
@@ -187,21 +188,32 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
             detections: objects,
             lumaMotion: lumaMotion
         )
+        features.append(frame)
+        if features.count > featureRetentionLimit {
+            features.removeFirst(features.count - featureRetentionLimit)
+        }
+
+        let lock = addressMonitor.update(
+            frame: frame,
+            recent: features,
+            allowsRetargeting: stateMachine.state == .addressed || stateMachine.state == .swinging
+        )
         samplingTraces.append(
             SwingSamplingTrace(
                 sourceTime: recordingTime,
                 realTime: realTime,
                 targetFPS: targetFPSForFrame,
                 burstActive: burstActiveForFrame,
-                stateBeforeFrame: stateMachine.state.rawValue
+                stateBeforeFrame: stateBeforeFrame,
+                lockCenterX: lock.map { Double($0.ballCenter.x) },
+                lockCenterY: lock.map { Double($0.ballCenter.y) },
+                lockRevision: lock?.revision,
+                lockSelectionReason: lock?.selectionReason,
+                lockCurrentClubheadAssociationScore: lock?.currentClubheadAssociationScore,
+                lockBallConfidence: lock?.ballConfidence,
+                addressBallCount: lock?.addressBallCount
             )
         )
-        features.append(frame)
-        if features.count > featureRetentionLimit {
-            features.removeFirst(features.count - featureRetentionLimit)
-        }
-
-        let lock = addressMonitor.update(frame: frame, recent: features)
         clubTracker.update(frame: frame, lock: lock)
         let patch = lock.map { PatchWatcher.observe(frame: frame, lock: $0) }
         let clubWindowSamples = featuresInWindow(
@@ -245,15 +257,17 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
             end: resolved.impactRealTime + 0.55
         )
         let candidateClub = clubTracker.evidence(in: candidateWindow[...], lock: resolved.lock)
-        let disappearance = disappearancePersistence(
+        let departure = departureEvidence(
             impactRealTime: resolved.impactRealTime,
             lock: resolved.lock
         )
         let evidence = EvidenceVector(
             anchorStability: resolved.lock?.stabilityScore ?? 0,
-            disappearancePersistence: disappearance,
+            disappearancePersistence: departure.targetSlotDeparture,
             clubSweptThrough: max(club.sweepScore, candidateClub.sweepScore),
             swingArc: max(club.arcScore, candidateClub.arcScore),
+            swingSequence: max(club.swingSequenceScore, candidateClub.swingSequenceScore),
+            ballInventoryDrop: departure.ballInventoryDrop,
             audioTransient: nil,
             poseConsistency: nil
         )
@@ -268,7 +282,12 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
                 centerX: Double(lock.ballCenter.x),
                 centerY: Double(lock.ballCenter.y),
                 stabilityScore: lock.stabilityScore,
-                clubAssociationScore: lock.clubAssociationScore
+                clubAssociationScore: lock.clubAssociationScore,
+                revision: lock.revision,
+                selectionReason: lock.selectionReason,
+                currentClubheadAssociationScore: lock.currentClubheadAssociationScore,
+                ballConfidence: lock.ballConfidence,
+                addressBallCount: lock.addressBallCount
             )
         }
 
@@ -279,6 +298,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
                 impactRealTime: resolved.impactRealTime,
                 impactSourceTime: configuration.sourceTime(fromReal: resolved.impactRealTime),
                 addressLock: lockTrace,
+                departure: departure.trace,
                 evidence: evidence,
                 score: score,
                 accepted: accepted,
@@ -364,6 +384,8 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
             disappearancePersistence: 0,
             clubSweptThrough: club.sweepScore,
             swingArc: club.arcScore,
+            swingSequence: club.swingSequenceScore,
+            ballInventoryDrop: nil,
             audioTransient: nil,
             poseConsistency: nil
         )
@@ -375,7 +397,12 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
                 centerX: Double(lock.ballCenter.x),
                 centerY: Double(lock.ballCenter.y),
                 stabilityScore: lock.stabilityScore,
-                clubAssociationScore: lock.clubAssociationScore
+                clubAssociationScore: lock.clubAssociationScore,
+                revision: lock.revision,
+                selectionReason: lock.selectionReason,
+                currentClubheadAssociationScore: lock.currentClubheadAssociationScore,
+                ballConfidence: lock.ballConfidence,
+                addressBallCount: lock.addressBallCount
             )
         }
         traces.append(
@@ -385,6 +412,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
                 impactRealTime: nil,
                 impactSourceTime: nil,
                 addressLock: lockTrace,
+                departure: nil,
                 evidence: evidence,
                 score: score,
                 accepted: false,
@@ -414,7 +442,9 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
         if accepted { return .none }
         if evidence.anchorStability < 0.25 { return .noAddressLock }
         if evidence.disappearancePersistence < 0.35 { return .ballReappeared }
+        if (evidence.ballInventoryDrop ?? 0) < 0.25 { return .noBallDeparture }
         if evidence.clubSweptThrough < 0.45 { return .noClubSweep }
+        if (evidence.swingSequence ?? 0) < 0.35 { return .noSwingSequence }
         if evidence.swingArc < 0.35 { return .lowSwingArc }
         return .belowThreshold
     }
@@ -423,8 +453,8 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
         features.filter { $0.realTime >= start && $0.realTime <= end }
     }
 
-    private func disappearancePersistence(impactRealTime: Double, lock: AddressLock?) -> Double {
-        guard let lock else { return 0 }
+    private func departureEvidence(impactRealTime: Double, lock: AddressLock?) -> DepartureEvidence {
+        guard let lock else { return .zero }
 
         let preStart = max(0, impactRealTime - 0.85)
         let preEnd = max(preStart, impactRealTime - 0.04)
@@ -433,7 +463,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
 
         let pre = featuresInWindow(start: preStart, end: preEnd)
         let post = featuresInWindow(start: postStart, end: postEnd)
-        guard !pre.isEmpty, !post.isEmpty else { return 0 }
+        guard !pre.isEmpty, !post.isEmpty else { return .zero }
 
         let prePresent = pre.reduce(0) { count, frame in
             count + (PatchWatcher.observe(frame: frame, lock: lock).ballPresent ? 1 : 0)
@@ -446,9 +476,65 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
 
         let preRatio = Double(prePresent) / Double(pre.count)
         let postRatio = Double(postAbsent) / Double(postFrames.count)
-        let preScore = GeometryV2.ramp(preRatio, low: 0.34, high: 0.82)
-        let postScore = GeometryV2.ramp(postRatio, low: 0.50, high: 0.92)
-        return min(1, max(0, preScore * postScore))
+        let preScore = GeometryV2.ramp(preRatio, low: 0.45, high: 0.84)
+        let postScore = GeometryV2.ramp(postRatio, low: 0.58, high: 0.94)
+        let targetSlotDeparture = min(1, max(0, preScore * postScore))
+
+        let preCounts = pre.map(Self.lowStrikeBallCount)
+        let postCounts = postFrames.map(Self.lowStrikeBallCount)
+        let preInventory = Self.quantile(preCounts, fraction: 0.60)
+        let postInventory = Self.quantile(postCounts, fraction: 0.40)
+        let reducedFrameFlags = postCounts.map { count in
+            preInventory >= 1 && Double(count) <= preInventory - 1
+        }
+        let reducedRatio = Double(reducedFrameFlags.filter { $0 }.count) / Double(max(1, reducedFrameFlags.count))
+        let longestRun = Self.longestTrueRun(reducedFrameFlags)
+        let runScore = GeometryV2.ramp(Double(longestRun), low: 1.0, high: 3.0)
+        let ratioScore = GeometryV2.ramp(reducedRatio, low: 0.18, high: 0.48)
+        let inventoryDrop = max(runScore * 0.72, ratioScore)
+
+        return DepartureEvidence(
+            targetSlotDeparture: targetSlotDeparture,
+            ballInventoryDrop: inventoryDrop,
+            trace: SwingDepartureTrace(
+                preTargetPresenceRatio: preRatio,
+                postTargetAbsenceRatio: postRatio,
+                preBallInventory: preInventory,
+                postBallInventory: postInventory,
+                ballInventoryDropScore: inventoryDrop,
+                ballInventoryDropFrameRatio: reducedRatio,
+                longestBallInventoryDropRun: longestRun
+            )
+        )
+    }
+
+    private static func lowStrikeBallCount(in frame: FrameSampleV2) -> Int {
+        frame.balls.filter {
+            $0.confidence >= 0.30 && $0.center.y >= 0.68
+        }.count
+    }
+
+    private static func quantile(_ values: [Int], fraction: Double) -> Double {
+        guard !values.isEmpty else { return 0 }
+        let sorted = values.sorted()
+        let clamped = min(1, max(0, fraction))
+        let rawIndex = clamped * Double(sorted.count - 1)
+        let index = Int(rawIndex.rounded())
+        return Double(sorted[index])
+    }
+
+    private static func longestTrueRun(_ flags: [Bool]) -> Int {
+        var best = 0
+        var current = 0
+        for flag in flags {
+            if flag {
+                current += 1
+                best = max(best, current)
+            } else {
+                current = 0
+            }
+        }
+        return best
     }
 
     // MARK: - Cheap luma motion
@@ -480,4 +566,16 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
         let total = zip(current, previous).reduce(0) { $0 + abs(Int($1.0) - Int($1.1)) }
         return Double(total) / Double(current.count) / 255.0
     }
+}
+
+nonisolated private struct DepartureEvidence: Equatable {
+    let targetSlotDeparture: Double
+    let ballInventoryDrop: Double
+    let trace: SwingDepartureTrace?
+
+    static let zero = DepartureEvidence(
+        targetSlotDeparture: 0,
+        ballInventoryDrop: 0,
+        trace: nil
+    )
 }

@@ -19,6 +19,11 @@ nonisolated struct AddressLock: Equatable {
     var lockedAtReal: Double
     var stabilityScore: Double
     var clubAssociationScore: Double
+    var revision: Int
+    var selectionReason: String
+    var currentClubheadAssociationScore: Double
+    var ballConfidence: Double
+    var addressBallCount: Int
 }
 
 nonisolated final class AddressMonitor {
@@ -37,6 +42,11 @@ nonisolated final class AddressMonitor {
     var minLockWindowSpan = 0.95
     /// Max normalized distance for detections to belong to the same ball track.
     var clusterDistance = 0.045
+    /// Early-takeaway retargeting: when the clubhead reveals a different ball
+    /// before impact, the provisional address can switch to that ball.
+    var retargetMinClubheadAssociation = 0.32
+    var retargetImprovementMargin = 0.12
+    var retargetMinSeparation = 0.050
 
     func reset() {
         currentLock = nil
@@ -58,13 +68,13 @@ nonisolated final class AddressMonitor {
     /// Update with the newest sampled frame and the recent buffer (real-time).
     /// Returns the current lock if one is held.
     @discardableResult
-    func update(frame: FrameSampleV2, recent: [FrameSampleV2]) -> AddressLock? {
+    func update(
+        frame: FrameSampleV2,
+        recent: [FrameSampleV2],
+        allowsRetargeting: Bool = false
+    ) -> AddressLock? {
         guard frame.realTime >= suppressedUntilRealTime else {
             return nil
-        }
-
-        if let currentLock {
-            return currentLock
         }
 
         let windowStart = max(0, frame.realTime - lockWindowDuration)
@@ -74,6 +84,55 @@ nonisolated final class AddressMonitor {
             return nil
         }
 
+        if let currentLock {
+            guard allowsRetargeting,
+                  let retarget = retargetCandidate(
+                    frame: frame,
+                    recentWindow: window,
+                    currentLock: currentLock
+                  )
+            else {
+                return currentLock
+            }
+
+            let lock = AddressLock(
+                patchRect: patchRect(center: retarget.center, meanRect: retarget.meanRect),
+                ballCenter: retarget.center,
+                lockedAtReal: frame.realTime,
+                stabilityScore: retarget.stabilityScore,
+                clubAssociationScore: retarget.clubAssociationScore,
+                revision: currentLock.revision + 1,
+                selectionReason: retarget.selectionReason,
+                currentClubheadAssociationScore: retarget.currentClubheadAssociationScore,
+                ballConfidence: retarget.ballConfidence,
+                addressBallCount: retarget.addressBallCount
+            )
+            self.currentLock = lock
+            return lock
+        }
+
+        guard let best = bestStableAddress(frame: frame, window: window) else {
+            return nil
+        }
+
+        let lock = AddressLock(
+            patchRect: patchRect(center: best.center, meanRect: best.meanRect),
+            ballCenter: best.center,
+            lockedAtReal: frame.realTime,
+            stabilityScore: best.stabilityScore,
+            clubAssociationScore: best.clubAssociationScore,
+            revision: 0,
+            selectionReason: best.selectionReason,
+            currentClubheadAssociationScore: best.currentClubheadAssociationScore,
+            ballConfidence: best.ballConfidence,
+            addressBallCount: best.addressBallCount
+        )
+        currentLock = lock
+        return lock
+    }
+
+    private func bestStableAddress(frame: FrameSampleV2, window: [FrameSampleV2]) -> ScoredAddress? {
+        let addressBallCount = addressBallCount(in: frame)
         var clusters: [BallCluster] = []
         for sample in window {
             for ball in sample.balls
@@ -88,6 +147,10 @@ nonisolated final class AddressMonitor {
         }
 
         let scored = clusters.compactMap { cluster -> ScoredAddress? in
+            guard let currentBall = currentFrameMatch(for: cluster.center, frame: frame) else {
+                return nil
+            }
+
             let distinctFrameCount = Set(cluster.frameIndices).count
             let presenceRatio = Double(distinctFrameCount) / Double(window.count)
             guard presenceRatio >= 0.30 else { return nil }
@@ -104,29 +167,67 @@ nonisolated final class AddressMonitor {
             let clubAssociation = clubAssociationScore(for: cluster.center, in: window)
             guard stabilityScore >= 0.34, clubAssociation >= 0.28 else { return nil }
 
+            let currentClubheadAssociation = currentClubheadAssociationScore(
+                for: cluster.center,
+                frame: frame
+            )
             let combined = stabilityScore * 0.64 + clubAssociation * 0.36
             return ScoredAddress(
                 center: cluster.center,
                 meanRect: cluster.meanRect,
                 stabilityScore: stabilityScore,
                 clubAssociationScore: clubAssociation,
-                combinedScore: combined
+                combinedScore: combined,
+                selectionReason: "stable_address",
+                currentClubheadAssociationScore: currentClubheadAssociation,
+                ballConfidence: currentBall.confidence,
+                addressBallCount: addressBallCount
             )
         }
 
-        guard let best = scored.max(by: { $0.combinedScore < $1.combinedScore }) else {
-            return nil
+        return scored.max(by: { $0.combinedScore < $1.combinedScore })
+    }
+
+    private func retargetCandidate(
+        frame: FrameSampleV2,
+        recentWindow: [FrameSampleV2],
+        currentLock: AddressLock
+    ) -> ScoredAddress? {
+        let currentAssociation = currentClubheadAssociationScore(
+            for: currentLock.ballCenter,
+            frame: frame
+        )
+        let addressBallCount = addressBallCount(in: frame)
+
+        let candidates = frame.balls.compactMap { ball -> ScoredAddress? in
+            guard ball.confidence >= minBallConfidence, ball.center.y >= minBallY else {
+                return nil
+            }
+            let separation = GeometryV2.distance(ball.center, currentLock.ballCenter)
+            guard separation >= retargetMinSeparation else { return nil }
+
+            let clubheadAssociation = currentClubheadAssociationScore(for: ball.center, frame: frame)
+            guard clubheadAssociation >= retargetMinClubheadAssociation,
+                  clubheadAssociation >= currentAssociation + retargetImprovementMargin
+            else { return nil }
+
+            let stability = recentBallStabilityScore(for: ball.center, in: recentWindow)
+            let confidence = GeometryV2.ramp(ball.confidence, low: minBallConfidence, high: 0.88)
+            let score = clubheadAssociation * 0.66 + confidence * 0.22 + stability * 0.12
+            return ScoredAddress(
+                center: ball.center,
+                meanRect: ball.rect,
+                stabilityScore: max(0.34, stability),
+                clubAssociationScore: max(currentLock.clubAssociationScore, clubheadAssociation),
+                combinedScore: score,
+                selectionReason: "takeaway_retarget",
+                currentClubheadAssociationScore: clubheadAssociation,
+                ballConfidence: ball.confidence,
+                addressBallCount: addressBallCount
+            )
         }
 
-        let lock = AddressLock(
-            patchRect: patchRect(center: best.center, meanRect: best.meanRect),
-            ballCenter: best.center,
-            lockedAtReal: frame.realTime,
-            stabilityScore: best.stabilityScore,
-            clubAssociationScore: best.clubAssociationScore
-        )
-        currentLock = lock
-        return lock
+        return candidates.max(by: { $0.combinedScore < $1.combinedScore })
     }
 
     private func clubAssociationScore(for point: CGPoint, in window: [FrameSampleV2]) -> Double {
@@ -162,6 +263,52 @@ nonisolated final class AddressMonitor {
         let stabilityScore = GeometryV2.inverseRamp(pathSpan, low: 0.018, high: 0.12)
         let persistenceScore = min(1, best * 0.30 + activeScore * 0.45 + meanScore * 0.25)
         return persistenceScore * (0.15 + 0.85 * stabilityScore)
+    }
+
+    private func currentClubheadAssociationScore(for point: CGPoint, frame: FrameSampleV2) -> Double {
+        var best = 0.0
+        for clubhead in frame.clubheads where clubhead.confidence >= 0.25 {
+            let distance = GeometryV2.distance(point, clubhead.center)
+            let proximity = GeometryV2.inverseRamp(distance, low: 0.035, high: 0.13)
+            let confidence = GeometryV2.ramp(clubhead.confidence, low: 0.25, high: 0.82)
+            best = max(best, proximity * (0.55 + 0.45 * confidence))
+        }
+        return best
+    }
+
+    private func recentBallStabilityScore(for point: CGPoint, in window: [FrameSampleV2]) -> Double {
+        let matches = window.compactMap { sample -> CGPoint? in
+            sample.balls
+                .filter {
+                    $0.confidence >= minBallConfidence
+                    && $0.center.y >= minBallY
+                    && GeometryV2.distance($0.center, point) <= clusterDistance
+                }
+                .max(by: { $0.confidence < $1.confidence })?
+                .center
+        }
+        guard !matches.isEmpty else { return 0 }
+        let ratio = Double(matches.count) / Double(max(1, window.count))
+        let persistence = GeometryV2.ramp(ratio, low: 0.10, high: 0.45)
+        let movement = Self.pathSpan(matches)
+        let stillness = GeometryV2.inverseRamp(movement, low: 0.012, high: 0.075)
+        return persistence * stillness
+    }
+
+    private func currentFrameMatch(for point: CGPoint, frame: FrameSampleV2) -> GolfObjectDetection? {
+        frame.balls
+            .filter {
+                $0.confidence >= minBallConfidence
+                && $0.center.y >= minBallY
+                && GeometryV2.distance($0.center, point) <= clusterDistance
+            }
+            .max(by: { $0.confidence < $1.confidence })
+    }
+
+    private func addressBallCount(in frame: FrameSampleV2) -> Int {
+        frame.balls.filter {
+            $0.confidence >= minBallConfidence && $0.center.y >= minBallY
+        }.count
     }
 
     private func patchRect(center: CGPoint, meanRect: CGRect) -> CGRect {
@@ -250,4 +397,8 @@ nonisolated private struct ScoredAddress {
     let stabilityScore: Double
     let clubAssociationScore: Double
     let combinedScore: Double
+    let selectionReason: String
+    let currentClubheadAssociationScore: Double
+    let ballConfidence: Double
+    let addressBallCount: Int
 }

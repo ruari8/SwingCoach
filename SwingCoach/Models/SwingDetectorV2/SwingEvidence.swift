@@ -22,6 +22,10 @@ nonisolated struct EvidenceVector: Encodable, Equatable {
     var clubSweptThrough: Double
     /// Takeaway + downswing + follow-through shape and path span.
     var swingArc: Double
+    /// Ordered near -> away -> near club path around the locked target.
+    var swingSequence: Double?
+    /// Low-strike-area ball count dropped after the candidate impact.
+    var ballInventoryDrop: Double?
     /// Sharp audio transient near candidate impact. nil when audio unavailable.
     var audioTransient: Double?
     /// Primary golfer present with plausible address->finish change. nil when pose unavailable.
@@ -32,6 +36,8 @@ nonisolated struct EvidenceVector: Encodable, Equatable {
         disappearancePersistence: 0,
         clubSweptThrough: 0,
         swingArc: 0,
+        swingSequence: nil,
+        ballInventoryDrop: nil,
         audioTransient: nil,
         poseConsistency: nil
     )
@@ -42,6 +48,8 @@ nonisolated struct SwingScorer: Equatable {
     var weightDisappearancePersistence = 0.26
     var weightClubSweptThrough = 0.34
     var weightSwingArc = 0.10
+    var weightSwingSequence = 0.16
+    var weightBallInventoryDrop = 0.12
     var weightAudioTransient = 0.04
     var weightPoseConsistency = 0.04
 
@@ -65,6 +73,8 @@ nonisolated struct SwingScorer: Equatable {
         add(evidence.disappearancePersistence, weightDisappearancePersistence)
         add(evidence.clubSweptThrough, weightClubSweptThrough)
         add(evidence.swingArc, weightSwingArc)
+        add(evidence.swingSequence, weightSwingSequence)
+        add(evidence.ballInventoryDrop, weightBallInventoryDrop)
         add(evidence.audioTransient, weightAudioTransient)
         add(evidence.poseConsistency, weightPoseConsistency)
 

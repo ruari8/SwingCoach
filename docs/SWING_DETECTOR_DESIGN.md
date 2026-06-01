@@ -296,6 +296,8 @@ The final decision should be based on a flat evidence vector instead of a chain 
 | `disappearancePersistence` | Ball gone from the locked patch and did not reappear | Separates impact from temporary occlusion | `0` if ball reappears |
 | `clubSweptThrough` | Club passed through or very near the patch at strike speed | Attributes departure to this golfer's club | `0` if club absent |
 | `swingArc` | Takeaway, downswing, follow-through shape and path span | Separates strike from nudges and setup movement | `0` if no arc |
+| `swingSequence` | Ordered near -> away -> near club motion around the locked target | Rejects ball-positioning nudges that move a ball without a swing | `0` if no ordered sequence |
+| `ballInventoryDrop` | Low strike-area ball count dropped after the candidate impact | Distinguishes real target departure from local patch occlusion | `0` if the count does not drop |
 | `audioTransient` | Sharp audio event near candidate impact | Optional timing corroboration | `0` when audio unavailable |
 | `poseConsistency` | Primary golfer exists and body/hands change plausibly | Optional golfer corroboration | `0` when pose unavailable |
 
@@ -305,10 +307,12 @@ So the score is a weighted average over the evidence that is actually available:
 
 ```text
 weights:
-    anchorStability          0.28   // always present
-    disappearancePersistence 0.28   // always present
-    clubSweptThrough         0.22   // always present
-    swingArc                 0.14   // always present
+    anchorStability          0.22   // always present
+    disappearancePersistence 0.26   // always present
+    clubSweptThrough         0.34   // always present
+    swingArc                 0.10   // always present
+    swingSequence            0.16   // present for resolved candidates
+    ballInventoryDrop        0.12   // present for resolved candidates
     audioTransient           0.04   // present only if audio was sampled
     poseConsistency          0.04   // present only if pose was sampled
 
@@ -319,9 +323,16 @@ score = sum(weight_i * evidence_i for i in available)
 accept if score >= threshold
 ```
 
-The four visual terms are always present; audio and pose drop out of both the numerator and the denominator when unavailable. The exact weights are starting placeholders, not truth. The design value is that strictness becomes one operating threshold, not dozens of interacting boolean branches.
+The visual terms are always present once a candidate impact is resolved; audio and pose drop out of both the numerator and the denominator when unavailable. The exact weights are starting placeholders, not truth. The design value is that strictness becomes one operating threshold, not dozens of interacting boolean branches.
 
-Once there are enough labelled positives and hard negatives, replace the hand-set weights with a tiny logistic regression over the same features. Keep it interpretable. The model should learn six weights, not become an opaque end-to-end video detector.
+The current v2 lock/impact contract is stricter than local disappearance alone:
+
+- a stable address lock must match a current-frame low strike-area ball, not only a stale recent-window cluster
+- the locked target patch must be occupied before impact and empty after the club leaves the patch
+- the broader low strike-area ball inventory should drop after impact
+- the club path must show ordered near -> away -> near sequence, so nudging or dragging balls with the club does not count as a swing
+
+Once there are enough labelled positives and hard negatives, replace the hand-set weights with a tiny logistic regression over the same features. Keep it interpretable. The model should learn this small evidence vector, not become an opaque end-to-end video detector.
 
 ## Debug Trace
 
@@ -531,6 +542,7 @@ Then inspect visually. Typical reads:
 - "the ball is clearly still sitting there at frame X but the patch watcher says absent" -> patch too small or in-patch threshold too high
 - "the club box is nowhere near the patch but `clubSweptThrough` is 0.6" -> proximity or speed scoring is wrong
 - "ball reads absent only while the clubhead covers it, then reappears" -> persistence must be measured after the club leaves (occlusion rule)
+- "ball count drops but `swingSequence` is 0" -> likely ball positioning or dragging, not a near-away-near swing
 
 ### Per-Layer Metrics
 

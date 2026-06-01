@@ -138,6 +138,7 @@ Purpose:
 - validate fresh address locks at fresh locations
 - validate time-based de-duplication
 - catch long real-time-session false positives before slow-motion work begins
+- validate impact as target-slot departure plus ball-inventory drop and ordered club sequence, not local disappearance alone
 
 Gate for each clip:
 
@@ -152,7 +153,14 @@ Stop rule:
 - If `test7` fails, do not move to M3.
 - On the first failure, generate/inspect trace plus contact sheet and identify the specific mismatch between algorithm belief and visible reality before changing thresholds or logic.
 
-Current status: next.
+Current status: implemented and verified on `test12`, `test11`, and `test7`.
+
+M2 notes:
+
+- `test7` originally exposed a wrong/stale target lock and two false positives.
+- Address locking now requires the stable target to still exist in the current frame when the lock is created.
+- Impact evidence now records target-slot departure, low strike-area ball-inventory drop, and ordered near -> away -> near club sequence.
+- The 9s ball-positioning candidate still showed real target departure and ball-count drop, but failed `no_swing_sequence`, which is the intended distinction between a golf swing and nudging a ball with the club.
 
 ### M3: Slow-Motion Timeline And Adaptive Burst
 
