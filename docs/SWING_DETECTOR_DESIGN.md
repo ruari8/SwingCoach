@@ -154,7 +154,24 @@ It should lock an address when a candidate ball:
 - is stable for a short window
 - has enough detection confidence or patch-level visual stability
 - has clubhead or shaft evidence nearby
+- has address-window endpoint coupling: the clubhead, or a compact inferred
+  shaft endpoint, must be coupled to the locked ball patch before address is
+  armed
 - is associated with the primary golfer if pose is available
+
+For club association, proximity is measured from the addressed ball to the
+clubhead/shaft box. Stability then tracks the nearest point on that winning
+club box to the ball, not the center of the whole box. This matters for shaft
+boxes: a shaft can overlap the ball while the box center sits halfway up the
+shaft, so using the center makes a stable club look like it jumped between
+shaft and clubhead.
+
+This generic box association is not enough by itself. A broad shaft detection
+can pass near a ball during a practice setup, so address creation also requires
+endpoint coupling inside the address window. Real clubhead detections are
+preferred. Shaft-only address can still pass, but only when the shaft box is
+compact enough that its nearest point is a plausible inferred endpoint rather
+than a large rectangle covering half the mat.
 
 Output:
 
@@ -165,6 +182,7 @@ AddressLock {
     lockedAt
     stabilityScore
     clubAssociationScore
+    endpointCouplingScore
 }
 ```
 
@@ -328,6 +346,7 @@ The visual terms are always present once a candidate impact is resolved; audio a
 The current v2 lock/impact contract is stricter than local disappearance alone:
 
 - a stable address lock must match a current-frame low strike-area ball, not only a stale recent-window cluster
+- a stable address lock must show clubhead or compact inferred-endpoint coupling to that current-frame ball
 - the locked target patch must be occupied before impact and empty after the club leaves the patch
 - the broader low strike-area ball inventory should drop after impact
 - the club path must show ordered near -> away -> near sequence, so nudging or dragging balls with the club does not count as a swing

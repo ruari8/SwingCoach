@@ -36,6 +36,7 @@ nonisolated struct SwingAddressLockTrace: Encodable, Equatable {
     let revision: Int
     let selectionReason: String
     let currentClubheadAssociationScore: Double
+    let endpointCouplingScore: Double
     let ballConfidence: Double
     let addressBallCount: Int
 }
@@ -75,6 +76,7 @@ nonisolated struct SwingSamplingTrace: Encodable, Equatable {
     let lockRevision: Int?
     let lockSelectionReason: String?
     let lockCurrentClubheadAssociationScore: Double?
+    let lockEndpointCouplingScore: Double?
     let lockBallConfidence: Double?
     let addressBallCount: Int?
 }

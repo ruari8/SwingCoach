@@ -210,6 +210,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
                 lockRevision: lock?.revision,
                 lockSelectionReason: lock?.selectionReason,
                 lockCurrentClubheadAssociationScore: lock?.currentClubheadAssociationScore,
+                lockEndpointCouplingScore: lock?.endpointCouplingScore,
                 lockBallConfidence: lock?.ballConfidence,
                 addressBallCount: lock?.addressBallCount
             )
@@ -286,6 +287,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
                 revision: lock.revision,
                 selectionReason: lock.selectionReason,
                 currentClubheadAssociationScore: lock.currentClubheadAssociationScore,
+                endpointCouplingScore: lock.endpointCouplingScore,
                 ballConfidence: lock.ballConfidence,
                 addressBallCount: lock.addressBallCount
             )
@@ -401,6 +403,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
                 revision: lock.revision,
                 selectionReason: lock.selectionReason,
                 currentClubheadAssociationScore: lock.currentClubheadAssociationScore,
+                endpointCouplingScore: lock.endpointCouplingScore,
                 ballConfidence: lock.ballConfidence,
                 addressBallCount: lock.addressBallCount
             )

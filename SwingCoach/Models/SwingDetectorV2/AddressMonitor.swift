@@ -22,6 +22,7 @@ nonisolated struct AddressLock: Equatable {
     var revision: Int
     var selectionReason: String
     var currentClubheadAssociationScore: Double
+    var endpointCouplingScore: Double
     var ballConfidence: Double
     var addressBallCount: Int
 }
@@ -47,6 +48,9 @@ nonisolated final class AddressMonitor {
     var retargetMinClubheadAssociation = 0.32
     var retargetImprovementMargin = 0.12
     var retargetMinSeparation = 0.050
+    /// Address is only armed when the address window shows the clubhead, or a
+    /// compact inferred shaft endpoint, coupled to the locked ball patch.
+    var minAddressEndpointCoupling = 0.50
 
     func reset() {
         currentLock = nil
@@ -104,6 +108,7 @@ nonisolated final class AddressMonitor {
                 revision: currentLock.revision + 1,
                 selectionReason: retarget.selectionReason,
                 currentClubheadAssociationScore: retarget.currentClubheadAssociationScore,
+                endpointCouplingScore: retarget.endpointCouplingScore,
                 ballConfidence: retarget.ballConfidence,
                 addressBallCount: retarget.addressBallCount
             )
@@ -124,6 +129,7 @@ nonisolated final class AddressMonitor {
             revision: 0,
             selectionReason: best.selectionReason,
             currentClubheadAssociationScore: best.currentClubheadAssociationScore,
+            endpointCouplingScore: best.endpointCouplingScore,
             ballConfidence: best.ballConfidence,
             addressBallCount: best.addressBallCount
         )
@@ -171,6 +177,12 @@ nonisolated final class AddressMonitor {
                 for: cluster.center,
                 frame: frame
             )
+            let endpointCoupling = addressEndpointCouplingScore(
+                for: cluster.center,
+                in: window
+            )
+            guard endpointCoupling >= minAddressEndpointCoupling else { return nil }
+
             let combined = stabilityScore * 0.64 + clubAssociation * 0.36
             return ScoredAddress(
                 center: cluster.center,
@@ -180,6 +192,7 @@ nonisolated final class AddressMonitor {
                 combinedScore: combined,
                 selectionReason: "stable_address",
                 currentClubheadAssociationScore: currentClubheadAssociation,
+                endpointCouplingScore: endpointCoupling,
                 ballConfidence: currentBall.confidence,
                 addressBallCount: addressBallCount
             )
@@ -210,6 +223,7 @@ nonisolated final class AddressMonitor {
             guard clubheadAssociation >= retargetMinClubheadAssociation,
                   clubheadAssociation >= currentAssociation + retargetImprovementMargin
             else { return nil }
+            let endpointCoupling = addressEndpointCouplingScore(for: ball.center, frame: frame)
 
             let stability = recentBallStabilityScore(for: ball.center, in: recentWindow)
             let confidence = GeometryV2.ramp(ball.confidence, low: minBallConfidence, high: 0.88)
@@ -222,6 +236,7 @@ nonisolated final class AddressMonitor {
                 combinedScore: score,
                 selectionReason: "takeaway_retarget",
                 currentClubheadAssociationScore: clubheadAssociation,
+                endpointCouplingScore: max(clubheadAssociation, endpointCoupling),
                 ballConfidence: ball.confidence,
                 addressBallCount: addressBallCount
             )
@@ -244,7 +259,7 @@ nonisolated final class AddressMonitor {
                 let score = proximity * (0.55 + 0.45 * confidence)
                 if score > frameBest {
                     frameBest = score
-                    framePoint = club.center
+                    framePoint = Self.nearestPoint(to: point, in: club.rect)
                 }
             }
             frameScores.append(frameBest)
@@ -274,6 +289,40 @@ nonisolated final class AddressMonitor {
             best = max(best, proximity * (0.55 + 0.45 * confidence))
         }
         return best
+    }
+
+    private func addressEndpointCouplingScore(for point: CGPoint, frame: FrameSampleV2) -> Double {
+        var best = 0.0
+
+        for clubhead in frame.clubheads where clubhead.confidence >= 0.45 {
+            let distance = GeometryV2.distance(point, clubhead.center)
+            let proximity = GeometryV2.inverseRamp(distance, low: 0.030, high: 0.110)
+            let confidence = GeometryV2.ramp(clubhead.confidence, low: 0.45, high: 0.86)
+            best = max(best, proximity * (0.58 + 0.42 * confidence))
+        }
+
+        for shaft in frame.detections
+        where shaft.objectClass == .clubShaft && shaft.confidence >= 0.50 {
+            let distance = GeometryV2.distance(from: point, to: shaft.rect)
+            let proximity = GeometryV2.inverseRamp(distance, low: 0.0, high: 0.045)
+            let confidence = GeometryV2.ramp(shaft.confidence, low: 0.50, high: 0.88)
+            let shape = Self.shaftEndpointReliability(shaft.rect)
+            best = max(best, proximity * shape * (0.55 + 0.45 * confidence))
+        }
+
+        return best
+    }
+
+    private func addressEndpointCouplingScore(for point: CGPoint, in window: [FrameSampleV2]) -> Double {
+        let frameScores = window.map { addressEndpointCouplingScore(for: point, frame: $0) }
+        guard !frameScores.isEmpty else { return 0 }
+
+        let best = frameScores.max() ?? 0
+        let mean = frameScores.reduce(0, +) / Double(frameScores.count)
+        let activeRatio = Double(frameScores.filter { $0 >= minAddressEndpointCoupling }.count) / Double(frameScores.count)
+        let meanScore = GeometryV2.ramp(mean, low: 0.10, high: 0.42)
+        let activeScore = GeometryV2.ramp(activeRatio, low: 0.18, high: 0.50)
+        return min(1, best * 0.45 + meanScore * 0.25 + activeScore * 0.30)
     }
 
     private func recentBallStabilityScore(for point: CGPoint, in window: [FrameSampleV2]) -> Double {
@@ -331,6 +380,21 @@ private extension AddressMonitor {
         let height = Double((ys.max() ?? 0) - (ys.min() ?? 0))
         return (width * width + height * height).squareRoot()
     }
+
+    nonisolated static func nearestPoint(to point: CGPoint, in rect: CGRect) -> CGPoint {
+        CGPoint(
+            x: min(max(point.x, rect.minX), rect.maxX),
+            y: min(max(point.y, rect.minY), rect.maxY)
+        )
+    }
+
+    nonisolated static func shaftEndpointReliability(_ rect: CGRect) -> Double {
+        let width = Double(rect.width)
+        let height = Double(rect.height)
+        let diagonal = (width * width + height * height).squareRoot()
+        return GeometryV2.inverseRamp(diagonal, low: 0.20, high: 0.42)
+    }
+
 }
 
 nonisolated private struct BallCluster {
@@ -399,6 +463,7 @@ nonisolated private struct ScoredAddress {
     let combinedScore: Double
     let selectionReason: String
     let currentClubheadAssociationScore: Double
+    let endpointCouplingScore: Double
     let ballConfidence: Double
     let addressBallCount: Int
 }
