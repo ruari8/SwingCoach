@@ -30,6 +30,7 @@ nonisolated struct AddressLock: Equatable {
 nonisolated final class AddressMonitor {
     private(set) var currentLock: AddressLock?
     private var suppressedUntilRealTime = -Double.greatestFiniteMagnitude
+    private var addressEndpointLostSinceRealTime: Double?
 
     /// A strike-area ball must sit at least this low in frame (normalized y).
     var minBallY = 0.68
@@ -51,21 +52,29 @@ nonisolated final class AddressMonitor {
     /// Address is only armed when the address window shows the clubhead, or a
     /// compact inferred shaft endpoint, coupled to the locked ball patch.
     var minAddressEndpointCoupling = 0.50
+    /// Once locked, address must keep seeing periodic endpoint coupling while
+    /// the state machine is still only addressed. A backswing is handled by the
+    /// swing state, not by this hold monitor.
+    var minAddressHoldEndpointCoupling = 0.28
+    var maxAddressHoldEndpointGap = 1.35
 
     func reset() {
         currentLock = nil
         suppressedUntilRealTime = -Double.greatestFiniteMagnitude
+        addressEndpointLostSinceRealTime = nil
     }
 
     /// Drop the current lock (e.g. after a confirmed swing, or address lost).
     func invalidate() {
         currentLock = nil
+        addressEndpointLostSinceRealTime = nil
     }
 
     /// Clear the active lock and prevent immediate re-locking from the same
     /// follow-through/waggle frames.
     func suppressLocks(until realTime: Double) {
         currentLock = nil
+        addressEndpointLostSinceRealTime = nil
         suppressedUntilRealTime = max(suppressedUntilRealTime, realTime)
     }
 
@@ -75,7 +84,8 @@ nonisolated final class AddressMonitor {
     func update(
         frame: FrameSampleV2,
         recent: [FrameSampleV2],
-        allowsRetargeting: Bool = false
+        allowsRetargeting: Bool = false,
+        monitorsAddressHold: Bool = false
     ) -> AddressLock? {
         guard frame.realTime >= suppressedUntilRealTime else {
             return nil
@@ -89,6 +99,11 @@ nonisolated final class AddressMonitor {
         }
 
         if let currentLock {
+            guard !monitorsAddressHold || holdsAddress(lock: currentLock, frame: frame) else {
+                self.currentLock = nil
+                return nil
+            }
+
             guard allowsRetargeting,
                   let retarget = retargetCandidate(
                     frame: frame,
@@ -113,6 +128,7 @@ nonisolated final class AddressMonitor {
                 addressBallCount: retarget.addressBallCount
             )
             self.currentLock = lock
+            addressEndpointLostSinceRealTime = nil
             return lock
         }
 
@@ -134,7 +150,26 @@ nonisolated final class AddressMonitor {
             addressBallCount: best.addressBallCount
         )
         currentLock = lock
+        addressEndpointLostSinceRealTime = nil
         return lock
+    }
+
+    private func holdsAddress(lock: AddressLock, frame: FrameSampleV2) -> Bool {
+        let endpointCoupling = addressEndpointCouplingScore(
+            for: lock.ballCenter,
+            frame: frame
+        )
+        if endpointCoupling >= minAddressHoldEndpointCoupling {
+            addressEndpointLostSinceRealTime = nil
+            return true
+        }
+
+        if addressEndpointLostSinceRealTime == nil {
+            addressEndpointLostSinceRealTime = frame.realTime
+        }
+
+        let lostDuration = frame.realTime - (addressEndpointLostSinceRealTime ?? frame.realTime)
+        return lostDuration < maxAddressHoldEndpointGap
     }
 
     private func bestStableAddress(frame: FrameSampleV2, window: [FrameSampleV2]) -> ScoredAddress? {

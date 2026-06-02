@@ -188,6 +188,13 @@ AddressLock {
 
 Once locked, the detector should primarily watch that patch. Global ball detection remains useful for finding a new address after a swing, but not for re-deciding the active strike spot every frame.
 
+An address lock is not permanent. While the state machine is still in
+`addressed`, the lock must keep seeing periodic endpoint coupling to the same
+ball patch. If the club endpoint stays away from the patch for longer than the
+hold gap, the lock is invalidated and the detector must find a fresh address.
+Once the state machine has entered `swinging`, this hold monitor no longer
+applies because the club is expected to leave the ball during takeaway.
+
 ### Patch Watcher
 
 The Patch Watcher answers a smaller question:

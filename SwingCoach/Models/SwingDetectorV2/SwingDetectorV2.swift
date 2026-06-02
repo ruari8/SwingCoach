@@ -196,7 +196,8 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
         let lock = addressMonitor.update(
             frame: frame,
             recent: features,
-            allowsRetargeting: stateMachine.state == .addressed || stateMachine.state == .swinging
+            allowsRetargeting: stateMachine.state == .addressed || stateMachine.state == .swinging,
+            monitorsAddressHold: stateMachine.state == .addressed
         )
         samplingTraces.append(
             SwingSamplingTrace(
