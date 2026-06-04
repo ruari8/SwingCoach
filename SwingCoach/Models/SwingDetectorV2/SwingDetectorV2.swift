@@ -275,6 +275,8 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
         )
         let score = scorer.score(evidence)
         let accepted = score >= scorer.threshold
+            && evidence.disappearancePersistence >= 0.35
+            && (evidence.swingSequence ?? 1) > 0
         let failure = primaryFailure(evidence: evidence, accepted: accepted)
 
         let lockTrace = resolved.lock.map { lock in

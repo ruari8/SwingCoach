@@ -47,8 +47,9 @@ nonisolated final class AddressMonitor {
     /// Early-takeaway retargeting: when the clubhead reveals a different ball
     /// before impact, the provisional address can switch to that ball.
     var retargetMinClubheadAssociation = 0.32
-    var retargetImprovementMargin = 0.12
+    var retargetImprovementMargin = 0.05
     var retargetMinSeparation = 0.050
+    var minRetargetInterval = 1.35
     /// Address is only armed when the address window shows the clubhead, or a
     /// compact inferred shaft endpoint, coupled to the locked ball patch.
     var minAddressEndpointCoupling = 0.50
@@ -102,6 +103,10 @@ nonisolated final class AddressMonitor {
             guard !monitorsAddressHold || holdsAddress(lock: currentLock, frame: frame) else {
                 self.currentLock = nil
                 return nil
+            }
+
+            guard frame.realTime - currentLock.lockedAtReal >= minRetargetInterval else {
+                return currentLock
             }
 
             guard allowsRetargeting,

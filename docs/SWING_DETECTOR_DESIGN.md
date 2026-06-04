@@ -195,6 +195,13 @@ hold gap, the lock is invalidated and the detector must find a fresh address.
 Once the state machine has entered `swinging`, this hold monitor no longer
 applies because the club is expected to leave the ball during takeaway.
 
+Retargeting has hysteresis. After the lock switches to a newly preferred ball,
+the detector holds that choice briefly instead of allowing frame-by-frame
+bouncing between adjacent range balls. On multi-ball mats, neighbouring balls
+can trade tiny clubhead-association advantages across sampled frames; hysteresis
+keeps the detector watching the ball it just selected long enough for the
+strike/no-strike evidence to resolve.
+
 ### Patch Watcher
 
 The Patch Watcher answers a smaller question:
@@ -357,6 +364,7 @@ The current v2 lock/impact contract is stricter than local disappearance alone:
 - the locked target patch must be occupied before impact and empty after the club leaves the patch
 - the broader low strike-area ball inventory should drop after impact
 - the club path must show ordered near -> away -> near sequence, so nudging or dragging balls with the club does not count as a swing
+- accepted candidates must retain minimum disappearance persistence and swing sequence evidence; a high weighted score cannot rescue a candidate with no ordered swing path or weak sustained departure
 
 Once there are enough labelled positives and hard negatives, replace the hand-set weights with a tiny logistic regression over the same features. Keep it interpretable. The model should learn this small evidence vector, not become an opaque end-to-end video detector.
 
