@@ -14,32 +14,42 @@ import Photos
 import ImageIO
 
 enum SloMoMode {
+    case normal      // 30 fps @ 1080p
+    case smooth      // 60 fps @ 1080p
     case standard    // 120 fps @ 1080p
     case ultra       // 240 fps @ 1080p
-    case ballTracer  // 60 fps @ 4K (for future shot tracer feature)
 
     var targetFPS: Double {
         switch self {
+        case .normal: return 30.0
+        case .smooth: return 60.0
         case .standard: return 120.0
         case .ultra: return 240.0
-        case .ballTracer: return 60.0
         }
     }
 
     var targetResolution: (width: Int32, height: Int32) {
         switch self {
-        case .standard, .ultra:
+        case .normal, .smooth, .standard, .ultra:
             return (1920, 1080)
-        case .ballTracer:
-            return (3840, 2160)
         }
     }
 
     var displayName: String {
         switch self {
+        case .normal: return "30fps HD"
+        case .smooth: return "60fps HD"
         case .standard: return "120fps HD"
         case .ultra: return "240fps HD"
-        case .ballTracer: return "60fps 4K"
+        }
+    }
+
+    var shortName: String {
+        switch self {
+        case .normal: return "30"
+        case .smooth: return "60"
+        case .standard: return "120"
+        case .ultra: return "240"
         }
     }
 
@@ -47,6 +57,44 @@ enum SloMoMode {
     var slowMotionRate: Float {
         Float(30.0 / targetFPS)
     }
+
+    var sourceTimeScale: Double {
+        targetFPS / 30.0
+    }
+
+    var exportSlowMotionFactor: Double? {
+        sourceTimeScale > 1.0 ? sourceTimeScale : nil
+    }
+}
+
+enum CaptureWorkflowMode: String, CaseIterable, Identifiable {
+    case manual
+    case auto
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .manual: return "Manual"
+        case .auto: return "Auto"
+        }
+    }
+}
+
+struct AutoCaptureStatus: Equatable {
+    var isActive: Bool
+    var savedSwingCount: Int
+    var pendingSwingCount: Int
+    var message: String
+    var lastErrorMessage: String?
+
+    static let idle = AutoCaptureStatus(
+        isActive: false,
+        savedSwingCount: 0,
+        pendingSwingCount: 0,
+        message: "Auto capture off",
+        lastErrorMessage: nil
+    )
 }
 
 final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecordingDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
@@ -55,16 +103,25 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private let qualityQueue = DispatchQueue(label: "camera.quality.queue")
     private let movieOutput = AVCaptureMovieFileOutput()
     private let videoDataOutput = AVCaptureVideoDataOutput()
+
     private var liveSwingDetector = SwingDetectorV2()
     private var recordingStartSampleTime: CMTime?
     private var recordingStartWallTime: Date?
     private var lastLiveSwingSampleTime = -Double.greatestFiniteMagnitude
+    private var autoCaptureIsActive = false
+    private var autoSavedSwingCount = 0
+    private var autoPendingSwingCount = 0
+    private var autoExportedDetectionIDs: Set<UUID> = []
+    private let autoRollingBuffer = AutoRollingVideoBuffer()
+    private let autoTrimmer = VideoTrimmer()
+
     @Published var lastRecordingURL: URL?
     @Published var lastRecordingSwingDetections: [DetectedSwing] = []
     @Published var lastRecordingSwingDetectionSummary: LiveSwingDetectionSnapshot?
     @Published var recordingError: Error?
     @Published var captureMode: SloMoMode = .ultra  // Default to 240 fps
     @Published var liveSwingDetection = LiveSwingDetectionSnapshot.idle
+    @Published var autoCaptureStatus = AutoCaptureStatus.idle
     var isLiveSwingDetectionEnabled = true
     var liveModelDetectorSampleFPS = 8.0
 
@@ -210,11 +267,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     func startRecording() {
+        guard !movieOutput.isRecording else { return }
+
         // Capture the mode at recording start for correct playback rate
         recordedMode = captureMode
         resetLiveSwingDetection()
 
-        guard !movieOutput.isRecording else { return }
         let url = Self.tempURL()
         movieOutput.startRecording(to: url, recordingDelegate: self)
     }
@@ -226,6 +284,57 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         }
     }
 
+    func startAutoCapture() {
+        queue.async {
+            guard !self.autoCaptureIsActive else { return }
+            guard !self.movieOutput.isRecording else {
+                DispatchQueue.main.async {
+                    self.autoCaptureStatus = AutoCaptureStatus(
+                        isActive: false,
+                        savedSwingCount: self.autoSavedSwingCount,
+                        pendingSwingCount: self.autoPendingSwingCount,
+                        message: "Stop manual recording before Auto",
+                        lastErrorMessage: nil
+                    )
+                }
+                return
+            }
+
+            self.autoCaptureIsActive = true
+            self.autoSavedSwingCount = 0
+            self.autoPendingSwingCount = 0
+            self.autoExportedDetectionIDs = []
+            self.recordedMode = self.captureMode
+            self.resetLiveSwingDetection()
+            self.autoRollingBuffer.reset(preservingPendingExports: true)
+            DispatchQueue.main.async {
+                self.autoCaptureStatus = AutoCaptureStatus(
+                    isActive: true,
+                    savedSwingCount: 0,
+                    pendingSwingCount: 0,
+                    message: "Auto watching",
+                    lastErrorMessage: nil
+                )
+            }
+        }
+    }
+
+    func stopAutoCapture() {
+        queue.async {
+            self.autoCaptureIsActive = false
+            self.autoRollingBuffer.reset(preservingPendingExports: true)
+            DispatchQueue.main.async {
+                self.autoCaptureStatus = AutoCaptureStatus(
+                    isActive: false,
+                    savedSwingCount: self.autoSavedSwingCount,
+                    pendingSwingCount: self.autoPendingSwingCount,
+                    message: "Auto capture off",
+                    lastErrorMessage: nil
+                )
+            }
+        }
+    }
+
     private static func tempURL() -> URL {
         let directory = FileManager.default.temporaryDirectory
         let filename = UUID().uuidString + ".mov"
@@ -233,19 +342,20 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     private func resetLiveSwingDetection() {
+        let detectorEnabled = isLiveSwingDetectionEnabled || autoCaptureIsActive
         qualityQueue.async {
             self.recordingStartSampleTime = nil
             self.recordingStartWallTime = nil
             self.lastLiveSwingSampleTime = -Double.greatestFiniteMagnitude
             self.liveSwingDetector = SwingDetectorV2(configuration: self.liveV2Configuration())
-            self.liveSwingDetector.reset(enabled: self.isLiveSwingDetectionEnabled)
+            self.liveSwingDetector.reset(enabled: detectorEnabled)
         }
 
         DispatchQueue.main.async {
             let configuration = self.liveV2Configuration()
             self.lastRecordingSwingDetections = []
             self.lastRecordingSwingDetectionSummary = nil
-            self.liveSwingDetection = self.isLiveSwingDetectionEnabled ? LiveSwingDetectionSnapshot(
+            self.liveSwingDetection = detectorEnabled ? LiveSwingDetectionSnapshot(
                 status: .idle,
                 primaryMessage: "V2 detect starting",
                 detailMessage: "Scanning sampled frames while recording.",
@@ -262,7 +372,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
     private func liveV2Configuration() -> SwingDetectorV2Configuration {
         SwingDetectorV2Configuration.live(
-            sourceTimeScale: recordedMode.targetFPS / 30.0,
+            sourceTimeScale: recordedMode.sourceTimeScale,
             lowSampleFPS: liveModelDetectorSampleFPS,
             burstSampleFPS: max(16.0, liveModelDetectorSampleFPS * 2.0)
         )
@@ -327,8 +437,71 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        if movieOutput.isRecording, isLiveSwingDetectionEnabled {
+        if movieOutput.isRecording, isLiveSwingDetectionEnabled || autoCaptureIsActive {
             processLiveModelSwingFrame(sampleBuffer)
+        }
+    }
+
+    private func exportAutoDetectedSwing(
+        detection: DetectedSwing,
+        preparedClip: AutoRollingVideoBuffer.PreparedClip,
+        recordedMode: SloMoMode
+    ) async {
+        let asset = AVURLAsset(url: preparedClip.sourceURL)
+        var savedCount = 0
+        var lastErrorMessage: String?
+
+        do {
+            let clip = SwingClip(
+                startTime: preparedClip.startTime,
+                endTime: preparedClip.endTime,
+                vantage: .dtl,
+                detectionImpactTime: detection.impactTime.map { $0 - preparedClip.sourceStartTime },
+                detectionDeclaredAt: detection.declaredAt.map { $0 - preparedClip.sourceStartTime }
+            )
+
+            let outputURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("auto_swing_\(clip.id.uuidString.prefix(8)).mp4")
+            try await autoTrimmer.exportClip(
+                from: asset,
+                startTime: clip.startCMTime,
+                endTime: clip.endCMTime,
+                to: outputURL,
+                slowMotionFactor: recordedMode.exportSlowMotionFactor
+            )
+
+            if let assetID = await PHPhotoLibrary.saveVideoAndGetID(url: outputURL) {
+                let thumbnail = try? await autoTrimmer.generateThumbnail(for: asset, at: clip.startCMTime)
+                await MainActor.run {
+                        SwingLibrary.shared.addSwing(
+                            photoAssetID: assetID,
+                            vantage: clip.vantage,
+                            duration: clip.duration * recordedMode.sourceTimeScale,
+                            initialThumbnail: thumbnail
+                        )
+                }
+                savedCount = 1
+            }
+
+            try? FileManager.default.removeItem(at: outputURL)
+        } catch {
+            lastErrorMessage = error.localizedDescription
+        }
+
+        await MainActor.run {
+            self.autoSavedSwingCount += savedCount
+            self.autoPendingSwingCount = max(0, self.autoPendingSwingCount - 1)
+            self.autoCaptureStatus = AutoCaptureStatus(
+                isActive: self.autoCaptureIsActive,
+                savedSwingCount: self.autoSavedSwingCount,
+                pendingSwingCount: self.autoPendingSwingCount,
+                message: self.autoCaptureIsActive ? "Auto watching" : "Auto capture off",
+                lastErrorMessage: lastErrorMessage
+            )
+        }
+
+        qualityQueue.async {
+            self.autoRollingBuffer.release(preparedClip)
         }
     }
 
@@ -349,6 +522,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         let relativeTime = CMTimeGetSeconds(CMTimeSubtract(sampleTime, recordingStartSampleTime))
         guard relativeTime.isFinite else { return }
         lastLiveSwingSampleTime = relativeTime
+        if autoCaptureIsActive {
+            autoRollingBuffer.append(sampleBuffer: sampleBuffer, relativeTime: relativeTime)
+        }
 
         let orientation: CGImagePropertyOrientation = .right
         let orientedImageSize = CGSize(
@@ -365,6 +541,54 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
         DispatchQueue.main.async {
             self.liveSwingDetection = snapshot
+        }
+
+        if autoCaptureIsActive {
+            enqueueNewAutoDetections()
+        }
+    }
+
+    private func enqueueNewAutoDetections() {
+        let detections = liveSwingDetector.currentDetections()
+        let newDetections = detections.filter { !autoExportedDetectionIDs.contains($0.id) }
+        guard !newDetections.isEmpty else { return }
+
+        for detection in newDetections {
+            autoExportedDetectionIDs.insert(detection.id)
+            autoRollingBuffer.prepareClip(for: detection) { [weak self] result in
+                guard let self else { return }
+                switch result {
+                case .success(let preparedClip):
+                    DispatchQueue.main.async {
+                        self.autoPendingSwingCount += 1
+                        self.autoCaptureStatus = AutoCaptureStatus(
+                            isActive: self.autoCaptureIsActive,
+                            savedSwingCount: self.autoSavedSwingCount,
+                            pendingSwingCount: self.autoPendingSwingCount,
+                            message: "Saving swing",
+                            lastErrorMessage: nil
+                        )
+                    }
+                    let recordedMode = self.recordedMode
+                    Task {
+                        await self.exportAutoDetectedSwing(
+                            detection: detection,
+                            preparedClip: preparedClip,
+                            recordedMode: recordedMode
+                        )
+                    }
+                case .failure(let error):
+                    DispatchQueue.main.async {
+                        self.autoCaptureStatus = AutoCaptureStatus(
+                            isActive: self.autoCaptureIsActive,
+                            savedSwingCount: self.autoSavedSwingCount,
+                            pendingSwingCount: self.autoPendingSwingCount,
+                            message: self.autoCaptureIsActive ? "Auto watching" : "Auto capture off",
+                            lastErrorMessage: error.localizedDescription
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -383,6 +607,307 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         return snapshot
     }
 
+}
+
+private final class AutoRollingVideoBuffer {
+    struct PreparedClip {
+        let sourceURL: URL
+        let sourceStartTime: Double
+        let startTime: CMTime
+        let endTime: CMTime
+        fileprivate let chunkID: UUID
+    }
+
+    enum BufferError: LocalizedError {
+        case missingFormatDescription
+        case writerCreationFailed(String)
+        case clipUnavailable
+        case invalidClipRange
+
+        var errorDescription: String? {
+            switch self {
+            case .missingFormatDescription:
+                return "Auto capture could not read the camera frame format."
+            case .writerCreationFailed(let reason):
+                return "Auto capture buffer failed: \(reason)"
+            case .clipUnavailable:
+                return "Auto capture buffer did not contain the full swing window."
+            case .invalidClipRange:
+                return "Auto capture received an invalid swing window."
+            }
+        }
+    }
+
+    private final class Chunk {
+        let id = UUID()
+        let url: URL
+        let writer: AVAssetWriter
+        let input: AVAssetWriterInput
+        let startRelativeTime: Double
+        let startSampleTime: CMTime
+        var endRelativeTime: Double
+        var isFinishing = false
+        var isFinished = false
+        var pendingExports = 0
+        var completionHandlers: [() -> Void] = []
+
+        init(
+            url: URL,
+            writer: AVAssetWriter,
+            input: AVAssetWriterInput,
+            startRelativeTime: Double,
+            startSampleTime: CMTime
+        ) {
+            self.url = url
+            self.writer = writer
+            self.input = input
+            self.startRelativeTime = startRelativeTime
+            self.startSampleTime = startSampleTime
+            self.endRelativeTime = startRelativeTime
+        }
+    }
+
+    private var chunks: [Chunk] = []
+    private let chunkDuration = 12.0
+    private let chunkStartInterval = 6.0
+    private let retentionDuration = 30.0
+    private var nextChunkStartTime: Double?
+
+    func reset(preservingPendingExports: Bool = false) {
+        var preservedChunks: [Chunk] = []
+        for chunk in chunks {
+            if preservingPendingExports, chunk.pendingExports > 0 {
+                finish(chunk)
+                preservedChunks.append(chunk)
+                continue
+            }
+
+            if !chunk.isFinishing && !chunk.isFinished {
+                chunk.input.markAsFinished()
+                chunk.writer.cancelWriting()
+            }
+            try? FileManager.default.removeItem(at: chunk.url)
+        }
+        chunks = preservedChunks
+        nextChunkStartTime = nil
+    }
+
+    func append(sampleBuffer: CMSampleBuffer, relativeTime: Double) {
+        guard relativeTime.isFinite else { return }
+        let sampleTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+        guard sampleTime.isValid else { return }
+
+        if chunks.isEmpty {
+            startChunk(sampleBuffer: sampleBuffer, relativeTime: relativeTime, sampleTime: sampleTime)
+        }
+
+        while let nextChunkStartTime, relativeTime >= nextChunkStartTime {
+            startChunk(sampleBuffer: sampleBuffer, relativeTime: relativeTime, sampleTime: sampleTime)
+        }
+
+        for chunk in chunks where !chunk.isFinishing && !chunk.isFinished {
+            guard relativeTime >= chunk.startRelativeTime else { continue }
+            append(sampleBuffer, to: chunk, relativeTime: relativeTime)
+            if relativeTime - chunk.startRelativeTime >= chunkDuration {
+                finish(chunk)
+            }
+        }
+
+        cleanupOldChunks(currentTime: relativeTime)
+    }
+
+    func prepareClip(
+        for detection: DetectedSwing,
+        completion: @escaping (Result<PreparedClip, Error>) -> Void
+    ) {
+        let start = CMTimeGetSeconds(detection.startTime)
+        let end = CMTimeGetSeconds(detection.endTime)
+        guard start.isFinite, end.isFinite, end > start else {
+            completion(.failure(BufferError.invalidClipRange))
+            return
+        }
+
+        guard let chunk = chunks
+            .filter({ $0.startRelativeTime <= start && $0.endRelativeTime >= end })
+            .sorted(by: { lhs, rhs in
+                let lhsMargin = min(start - lhs.startRelativeTime, lhs.endRelativeTime - end)
+                let rhsMargin = min(start - rhs.startRelativeTime, rhs.endRelativeTime - end)
+                return lhsMargin > rhsMargin
+            })
+            .first
+        else {
+            completion(.failure(BufferError.clipUnavailable))
+            return
+        }
+
+        chunk.pendingExports += 1
+        let preparedClip = PreparedClip(
+            sourceURL: chunk.url,
+            sourceStartTime: chunk.startRelativeTime,
+            startTime: CMTime(seconds: start - chunk.startRelativeTime, preferredTimescale: 600),
+            endTime: CMTime(seconds: end - chunk.startRelativeTime, preferredTimescale: 600),
+            chunkID: chunk.id
+        )
+
+        let complete = {
+            completion(.success(preparedClip))
+        }
+
+        if chunk.isFinished {
+            complete()
+        } else {
+            chunk.completionHandlers.append(complete)
+            finish(chunk)
+        }
+    }
+
+    func release(_ preparedClip: PreparedClip) {
+        guard let chunk = chunks.first(where: { $0.id == preparedClip.chunkID }) else { return }
+        chunk.pendingExports = max(0, chunk.pendingExports - 1)
+        cleanupOldChunks(currentTime: chunks.map(\.endRelativeTime).max() ?? chunk.endRelativeTime)
+    }
+
+    private func startChunk(sampleBuffer: CMSampleBuffer, relativeTime: Double, sampleTime: CMTime) {
+        do {
+            guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else {
+                throw BufferError.missingFormatDescription
+            }
+
+            let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
+            let outputSettings: [String: Any] = [
+                AVVideoCodecKey: AVVideoCodecType.h264,
+                AVVideoWidthKey: Int(dimensions.width),
+                AVVideoHeightKey: Int(dimensions.height)
+            ]
+            let url = Self.tempURL()
+            let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
+            let input = AVAssetWriterInput(
+                mediaType: .video,
+                outputSettings: outputSettings,
+                sourceFormatHint: formatDescription
+            )
+            input.expectsMediaDataInRealTime = true
+
+            guard writer.canAdd(input) else {
+                throw BufferError.writerCreationFailed("Video input could not be added.")
+            }
+
+            writer.add(input)
+            guard writer.startWriting() else {
+                throw BufferError.writerCreationFailed(writer.error?.localizedDescription ?? "Writer did not start.")
+            }
+            writer.startSession(atSourceTime: .zero)
+
+            let chunk = Chunk(
+                url: url,
+                writer: writer,
+                input: input,
+                startRelativeTime: relativeTime,
+                startSampleTime: sampleTime
+            )
+            chunks.append(chunk)
+            nextChunkStartTime = relativeTime + chunkStartInterval
+        } catch {
+            print("❌ Auto rolling buffer failed to start: \(error.localizedDescription)")
+        }
+    }
+
+    private func append(_ sampleBuffer: CMSampleBuffer, to chunk: Chunk, relativeTime: Double) {
+        guard chunk.input.isReadyForMoreMediaData,
+              let retimedBuffer = Self.copy(sampleBuffer, relativeTo: chunk.startSampleTime)
+        else {
+            return
+        }
+
+        if chunk.input.append(retimedBuffer) {
+            chunk.endRelativeTime = relativeTime
+        } else if let error = chunk.writer.error {
+            print("❌ Auto rolling buffer append failed: \(error.localizedDescription)")
+            finish(chunk)
+        }
+    }
+
+    private func finish(_ chunk: Chunk) {
+        guard !chunk.isFinishing, !chunk.isFinished else { return }
+        chunk.isFinishing = true
+        chunk.input.markAsFinished()
+        chunk.writer.finishWriting { [weak chunk] in
+            guard let chunk else { return }
+            chunk.isFinished = true
+            chunk.isFinishing = false
+            let handlers = chunk.completionHandlers
+            chunk.completionHandlers = []
+            for handler in handlers {
+                handler()
+            }
+        }
+    }
+
+    private func cleanupOldChunks(currentTime: Double) {
+        chunks.removeAll { chunk in
+            guard chunk.isFinished,
+                  chunk.pendingExports == 0,
+                  currentTime - chunk.endRelativeTime > retentionDuration
+            else {
+                return false
+            }
+            try? FileManager.default.removeItem(at: chunk.url)
+            return true
+        }
+    }
+
+    private static func copy(_ sampleBuffer: CMSampleBuffer, relativeTo startTime: CMTime) -> CMSampleBuffer? {
+        let sampleCount = CMSampleBufferGetNumSamples(sampleBuffer)
+        guard sampleCount > 0 else { return nil }
+
+        var timingInfo = Array(
+            repeating: CMSampleTimingInfo(
+                duration: .invalid,
+                presentationTimeStamp: .invalid,
+                decodeTimeStamp: .invalid
+            ),
+            count: sampleCount
+        )
+        var timingCount = 0
+        let timingStatus = CMSampleBufferGetSampleTimingInfoArray(
+            sampleBuffer,
+            entryCount: sampleCount,
+            arrayToFill: &timingInfo,
+            entriesNeededOut: &timingCount
+        )
+        guard timingStatus == noErr else { return nil }
+
+        for index in timingInfo.indices {
+            if timingInfo[index].presentationTimeStamp.isValid {
+                timingInfo[index].presentationTimeStamp = CMTimeSubtract(
+                    timingInfo[index].presentationTimeStamp,
+                    startTime
+                )
+            }
+            if timingInfo[index].decodeTimeStamp.isValid {
+                timingInfo[index].decodeTimeStamp = CMTimeSubtract(
+                    timingInfo[index].decodeTimeStamp,
+                    startTime
+                )
+            }
+        }
+
+        var copiedBuffer: CMSampleBuffer?
+        let copyStatus = CMSampleBufferCreateCopyWithNewTiming(
+            allocator: kCFAllocatorDefault,
+            sampleBuffer: sampleBuffer,
+            sampleTimingEntryCount: timingInfo.count,
+            sampleTimingArray: &timingInfo,
+            sampleBufferOut: &copiedBuffer
+        )
+        guard copyStatus == noErr else { return nil }
+        return copiedBuffer
+    }
+
+    private static func tempURL() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("auto_buffer_\(UUID().uuidString).mov")
+    }
 }
 
 final class CameraPreviewView: UIView {
@@ -445,6 +970,7 @@ struct CaptureView: View {
     @StateObject private var camera = CameraSession()
     @AppStorage(ExperimentalSettingKey.liveAutoSwingDetectionEnabled) private var liveAutoSwingDetectionEnabled = true
     @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
+    @State private var workflowMode: CaptureWorkflowMode = .manual
     @State private var isRecording = false
     @State private var previewPlayerItem: AVPlayerItem?
     @State private var currentRecordingURL: URL?
@@ -552,22 +1078,37 @@ struct CaptureView: View {
                     VStack {
                         // Top controls: FPS toggle and recording timer
                         HStack {
-                            // FPS toggle (left)
-                            Button {
-                                toggleFPSMode()
+                            // FPS mode picker (left)
+                            Menu {
+                                Button("30fps HD") {
+                                    camera.switchMode(to: .normal)
+                                }
+                                Button("60fps HD") {
+                                    camera.switchMode(to: .smooth)
+                                }
+                                Button("120fps HD") {
+                                    camera.switchMode(to: .standard)
+                                }
+                                Button("240fps HD") {
+                                    camera.switchMode(to: .ultra)
+                                }
                             } label: {
-                                Text(camera.captureMode == .standard ? "120" : "240")
-                                    .font(.system(size: 14, weight: .bold, design: .monospaced))
-                                    .foregroundColor(.yellow)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 6)
-                                            .fill(Color.black.opacity(0.5))
-                                    )
+                                HStack(spacing: 4) {
+                                    Text(camera.captureMode.shortName)
+                                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                    Image(systemName: "chevron.down")
+                                        .font(.system(size: 9, weight: .bold))
+                                }
+                                .foregroundColor(.yellow)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(Color.black.opacity(0.5))
+                                )
                             }
-                            .disabled(isRecording)
-                            .opacity(isRecording ? 0.5 : 1.0)
+                            .disabled(isRecording || workflowMode == .auto)
+                            .opacity((isRecording || workflowMode == .auto) ? 0.5 : 1.0)
 
                             Spacer()
 
@@ -586,27 +1127,44 @@ struct CaptureView: View {
                                 .background(
                                     RoundedRectangle(cornerRadius: 6)
                                         .fill(Color.black.opacity(0.5))
-                                )
+                                    )
                             }
 
                             Spacer()
+
+                            Picker("Capture", selection: $workflowMode) {
+                                ForEach(CaptureWorkflowMode.allCases) { mode in
+                                    Text(mode.displayName).tag(mode)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(width: 144)
+                            .disabled(isRecording)
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 8)
 
-                        if isRecording {
+                        if isRecording || workflowMode == .auto {
                             LiveSwingDetectionBadge(snapshot: camera.liveSwingDetection)
                                 .padding(.top, 10)
+                                .padding(.horizontal, 16)
+                        }
+
+                        if workflowMode == .auto {
+                            AutoCaptureStatusBadge(status: camera.autoCaptureStatus)
+                                .padding(.top, 8)
                                 .padding(.horizontal, 16)
                         }
 
                         Spacer()
 
                         // Bottom: Record button
-                        RecordButton(isRecording: isRecording) {
-                            toggleRecording()
+                        if workflowMode == .manual {
+                            RecordButton(isRecording: isRecording) {
+                                toggleRecording()
+                            }
+                            .padding(.bottom, 8)
                         }
-                        .padding(.bottom, 8)
                     }
                 }
             }
@@ -625,7 +1183,20 @@ struct CaptureView: View {
         .onChange(of: liveModelDetectorSampleFPS) { _, sampleFPS in
             camera.liveModelDetectorSampleFPS = sampleFPS
         }
+        .onChange(of: workflowMode) { _, mode in
+            switch mode {
+            case .manual:
+                camera.stopAutoCapture()
+                restoreIdleTimer()
+            case .auto:
+                clearCurrentRecording()
+                isProcessing = false
+                preventIdleTimer()
+                camera.startAutoCapture()
+            }
+        }
         .onDisappear {
+            camera.stopAutoCapture()
             camera.stop()
             timerCancellable?.cancel()
             restoreIdleTimer()
@@ -725,11 +1296,6 @@ struct CaptureView: View {
         guard let previousIdleTimerDisabled else { return }
         UIApplication.shared.isIdleTimerDisabled = previousIdleTimerDisabled
         self.previousIdleTimerDisabled = nil
-    }
-
-    private func toggleFPSMode() {
-        let newMode: SloMoMode = camera.captureMode == .standard ? .ultra : .standard
-        camera.switchMode(to: newMode)
     }
 
     private func clearCurrentRecording() {
@@ -841,6 +1407,83 @@ struct FocusIndicatorView: View {
                     opacity = 0.5
                 }
             }
+    }
+}
+
+struct AutoCaptureStatusBadge: View {
+    let status: AutoCaptureStatus
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: iconName)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(iconColor)
+                .frame(width: 22)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 8) {
+                    Text(status.message)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    if status.savedSwingCount > 0 {
+                        Text("\(status.savedSwingCount) saved")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Color.green))
+                    }
+                }
+
+                Text(detailText)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(detailColor)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.black.opacity(0.54))
+        )
+    }
+
+    private var iconName: String {
+        if status.lastErrorMessage != nil {
+            return "exclamationmark.triangle.fill"
+        }
+        if status.pendingSwingCount > 0 {
+            return "square.and.arrow.down.fill"
+        }
+        return status.isActive ? "dot.radiowaves.left.and.right" : "pause.circle.fill"
+    }
+
+    private var iconColor: Color {
+        if status.lastErrorMessage != nil {
+            return .yellow
+        }
+        if status.pendingSwingCount > 0 {
+            return .green
+        }
+        return status.isActive ? .yellow : .white.opacity(0.68)
+    }
+
+    private var detailText: String {
+        if let error = status.lastErrorMessage {
+            return error
+        }
+        if status.pendingSwingCount > 0 {
+            return "\(status.pendingSwingCount) clip\(status.pendingSwingCount == 1 ? "" : "s") exporting to Library"
+        }
+        return "Saved swings appear in Library"
+    }
+
+    private var detailColor: Color {
+        status.lastErrorMessage == nil ? .white.opacity(0.70) : .yellow.opacity(0.92)
     }
 }
 

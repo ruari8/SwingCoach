@@ -65,9 +65,13 @@ File: [CaptureView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/
 Implemented feature set:
 - AVFoundation recording session with video input and microphone input when available, so newly captured clips can carry audio for export and detector experiments.
 - Capture mode support:
+  - `30fps HD`
+  - `60fps HD`
   - `120fps HD`
   - `240fps HD`
-  - `60fps 4K` (ball-tracer future mode scaffold)
+- Capture workflow support:
+  - `Manual`: existing record/stop flow. Stopping a recording opens Trim with any V2 ranges collected live during that recording.
+  - `Auto`: selecting Auto arms capture immediately while the Capture tab is visible. The app feeds the live camera stream to `SwingDetectorV2` continuously, keeps an overlapping rolling video buffer with `AVAssetWriter`, and exports accepted detector swing windows directly to Photos and `SwingLibrary` without a separate start/stop button or Trim handoff. Auto pauses when leaving Capture or switching back to Manual.
 - Runtime mode switching without full session teardown.
 - Tap-to-focus and exposure targeting.
 - Model swing detection is experimental and can be turned off from Library > Experiments. When enabled, capture samples camera frames during recording and runs `SwingDetectorV2` with the bundled YOLO11n/Core ML golf-object model on-device while the video is still being captured.

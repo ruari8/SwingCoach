@@ -71,11 +71,11 @@ struct TrimView: View {
     private let trimmer = VideoTrimmer()
 
     private var displayTimeScale: Double {
-        sourceCaptureMode.map { $0.targetFPS / 30.0 } ?? 1.0
+        sourceCaptureMode?.sourceTimeScale ?? 1.0
     }
 
     private var detectorTimelineScale: Double {
-        sourceCaptureMode.map { $0.targetFPS / 30.0 } ?? 8.0
+        sourceCaptureMode?.sourceTimeScale ?? 8.0
     }
 
     var body: some View {
@@ -972,7 +972,7 @@ struct TrimView: View {
                     from: exportAsset,
                     clips: clipsToExport,
                     outputDirectory: tempDir,
-                    slowMotionFactor: sourceCaptureMode.map { $0.targetFPS / 30.0 }
+                    slowMotionFactor: sourceCaptureMode?.exportSlowMotionFactor
                 ) { current, total in
                     Task { @MainActor in
                         exportProgress = (current, total)
@@ -988,7 +988,7 @@ struct TrimView: View {
                             SwingLibrary.shared.addSwing(
                                 photoAssetID: assetID,
                                 vantage: clip.vantage,
-                                duration: clip.duration * (sourceCaptureMode.map { $0.targetFPS / 30.0 } ?? 1.0),
+                                duration: clip.duration * displayTimeScale,
                                 initialThumbnail: libraryThumbnail
                             )
                         }
@@ -1089,7 +1089,7 @@ struct TrimView: View {
                     startTime: .zero,
                     endTime: fullDuration,
                     to: outputURL,
-                    slowMotionFactor: sourceCaptureMode.map { $0.targetFPS / 30.0 }
+                    slowMotionFactor: sourceCaptureMode?.exportSlowMotionFactor
                 )
 
                 guard let assetID = await PHPhotoLibrary.saveVideoAndGetID(url: outputURL) else {
