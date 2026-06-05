@@ -134,14 +134,16 @@ The scheduler decides which frames receive YOLO inference.
 Default behavior:
 
 - low rate while idle or addressed, around 4-8 fps
-- high rate only after a locked address plus a takeaway-like club movement
+- high rate during the initial startup grace period, because live recording may
+  begin already addressed or mid-swing
+- high rate after a locked address plus a takeaway-like club movement
 - high-rate burst lasts roughly 1.0-1.5 real seconds unless impact confirmation is actively pending
 - immediate decay back to low rate after confirmation, timeout, or rejection
 
 The trigger should not be generic motion. A high-rate burst is expensive and should require a rare, golf-specific state:
 
 ```text
-address locked AND club leaves the lock region in a takeaway-like direction
+startup grace OR (address locked AND club leaves the lock region in a takeaway-like direction)
 ```
 
 ### Address Monitor
@@ -287,8 +289,11 @@ Nearby bays, mat strikes, bags, speech, wind, and slow-motion export artifacts m
 stateDiagram-v2
     [*] --> Idle
     Idle --> Addressed: stable ball + nearby club
+    Idle --> StartupInFlight: startup-only club sweep + low ball departure
     Addressed --> Swinging: takeaway-like club movement
     Addressed --> Idle: address lost
+    StartupInFlight --> Confirmed: target absence + strong club motion
+    StartupInFlight --> Idle: startup timeout or weak departure
     Swinging --> ImpactCandidate: ball gone + club near/sweeping patch
     Swinging --> Addressed: timeout or waggle decay
     ImpactCandidate --> Confirmed: ball absence persists
@@ -301,14 +306,17 @@ State responsibilities:
 
 | State | Sample Rate | Entered When | Watches For | Exit Reason |
 | --- | --- | --- | --- | --- |
-| Idle | Low | Startup or after cooldown | Stable low ball plus nearby club | Address lock or no evidence |
+| Idle | Startup high, then low | Startup or after cooldown | Stable low ball plus nearby club; startup-only in-flight sweep/departure | Address lock, startup in-flight candidate, or no evidence |
 | Addressed | Low | Address lock acquired | Club leaving patch in takeaway-like pattern | Swinging, address lost, timeout |
+| StartupInFlight | Startup high | Recording began with swing already underway | Low ball anchor near early club sweep, then target departure | Confirmed or abandoned |
 | Swinging | High burst | Takeaway detected | Club returning through patch, ball departure | ImpactCandidate or decay |
 | ImpactCandidate | High until resolved | Ball gone near club sweep | Persistent absence or reappearance | Confirmed or rejected |
 | Confirmed | Low | Impact accepted | Emit detection and trace | Cooldown |
 | Cooldown | Low | Detection emitted | Duplicate suppression | Idle |
 
-This state machine is also the adaptive-FPS controller. High-rate sampling exists only in `Swinging` and unresolved `ImpactCandidate`, with a hard time budget.
+This state machine is also the adaptive-FPS controller. High-rate sampling exists during startup grace, `Swinging`, and unresolved `ImpactCandidate`. Startup grace can raise sampling rate, but it cannot force sampling back down; once the normal state machine arms a swing, the normal burst budget owns the high-rate window.
+
+Startup grace is a parallel recovery path, not a replacement for address lock. The normal address detector still runs from frame one. If address lock succeeds, the regular `Addressed -> Swinging -> ImpactCandidate` path remains authoritative. If recording starts after address or during takeaway, `StartupInFlight` may infer a temporary strike anchor from early low-ball candidates plus strong club sweep/arc and target-patch departure. This path is time-bounded to the first seconds of recording and is intentionally stricter about club motion/departure because it lacks mature address history.
 
 ## Graded Outputs
 
@@ -365,6 +373,7 @@ The current v2 lock/impact contract is stricter than local disappearance alone:
 - the broader low strike-area ball inventory should drop after impact
 - the club path must show ordered near -> away -> near sequence, so nudging or dragging balls with the club does not count as a swing
 - accepted candidates must retain minimum disappearance persistence and swing sequence evidence; a high weighted score cannot rescue a candidate with no ordered swing path or weak sustained departure
+- startup in-flight candidates are exempt from mature address history, but only inside the startup grace window and only when the temporary low-ball anchor shows target-patch departure plus strong club sweep/arc evidence
 
 Once there are enough labelled positives and hard negatives, replace the hand-set weights with a tiny logistic regression over the same features. Keep it interpretable. The model should learn this small evidence vector, not become an opaque end-to-end video detector.
 

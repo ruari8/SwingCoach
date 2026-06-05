@@ -29,6 +29,9 @@ nonisolated struct SwingDetectorV2Configuration: Equatable {
     var lowSampleFPS: Double
     /// Sampling rate during an armed swing burst (downswing -> follow-through).
     var burstSampleFPS: Double
+    /// Sample at burst rate immediately after recording starts. Startup clips
+    /// may begin already addressed or mid-swing, before address can mature.
+    var startupBurstDuration: Double
     /// Maximum real-time seconds a high-rate burst may run before decaying.
     var burstMaxDuration: Double
     /// Recent real-time window used for state-machine club evidence. This must
@@ -89,6 +92,7 @@ nonisolated struct SwingDetectorV2Configuration: Equatable {
             sourceTimeScale: clampedScale,
             lowSampleFPS: clampedLow,
             burstSampleFPS: clampedBurst,
+            startupBurstDuration: 2.0,
             burstMaxDuration: 1.5,
             clubEvidenceWindowDuration: 1.6,
             swingTimeout: 2.2,

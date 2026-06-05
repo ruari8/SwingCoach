@@ -70,6 +70,8 @@ nonisolated struct SwingSamplingTrace: Encodable, Equatable {
     let realTime: Double
     let targetFPS: Double
     let burstActive: Bool
+    let startupBurstActive: Bool
+    let stateBurstActive: Bool
     let stateBeforeFrame: String
     let lockCenterX: Double?
     let lockCenterY: Double?

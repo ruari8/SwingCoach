@@ -46,8 +46,13 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
     private var lastProcessingMS = 0.0
     private var nextCandidateId = 1
     private var enabled = false
+    private var startupInFlightResolved = false
+    private var startupEvaluatedImpactTimes: [Double] = []
 
     private let featureRetentionLimit = 4_000
+    private let startupInFlightEndRealTime = 2.25
+    private let startupInFlightResolveEndRealTime = 2.90
+    private let startupInFlightMinBallY: CGFloat = 0.58
 
     init(
         configuration: SwingDetectorV2Configuration = .live(),
@@ -69,10 +74,18 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
     /// timestamps live in). Burst rate while the machine is armed.
     func currentSampleInterval(recordingTime: Double? = nil) -> Double {
         let realTime = configuration.realTime(fromSource: recordingTime ?? features.last?.sourceTime ?? 0)
-        let realInterval = stateMachine.wantsBurst(atRealTime: realTime)
+        let realInterval = wantsBurstSampling(atRealTime: realTime)
             ? configuration.burstSampleInterval
             : configuration.lowSampleInterval
         return configuration.sourceInterval(forRealInterval: realInterval)
+    }
+
+    private func wantsStartupBurst(atRealTime realTime: Double) -> Bool {
+        realTime <= configuration.startupBurstDuration + 0.0001
+    }
+
+    private func wantsBurstSampling(atRealTime realTime: Double) -> Bool {
+        wantsStartupBurst(atRealTime: realTime) || stateMachine.wantsBurst(atRealTime: realTime)
     }
 
     // MARK: - LiveSwingDetecting
@@ -91,6 +104,8 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
         totalProcessingMS = 0
         lastProcessingMS = 0
         nextCandidateId = 1
+        startupInFlightResolved = false
+        startupEvaluatedImpactTimes.removeAll(keepingCapacity: true)
         addressMonitor.reset()
         clubTracker.reset()
         stateMachine.reset()
@@ -155,7 +170,9 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
 
         let startedAt = Date()
         let realTime = configuration.realTime(fromSource: recordingTime)
-        let burstActiveForFrame = stateMachine.wantsBurst(atRealTime: realTime)
+        let startupBurstActiveForFrame = wantsStartupBurst(atRealTime: realTime)
+        let stateBurstActiveForFrame = stateMachine.wantsBurst(atRealTime: realTime)
+        let burstActiveForFrame = startupBurstActiveForFrame || stateBurstActiveForFrame
         let targetFPSForFrame = burstActiveForFrame ? configuration.burstSampleFPS : configuration.lowSampleFPS
         let stateBeforeFrame = stateMachine.state.rawValue
 
@@ -205,6 +222,8 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
                 realTime: realTime,
                 targetFPS: targetFPSForFrame,
                 burstActive: burstActiveForFrame,
+                startupBurstActive: startupBurstActiveForFrame,
+                stateBurstActive: stateBurstActiveForFrame,
                 stateBeforeFrame: stateBeforeFrame,
                 lockCenterX: lock.map { Double($0.ballCenter.x) },
                 lockCenterY: lock.map { Double($0.ballCenter.y) },
@@ -227,6 +246,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
         if let resolved = stateMachine.update(frame: frame, lock: lock, patch: patch, club: clubWindow) {
             evaluate(resolved: resolved, club: clubWindow)
         }
+        evaluateStartupInFlightIfNeeded(frame: frame, lock: lock)
 
         recordProcessing(startedAt: startedAt)
         lastSnapshot = makeSnapshot(frame: frame, lock: lock)
@@ -332,6 +352,186 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
         )
         stateMachine.didConfirm(impactRealTime: resolved.impactRealTime)
         addressMonitor.suppressLocks(until: resolved.impactRealTime + configuration.minImpactGap)
+    }
+
+    private func evaluateStartupInFlightIfNeeded(frame: FrameSampleV2, lock: AddressLock?) {
+        guard !startupInFlightResolved,
+              detections.isEmpty,
+              lock == nil,
+              frame.realTime <= startupInFlightResolveEndRealTime
+        else {
+            return
+        }
+
+        guard let candidate = startupInFlightCandidate(atRealTime: frame.realTime) else {
+            return
+        }
+        guard !startupEvaluatedImpactTimes.contains(where: { abs($0 - candidate.impactRealTime) < 0.18 }) else {
+            return
+        }
+        startupEvaluatedImpactTimes.append(candidate.impactRealTime)
+
+        let candidateWindow = featuresInWindow(
+            start: max(0, candidate.impactRealTime - 1.35),
+            end: candidate.impactRealTime + 0.55
+        )
+        let club = clubTracker.evidence(in: candidateWindow[...], lock: candidate.lock)
+        let departure = departureEvidence(
+            impactRealTime: candidate.impactRealTime,
+            lock: candidate.lock
+        )
+        let evidence = EvidenceVector(
+            anchorStability: candidate.lock.stabilityScore,
+            disappearancePersistence: departure.targetSlotDeparture,
+            clubSweptThrough: club.sweepScore,
+            swingArc: club.arcScore,
+            swingSequence: club.swingSequenceScore,
+            ballInventoryDrop: departure.ballInventoryDrop,
+            audioTransient: nil,
+            poseConsistency: nil
+        )
+        let score = scorer.score(evidence)
+        let strongStartupSwing = evidence.clubSweptThrough >= 0.62
+            && evidence.swingArc >= 0.52
+        let startupThreshold = strongStartupSwing ? scorer.threshold - 0.05 : scorer.threshold
+        let accepted = score >= startupThreshold
+            && evidence.disappearancePersistence >= 0.35
+            && ((evidence.swingSequence ?? 0) > 0 || strongStartupSwing)
+        let failure = primaryFailure(evidence: evidence, accepted: accepted)
+
+        traces.append(
+            SwingCandidateTrace(
+                candidateId: nextCandidateId,
+                stateReached: "startupInFlight",
+                impactRealTime: candidate.impactRealTime,
+                impactSourceTime: configuration.sourceTime(fromReal: candidate.impactRealTime),
+                addressLock: trace(for: candidate.lock),
+                departure: departure.trace,
+                evidence: evidence,
+                score: score,
+                accepted: accepted,
+                primaryFailure: failure
+            )
+        )
+        nextCandidateId += 1
+
+        guard accepted else { return }
+
+        startupInFlightResolved = true
+        let impactSource = configuration.sourceTime(fromReal: candidate.impactRealTime)
+        let startSource = max(0, impactSource - configuration.sourceTime(fromReal: configuration.impactPreRoll))
+        let endSource = impactSource + configuration.sourceTime(fromReal: configuration.impactPostRoll)
+        detections.append(
+            DetectedSwing(
+                startTime: CMTime(seconds: startSource, preferredTimescale: 600),
+                endTime: CMTime(seconds: endSource, preferredTimescale: 600),
+                confidence: score,
+                impactTime: impactSource,
+                declaredAt: features.last?.sourceTime
+            )
+        )
+        addressMonitor.suppressLocks(until: candidate.impactRealTime + configuration.minImpactGap)
+        stateMachine.didConfirm(impactRealTime: candidate.impactRealTime)
+    }
+
+    private func startupInFlightCandidate(atRealTime now: Double) -> StartupInFlightCandidate? {
+        let startupFrames = features.filter { $0.realTime <= min(now, startupInFlightResolveEndRealTime) }
+        guard startupFrames.count >= 4 else { return nil }
+
+        let clusters = startupBallClusters(in: startupFrames)
+        let scored = clusters.compactMap { cluster -> StartupInFlightCandidate? in
+            let lock = startupLock(from: cluster)
+            let observations = startupFrames.map { frame in
+                (frame: frame, observation: PatchWatcher.observe(frame: frame, lock: lock))
+            }
+
+            for index in observations.indices {
+                let frame = observations[index].frame
+                guard frame.realTime <= startupInFlightEndRealTime else { continue }
+                guard !observations[index].observation.ballPresent else { continue }
+
+                let pre = observations[..<index]
+                let post = observations[index...]
+                let prePresent = pre.filter { $0.observation.ballPresent }.count
+                guard prePresent >= 2 else { continue }
+                guard frame.realTime - cluster.firstRealTime >= 0.18 else { continue }
+
+                let usablePost = post.filter { !$0.observation.clubOverlapsPatch }
+                let postFrames = usablePost.isEmpty ? Array(post) : usablePost
+                guard postFrames.count >= 2 || now - frame.realTime >= 0.28 else { continue }
+                let postAbsent = postFrames.filter { !$0.observation.ballPresent }.count
+                let postAbsentRatio = Double(postAbsent) / Double(max(1, postFrames.count))
+                guard postAbsentRatio >= 0.50 else { continue }
+
+                let window = featuresInWindow(
+                    start: max(0, frame.realTime - 1.15),
+                    end: frame.realTime + 0.35
+                )
+                let club = clubTracker.evidence(in: window[...], lock: lock)
+                guard club.sweepScore >= 0.30, club.arcScore >= 0.24 else { continue }
+
+                let score = club.sweepScore * 0.34
+                    + club.arcScore * 0.26
+                    + club.swingSequenceScore * 0.16
+                    + cluster.stabilityScore * 0.12
+                    + postAbsentRatio * 0.12
+                return StartupInFlightCandidate(
+                    impactRealTime: frame.realTime,
+                    lock: lock,
+                    score: score
+                )
+            }
+            return nil
+        }
+
+        return scored.max(by: { $0.score < $1.score })
+    }
+
+    private func startupBallClusters(in frames: [FrameSampleV2]) -> [StartupBallCluster] {
+        var clusters: [StartupBallCluster] = []
+        for frame in frames where frame.realTime <= startupInFlightEndRealTime {
+            for ball in frame.balls where ball.confidence >= 0.30 && ball.center.y >= startupInFlightMinBallY {
+                if let index = clusters.firstIndex(where: { GeometryV2.distance($0.center, ball.center) <= 0.050 }) {
+                    clusters[index].append(ball: ball, frame: frame)
+                } else {
+                    clusters.append(StartupBallCluster(ball: ball, frame: frame))
+                }
+            }
+        }
+        return clusters.filter { $0.frameCount >= 2 }
+    }
+
+    private func startupLock(from cluster: StartupBallCluster) -> AddressLock {
+        AddressLock(
+            patchRect: Self.patchRect(center: cluster.center, meanRect: cluster.meanRect),
+            ballCenter: cluster.center,
+            lockedAtReal: cluster.firstRealTime,
+            stabilityScore: cluster.stabilityScore,
+            clubAssociationScore: 0.50,
+            revision: 0,
+            selectionReason: "startup_inflight_anchor",
+            currentClubheadAssociationScore: 0,
+            endpointCouplingScore: 0,
+            ballConfidence: cluster.meanConfidence,
+            addressBallCount: cluster.addressBallCount
+        )
+    }
+
+    private func trace(for lock: AddressLock) -> SwingAddressLockTrace {
+        SwingAddressLockTrace(
+            lockedAtReal: lock.lockedAtReal,
+            lockedAtSource: configuration.sourceTime(fromReal: lock.lockedAtReal),
+            centerX: Double(lock.ballCenter.x),
+            centerY: Double(lock.ballCenter.y),
+            stabilityScore: lock.stabilityScore,
+            clubAssociationScore: lock.clubAssociationScore,
+            revision: lock.revision,
+            selectionReason: lock.selectionReason,
+            currentClubheadAssociationScore: lock.currentClubheadAssociationScore,
+            endpointCouplingScore: lock.endpointCouplingScore,
+            ballConfidence: lock.ballConfidence,
+            addressBallCount: lock.addressBallCount
+        )
     }
 
     // MARK: - Snapshot
@@ -520,6 +720,16 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
         }.count
     }
 
+    private static func patchRect(center: CGPoint, meanRect: CGRect) -> CGRect {
+        let baseWidth = max(0.030, meanRect.width * 3.6)
+        let baseHeight = max(0.030, meanRect.height * 3.6)
+        let width = min(0.18, baseWidth)
+        let height = min(0.18, baseHeight)
+        let x = min(max(0, center.x - width / 2), 1 - width)
+        let y = min(max(0, center.y - height / 2), 1 - height)
+        return CGRect(x: x, y: y, width: width, height: height)
+    }
+
     private static func quantile(_ values: [Int], fraction: Double) -> Double {
         guard !values.isEmpty else { return 0 }
         let sorted = values.sorted()
@@ -584,4 +794,89 @@ nonisolated private struct DepartureEvidence: Equatable {
         ballInventoryDrop: 0,
         trace: nil
     )
+}
+
+nonisolated private struct StartupInFlightCandidate: Equatable {
+    let impactRealTime: Double
+    let lock: AddressLock
+    let score: Double
+}
+
+nonisolated private struct StartupBallCluster: Equatable {
+    private(set) var weightedX: CGFloat
+    private(set) var weightedY: CGFloat
+    private(set) var totalWeight: CGFloat
+    private(set) var rects: [CGRect]
+    private(set) var confidences: [Double]
+    private(set) var centers: [CGPoint]
+    private(set) var frameTimes: [Double]
+    private(set) var addressBallCounts: [Int]
+
+    init(ball: GolfObjectDetection, frame: FrameSampleV2) {
+        let weight = CGFloat(max(0.001, ball.confidence))
+        weightedX = ball.center.x * weight
+        weightedY = ball.center.y * weight
+        totalWeight = weight
+        rects = [ball.rect]
+        confidences = [ball.confidence]
+        centers = [ball.center]
+        frameTimes = [frame.realTime]
+        addressBallCounts = [Self.lowBallCount(in: frame)]
+    }
+
+    var center: CGPoint {
+        CGPoint(x: weightedX / totalWeight, y: weightedY / totalWeight)
+    }
+
+    var meanConfidence: Double {
+        confidences.reduce(0, +) / Double(max(1, confidences.count))
+    }
+
+    var meanRect: CGRect {
+        guard !rects.isEmpty else {
+            return CGRect(x: center.x - 0.015, y: center.y - 0.015, width: 0.03, height: 0.03)
+        }
+        let minX = rects.map(\.minX).reduce(0, +) / CGFloat(rects.count)
+        let minY = rects.map(\.minY).reduce(0, +) / CGFloat(rects.count)
+        let width = rects.map(\.width).reduce(0, +) / CGFloat(rects.count)
+        let height = rects.map(\.height).reduce(0, +) / CGFloat(rects.count)
+        return CGRect(x: minX, y: minY, width: width, height: height)
+    }
+
+    var frameCount: Int { frameTimes.count }
+    var firstRealTime: Double { frameTimes.min() ?? 0 }
+    var addressBallCount: Int { addressBallCounts.max() ?? 1 }
+
+    var stabilityScore: Double {
+        let span = Self.pathSpan(centers)
+        let stillness = GeometryV2.inverseRamp(span, low: 0.012, high: 0.075)
+        let persistence = GeometryV2.ramp(Double(frameCount), low: 2, high: 5)
+        let confidence = GeometryV2.ramp(meanConfidence, low: 0.30, high: 0.86)
+        return min(1, stillness * 0.42 + persistence * 0.34 + confidence * 0.24)
+    }
+
+    mutating func append(ball: GolfObjectDetection, frame: FrameSampleV2) {
+        let weight = CGFloat(max(0.001, ball.confidence))
+        weightedX += ball.center.x * weight
+        weightedY += ball.center.y * weight
+        totalWeight += weight
+        rects.append(ball.rect)
+        confidences.append(ball.confidence)
+        centers.append(ball.center)
+        frameTimes.append(frame.realTime)
+        addressBallCounts.append(Self.lowBallCount(in: frame))
+    }
+
+    private static func lowBallCount(in frame: FrameSampleV2) -> Int {
+        frame.balls.filter { $0.confidence >= 0.30 && $0.center.y >= 0.68 }.count
+    }
+
+    private static func pathSpan(_ points: [CGPoint]) -> Double {
+        guard !points.isEmpty else { return 1 }
+        let xs = points.map(\.x)
+        let ys = points.map(\.y)
+        let width = Double((xs.max() ?? 0) - (xs.min() ?? 0))
+        let height = Double((ys.max() ?? 0) - (ys.min() ?? 0))
+        return (width * width + height * height).squareRoot()
+    }
 }
