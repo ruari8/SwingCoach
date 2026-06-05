@@ -318,6 +318,12 @@ This state machine is also the adaptive-FPS controller. High-rate sampling exist
 
 Startup grace is a parallel recovery path, not a replacement for address lock. The normal address detector still runs from frame one. If address lock succeeds, the regular `Addressed -> Swinging -> ImpactCandidate` path remains authoritative. If recording starts after address or during takeaway, `StartupInFlight` may infer a temporary strike anchor from early low-ball candidates plus strong club sweep/arc and target-patch departure. This path is time-bounded to the first seconds of recording and is intentionally stricter about club motion/departure because it lacks mature address history.
 
+Slow-tempo drill swings may remain in `Swinging` beyond the normal timeout only when the source is slow-motion, the candidate has high prior arc evidence, and it has weak normal swing-sequence evidence. This handles rehearsed top-of-backswing/drop-and-release drills, including brief pauses, without globally extending waggles or real-time practice swings because the extension is hard-capped and shape-gated.
+
+When a delayed drill swing resolves, final scoring may use the best sweep/arc/sequence evidence accumulated while `Swinging`, not only the local frames around disappearance. The same accumulated evidence is not used for ordinary candidates; they still need local club-through-ball evidence near the target departure.
+
+Swing-phase ball retargets are also quality-gated at scoring time. A retargeted address ball must remain strongly coupled to the inferred club endpoint; weak retargets stay visible in traces but cannot become accepted detections.
+
 ## Graded Outputs
 
 Every component emits continuous scores in `[0, 1]`. Only the final scorer compares to a threshold.
@@ -374,6 +380,7 @@ The current v2 lock/impact contract is stricter than local disappearance alone:
 - the club path must show ordered near -> away -> near sequence, so nudging or dragging balls with the club does not count as a swing
 - accepted candidates must retain minimum disappearance persistence and swing sequence evidence; a high weighted score cannot rescue a candidate with no ordered swing path or weak sustained departure
 - startup in-flight candidates are exempt from mature address history, but only inside the startup grace window and only when the temporary low-ball anchor shows target-patch departure plus strong club sweep/arc evidence
+- clips that end at impact without enough post-impact frames are not acceptance targets for V2; the detector requires visible departure/persistence evidence rather than accepting contact motion alone
 
 Once there are enough labelled positives and hard negatives, replace the hand-set weights with a tiny logistic regression over the same features. Keep it interpretable. The model should learn this small evidence vector, not become an opaque end-to-end video detector.
 

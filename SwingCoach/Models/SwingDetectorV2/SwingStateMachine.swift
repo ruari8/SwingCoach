@@ -28,6 +28,10 @@ nonisolated enum SwingMachineState: String, Equatable {
 nonisolated struct ResolvedSwingCandidate: Equatable {
     let impactRealTime: Double
     let lock: AddressLock?
+    let swingDuration: Double
+    let bestSweep: Double
+    let bestArc: Double
+    let bestSequence: Double
 }
 
 nonisolated final class SwingStateMachine {
@@ -115,23 +119,20 @@ nonisolated final class SwingStateMachine {
             bestArcDuringSwing = max(bestArcDuringSwing, club.arcScore)
             bestSequenceDuringSwing = max(bestSequenceDuringSwing, club.swingSequenceScore)
 
-            if let swingStartedAt, now - swingStartedAt > configuration.swingTimeout {
+            if let swingStartedAt,
+               now - swingStartedAt > configuration.swingTimeout,
+               shouldTimeoutSwing(elapsed: now - swingStartedAt) {
                 transition(to: .addressed)
                 clearSwing()
                 return nil
             }
 
-            guard patch?.ballPresent == false else {
+            if patch?.ballPresent != false {
                 return nil
             }
 
-            guard bestSweepDuringSwing >= 0.34 || club.sweepScore >= 0.34 else {
-                return nil
-            }
-
-            guard bestArcDuringSwing >= 0.32 || club.arcScore >= 0.32 else {
-                return nil
-            }
+            guard bestSweepDuringSwing >= 0.34 || club.sweepScore >= 0.34 else { return nil }
+            guard bestArcDuringSwing >= 0.32 || club.arcScore >= 0.32 else { return nil }
 
             transition(to: .impactCandidate)
             firstAbsentAt = now
@@ -170,6 +171,20 @@ nonisolated final class SwingStateMachine {
             || (club.clubNearPatch >= 0.45 && frame.lumaMotion >= 0.010 && club.arcScore >= 0.18)
     }
 
+    private func shouldTimeoutSwing(
+        elapsed: Double
+    ) -> Bool {
+        guard elapsed <= configuration.extendedSwingTimeout else { return true }
+        return !hasSlowDrillSwingEvidence(elapsed: elapsed)
+    }
+
+    private func hasSlowDrillSwingEvidence(elapsed: Double) -> Bool {
+        elapsed > configuration.swingTimeout
+            && configuration.sourceTimeScale > 1.0
+            && bestArcDuringSwing >= 0.75
+            && bestSequenceDuringSwing < 0.20
+    }
+
     private func maybeResolveImpact(now: Double, lock: AddressLock) -> ResolvedSwingCandidate? {
         guard let firstAbsentAt else { return nil }
 
@@ -186,7 +201,14 @@ nonisolated final class SwingStateMachine {
             return nil
         }
 
-        let candidate = ResolvedSwingCandidate(impactRealTime: firstAbsentAt, lock: lock)
+        let candidate = ResolvedSwingCandidate(
+            impactRealTime: firstAbsentAt,
+            lock: lock,
+            swingDuration: firstAbsentAt - (swingStartedAt ?? firstAbsentAt),
+            bestSweep: bestSweepDuringSwing,
+            bestArc: bestArcDuringSwing,
+            bestSequence: bestSequenceDuringSwing
+        )
         transition(to: .cooldown)
         clearSwing()
         return candidate

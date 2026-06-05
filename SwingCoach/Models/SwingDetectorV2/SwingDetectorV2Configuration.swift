@@ -43,6 +43,9 @@ nonisolated struct SwingDetectorV2Configuration: Equatable {
 
     /// Maximum time to wait for impact after a swing has been armed.
     var swingTimeout: Double
+    /// Extended timeout for slow-tempo/drill swings where the ball remains
+    /// present and strong swing evidence is still active.
+    var extendedSwingTimeout: Double
     /// Minimum post-departure confirmation time before scoring a candidate.
     var impactConfirmationDuration: Double
     /// Minimum absent samples after a sweep before scoring a candidate.
@@ -96,6 +99,7 @@ nonisolated struct SwingDetectorV2Configuration: Equatable {
             burstMaxDuration: 1.5,
             clubEvidenceWindowDuration: 1.6,
             swingTimeout: 2.2,
+            extendedSwingTimeout: 4.0,
             impactConfirmationDuration: 0.55,
             minDepartureAbsentSamples: 5,
             scorer: SwingScorer(),

@@ -41,6 +41,7 @@ class Case:
     source_time_scale: float
     rough_impact: RoughImpact | None
     expected_count: int
+    excluded: bool = False
 
 
 def run(command: list[str], *, capture: bool = False) -> subprocess.CompletedProcess[str]:
@@ -150,6 +151,7 @@ def load_cases(args: argparse.Namespace) -> tuple[Case, ...]:
                 source_time_scale=source_time_scale,
                 rough_impact=rough_impacts.get(video_path.name),
                 expected_count=int(labels.get("expected_swing_count", default_expected_count)),
+                excluded=bool(labels.get("excluded", False)),
             )
         )
     return tuple(cases)
@@ -235,9 +237,12 @@ def summarize_case(
     passed = count_passed and (
         rough_alignment_passed or not args.require_rough_impact_alignment
     )
+    if case.excluded:
+        passed = True
 
     return {
         "video": case.filename,
+        "excluded": case.excluded,
         "expectedCount": case.expected_count,
         "sourceTimeScale": case.source_time_scale,
         "durationSeconds": round(case.duration, 4),
@@ -252,8 +257,8 @@ def summarize_case(
         "averagePoseMSPerSample": round(float(data.get("averagePoseProcessingTimeMS") or 0), 4),
         "impactCandidateCount": len(impact),
         "hybridDetectionCount": len(hybrid),
-        "missed": case.expected_count > 0 and len(hybrid) < case.expected_count,
-        "extraDetectionCount": max(0, len(hybrid) - case.expected_count),
+        "missed": (not case.excluded) and case.expected_count > 0 and len(hybrid) < case.expected_count,
+        "extraDetectionCount": 0 if case.excluded else max(0, len(hybrid) - case.expected_count),
         "countPassed": count_passed,
         "roughImpactScore": rough_score,
         "passed": passed,
@@ -302,6 +307,7 @@ def evaluate_case(case: Case, args: argparse.Namespace) -> dict[str, Any]:
 
 def aggregate_report(summaries: list[dict[str, Any]], args: argparse.Namespace) -> dict[str, Any]:
     rough_scored = [item for item in summaries if item.get("roughImpactScore") is not None]
+    active_summaries = [item for item in summaries if not item.get("excluded")]
     return {
         "parameters": {
             "videoDir": str(args.video_dir),
@@ -321,11 +327,13 @@ def aggregate_report(summaries: list[dict[str, Any]], args: argparse.Namespace) 
             "requireRoughImpactAlignment": args.require_rough_impact_alignment,
         },
         "caseCount": len(summaries),
-        "passedCount": sum(1 for item in summaries if item["passed"]),
-        "failedCount": sum(1 for item in summaries if not item["passed"]),
-        "missedCount": sum(1 for item in summaries if item["missed"]),
-        "extraDetectionCount": sum(int(item["extraDetectionCount"]) for item in summaries),
-        "exactlyOneDetectionCount": sum(1 for item in summaries if item["hybridDetectionCount"] == 1),
+        "activeCaseCount": len(active_summaries),
+        "excludedCaseCount": len(summaries) - len(active_summaries),
+        "passedCount": sum(1 for item in active_summaries if item["passed"]),
+        "failedCount": sum(1 for item in active_summaries if not item["passed"]),
+        "missedCount": sum(1 for item in active_summaries if item["missed"]),
+        "extraDetectionCount": sum(int(item["extraDetectionCount"]) for item in active_summaries),
+        "exactlyOneDetectionCount": sum(1 for item in active_summaries if item["hybridDetectionCount"] == 1),
         "roughImpactScoredCount": len(rough_scored),
         "roughImpactAlignedCount": sum(
             1

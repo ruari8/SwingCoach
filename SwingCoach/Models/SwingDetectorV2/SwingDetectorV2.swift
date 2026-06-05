@@ -283,20 +283,31 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
             impactRealTime: resolved.impactRealTime,
             lock: resolved.lock
         )
+        let useAccumulatedSwingEvidence = resolved.swingDuration > configuration.swingTimeout
+            && configuration.sourceTimeScale > 1.0
+            && resolved.bestArc >= 0.75
+            && resolved.bestSequence < 0.20
         let evidence = EvidenceVector(
             anchorStability: resolved.lock?.stabilityScore ?? 0,
             disappearancePersistence: departure.targetSlotDeparture,
-            clubSweptThrough: max(club.sweepScore, candidateClub.sweepScore),
-            swingArc: max(club.arcScore, candidateClub.arcScore),
-            swingSequence: max(club.swingSequenceScore, candidateClub.swingSequenceScore),
+            clubSweptThrough: max(club.sweepScore, candidateClub.sweepScore, useAccumulatedSwingEvidence ? resolved.bestSweep : 0),
+            swingArc: max(club.arcScore, candidateClub.arcScore, useAccumulatedSwingEvidence ? resolved.bestArc : 0),
+            swingSequence: max(club.swingSequenceScore, candidateClub.swingSequenceScore, useAccumulatedSwingEvidence ? resolved.bestSequence : 0),
             ballInventoryDrop: departure.ballInventoryDrop,
             audioTransient: nil,
             poseConsistency: nil
         )
         let score = scorer.score(evidence)
+        let retargetLockIsStrong: Bool
+        if let lock = resolved.lock, lock.selectionReason == "takeaway_retarget" {
+            retargetLockIsStrong = lock.endpointCouplingScore >= 0.60
+        } else {
+            retargetLockIsStrong = true
+        }
         let accepted = score >= scorer.threshold
             && evidence.disappearancePersistence >= 0.35
             && (evidence.swingSequence ?? 1) > 0
+            && retargetLockIsStrong
         let failure = primaryFailure(evidence: evidence, accepted: accepted)
 
         let lockTrace = resolved.lock.map { lock in
