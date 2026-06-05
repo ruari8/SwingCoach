@@ -6,12 +6,12 @@ For the fixture-gated execution plan and milestone order, see [Swing Detector V2
 
 ## Implementation Status
 
-`SwingDetectorV2` now has the first working slice of this design behind an offline evaluator:
+`SwingDetectorV2` is now the app-wired detector and the offline evaluator target:
 
 - M0 scaffold and fail-fast dev loop: shared detector protocol, v2 Swift evaluator, Python fixture harness, JSON candidate traces, and contact sheets.
 - M1 first pass: address lock, locked-patch watcher, graded club evidence, state-machine transitions, and evidence scoring.
-- The first validated fixture is `test2`; broader fixture generalization is still future work, not an implied claim.
-- The iOS app is not wired to v2 yet. The legacy detector remains the production path while v2 is evaluated beside it.
+- M2-M4 fixture gates and exported single-swing clip baselines are passing for the current labelled acceptance set.
+- Capture, imported Trim detection, and Replay Debug now use V2 directly. The legacy detector source remains only as a reference/evaluator comparison path.
 
 The central design choice is:
 

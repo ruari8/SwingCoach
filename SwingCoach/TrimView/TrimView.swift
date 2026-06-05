@@ -67,8 +67,6 @@ struct TrimView: View {
     @State private var seekRepeatTask: Task<Void, Never>?
     @State private var activeSeekDirection: Int?
     @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
-    @AppStorage(ExperimentalSettingKey.hybridImpactConfirmationPostRoll) private var hybridImpactConfirmationPostRoll = 0.20
-    @AppStorage(ExperimentalSettingKey.liveCaptureDetectionMode) private var liveCaptureDetectionModeRaw = LiveCaptureDetectionMode.hybrid.rawValue
 
     private let trimmer = VideoTrimmer()
 
@@ -78,10 +76,6 @@ struct TrimView: View {
 
     private var detectorTimelineScale: Double {
         sourceCaptureMode.map { $0.targetFPS / 30.0 } ?? 8.0
-    }
-
-    private var liveCaptureDetectionMode: LiveCaptureDetectionMode {
-        LiveCaptureDetectionMode(rawValue: liveCaptureDetectionModeRaw) ?? .hybrid
     }
 
     var body: some View {
@@ -785,22 +779,14 @@ struct TrimView: View {
 
         swingDetectionTask = Task {
             do {
-                let detector = ModelBackedSwingDetector(
-                    configuration: ObjectSwingDetectorConfiguration.liveObjectModel(
-                        sampleFPS: liveModelDetectorSampleFPS,
-                        timelineScale: detectorTimelineScale,
-                        impactConfirmationPostRoll: hybridImpactConfirmationPostRoll
+                let detector = SwingDetectorV2AssetDetector(
+                    configuration: SwingDetectorV2Configuration.live(
+                        sourceTimeScale: detectorTimelineScale,
+                        lowSampleFPS: liveModelDetectorSampleFPS,
+                        burstSampleFPS: max(16.0, liveModelDetectorSampleFPS * 2.0)
                     )
                 )
-                let detections: [DetectedSwing]
-                switch liveCaptureDetectionMode {
-                case .contact:
-                    detections = try await detector.detectSwings(in: asset)
-                case .impact:
-                    detections = try await detector.detectImpactSwings(in: asset, usesHybridGate: false)
-                case .hybrid:
-                    detections = try await detector.detectImpactSwings(in: asset, usesHybridGate: true)
-                }
+                let detections = try await detector.detectSwings(in: asset)
                 await MainActor.run {
                     applyDetectedSwings(detections, asset: asset)
                 }

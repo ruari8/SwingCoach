@@ -55,6 +55,6 @@ cd backend
 
 ## Current State
 
-- Frontend capture/library/trim flows are implemented, including experimental live YOLO/Core ML preselection of likely swing clips during capture and editable preselected clips in the trim editor. Live capture defaults to the current hybrid impact/Apple Vision pose gate, while DEBUG builds include a replay harness that runs saved videos through the same live detector with configurable real-time sample rates, contact/impact/pose/audio/hybrid comparison modes, and separate motion-candidate diagnostics.
+- Frontend capture/library/trim flows are implemented, including experimental `SwingDetectorV2` YOLO/Core ML preselection of likely swing clips during capture and editable preselected clips in the trim editor. Capture, imported Trim detection, and DEBUG Replay Debug now use the same V2 detector core with configurable real-time low sample rates and V2-owned adaptive burst sampling.
 - Backend unified pipeline (`/analysis-runs` + SSE progress + artifacts + `/chat`) is implemented, with legacy synchronous `/analyze` still available.
 - Frontend analysis decoding uses the lightweight MVP analysis response: summary, display metrics, annotated/base video artifacts, normalized overlay tracks, and drills. Swing Detail can render server guide overlays over the clean base video and supports local manual drawing annotations for self-analysis.

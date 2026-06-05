@@ -12,7 +12,6 @@ import Combine
 import Photos
 import PhotosUI
 import UniformTypeIdentifiers
-import Vision
 
 private enum DebugReplaySourceTiming: String, CaseIterable {
     case realtime
@@ -40,53 +39,15 @@ private enum DebugReplaySourceTiming: String, CaseIterable {
     }
 }
 
-enum DebugReplayDetectionMode: String, CaseIterable {
-    case contact
-    case impact
-    case poseImpact
-    case audioImpact
-    case hybridImpact
-
-    var label: String {
-        switch self {
-        case .contact: "contact"
-        case .impact: "impact"
-        case .poseImpact: "pose"
-        case .audioImpact: "audio"
-        case .hybridImpact: "hybrid"
-        }
-    }
-
-    var emptyMessage: String {
-        switch self {
-        case .contact: "No contact swings detected"
-        case .impact: "No impact swings detected"
-        case .poseImpact: "No pose-gated swings detected"
-        case .audioImpact: "No audio-gated swings detected"
-        case .hybridImpact: "No hybrid swings detected"
-        }
-    }
-}
-
 private struct DebugReplayResult {
     let detections: [DetectedSwing]
-    let candidateWindows: [ObjectSwingWindowDiagnostics]
     let sourceDuration: Double
-}
-
-private typealias DebugReplayPoseFeature = ObjectSwingPoseFeature
-
-private struct DebugReplayAudioImpact {
-    let time: Double
-    let score: Double
 }
 
 struct DebugReplayView: View {
     @StateObject private var model = DebugReplayViewModel()
     @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
-    @AppStorage(ExperimentalSettingKey.hybridImpactConfirmationPostRoll) private var hybridImpactConfirmationPostRoll = 0.20
     @AppStorage(ExperimentalSettingKey.debugReplaySourceTiming) private var debugReplaySourceTimingRaw = DebugReplaySourceTiming.realtime.rawValue
-    @AppStorage(ExperimentalSettingKey.debugReplayDetectionMode) private var debugReplayDetectionModeRaw = DebugReplayDetectionMode.hybridImpact.rawValue
     @State private var showsVideoPicker = false
     @State private var trimSource: TrimVideoSource?
     @State private var trimDetections: [DetectedSwing] = []
@@ -94,16 +55,10 @@ struct DebugReplayView: View {
     @State private var showsAdvancedControls = false
 
     private let detectorSampleOptions = [2.0, 4.0, 8.0, 16.0]
-    private let confirmationWaitOptions = [0.20, 0.28, 0.35, 0.55]
 
     private var sourceTiming: DebugReplaySourceTiming {
         get { DebugReplaySourceTiming(rawValue: debugReplaySourceTimingRaw) ?? .realtime }
         nonmutating set { debugReplaySourceTimingRaw = newValue.rawValue }
-    }
-
-    private var detectionMode: DebugReplayDetectionMode {
-        get { DebugReplayDetectionMode(rawValue: debugReplayDetectionModeRaw) ?? .hybridImpact }
-        nonmutating set { debugReplayDetectionModeRaw = newValue.rawValue }
     }
 
     var body: some View {
@@ -209,11 +164,7 @@ struct DebugReplayView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
             }
-            .onAppear {
-                if let debugReplayModeRaw = ExperimentalDetectorDefaults.migrateIfNeeded().debugReplayModeRaw {
-                    debugReplayDetectionModeRaw = debugReplayModeRaw
-                }
-            }
+            .onAppear { ExperimentalDetectorDefaults.migrateIfNeeded() }
         }
     }
 
@@ -225,9 +176,7 @@ struct DebugReplayView: View {
                 model.startReplay(
                     speedMultiplier: sourceTiming.playbackSpeedMultiplier,
                     sourceTimeScale: sourceTiming.sourceTimeScale,
-                    detectorSampleFPS: liveModelDetectorSampleFPS,
-                    impactConfirmationPostRoll: hybridImpactConfirmationPostRoll,
-                    detectionMode: detectionMode
+                    detectorSampleFPS: liveModelDetectorSampleFPS
                 )
             }
         } label: {
@@ -260,15 +209,6 @@ struct DebugReplayView: View {
                 }
             }
 
-            HStack(spacing: 6) {
-                debugRowTitle("mode")
-                ForEach(DebugReplayDetectionMode.allCases, id: \.rawValue) { mode in
-                    debugChip(mode.label, isSelected: detectionMode == mode, minWidth: 36) {
-                        detectionMode = mode
-                    }
-                }
-            }
-
             HStack(spacing: 8) {
                 Button {
                     showsAdvancedControls.toggle()
@@ -282,7 +222,7 @@ struct DebugReplayView: View {
 
                 Spacer()
 
-                Text("\(Int(liveModelDetectorSampleFPS))fps · \(String(format: "%.2fs", hybridImpactConfirmationPostRoll))")
+                Text("\(Int(liveModelDetectorSampleFPS))fps · V2")
                     .font(.caption2.monospacedDigit().weight(.semibold))
                     .foregroundColor(.white.opacity(0.52))
                     .lineLimit(1)
@@ -298,14 +238,6 @@ struct DebugReplayView: View {
                     }
                 }
 
-                HStack(spacing: 6) {
-                    debugRowTitle("confirm")
-                    ForEach(confirmationWaitOptions, id: \.self) { wait in
-                        debugChip(String(format: "%.2fs", wait), isSelected: hybridImpactConfirmationPostRoll == wait, minWidth: 44) {
-                            hybridImpactConfirmationPostRoll = wait
-                        }
-                    }
-                }
             }
         }
         .padding(.horizontal, 10)
@@ -348,7 +280,7 @@ struct DebugReplayView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundColor(.white.opacity(0.76))
                 Spacer()
-                Text("\(model.detections.count) swings · \(model.candidateWindows.count) motion")
+                Text("\(model.detections.count) swings")
                     .font(.caption.weight(.semibold))
                     .foregroundColor(.white.opacity(0.64))
             }
@@ -372,9 +304,6 @@ struct DebugReplayView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundColor(.white.opacity(0.82))
                 Spacer()
-                Text(model.candidateWindows.isEmpty ? "No motion candidates" : "\(model.candidateWindows.count) motion candidates")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(.white.opacity(0.66))
                 if !model.detections.isEmpty {
                     Button {
                         trimDetections = model.detections
@@ -386,40 +315,6 @@ struct DebugReplayView: View {
                             .padding(.horizontal, 10)
                             .padding(.vertical, 7)
                             .background(Capsule().fill(Color.yellow))
-                    }
-                }
-            }
-
-            if !model.candidateWindows.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(Array(model.candidateWindows.enumerated()), id: \.offset) { index, candidate in
-                            Button {
-                                if let videoURL = model.selectedVideoURL {
-                                    previewDetection = DetectionPreview(
-                                        videoURL: videoURL,
-                                        detection: detectedSwing(from: candidate),
-                                        index: index
-                                    )
-                                }
-                            } label: {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Motion candidate \(index + 1)")
-                                        .font(.caption.weight(.bold))
-                                    Text("\(formatTime(candidate.start))-\(formatTime(candidate.end))")
-                                        .font(.caption2.monospacedDigit())
-                                        .foregroundColor(.white.opacity(0.72))
-                                    Text("ball \(Int(candidate.ballFrameRatio * 100))%")
-                                        .font(.caption2.weight(.semibold))
-                                        .foregroundColor(.white.opacity(0.66))
-                                }
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 7)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.08)))
-                            }
-                            .buttonStyle(.plain)
-                        }
                     }
                 }
             }
@@ -531,13 +426,6 @@ struct DebugReplayView: View {
         return "\(confidence) end +\(String(format: "%.1f", lag))s\(suffix)"
     }
 
-    private func detectedSwing(from diagnostics: ObjectSwingWindowDiagnostics) -> DetectedSwing {
-        DetectedSwing(
-            startTime: CMTime(seconds: diagnostics.start, preferredTimescale: 600),
-            endTime: CMTime(seconds: diagnostics.end, preferredTimescale: 600),
-            confidence: min(0.95, max(0.20, diagnostics.peakMotion / 2.0))
-        )
-    }
 }
 
 private struct DetectionPreview: Identifiable {
@@ -666,7 +554,6 @@ final class DebugReplayViewModel: ObservableObject {
     @Published var detectorSourceTime = 0.0
     @Published var snapshot = LiveSwingDetectionSnapshot.idle
     @Published var detections: [DetectedSwing] = []
-    @Published var candidateWindows: [ObjectSwingWindowDiagnostics] = []
     @Published var errorMessage: String?
 
     private var replayTask: Task<Void, Never>?
@@ -718,7 +605,6 @@ final class DebugReplayViewModel: ObservableObject {
         detectorSourceTime = 0
         snapshot = .idle
         detections = []
-        candidateWindows = []
         errorMessage = nil
         lastProgressUpdateAt = .distantPast
     }
@@ -726,17 +612,15 @@ final class DebugReplayViewModel: ObservableObject {
     func startReplay(
         speedMultiplier: Double,
         sourceTimeScale: Double,
-        detectorSampleFPS: Double,
-        impactConfirmationPostRoll: Double,
-        detectionMode: DebugReplayDetectionMode
+        detectorSampleFPS: Double
     ) {
         guard let selectedVideoURL else { return }
 
         cancelReplay()
-        let configuration = ObjectSwingDetectorConfiguration.liveObjectModel(
-            sampleFPS: detectorSampleFPS,
-            timelineScale: 8.0,
-            impactConfirmationPostRoll: impactConfirmationPostRoll
+        let configuration = SwingDetectorV2Configuration.live(
+            sourceTimeScale: sourceTimeScale,
+            lowSampleFPS: detectorSampleFPS,
+            burstSampleFPS: max(16.0, detectorSampleFPS * 2.0)
         )
         let control = DebugReplayControl()
         replayControl = control
@@ -753,11 +637,10 @@ final class DebugReplayViewModel: ObservableObject {
             status: .searchingBall,
             primaryMessage: "Preparing replay",
             detailMessage: "Opening video frames for detector replay.",
-            targetSampleFPS: configuration.targetSampleFPS,
+            targetSampleFPS: configuration.lowSampleFPS,
             detectorConfigurationName: configuration.name
         )
         detections = []
-        candidateWindows = []
         errorMessage = nil
         lastProgressUpdateAt = .distantPast
         player?.seek(to: .zero)
@@ -767,7 +650,6 @@ final class DebugReplayViewModel: ObservableObject {
             for: selectedVideoURL,
             speedMultiplier: speedMultiplier,
             sourceTimeScale: sourceTimeScale,
-            detectionMode: detectionMode,
             detectorConfiguration: configuration,
             control: control
         )
@@ -775,18 +657,16 @@ final class DebugReplayViewModel: ObservableObject {
         replayTask = Task {
             for await event in stream {
                 switch event {
-                case .progress(let progressValue, let sourceTime, let sourceDuration, let newSnapshot, let currentDetections, let currentCandidates):
+                case .progress(let progressValue, let sourceTime, let sourceDuration, let newSnapshot, let currentDetections):
                     applyProgress(
                         progressValue,
                         sourceTime: sourceTime,
                         sourceDuration: sourceDuration,
                         snapshot: newSnapshot,
-                        detections: currentDetections,
-                        candidateWindows: currentCandidates
+                        detections: currentDetections
                     )
                 case .finished(let result):
                     detections = result.detections
-                    candidateWindows = result.candidateWindows
                     replayDuration = result.sourceDuration
                     replaySourceTime = result.sourceDuration
                     detectorSourceTime = result.sourceDuration
@@ -795,12 +675,11 @@ final class DebugReplayViewModel: ObservableObject {
                     isReplaying = false
                     isPaused = false
                     player?.pause()
-                    let hasCandidates = !result.candidateWindows.isEmpty
                     snapshot = LiveSwingDetectionSnapshot(
                         status: result.detections.isEmpty ? .idle : .swingDetected,
-                        primaryMessage: result.detections.isEmpty ? detectionMode.emptyMessage : "\(result.detections.count) swing\(result.detections.count == 1 ? "" : "s") detected",
+                        primaryMessage: result.detections.isEmpty ? "No V2 swings detected" : "\(result.detections.count) swing\(result.detections.count == 1 ? "" : "s") detected",
                         detailMessage: result.detections.isEmpty
-                            ? emptyReplayDetail(hasCandidates: hasCandidates, detectionMode: detectionMode)
+                            ? "No V2 detections cleared the detector gates."
                             : "Open trim to inspect detected ranges.",
                         detectedSwingCount: result.detections.count,
                         hasBallLock: snapshot.hasBallLock,
@@ -864,12 +743,10 @@ final class DebugReplayViewModel: ObservableObject {
         sourceTime: Double,
         sourceDuration: Double,
         snapshot newSnapshot: LiveSwingDetectionSnapshot,
-        detections currentDetections: [DetectedSwing],
-        candidateWindows currentCandidateWindows: [ObjectSwingWindowDiagnostics]
+        detections currentDetections: [DetectedSwing]
     ) {
         let now = Date()
         let detectionsChanged = currentDetections.count != detections.count
-        let candidatesChanged = currentCandidateWindows.count != candidateWindows.count
         let statusChanged = newSnapshot.status != snapshot.status
         let enoughTimePassed = now.timeIntervalSince(lastProgressUpdateAt) >= 0.25
 
@@ -883,30 +760,11 @@ final class DebugReplayViewModel: ObservableObject {
             progress = progressValue
         }
 
-        guard detectionsChanged || candidatesChanged || statusChanged || enoughTimePassed else { return }
+        guard detectionsChanged || statusChanged || enoughTimePassed else { return }
 
         snapshot = newSnapshot
         detections = currentDetections
-        candidateWindows = currentCandidateWindows
         lastProgressUpdateAt = now
-    }
-
-    private func emptyReplayDetail(
-        hasCandidates: Bool,
-        detectionMode: DebugReplayDetectionMode
-    ) -> String {
-        switch detectionMode {
-        case .contact:
-            return hasCandidates ? "Motion candidates were rejected by contact validation." : "No motion candidates cleared the model gate."
-        case .impact:
-            return hasCandidates ? "Motion candidates did not produce a stable impact window." : "No motion candidates cleared the model gate."
-        case .poseImpact:
-            return hasCandidates ? "Impact windows were rejected by the pose gate." : "No motion candidates cleared the model gate."
-        case .audioImpact:
-            return hasCandidates ? "Impact windows did not align with an audio impact." : "No motion candidates cleared the model gate."
-        case .hybridImpact:
-            return hasCandidates ? "Impact windows were rejected by the hybrid pose/cadence gate." : "No motion candidates cleared the model gate."
-        }
     }
 
     private static func formatReplayTimer(elapsed: Double, duration: Double) -> String {
@@ -1008,7 +866,7 @@ private actor DebugReplayControl {
 }
 
 private enum DebugReplayEvent {
-    case progress(Double, Double, Double, LiveSwingDetectionSnapshot, [DetectedSwing], [ObjectSwingWindowDiagnostics])
+    case progress(Double, Double, Double, LiveSwingDetectionSnapshot, [DetectedSwing])
     case finished(DebugReplayResult)
     case failed(String)
 }
@@ -1018,8 +876,7 @@ private enum DebugLiveSwingReplayRunner {
         for url: URL,
         speedMultiplier: Double,
         sourceTimeScale: Double,
-        detectionMode: DebugReplayDetectionMode,
-        detectorConfiguration: ObjectSwingDetectorConfiguration,
+        detectorConfiguration: SwingDetectorV2Configuration,
         control: DebugReplayControl
     ) -> AsyncStream<DebugReplayEvent> {
         AsyncStream { continuation in
@@ -1029,11 +886,10 @@ private enum DebugLiveSwingReplayRunner {
                         url: url,
                         speedMultiplier: speedMultiplier,
                         sourceTimeScale: sourceTimeScale,
-                        detectionMode: detectionMode,
                         detectorConfiguration: detectorConfiguration,
                         control: control
-                    ) { progress, sourceTime, sourceDuration, snapshot, detections, candidateWindows in
-                        continuation.yield(.progress(progress, sourceTime, sourceDuration, snapshot, detections, candidateWindows))
+                    ) { progress, sourceTime, sourceDuration, snapshot, detections in
+                        continuation.yield(.progress(progress, sourceTime, sourceDuration, snapshot, detections))
                     }
                     continuation.yield(.finished(result))
                 } catch is CancellationError {
@@ -1056,13 +912,11 @@ private enum DebugLiveSwingReplayRunner {
         url: URL,
         speedMultiplier: Double,
         sourceTimeScale: Double,
-        detectionMode: DebugReplayDetectionMode,
-        detectorConfiguration: ObjectSwingDetectorConfiguration,
+        detectorConfiguration: SwingDetectorV2Configuration,
         control: DebugReplayControl,
-        onProgress: @escaping (Double, Double, Double, LiveSwingDetectionSnapshot, [DetectedSwing], [ObjectSwingWindowDiagnostics]) -> Void
+        onProgress: @escaping (Double, Double, Double, LiveSwingDetectionSnapshot, [DetectedSwing]) -> Void
     ) async throws -> DebugReplayResult {
         let clampedSpeedMultiplier = max(1, min(8, speedMultiplier))
-        let clampedSourceTimeScale = max(1, min(8, sourceTimeScale))
         let asset = AVURLAsset(url: url)
         let duration = try await asset.load(.duration)
         let durationSeconds = CMTimeGetSeconds(duration)
@@ -1094,21 +948,10 @@ private enum DebugLiveSwingReplayRunner {
             throw reader.error ?? VideoTrimmer.TrimmerError.assetLoadFailed
         }
 
-        let detector = LiveModelSwingDetector(configuration: detectorConfiguration)
-        detector.reset(enabled: true, configuration: detectorConfiguration)
-        let audioImpacts = detectionMode == .audioImpact
-            ? (try? await audioImpactCandidates(in: asset)) ?? []
-            : []
-        let poseRequest = VNDetectHumanBodyPoseRequest()
-        var lastPoseDetectorTime = -Double.greatestFiniteMagnitude
-        var poseAttemptTimes: [Double] = []
-        var poseFeatures: [DebugReplayPoseFeature] = []
-        var poseProcessingTotalMS = 0.0
-        var poseProcessingSampleCount = 0
-        var lastPoseProcessingTimeMS = 0.0
+        let detector = SwingDetectorV2(configuration: detectorConfiguration)
+        detector.reset(enabled: true)
         var firstSampleTime: CMTime?
-        var lastProcessedDetectorTime = -Double.greatestFiniteMagnitude
-        var lastDetectorTime = 0.0
+        var lastDetectorSourceTime = 0.0
         let replayStartedAt = Date()
 
         while reader.status == .reading, let sampleBuffer = output.copyNextSampleBuffer() {
@@ -1125,9 +968,6 @@ private enum DebugLiveSwingReplayRunner {
             let videoRelativeTime = CMTimeGetSeconds(CMTimeSubtract(sampleTime, firstSampleTime))
             guard videoRelativeTime.isFinite else { continue }
 
-            let detectorTime = videoRelativeTime / clampedSourceTimeScale
-            guard detectorTime - lastProcessedDetectorTime >= detectorConfiguration.targetSampleInterval else { continue }
-
             let realElapsed = await control.activeElapsed(since: replayStartedAt)
             let targetReplayElapsed = videoRelativeTime / clampedSpeedMultiplier
             if targetReplayElapsed > realElapsed {
@@ -1135,56 +975,21 @@ private enum DebugLiveSwingReplayRunner {
                 try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
 
-            lastProcessedDetectorTime = detectorTime
-            lastDetectorTime = detectorTime
+            lastDetectorSourceTime = videoRelativeTime
 
             let orientedImageSize = Self.orientedImageSize(from: sampleBuffer)
-            var snapshot = detector.process(
+            let snapshot = detector.process(
                 sampleBuffer: sampleBuffer,
-                recordingTime: detectorTime,
+                recordingTime: videoRelativeTime,
                 orientation: .up,
                 orientedImageSize: orientedImageSize
             )
-            if (detectionMode == .poseImpact || detectionMode == .hybridImpact),
-               detectorTime - lastPoseDetectorTime >= max(0.12, detectorConfiguration.targetSampleInterval * 2.0) {
-                lastPoseDetectorTime = detectorTime
-                poseAttemptTimes.append(detectorTime)
-                let poseStartedAt = Date()
-                if let poseFeature = Self.poseFeature(
-                    from: sampleBuffer,
-                    at: detectorTime,
-                    request: poseRequest
-                ) {
-                    poseFeatures.append(poseFeature)
-                }
-                lastPoseProcessingTimeMS = Date().timeIntervalSince(poseStartedAt) * 1_000
-                poseProcessingTotalMS += lastPoseProcessingTimeMS
-                poseProcessingSampleCount += 1
-            }
-            snapshot.poseObservationCount = poseFeatures.count
-            snapshot.lastPoseProcessingTimeMS = lastPoseProcessingTimeMS
-            if poseProcessingSampleCount > 0 {
-                snapshot.averagePoseProcessingTimeMS = poseProcessingTotalMS / Double(poseProcessingSampleCount)
-            }
             onProgress(
                 min(1, max(0, videoRelativeTime / durationSeconds)),
                 videoRelativeTime,
                 durationSeconds,
                 snapshot,
-                selectedDetections(
-                    mode: detectionMode,
-                    detector: detector,
-                    videoDuration: detectorTime,
-                    declaredAt: detectorTime,
-                    timeScale: clampedSourceTimeScale,
-                    poseAttemptTimes: poseAttemptTimes,
-                    poseFeatures: poseFeatures,
-                    audioImpacts: audioImpacts
-                ),
-                sourceTimelineDiagnostics(
-                    detector.currentCandidateDiagnostics(),
-                    timeScale: clampedSourceTimeScale
-                )
+                detector.currentDetections()
             )
         }
 
@@ -1192,291 +997,10 @@ private enum DebugLiveSwingReplayRunner {
             throw reader.error ?? VideoTrimmer.TrimmerError.assetLoadFailed
         }
 
-        let detections = detector.finish(recordingTime: lastDetectorTime)
+        let detections = detector.finish(recordingTime: lastDetectorSourceTime)
         return DebugReplayResult(
-            detections: selectedDetections(
-                mode: detectionMode,
-                detector: detector,
-                fallbackContactDetections: detections,
-                videoDuration: lastDetectorTime,
-                declaredAt: lastDetectorTime,
-                timeScale: clampedSourceTimeScale,
-                poseAttemptTimes: poseAttemptTimes,
-                poseFeatures: poseFeatures,
-                audioImpacts: audioImpacts
-            ),
-            candidateWindows: sourceTimelineDiagnostics(
-                detector.currentCandidateDiagnostics(),
-                timeScale: clampedSourceTimeScale
-            ),
+            detections: detections,
             sourceDuration: durationSeconds
-        )
-    }
-
-    private static func selectedDetections(
-        mode: DebugReplayDetectionMode,
-        detector: LiveModelSwingDetector,
-        fallbackContactDetections: [DetectedSwing]? = nil,
-        videoDuration: Double,
-        declaredAt: Double,
-        timeScale: Double,
-        poseAttemptTimes: [Double],
-        poseFeatures: [DebugReplayPoseFeature],
-        audioImpacts: [DebugReplayAudioImpact]
-    ) -> [DetectedSwing] {
-        switch mode {
-        case .contact:
-            return sourceTimelineDetections(
-                fallbackContactDetections ?? detector.currentDetections(),
-                timeScale: timeScale
-            )
-        case .impact:
-            return sourceTimelineImpactDetections(
-                detector.currentImpactCenteredDetections(
-                    videoDuration: videoDuration,
-                    declaredAt: declaredAt
-                ),
-                timeScale: timeScale
-            )
-        case .audioImpact:
-            return sourceTimelineAudioImpactDetections(
-                modelCandidates: detector.currentImpactCenteredDetections(
-                    videoDuration: videoDuration,
-                    declaredAt: declaredAt
-                ),
-                audioImpacts: audioImpacts,
-                declaredAt: declaredAt,
-                timeScale: timeScale
-            )
-        case .poseImpact:
-            return sourceTimelineImpactDetections(
-                poseGatedImpactCandidates(
-                    detector.currentImpactCenteredDetections(
-                        videoDuration: videoDuration,
-                        declaredAt: declaredAt
-                    ),
-                    attemptTimes: poseAttemptTimes,
-                    poseFeatures: poseFeatures
-                ),
-                timeScale: timeScale
-            )
-        case .hybridImpact:
-            return sourceTimelineImpactDetections(
-                hybridImpactCandidates(
-                    detector.currentImpactCenteredDetections(
-                        videoDuration: videoDuration,
-                        declaredAt: declaredAt
-                    ),
-                    attemptTimes: poseAttemptTimes,
-                    poseFeatures: poseFeatures
-                ),
-                timeScale: timeScale
-            )
-        }
-    }
-
-    private static func sourceTimelineAudioImpactDetections(
-        modelCandidates: [ObjectSwingImpactCandidate],
-        audioImpacts: [DebugReplayAudioImpact],
-        declaredAt: Double,
-        timeScale: Double
-    ) -> [DetectedSwing] {
-        let declaredSourceTime = declaredAt * timeScale
-        let sourceCandidates = modelCandidates.map { candidate in
-            (
-                start: candidate.start * timeScale,
-                end: candidate.end * timeScale,
-                impactTime: candidate.impactTime * timeScale,
-                declaredAt: candidate.declaredAt * timeScale,
-                confidence: candidate.confidence
-            )
-        }
-        var detections: [DetectedSwing] = []
-
-        for impact in audioImpacts where impact.time <= declaredSourceTime {
-            guard let candidate = sourceCandidates.first(where: {
-                impact.time >= $0.start - 0.4 && impact.time <= $0.end + 0.4
-            }) else {
-                continue
-            }
-
-            let confidence = min(0.96, max(candidate.confidence, 0.45 + impact.score / 20.0))
-            let detection = DetectedSwing(
-                startTime: CMTime(seconds: max(0, candidate.start), preferredTimescale: 600),
-                endTime: CMTime(seconds: max(candidate.start, candidate.end), preferredTimescale: 600),
-                confidence: confidence,
-                impactTime: impact.time,
-                declaredAt: max(impact.time, candidate.declaredAt)
-            )
-            if let last = detections.last,
-               CMTimeGetSeconds(detection.startTime) <= CMTimeGetSeconds(last.endTime) + 0.35 {
-                if detection.confidence > last.confidence {
-                    detections[detections.count - 1] = detection
-                }
-            } else {
-                detections.append(detection)
-            }
-        }
-
-        return detections
-    }
-
-    private static func audioImpactCandidates(in asset: AVURLAsset) async throws -> [DebugReplayAudioImpact] {
-        guard let audioTrack = try await asset.loadTracks(withMediaType: .audio).first else {
-            return []
-        }
-
-        let sampleRate = 8_000
-        let windowSampleCount = max(1, sampleRate / 50)
-        let output = AVAssetReaderTrackOutput(
-            track: audioTrack,
-            outputSettings: [
-                AVFormatIDKey: kAudioFormatLinearPCM,
-                AVSampleRateKey: sampleRate,
-                AVNumberOfChannelsKey: 1,
-                AVLinearPCMBitDepthKey: 16,
-                AVLinearPCMIsFloatKey: false,
-                AVLinearPCMIsBigEndianKey: false
-            ]
-        )
-        output.alwaysCopiesSampleData = false
-
-        let reader = try AVAssetReader(asset: asset)
-        guard reader.canAdd(output) else { return [] }
-        reader.add(output)
-
-        guard reader.startReading() else {
-            throw reader.error ?? VideoTrimmer.TrimmerError.assetLoadFailed
-        }
-
-        var rmsWindows: [(time: Double, rms: Double)] = []
-        var globalSampleIndex = 0
-        var windowStartSample = 0
-        var squaredSum = 0.0
-        var samplesInWindow = 0
-
-        while reader.status == .reading, let sampleBuffer = output.copyNextSampleBuffer() {
-            guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { continue }
-            let length = CMBlockBufferGetDataLength(blockBuffer)
-            guard length >= 2 else { continue }
-
-            var data = Data(count: length)
-            let copied = data.withUnsafeMutableBytes { rawBuffer -> OSStatus in
-                guard let baseAddress = rawBuffer.baseAddress else { return kCMBlockBufferBadPointerParameterErr }
-                return CMBlockBufferCopyDataBytes(
-                    blockBuffer,
-                    atOffset: 0,
-                    dataLength: length,
-                    destination: baseAddress
-                )
-            }
-            guard copied == noErr else { continue }
-
-            data.withUnsafeBytes { rawBuffer in
-                var offset = 0
-                while offset + 1 < rawBuffer.count {
-                    if samplesInWindow == 0 {
-                        windowStartSample = globalSampleIndex
-                    }
-                    let bitPattern = UInt16(rawBuffer[offset]) | (UInt16(rawBuffer[offset + 1]) << 8)
-                    let sample = Double(Int16(bitPattern: bitPattern)) / 32768.0
-                    squaredSum += sample * sample
-                    samplesInWindow += 1
-                    globalSampleIndex += 1
-
-                    if samplesInWindow == windowSampleCount {
-                        rmsWindows.append(
-                            (
-                                time: Double(windowStartSample) / Double(sampleRate),
-                                rms: sqrt(squaredSum / Double(windowSampleCount))
-                            )
-                        )
-                        squaredSum = 0
-                        samplesInWindow = 0
-                    }
-                    offset += 2
-                }
-            }
-        }
-
-        if reader.status == .failed {
-            throw reader.error ?? VideoTrimmer.TrimmerError.assetLoadFailed
-        }
-
-        guard rmsWindows.count >= 3 else { return [] }
-        let halfWindow = 25
-        let scores = rmsWindows.indices.map { index in
-            let lower = max(0, index - halfWindow)
-            let upper = min(rmsWindows.count - 1, index + halfWindow)
-            let baseline = median(rmsWindows[lower...upper].map(\.rms))
-            return rmsWindows[index].rms / (baseline + 0.00001)
-        }
-
-        var peaks: [DebugReplayAudioImpact] = []
-        for index in 1..<(scores.count - 1) {
-            guard scores[index] >= scores[index - 1],
-                  scores[index] >= scores[index + 1],
-                  scores[index] > 2.5
-            else {
-                continue
-            }
-            peaks.append(DebugReplayAudioImpact(time: rmsWindows[index].time, score: scores[index]))
-        }
-
-        let strongest = peaks.sorted { $0.score > $1.score }
-        var kept: [DebugReplayAudioImpact] = []
-        for peak in strongest {
-            guard kept.allSatisfy({ abs($0.time - peak.time) > 0.35 }) else { continue }
-            kept.append(peak)
-            if kept.count >= 32 { break }
-        }
-        return kept.sorted { $0.time < $1.time }
-    }
-
-    private static func median(_ values: [Double]) -> Double {
-        guard !values.isEmpty else { return 0 }
-        let sorted = values.sorted()
-        let middle = sorted.count / 2
-        if sorted.count.isMultiple(of: 2) {
-            return (sorted[middle - 1] + sorted[middle]) / 2
-        }
-        return sorted[middle]
-    }
-
-    private static func poseGatedImpactCandidates(
-        _ detections: [ObjectSwingImpactCandidate],
-        attemptTimes: [Double],
-        poseFeatures: [DebugReplayPoseFeature]
-    ) -> [ObjectSwingImpactCandidate] {
-        ObjectSwingImpactSelector.poseGatedImpactCandidates(
-            detections,
-            attemptTimes: attemptTimes,
-            poseFeatures: poseFeatures
-        )
-    }
-
-    private static func hybridImpactCandidates(
-        _ detections: [ObjectSwingImpactCandidate],
-        attemptTimes: [Double],
-        poseFeatures: [DebugReplayPoseFeature]
-    ) -> [ObjectSwingImpactCandidate] {
-        ObjectSwingImpactSelector.hybridImpactCandidates(
-            detections,
-            attemptTimes: attemptTimes,
-            poseFeatures: poseFeatures
-        )
-    }
-
-    private static func poseFeature(
-        from sampleBuffer: CMSampleBuffer,
-        at time: Double,
-        request: VNDetectHumanBodyPoseRequest
-    ) -> DebugReplayPoseFeature? {
-        ObjectSwingImpactSelector.poseFeature(
-            from: sampleBuffer,
-            at: time,
-            orientation: .up,
-            request: request
         )
     }
 
@@ -1489,55 +1013,6 @@ private enum DebugLiveSwingReplayRunner {
             width: CVPixelBufferGetWidth(pixelBuffer),
             height: CVPixelBufferGetHeight(pixelBuffer)
         )
-    }
-
-    private static func sourceTimelineDetections(
-        _ detections: [DetectedSwing],
-        timeScale: Double
-    ) -> [DetectedSwing] {
-        detections.map { detection in
-            DetectedSwing(
-                startTime: CMTimeMultiplyByFloat64(detection.startTime, multiplier: timeScale),
-                endTime: CMTimeMultiplyByFloat64(detection.endTime, multiplier: timeScale),
-                confidence: detection.confidence,
-                impactTime: detection.impactTime.map { $0 * timeScale },
-                declaredAt: detection.declaredAt.map { $0 * timeScale }
-            )
-        }
-    }
-
-    private static func sourceTimelineImpactDetections(
-        _ detections: [ObjectSwingImpactCandidate],
-        timeScale: Double
-    ) -> [DetectedSwing] {
-        detections.map { detection in
-            DetectedSwing(
-                startTime: CMTime(seconds: detection.start * timeScale, preferredTimescale: 600),
-                endTime: CMTime(seconds: detection.end * timeScale, preferredTimescale: 600),
-                confidence: detection.confidence,
-                impactTime: detection.impactTime * timeScale,
-                declaredAt: detection.declaredAt * timeScale
-            )
-        }
-    }
-
-    private static func sourceTimelineDiagnostics(
-        _ diagnostics: [ObjectSwingWindowDiagnostics],
-        timeScale: Double
-    ) -> [ObjectSwingWindowDiagnostics] {
-        diagnostics.map { diagnostic in
-            ObjectSwingWindowDiagnostics(
-                start: diagnostic.start * timeScale,
-                end: diagnostic.end * timeScale,
-                peakMotion: diagnostic.peakMotion,
-                strongMotionFrameCount: diagnostic.strongMotionFrameCount,
-                meanClubMotion: diagnostic.meanClubMotion,
-                clubPathSpan: diagnostic.clubPathSpan,
-                clubTopY: diagnostic.clubTopY,
-                clubFrameRatio: diagnostic.clubFrameRatio,
-                ballFrameRatio: diagnostic.ballFrameRatio
-            )
-        }
     }
 
     private static func orientedVideoComposition(for track: AVAssetTrack, duration: CMTime) async throws -> AVVideoComposition {

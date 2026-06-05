@@ -24,8 +24,8 @@ The shipping swing detector, `LiveModelSwingDetector` in [ModelBackedSwingDetect
 - Reuse `GolfObjectDetector` unchanged for per-frame YOLO objects.
 - Patch Watcher v1 is YOLO-only inside the locked patch, with a lower in-patch ball threshold than global detection.
 - Do not add classical luma/template patch fallback unless YOLO-only recall proves insufficient.
-- Keep the legacy detector intact until V2 beats it on the fixture suite.
-- Wire the app only behind an Experiments flag, after the offline V2 path is proven enough to compare on device.
+- Keep the legacy detector source intact as a fallback reference until V2 has enough on-device mileage to delete it safely.
+- Wire the app directly to V2 once the offline fixture gates are proven; do not keep a product-facing old/new detector flag.
 - Advance one fixture at a time. If a case fails, stop and debug the conflict between the trace and the visible frames before moving on.
 
 ## Reused Types And Tools
@@ -51,7 +51,7 @@ All new Swift detector code lives under [SwingDetectorV2](/Users/ruari/Documents
 | `SwingCandidateTrace.swift` | Debug-only candidate traces with evidence, score, state, lock, and primary failure. |
 | `SwingDetectorV2.swift` | Driver that feeds YOLO objects, motion, trackers, state machine, scorer, detections, and traces. |
 
-The shared interface is [LiveSwingDetecting.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/LiveSwingDetecting.swift). Eventually both `SwingDetectorV2` and the legacy detector should conform.
+The shared interface is [LiveSwingDetecting.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/LiveSwingDetecting.swift). `SwingDetectorV2` is the app-wired implementation; the legacy detector remains in source for reference/evaluator comparison only.
 
 ## Offline Dev Loop
 
@@ -201,21 +201,24 @@ Gate:
 - zero false positives
 - evaluator performance remains bounded enough for the selected sampling profile
 
-### M5: App Wiring Behind Experiments Flag
+### M5: App Wiring
 
 Build:
 
-- conform the legacy detector to `LiveSwingDetecting`
-- add `ExperimentalSettingKey.useSwingDetectorV2`
-- branch Capture setup between legacy and V2
-- branch Trim/import detection between legacy and V2
-- optionally add V2 Replay Debug mode for on-device trace comparison
+- switch Capture live detection to `SwingDetectorV2`
+- pass V2 live detections into Trim after recording stops
+- run imported/library Trim post-pass through `SwingDetectorV2AssetDetector`
+- replay Debug frames through `SwingDetectorV2`
+- remove old contact/impact/hybrid detector mode wiring from the app UI
 
 Gate:
 
-- flag off: legacy behavior unchanged
-- flag on: V2 runs in Capture, badge updates from V2 snapshots, Trim opens with V2 ranges
-- imported clip path can run V2 without diverging from the shared detector core
+- Capture badge updates from V2 snapshots
+- captured recordings open Trim with V2 ranges
+- imported clip path runs V2 without diverging from the shared detector core
+- Replay Debug has one detector path and one timing selector
+
+Current status: implemented in app wiring. The old detector source remains present but is no longer referenced by Capture, Trim, or Replay Debug.
 
 ## Deferred
 
