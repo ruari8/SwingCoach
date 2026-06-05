@@ -288,6 +288,8 @@ struct DebugReplayView: View {
             ProgressView(value: model.progress)
                 .tint(.yellow)
 
+            replayScrubber
+
             debugEvidenceGrid(snapshot: model.snapshot)
 
             if let errorMessage = model.errorMessage {
@@ -358,6 +360,51 @@ struct DebugReplayView: View {
             RoundedRectangle(cornerRadius: 10)
                 .fill(Color.black.opacity(0.72))
         )
+    }
+
+    private var replayScrubber: some View {
+        HStack(spacing: 8) {
+            Text(formatTime(model.replayStartSourceTime))
+                .font(.caption2.monospacedDigit().weight(.semibold))
+                .foregroundColor(.white.opacity(0.58))
+                .frame(width: 54, alignment: .leading)
+
+            GeometryReader { geometry in
+                let width = max(1, geometry.size.width)
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.white.opacity(0.24))
+                        .frame(height: 4)
+
+                    Capsule()
+                        .fill(Color.yellow)
+                        .frame(width: model.scrubberOffset(in: width), height: 4)
+
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 13, height: 13)
+                        .shadow(color: .black.opacity(0.28), radius: 3)
+                        .offset(x: model.scrubberOffset(in: width) - 6.5)
+                }
+                .frame(height: 28)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            guard !model.isReplaying else { return }
+                            let fraction = max(0, min(1, value.location.x / width))
+                            model.setReplayStartFraction(Double(fraction))
+                        }
+                )
+            }
+            .frame(height: 28)
+            .opacity(model.selectedVideoURL == nil || model.isReplaying ? 0.45 : 1)
+
+            Text(model.replayDuration > 0 ? formatTime(model.replayDuration) : "--")
+                .font(.caption2.monospacedDigit().weight(.semibold))
+                .foregroundColor(.white.opacity(0.46))
+                .frame(width: 54, alignment: .trailing)
+        }
     }
 
     private func debugEvidenceGrid(snapshot: LiveSwingDetectionSnapshot) -> some View {
@@ -551,12 +598,14 @@ final class DebugReplayViewModel: ObservableObject {
     @Published var progress = 0.0
     @Published var replaySourceTime = 0.0
     @Published var replayDuration = 0.0
+    @Published var replayStartSourceTime = 0.0
     @Published var detectorSourceTime = 0.0
     @Published var snapshot = LiveSwingDetectionSnapshot.idle
     @Published var detections: [DetectedSwing] = []
     @Published var errorMessage: String?
 
     private var replayTask: Task<Void, Never>?
+    private var durationLoadTask: Task<Void, Never>?
     private var replayControl: DebugReplayControl?
     private var playerTimeObserver: Any?
     private var lastProgressUpdateAt = Date.distantPast
@@ -588,12 +637,37 @@ final class DebugReplayViewModel: ObservableObject {
         return detections.isEmpty ? "Ready" : "Replay complete"
     }
 
+    func setReplayStartSourceTime(_ sourceTime: Double) {
+        guard !isReplaying else { return }
+        let clamped = max(0, replayDuration > 0 ? min(sourceTime, replayDuration) : sourceTime)
+        replayStartSourceTime = clamped
+        replaySourceTime = clamped
+        progress = replayDuration > 0 ? min(1, max(0, clamped / replayDuration)) : 0
+        player?.seek(
+            to: CMTime(seconds: clamped, preferredTimescale: 600),
+            toleranceBefore: .zero,
+            toleranceAfter: .zero
+        )
+    }
+
+    func setReplayStartFraction(_ fraction: Double) {
+        guard replayDuration > 0 else { return }
+        setReplayStartSourceTime(replayDuration * max(0, min(1, fraction)))
+    }
+
+    func scrubberOffset(in width: CGFloat) -> CGFloat {
+        guard replayDuration > 0 else { return 0 }
+        let fraction = max(0, min(1, replayStartSourceTime / replayDuration))
+        return CGFloat(fraction) * width
+    }
+
     var trimVideoSource: TrimVideoSource? {
         selectedVideoURL.map { .localFile(url: $0) }
     }
 
     func setSelectedVideo(_ url: URL) {
         cancelReplay()
+        durationLoadTask?.cancel()
         clearPlayerTimeObserver()
         let newPlayer = AVPlayer(url: url)
         selectedVideoURL = url
@@ -602,11 +676,23 @@ final class DebugReplayViewModel: ObservableObject {
         progress = 0
         replaySourceTime = 0
         replayDuration = 0
+        replayStartSourceTime = 0
         detectorSourceTime = 0
         snapshot = .idle
         detections = []
         errorMessage = nil
         lastProgressUpdateAt = .distantPast
+
+        durationLoadTask = Task {
+            let asset = AVURLAsset(url: url)
+            guard let duration = try? await asset.load(.duration) else { return }
+            let seconds = CMTimeGetSeconds(duration)
+            guard seconds.isFinite, seconds > 0 else { return }
+            await MainActor.run {
+                guard self.selectedVideoURL == url else { return }
+                self.replayDuration = seconds
+            }
+        }
     }
 
     func startReplay(
@@ -625,14 +711,14 @@ final class DebugReplayViewModel: ObservableObject {
         let control = DebugReplayControl()
         replayControl = control
         activePlaybackSpeedMultiplier = max(1, min(8, speedMultiplier))
+        let startSourceTime = max(0, replayStartSourceTime)
         visibleReplayStarted = false
         playerHeldForDetectorCatchup = false
         isReplaying = true
         isPaused = false
-        progress = 0
-        replaySourceTime = 0
-        replayDuration = 0
-        detectorSourceTime = 0
+        progress = replayDuration > 0 ? min(1, max(0, startSourceTime / replayDuration)) : 0
+        replaySourceTime = startSourceTime
+        detectorSourceTime = startSourceTime
         snapshot = LiveSwingDetectionSnapshot(
             status: .searchingBall,
             primaryMessage: "Preparing replay",
@@ -643,13 +729,17 @@ final class DebugReplayViewModel: ObservableObject {
         detections = []
         errorMessage = nil
         lastProgressUpdateAt = .distantPast
-        player?.seek(to: .zero)
+        player?.seek(
+            to: CMTime(seconds: startSourceTime, preferredTimescale: 600),
+            toleranceBefore: .zero,
+            toleranceAfter: .zero
+        )
         player?.pause()
 
         let stream = DebugLiveSwingReplayRunner.eventStream(
             for: selectedVideoURL,
             speedMultiplier: speedMultiplier,
-            sourceTimeScale: sourceTimeScale,
+            startSourceTime: startSourceTime,
             detectorConfiguration: configuration,
             control: control
         )
@@ -657,9 +747,8 @@ final class DebugReplayViewModel: ObservableObject {
         replayTask = Task {
             for await event in stream {
                 switch event {
-                case .progress(let progressValue, let sourceTime, let sourceDuration, let newSnapshot, let currentDetections):
+                case .progress(let sourceTime, let sourceDuration, let newSnapshot, let currentDetections):
                     applyProgress(
-                        progressValue,
                         sourceTime: sourceTime,
                         sourceDuration: sourceDuration,
                         snapshot: newSnapshot,
@@ -715,6 +804,11 @@ final class DebugReplayViewModel: ObservableObject {
         visibleReplayStarted = false
         playerHeldForDetectorCatchup = false
         player?.pause()
+        player?.seek(
+            to: CMTime(seconds: replayStartSourceTime, preferredTimescale: 600),
+            toleranceBefore: .zero,
+            toleranceAfter: .zero
+        )
     }
 
     func togglePause(speedMultiplier: Double) {
@@ -739,7 +833,6 @@ final class DebugReplayViewModel: ObservableObject {
     }
 
     private func applyProgress(
-        _ progressValue: Double,
         sourceTime: Double,
         sourceDuration: Double,
         snapshot newSnapshot: LiveSwingDetectionSnapshot,
@@ -756,9 +849,6 @@ final class DebugReplayViewModel: ObservableObject {
             startVisibleReplayIfNeeded()
         }
         syncVisiblePlaybackToDetector()
-        if replaySourceTime <= 0 {
-            progress = progressValue
-        }
 
         guard detectionsChanged || statusChanged || enoughTimePassed else { return }
 
@@ -796,9 +886,13 @@ final class DebugReplayViewModel: ObservableObject {
         guard !visibleReplayStarted else { return }
 
         visibleReplayStarted = true
-        replaySourceTime = 0
-        progress = 0
-        player?.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
+        replaySourceTime = replayStartSourceTime
+        progress = replayDuration > 0 ? min(1, max(0, replayStartSourceTime / replayDuration)) : 0
+        player?.seek(
+            to: CMTime(seconds: replayStartSourceTime, preferredTimescale: 600),
+            toleranceBefore: .zero,
+            toleranceAfter: .zero
+        )
         if !isPaused {
             player?.playImmediately(atRate: Float(activePlaybackSpeedMultiplier))
         }
@@ -866,7 +960,7 @@ private actor DebugReplayControl {
 }
 
 private enum DebugReplayEvent {
-    case progress(Double, Double, Double, LiveSwingDetectionSnapshot, [DetectedSwing])
+    case progress(Double, Double, LiveSwingDetectionSnapshot, [DetectedSwing])
     case finished(DebugReplayResult)
     case failed(String)
 }
@@ -875,7 +969,7 @@ private enum DebugLiveSwingReplayRunner {
     static func eventStream(
         for url: URL,
         speedMultiplier: Double,
-        sourceTimeScale: Double,
+        startSourceTime: Double,
         detectorConfiguration: SwingDetectorV2Configuration,
         control: DebugReplayControl
     ) -> AsyncStream<DebugReplayEvent> {
@@ -885,11 +979,11 @@ private enum DebugLiveSwingReplayRunner {
                     let result = try await replay(
                         url: url,
                         speedMultiplier: speedMultiplier,
-                        sourceTimeScale: sourceTimeScale,
+                        startSourceTime: startSourceTime,
                         detectorConfiguration: detectorConfiguration,
                         control: control
-                    ) { progress, sourceTime, sourceDuration, snapshot, detections in
-                        continuation.yield(.progress(progress, sourceTime, sourceDuration, snapshot, detections))
+                    ) { sourceTime, sourceDuration, snapshot, detections in
+                        continuation.yield(.progress(sourceTime, sourceDuration, snapshot, detections))
                     }
                     continuation.yield(.finished(result))
                 } catch is CancellationError {
@@ -911,12 +1005,13 @@ private enum DebugLiveSwingReplayRunner {
     private static func replay(
         url: URL,
         speedMultiplier: Double,
-        sourceTimeScale: Double,
+        startSourceTime: Double,
         detectorConfiguration: SwingDetectorV2Configuration,
         control: DebugReplayControl,
-        onProgress: @escaping (Double, Double, Double, LiveSwingDetectionSnapshot, [DetectedSwing]) -> Void
+        onProgress: @escaping (Double, Double, LiveSwingDetectionSnapshot, [DetectedSwing]) -> Void
     ) async throws -> DebugReplayResult {
         let clampedSpeedMultiplier = max(1, min(8, speedMultiplier))
+        let clampedStartSourceTime = max(0, startSourceTime)
         let asset = AVURLAsset(url: url)
         let duration = try await asset.load(.duration)
         let durationSeconds = CMTimeGetSeconds(duration)
@@ -929,6 +1024,12 @@ private enum DebugLiveSwingReplayRunner {
         }
 
         let reader = try AVAssetReader(asset: asset)
+        let startTime = CMTime(seconds: min(clampedStartSourceTime, durationSeconds), preferredTimescale: 600)
+        let remainingDuration = CMTimeSubtract(duration, startTime)
+        if CMTimeCompare(remainingDuration, .zero) > 0 {
+            reader.timeRange = CMTimeRange(start: startTime, duration: remainingDuration)
+        }
+
         let output = AVAssetReaderVideoCompositionOutput(
             videoTracks: [videoTrack],
             videoSettings: [
@@ -950,26 +1051,21 @@ private enum DebugLiveSwingReplayRunner {
 
         let detector = SwingDetectorV2(configuration: detectorConfiguration)
         detector.reset(enabled: true)
-        var firstSampleTime: CMTime?
         var lastDetectorSourceTime = 0.0
         let replayStartedAt = Date()
+        let trackTimeRange = try await videoTrack.load(.timeRange)
+        let trackStart = trackTimeRange.start
 
         while reader.status == .reading, let sampleBuffer = output.copyNextSampleBuffer() {
             try Task.checkCancellation()
             try await control.waitIfPaused()
 
             let sampleTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-            if firstSampleTime == nil {
-                firstSampleTime = sampleTime
-            }
-
-            guard let firstSampleTime else { continue }
-
-            let videoRelativeTime = CMTimeGetSeconds(CMTimeSubtract(sampleTime, firstSampleTime))
+            let videoRelativeTime = CMTimeGetSeconds(CMTimeSubtract(sampleTime, trackStart))
             guard videoRelativeTime.isFinite else { continue }
 
             let realElapsed = await control.activeElapsed(since: replayStartedAt)
-            let targetReplayElapsed = videoRelativeTime / clampedSpeedMultiplier
+            let targetReplayElapsed = max(0, videoRelativeTime - clampedStartSourceTime) / clampedSpeedMultiplier
             if targetReplayElapsed > realElapsed {
                 let delay = targetReplayElapsed - realElapsed
                 try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
@@ -985,7 +1081,6 @@ private enum DebugLiveSwingReplayRunner {
                 orientedImageSize: orientedImageSize
             )
             onProgress(
-                min(1, max(0, videoRelativeTime / durationSeconds)),
                 videoRelativeTime,
                 durationSeconds,
                 snapshot,

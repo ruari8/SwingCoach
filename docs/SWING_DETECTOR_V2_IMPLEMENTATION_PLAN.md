@@ -226,6 +226,12 @@ Current status: implemented in app wiring. The old detector source remains prese
 - Soft-import profile for clips that start mid-swing with no visible address.
 - Learned scorer weights from labelled evidence.
 - Hard-negative fixture expansion: ball repositioning, club-over-ball setup, waggles, spare balls, nearby-bay audio, walk-ins.
+- Lag-aware live sampling. Current live capture keeps recording safe by allowing
+  AVFoundation to discard late video-data frames if detector processing falls
+  behind. That prevents a long post-stop backlog, but it can discard detector
+  evidence blindly. Revisit with phone telemetry: preserve burst sampling during
+  swing/impact states, and temporarily reduce idle/cooldown sampling below the
+  normal low rate until `analysisLagMS` recovers.
 - Removing or rewriting the legacy detector.
 
 ## Verification Discipline

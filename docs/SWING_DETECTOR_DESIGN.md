@@ -673,6 +673,14 @@ The current V3 labels and exported library clips are useful, but the reset needs
 - How short can the high-rate burst be without losing impact timing?
 - Should patch watching include a classical fallback in v1, or start YOLO-only inside the patch?
 - What is the production operating threshold for "safe precision"?
+- Should the live sample scheduler become lag-aware? The current capture path
+  relies on AVFoundation dropping late video-data frames to protect recording
+  stability. That avoids an unbounded detector backlog, but it is not a
+  swing-aware policy: a slow phone could drop useful downswing/impact evidence
+  during a burst. A future scheduler should consider lowering non-critical
+  idle/cooldown sampling below the normal low rate when `analysisLagMS` grows,
+  while preserving burst sampling during `Swinging` and unresolved
+  `ImpactCandidate`.
 
 Resolved:
 

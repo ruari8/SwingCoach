@@ -249,7 +249,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
         evaluateStartupInFlightIfNeeded(frame: frame, lock: lock)
 
         recordProcessing(startedAt: startedAt)
-        lastSnapshot = makeSnapshot(frame: frame, lock: lock)
+        lastSnapshot = makeSnapshot(frame: frame, lock: lock, targetFPS: targetFPSForFrame)
         return lastSnapshot
     }
 
@@ -547,7 +547,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
 
     // MARK: - Snapshot
 
-    private func makeSnapshot(frame: FrameSampleV2, lock: AddressLock?) -> LiveSwingDetectionSnapshot {
+    private func makeSnapshot(frame: FrameSampleV2, lock: AddressLock?, targetFPS: Double) -> LiveSwingDetectionSnapshot {
         let status: LiveSwingDetectionStatus
         let primary: String
         switch stateMachine.state {
@@ -573,7 +573,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
             hasBallLock: lock != nil,
             processedFrameCount: processedFrameCount,
             skippedFrameCount: skippedFrameCount,
-            targetSampleFPS: configuration.lowSampleFPS,
+            targetSampleFPS: targetFPS,
             averageProcessingTimeMS: averageProcessingMS,
             lastProcessingTimeMS: lastProcessingMS,
             detectorConfigurationName: configuration.name
