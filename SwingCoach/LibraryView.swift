@@ -998,6 +998,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     let showsSpeedControls: Bool
     let startsPlaying: Bool
     let allowsFullscreen: Bool
+    let allowsTransportGestures: Bool
     let contentOverlayAllowsHitTesting: Bool
 
     private let header: Header
@@ -1027,6 +1028,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         showsSpeedControls: Bool = true,
         startsPlaying: Bool = true,
         allowsFullscreen: Bool = true,
+        allowsTransportGestures: Bool = true,
         contentOverlayAllowsHitTesting: Bool = false,
         contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
         @ViewBuilder header: () -> Header,
@@ -1038,6 +1040,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         self.showsSpeedControls = showsSpeedControls
         self.startsPlaying = startsPlaying
         self.allowsFullscreen = allowsFullscreen
+        self.allowsTransportGestures = allowsTransportGestures
         self.contentOverlayAllowsHitTesting = contentOverlayAllowsHitTesting
         self.header = header()
         self.overlayAccessory = overlayAccessory()
@@ -1071,6 +1074,9 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     private var videoArea: some View {
         GeometryReader { geometry in
             let timelineWidth = max(geometry.size.width - 28, 1)
+            let topControlPadding = max(12, geometry.safeAreaInsets.top + 8)
+            let bottomControlPadding = max(12, geometry.safeAreaInsets.bottom + 12)
+            let accessoryBottomPadding = max(34, geometry.safeAreaInsets.bottom + 34)
 
             ZStack {
                 Group {
@@ -1096,7 +1102,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .allowsHitTesting(contentOverlayAllowsHitTesting)
 
-                if !contentOverlayAllowsHitTesting {
+                if allowsTransportGestures && !contentOverlayAllowsHitTesting {
                     transportTouchLayer
                 }
 
@@ -1136,7 +1142,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                         playerCornerControls
                     }
                     .padding(.horizontal, 12)
-                    .padding(.top, 12)
+                    .padding(.top, topControlPadding)
 
                     Spacer(minLength: 0)
 
@@ -1152,7 +1158,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
                     integratedTimeline(width: timelineWidth)
                         .padding(.horizontal, 14)
-                        .padding(.bottom, 12)
+                        .padding(.bottom, bottomControlPadding)
                 }
 
                 VStack {
@@ -1163,7 +1169,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                         overlayAccessory
                     }
                     .padding(.trailing, 12)
-                    .padding(.bottom, 34)
+                    .padding(.bottom, accessoryBottomPadding)
                 }
             }
             .background(Color.black)
@@ -1220,6 +1226,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 showsSpeedControls: showsSpeedControls,
                 startsPlaying: false,
                 allowsFullscreen: false,
+                allowsTransportGestures: allowsTransportGestures,
                 contentOverlayAllowsHitTesting: contentOverlayAllowsHitTesting,
                 contentOverlay: contentOverlay
             ) {
@@ -1590,6 +1597,7 @@ extension PlaybackChromeView where OverlayAccessory == EmptyView {
         showsSpeedControls: Bool = true,
         startsPlaying: Bool = true,
         allowsFullscreen: Bool = true,
+        allowsTransportGestures: Bool = true,
         contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
         @ViewBuilder header: () -> Header
     ) {
@@ -1600,6 +1608,7 @@ extension PlaybackChromeView where OverlayAccessory == EmptyView {
             showsSpeedControls: showsSpeedControls,
             startsPlaying: startsPlaying,
             allowsFullscreen: allowsFullscreen,
+            allowsTransportGestures: allowsTransportGestures,
             contentOverlay: contentOverlay,
             header: header,
             overlayAccessory: { EmptyView() }

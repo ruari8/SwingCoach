@@ -21,7 +21,8 @@ struct SwingDetailView: View {
     @State private var analysisProgressText: String?
     @State private var analysisProgressValue: Float?
     @State private var showTechnicalDetails = false
-    @State private var isOriginalExpanded = false
+    @State private var showMetadata = false
+    @State private var selectedPage = 0
 
     private var currentSwing: SavedSwing {
         library.swings.first { $0.id == swing.id } ?? swing
@@ -39,61 +40,205 @@ struct SwingDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                originalVideoSection
-                if shouldShowAnalysisAction {
-                    analysisActionSection
+        GeometryReader { geometry in
+            ZStack {
+                Color.black
+                    .ignoresSafeArea(edges: .top)
+
+                if let savedAnalysis {
+                    analyzedCarousel(savedAnalysis: savedAnalysis, size: geometry.size)
+                } else {
+                    originalVideoPage(size: geometry.size)
                 }
-                analysisSection
             }
-            .padding()
         }
-        .background(Color(.systemGroupedBackground))
-        .navigationTitle("Swing Detail")
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showMetadata = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(Color.black.opacity(0.42)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Show swing metadata")
+            }
+        }
+        .sheet(isPresented: $showMetadata) {
+            metadataSheet
+                .presentationDetents([.medium])
+        }
         .onAppear {
+            preparePlayback()
             Task {
                 await library.loadThumbnails()
             }
         }
-        .onChange(of: isOriginalExpanded) { _, expanded in
-            if expanded {
-                preparePlayback()
+    }
+
+    private func analyzedCarousel(savedAnalysis: SavedAnalysis, size: CGSize) -> some View {
+        ZStack(alignment: .bottom) {
+            TabView(selection: $selectedPage) {
+                originalVideoPage(size: size)
+                    .tag(0)
+
+                annotatedVideoPage(savedAnalysis: savedAnalysis)
+                    .tag(1)
+
+                coachNotesPage(savedAnalysis: savedAnalysis)
+                    .tag(2)
             }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+
+            carouselDots(count: 3)
+                .padding(.bottom, 14)
         }
     }
 
-    private var originalVideoSection: some View {
-        DisclosureGroup(isExpanded: $isOriginalExpanded) {
-            VStack(alignment: .leading, spacing: 14) {
-                originalPlayer
-                    .frame(height: 280)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+    private func originalVideoPage(size: CGSize) -> some View {
+        ZStack(alignment: .bottom) {
+            originalPlayer
+                .frame(width: size.width, height: size.height)
+                .ignoresSafeArea(edges: .top)
 
-                metadataContent
-            }
-            .padding(.top, 12)
-        } label: {
-            HStack(spacing: 12) {
-                originalThumbnail
+            LinearGradient(
+                colors: [.clear, Color.black.opacity(0.22), Color.black.opacity(0.66)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 150)
+            .allowsHitTesting(false)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Original Swing")
-                        .font(.headline)
-                        .foregroundColor(.primary)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .bottom) {
+                    Spacer(minLength: 0)
 
-                    Text("\(currentSwing.vantage.displayName) · \(formatDuration(currentSwing.duration))")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    if shouldShowAnalysisAction {
+                        analysisOverlayButton
+                    }
                 }
 
-                Spacer(minLength: 0)
+                analysisInlineStatus
+            }
+            .padding(.horizontal, 18)
+            .padding(.bottom, savedAnalysis == nil ? 22 : 42)
+        }
+    }
+
+    @ViewBuilder
+    private func annotatedVideoPage(savedAnalysis: SavedAnalysis) -> some View {
+        if let annotatedVideo = savedAnalysis.annotatedVideo {
+            AnnotatedAnalysisVideo(
+                video: annotatedVideo,
+                analysisID: savedAnalysis.analysisID,
+                presentation: .immersive
+            )
+        } else {
+            statusFullscreen(
+                icon: "video.slash",
+                title: "No annotated video",
+                message: "This analysis has coach notes and metrics, but no rendered video artifact yet."
+            )
+        }
+    }
+
+    private func coachNotesPage(savedAnalysis: SavedAnalysis) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Coach Notes")
+                        .font(.title2.weight(.bold))
+                        .foregroundColor(.white)
+
+                    Text(savedAnalysis.summary)
+                        .font(.body)
+                        .foregroundColor(.white.opacity(0.82))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                if !savedAnalysis.metrics.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Metrics")
+                            .font(.headline)
+                            .foregroundColor(.white)
+
+                        ForEach(savedAnalysis.metrics, id: \.key) { metric in
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(metric.name)
+                                    .foregroundColor(.white.opacity(0.72))
+
+                                Spacer(minLength: 12)
+
+                                Text(metric.value)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.trailing)
+                            }
+                            .font(.subheadline)
+                        }
+                    }
+                }
+
+                if !savedAnalysis.drills.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Drills")
+                            .font(.headline)
+                            .foregroundColor(.white)
+
+                        ForEach(savedAnalysis.drills, id: \.title) { drill in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(drill.title)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundColor(.white)
+
+                                Text(drill.summary)
+                                    .font(.caption)
+                                    .foregroundColor(.white.opacity(0.68))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding()
+                            .background(Color.white.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+                }
+
+                Text("Note: this page is the future home for richer coach notes and linked drill content once the drill library is wired into the analysis flow.")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.54))
+            }
+            .padding(.horizontal, 22)
+            .padding(.top, 92)
+            .padding(.bottom, 84)
+        }
+        .background(
+            LinearGradient(
+                colors: [Color.black, Color(red: 0.08, green: 0.09, blue: 0.1)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea(edges: .top)
+        )
+    }
+
+    private func carouselDots(count: Int) -> some View {
+        HStack(spacing: 7) {
+            ForEach(0..<count, id: \.self) { index in
+                Circle()
+                    .fill(index == selectedPage ? Color.white : Color.white.opacity(0.34))
+                    .frame(width: index == selectedPage ? 7 : 5, height: index == selectedPage ? 7 : 5)
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(8)
+        .padding(.horizontal, 11)
+        .padding(.vertical, 7)
+        .background(Capsule().fill(Color.black.opacity(0.35)))
+        .accessibilityLabel("Carousel page \(selectedPage + 1) of \(count)")
     }
 
     @ViewBuilder
@@ -103,7 +248,9 @@ struct SwingDetailView: View {
                 playerItem: playerItem,
                 playbackEnabled: true,
                 showsSpeedControls: true,
-                startsPlaying: false
+                startsPlaying: false,
+                allowsFullscreen: false,
+                allowsTransportGestures: savedAnalysis == nil
             ) {
                 EmptyView()
             }
@@ -137,20 +284,69 @@ struct SwingDetailView: View {
         }
     }
 
-    private var originalThumbnail: some View {
-        ZStack {
-            if let thumbnail = currentSwing.thumbnail {
-                Image(uiImage: thumbnail)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Color.black
-                Image(systemName: "play.rectangle.fill")
-                    .foregroundColor(.white.opacity(0.75))
+    private var analysisOverlayButton: some View {
+        Button {
+            startAnalysis()
+        } label: {
+            HStack(spacing: 8) {
+                if isAnalyzing {
+                    ProgressView()
+                        .tint(.black)
+                } else {
+                    Image(systemName: savedAnalysis == nil ? "wand.and.stars" : "arrow.clockwise")
+                }
+
+                Text(actionTitle)
+                    .font(.subheadline.weight(.bold))
             }
+            .foregroundColor(.black)
+            .padding(.horizontal, 14)
+            .frame(height: 42)
+            .background(Capsule().fill(isAnalyzing ? Color.white.opacity(0.72) : Color.yellow))
         }
-        .frame(width: 86, height: 56)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .buttonStyle(.plain)
+        .disabled(isAnalyzing)
+    }
+
+    @ViewBuilder
+    private var analysisInlineStatus: some View {
+        switch analysisStatus {
+        case .analyzing:
+            VStack(alignment: .leading, spacing: 8) {
+                Text(analysisProgressTitle)
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.white.opacity(0.75))
+
+                if let analysisProgressValue {
+                    ProgressView(value: Double(analysisProgressValue))
+                        .tint(.yellow)
+                } else {
+                    ProgressView()
+                        .tint(.yellow)
+                }
+            }
+        case .failed(let error):
+            Button {
+                showTechnicalDetails.toggle()
+            } label: {
+                Label(showTechnicalDetails ? error : "Analysis failed. Tap for details.", systemImage: "exclamationmark.circle.fill")
+                    .font(.caption)
+                    .foregroundColor(.yellow)
+                    .lineLimit(showTechnicalDetails ? nil : 1)
+            }
+            .buttonStyle(.plain)
+        case .pending, .complete:
+            EmptyView()
+        }
+    }
+
+    private var metadataSheet: some View {
+        NavigationStack {
+            metadataContent
+                .padding()
+                .navigationTitle("Swing Info")
+                .navigationBarTitleDisplayMode(.inline)
+        }
     }
 
     private var metadataContent: some View {
@@ -177,94 +373,22 @@ struct SwingDetailView: View {
         return false
     }
 
-    private var analysisActionSection: some View {
-        Button {
-            startAnalysis()
-        } label: {
-            HStack {
-                if isAnalyzing {
-                    ProgressView()
-                        .tint(.white)
-                } else {
-                    Image(systemName: savedAnalysis == nil ? "wand.and.stars" : "arrow.clockwise")
-                }
-
-                Text(actionTitle)
-                    .font(.headline)
-            }
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(isAnalyzing ? Color.gray : Color.blue)
-            .cornerRadius(10)
+    private func statusFullscreen(icon: String, title: String, message: String) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.largeTitle)
+                .foregroundColor(.white.opacity(0.72))
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.white)
+            Text(message)
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.64))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
         }
-        .disabled(isAnalyzing)
-    }
-
-    @ViewBuilder
-    private var analysisSection: some View {
-        switch analysisStatus {
-        case .analyzing:
-            VStack(alignment: .leading, spacing: 10) {
-                statusPanel(
-                    icon: "arrow.triangle.2.circlepath",
-                    title: analysisProgressTitle,
-                    message: "You can leave this screen open while SwingCoach prepares the coach result."
-                )
-
-                if let analysisProgressValue {
-                    ProgressView(value: Double(analysisProgressValue))
-                } else {
-                    ProgressView()
-                }
-            }
-
-        case .failed(let error):
-            VStack(alignment: .leading, spacing: 10) {
-                statusPanel(
-                    icon: "exclamationmark.circle.fill",
-                    title: "Analysis failed",
-                    message: "Open details for the exact error, then try again."
-                )
-
-                Button {
-                    showTechnicalDetails.toggle()
-                } label: {
-                    Text(showTechnicalDetails ? "Hide details" : "Show details")
-                        .font(.subheadline)
-                }
-
-                if showTechnicalDetails {
-                    Text(error)
-                        .font(.caption2.monospaced())
-                        .foregroundColor(.secondary)
-                        .textSelection(.enabled)
-                        .padding(10)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(.secondarySystemBackground))
-                        .cornerRadius(8)
-                }
-            }
-
-        case .pending, .complete:
-            if let savedAnalysis {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Coach Result")
-                        .font(.headline)
-
-                    AnalysisResultView(result: AnalysisResult(savedAnalysis: savedAnalysis))
-                        .padding()
-                        .background(Color(.systemBackground))
-                        .cornerRadius(8)
-                }
-            } else {
-                statusPanel(
-                    icon: "wand.and.stars",
-                    title: "Ready for analysis",
-                    message: "Run the coach analysis to attach metrics, annotated video, notes, and recommendations to this swing."
-                )
-            }
-        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.ignoresSafeArea(edges: .top))
     }
 
     private var actionTitle: String {
@@ -299,29 +423,6 @@ struct SwingDetailView: View {
                 .font(.subheadline.weight(.medium))
                 .multilineTextAlignment(.trailing)
         }
-    }
-
-    private func statusPanel(icon: String, title: String, message: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundColor(.secondary)
-                .frame(width: 28)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                Text(message)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(8)
     }
 
     private func preparePlayback() {

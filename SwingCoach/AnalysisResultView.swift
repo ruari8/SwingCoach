@@ -91,8 +91,14 @@ struct AnalysisResultView: View {
 }
 
 struct AnnotatedAnalysisVideo: View {
+    enum Presentation {
+        case card
+        case immersive
+    }
+
     let video: SavedAnalysisVideo
     let analysisID: String
+    let presentation: Presentation
 
     @ObservedObject private var manualStore = ManualAnnotationStore.shared
 
@@ -108,93 +114,41 @@ struct AnnotatedAnalysisVideo: View {
     @State private var manualLabelText = "Checkpoint"
     @State private var draftManualAnnotation: ManualAnnotation?
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Group {
-                if let playerItem {
-                    PlaybackChromeView<EmptyView, EmptyView>(
-                        playerItem: playerItem,
-                        playbackEnabled: true,
-                        showsSpeedControls: true,
-                        startsPlaying: false,
-                        contentOverlayAllowsHitTesting: isManualCanvasEnabled,
-                        contentOverlay: { currentTime, _ in
-                            AnyView(
-                                ZStack {
-                                    AnnotationVideoOverlay(
-                                        tracks: annotationTracks,
-                                        currentTime: currentTime,
-                                        enabledLayerNames: enabledLayerNames
-                                    )
+    init(video: SavedAnalysisVideo, analysisID: String, presentation: Presentation = .card) {
+        self.video = video
+        self.analysisID = analysisID
+        self.presentation = presentation
+    }
 
-                                    ManualAnnotationCanvasOverlay(
-                                        tracks: annotationTracks,
-                                        currentTime: currentTime,
-                                        analysisID: analysisID,
-                                        annotations: manualStore.annotations(for: analysisID),
-                                        draftAnnotation: draftManualAnnotation,
-                                        enabled: enabledLayerNames.contains("manual"),
-                                        editingEnabled: isManualCanvasEnabled,
-                                        selectedTool: selectedManualTool,
-                                        selectedColorHex: selectedManualColor,
-                                        labelText: manualLabelText,
-                                        appliesToFullSwing: manualAppliesToFullSwing,
-                                        onDraftChanged: { draftManualAnnotation = $0 },
-                                        onCommit: { annotation in
-                                            manualStore.add(annotation)
-                                            draftManualAnnotation = nil
-                                        },
-                                        onErase: { point, seconds in
-                                            manualStore.removeNearest(
-                                                analysisID: analysisID,
-                                                to: point,
-                                                at: seconds
-                                            )
-                                        }
-                                    )
-                                }
-                            )
-                        }
-                    ) {
-                        EmptyView()
-                    } overlayAccessory: {
-                        EmptyView()
-                    }
-                } else {
-                    ZStack {
-                        Color.black
-                        if let errorMessage {
-                            VStack(spacing: 8) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundColor(.yellow)
-                                Text(errorMessage)
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.8))
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal)
-                            }
-                        } else {
-                            VStack(spacing: 8) {
-                                ProgressView()
-                                    .tint(.white)
-                                Text("Loading annotated video...")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.75))
-                            }
-                        }
+    var body: some View {
+        Group {
+            switch presentation {
+            case .card:
+                VStack(alignment: .leading, spacing: 8) {
+                    playerSurface
+                        .frame(height: 280)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                    if !annotationLayerControls.isEmpty {
+                        annotationControls
+                        manualCanvasControls
+                    } else if let tracksErrorMessage {
+                        Text(tracksErrorMessage)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
                     }
                 }
-            }
-            .frame(height: 280)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            case .immersive:
+                ZStack(alignment: .trailing) {
+                    playerSurface
+                        .ignoresSafeArea(edges: .top)
 
-            if !annotationLayerControls.isEmpty {
-                annotationControls
-                manualCanvasControls
-            } else if let tracksErrorMessage {
-                Text(tracksErrorMessage)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+                    if !annotationLayerControls.isEmpty {
+                        immersiveToolRail
+                            .padding(.trailing, 12)
+                            .padding(.bottom, 64)
+                    }
+                }
             }
         }
         .onAppear {
@@ -209,6 +163,85 @@ struct AnnotatedAnalysisVideo: View {
             isManualCanvasEnabled = false
             draftManualAnnotation = nil
             prepareArtifacts()
+        }
+    }
+
+    @ViewBuilder
+    private var playerSurface: some View {
+        if let playerItem {
+            PlaybackChromeView<EmptyView, EmptyView>(
+                playerItem: playerItem,
+                playbackEnabled: true,
+                showsSpeedControls: true,
+                startsPlaying: false,
+                allowsFullscreen: presentation == .card,
+                allowsTransportGestures: presentation == .card,
+                contentOverlayAllowsHitTesting: isManualCanvasEnabled,
+                contentOverlay: { currentTime, _ in
+                    AnyView(
+                        ZStack {
+                            AnnotationVideoOverlay(
+                                tracks: annotationTracks,
+                                currentTime: currentTime,
+                                enabledLayerNames: enabledLayerNames
+                            )
+
+                            ManualAnnotationCanvasOverlay(
+                                tracks: annotationTracks,
+                                currentTime: currentTime,
+                                analysisID: analysisID,
+                                annotations: manualStore.annotations(for: analysisID),
+                                draftAnnotation: draftManualAnnotation,
+                                enabled: enabledLayerNames.contains("manual"),
+                                editingEnabled: isManualCanvasEnabled,
+                                selectedTool: selectedManualTool,
+                                selectedColorHex: selectedManualColor,
+                                labelText: manualLabelText,
+                                appliesToFullSwing: manualAppliesToFullSwing,
+                                onDraftChanged: { draftManualAnnotation = $0 },
+                                onCommit: { annotation in
+                                    manualStore.add(annotation)
+                                    draftManualAnnotation = nil
+                                },
+                                onErase: { point, seconds in
+                                    manualStore.removeNearest(
+                                        analysisID: analysisID,
+                                        to: point,
+                                        at: seconds
+                                    )
+                                }
+                            )
+                        }
+                    )
+                }
+            ) {
+                EmptyView()
+            } overlayAccessory: {
+                EmptyView()
+            }
+        } else {
+            ZStack {
+                Color.black
+                if let errorMessage {
+                    VStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.yellow)
+                        Text(errorMessage)
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.8))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                } else {
+                    VStack(spacing: 8) {
+                        ProgressView()
+                            .tint(.white)
+                        Text("Loading annotated video...")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.75))
+                    }
+                }
+            }
         }
     }
 
@@ -414,6 +447,100 @@ struct AnnotatedAnalysisVideo: View {
                     .padding(.horizontal, 1)
                 }
             }
+        }
+    }
+
+    private var immersiveToolRail: some View {
+        VStack(spacing: 10) {
+            ForEach(annotationLayerControls.prefix(6), id: \.name) { layer in
+                Button {
+                    toggleLayer(layer.name)
+                } label: {
+                    Image(systemName: layerIconName(layer.name))
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(enabledLayerNames.contains(layer.name) ? .black : .white)
+                        .frame(width: 42, height: 42)
+                        .background(
+                            Circle()
+                                .fill(enabledLayerNames.contains(layer.name) ? Color.yellow : Color.black.opacity(0.54))
+                        )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Toggle \(layer.displayName)")
+            }
+
+            Divider()
+                .frame(width: 28)
+                .overlay(Color.white.opacity(0.24))
+
+            Button {
+                isManualCanvasEnabled.toggle()
+                draftManualAnnotation = nil
+                enabledLayerNames.insert("manual")
+            } label: {
+                Image(systemName: isManualCanvasEnabled ? "pencil.tip.crop.circle.fill" : "pencil.tip.crop.circle")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundColor(isManualCanvasEnabled ? .black : .white)
+                    .frame(width: 42, height: 42)
+                    .background(Circle().fill(isManualCanvasEnabled ? Color.yellow : Color.black.opacity(0.54)))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isManualCanvasEnabled ? "Disable drawing canvas" : "Enable drawing canvas")
+
+            if isManualCanvasEnabled {
+                ForEach(ManualAnnotationTool.allCases, id: \.self) { tool in
+                    Button {
+                        selectedManualTool = tool
+                        draftManualAnnotation = nil
+                    } label: {
+                        Image(systemName: tool.systemImageName)
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(selectedManualTool == tool ? .black : .white)
+                            .frame(width: 38, height: 38)
+                            .background(Circle().fill(selectedManualTool == tool ? Color.yellow : Color.black.opacity(0.54)))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(tool.accessibilityLabel)
+                }
+
+                Button {
+                    manualStore.undoLast(for: analysisID)
+                } label: {
+                    Image(systemName: "arrow.uturn.backward")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 38, height: 38)
+                        .background(Circle().fill(Color.black.opacity(0.54)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Undo last drawing")
+            }
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 6)
+        .background(Capsule().fill(Color.black.opacity(0.22)))
+    }
+
+    private func layerIconName(_ name: String) -> String {
+        switch name {
+        case "skeleton":
+            return "figure.golf"
+        case "reference_lines", "club_plane":
+            return "line.diagonal"
+        case "swing_path":
+            return "point.topleft.down.curvedto.point.bottomright.up"
+        case "ball_contact":
+            return "circle.circle"
+        case "phase_markers":
+            return "flag.checkered"
+        case "confidence":
+            return "gauge.with.dots.needle.50percent"
+        case "speed":
+            return "speedometer"
+        case "manual":
+            return "pencil.tip.crop.circle"
+        default:
+            return "switch.2"
         }
     }
 

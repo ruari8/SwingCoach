@@ -52,6 +52,7 @@ Implemented feature set:
 - Persist swing metadata and thumbnails via `SwingLibrary`.
 - Grid browsing with vantage filtering.
 - Swing cards open a swing detail workspace instead of immediately presenting full-screen playback.
+- Swing detail is now video-first: opening an unanalyzed swing shows the original video across the usable area above the tab bar, with a bottom analyze action and an optional info sheet for metadata.
 - Analyzed swings show a status indicator on their library card.
 - Multi-select for batch analyze and batch delete (library-only delete, does not remove Photos asset).
 - Multi-select can export selected swings by copying the underlying Photos video resources into a temporary SwingCoach export folder, adding one `metadata.json` manifest with app-level swing metadata, and presenting the iOS share sheet for AirDrop/Files transfer. The manifest is for dataset traceability and is shared alongside the selected videos, not embedded into each movie file.
@@ -132,11 +133,14 @@ File: [SwingDetailView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCo
 
 Implemented feature set:
 - Treat a saved swing as the primary product object.
-- Show the original swing as a collapsed thumbnail disclosure by default, with playback and metadata available after expansion.
+- Show the original swing as a full-screen playback surface by default, with metadata moved behind a top-right info button and no persistent title/metadata caption over the video.
+- Once analysis exists, present the detail workspace as a TikTok/Instagram-style paged carousel: slide 1 is the original full-screen video, slide 2 is the annotated full-screen video, and slide 3 is coach notes, metrics, and drill recommendations.
+- Carousel page dots are rendered above the fixed bottom tab bar, and carousel video pages disable hold-to-step transport gestures so horizontal swipes remain reliable.
 - Display original and annotated swing playback using the shared playback chrome, including timeline, compact cycle-through playback speed control, and full-screen viewing.
+- The carousel annotated-video slide embeds annotation layer toggles and manual drawing controls as a vertical right-side rail over the video, while the existing embedded Coach result keeps the compact card controls below the player.
 - For backend results that include `annotated_video.base_url` and `annotated_video.tracks_url`, the annotated video card plays the clean base video and draws/toggles skeleton, reference-line, swing-path, club-plane, ball-contact, phase-marker, confidence, speed, and generic guide overlays over playback. Generic guide toggles currently include shaft checkpoints, clubhead path, setup geometry, head reference, hip depth, hand depth, lead-arm plane, and takeaway checkpoint. If no base video is available, it falls back to the flattened annotated MP4. The selected overlay state is preserved when the annotated player opens full-screen.
 - Annotated playback includes a local Manual layer and canvas mode for self-analysis. Tools are line, arrow, freehand, rectangle, circle, text label, eraser, undo, and clear; controls use icon buttons, color swatches, and a full-swing/moment scope selector. Drawings are stored as normalized video coordinates with timestamp/scope/color/stroke/tool metadata in app Documents through `ManualAnnotationStore`; they are not synced to the backend.
-- Show swing metadata and local analysis status inside the original swing disclosure.
+- Show swing metadata and local analysis status in the detail info sheet or video overlay instead of reserving persistent space beside the footage.
 - Run the current R2-backed analysis flow for a single swing, with retry controls reserved for failed analysis attempts.
 - Attach completed analysis to the swing through `AnalysisLibrary`.
 - Render annotated video, metrics, coach notes, and recommendations with the shared [AnalysisResultView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AnalysisResultView.swift).
