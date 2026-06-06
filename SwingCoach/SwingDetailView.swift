@@ -11,6 +11,7 @@ import AVFoundation
 struct SwingDetailView: View {
     let swing: SavedSwing
 
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var library = SwingLibrary.shared
     @StateObject private var analysisLibrary = AnalysisLibrary.shared
 
@@ -40,36 +41,26 @@ struct SwingDetailView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                Color.black
-                    .ignoresSafeArea(edges: .top)
+        ZStack {
+            Color.black.ignoresSafeArea()
 
-                if let savedAnalysis {
-                    analyzedCarousel(savedAnalysis: savedAnalysis, size: geometry.size)
-                } else {
-                    originalVideoPage(size: geometry.size)
-                }
+            if let savedAnalysis {
+                analyzedCarousel(savedAnalysis: savedAnalysis)
+            } else {
+                originalVideoPage()
+            }
+
+            // Navigation chrome stays available on every page so you can always
+            // get back / open metadata, even with the player controls hidden.
+            topNavOverlay
+
+            if shouldShowAnalysisAction {
+                analysisFloatingLayer
             }
         }
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showMetadata = true
-                } label: {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(Color.black.opacity(0.42)))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Show swing metadata")
-            }
-        }
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
         .sheet(isPresented: $showMetadata) {
             metadataSheet
                 .presentationDetents([.medium])
@@ -82,53 +73,65 @@ struct SwingDetailView: View {
         }
     }
 
-    private func analyzedCarousel(savedAnalysis: SavedAnalysis, size: CGSize) -> some View {
-        ZStack(alignment: .bottom) {
-            TabView(selection: $selectedPage) {
-                originalVideoPage(size: size)
-                    .tag(0)
+    private func analyzedCarousel(savedAnalysis: SavedAnalysis) -> some View {
+        TabView(selection: $selectedPage) {
+            originalVideoPage()
+                .tag(0)
 
-                annotatedVideoPage(savedAnalysis: savedAnalysis)
-                    .tag(1)
+            annotatedVideoPage(savedAnalysis: savedAnalysis)
+                .tag(1)
 
-                coachNotesPage(savedAnalysis: savedAnalysis)
-                    .tag(2)
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-
-            carouselDots(count: 3)
-                .padding(.bottom, 14)
+            coachNotesPage(savedAnalysis: savedAnalysis)
+                .tag(2)
         }
+        .tabViewStyle(.page(indexDisplayMode: .never))
     }
 
-    private func originalVideoPage(size: CGSize) -> some View {
-        ZStack(alignment: .bottom) {
-            originalPlayer
-                .frame(width: size.width, height: size.height)
-                .ignoresSafeArea(edges: .top)
+    private func originalVideoPage() -> some View {
+        originalPlayer
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
 
-            LinearGradient(
-                colors: [.clear, Color.black.opacity(0.22), Color.black.opacity(0.66)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 150)
-            .allowsHitTesting(false)
+    private var topNavOverlay: some View {
+        VStack(spacing: 10) {
+            HStack {
+                navCircleButton(systemName: "chevron.left") { dismiss() }
+                    .accessibilityLabel("Back to library")
 
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .bottom) {
-                    Spacer(minLength: 0)
-
-                    if shouldShowAnalysisAction {
-                        analysisOverlayButton
-                    }
-                }
-
-                analysisInlineStatus
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 18)
-            .padding(.bottom, savedAnalysis == nil ? 22 : 42)
+            .padding(.horizontal, 14)
+
+            if savedAnalysis != nil {
+                carouselDots(count: 3)
+            }
+
+            Spacer(minLength: 0)
         }
+        .padding(.top, 6)
+    }
+
+    private func navCircleButton(systemName: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 38, height: 38)
+                .background(Circle().fill(Color.black.opacity(0.45)))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var analysisFloatingLayer: some View {
+        VStack(spacing: 12) {
+            analysisOverlayButton
+
+            analysisInlineStatus
+                .padding(.horizontal, 28)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 64)
     }
 
     @ViewBuilder
@@ -250,7 +253,10 @@ struct SwingDetailView: View {
                 showsSpeedControls: true,
                 startsPlaying: false,
                 allowsFullscreen: false,
-                allowsTransportGestures: savedAnalysis == nil
+                allowsTransportGestures: true,
+                edgeToEdge: true,
+                allowsLock: true,
+                infoAction: { showMetadata = true }
             ) {
                 EmptyView()
             }

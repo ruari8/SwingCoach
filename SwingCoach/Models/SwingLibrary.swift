@@ -206,19 +206,30 @@ class SwingLibrary: ObservableObject {
     func getPlayerItem(for swing: SavedSwing) async -> AVPlayerItem? {
         await withCheckedContinuation { continuation in
             let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [swing.photoAssetID], options: nil)
-            
+
             guard let asset = fetchResult.firstObject else {
                 continuation.resume(returning: nil)
                 return
             }
-            
+
             let options = PHVideoRequestOptions()
             options.version = .current
-            options.deliveryMode = .highQualityFormat
-            options.isNetworkAccessAllowed = true  // Allow iCloud downloads
-            
-            PHImageManager.default().requestPlayerItem(forVideo: asset, options: options) { playerItem, info in
-                continuation.resume(returning: playerItem)
+            options.deliveryMode = .automatic
+            options.isNetworkAccessAllowed = true  // Allow iCloud downloads when offloaded
+
+            // Resolve the on-device file directly (AVURLAsset, or AVComposition for
+            // slow-mo) and play it straight away. This avoids requestPlayerItem's
+            // heavyweight "prepare/wait" path, so local clips open ~instantly with
+            // no copy and no extra storage.
+            var didResume = false
+            PHImageManager.default().requestAVAsset(forVideo: asset, options: options) { avAsset, _, _ in
+                guard !didResume else { return }
+                didResume = true
+                if let avAsset {
+                    continuation.resume(returning: AVPlayerItem(asset: avAsset))
+                } else {
+                    continuation.resume(returning: nil)
+                }
             }
         }
     }

@@ -177,6 +177,7 @@ struct AnnotatedAnalysisVideo: View {
                 allowsFullscreen: presentation == .card,
                 allowsTransportGestures: presentation == .card,
                 contentOverlayAllowsHitTesting: isManualCanvasEnabled,
+                edgeToEdge: presentation == .immersive,
                 contentOverlay: { currentTime, _ in
                     AnyView(
                         ZStack {

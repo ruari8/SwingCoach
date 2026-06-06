@@ -1000,6 +1000,9 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     let allowsFullscreen: Bool
     let allowsTransportGestures: Bool
     let contentOverlayAllowsHitTesting: Bool
+    let edgeToEdge: Bool
+    let allowsLock: Bool
+    let infoAction: (() -> Void)?
 
     private let header: Header
     private let overlayAccessory: OverlayAccessory
@@ -1013,11 +1016,16 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     @State private var timeObserver: Any?
     @State private var isScrubbing = false
     @State private var resumePlaybackAfterScrub = false
-    @State private var transportHoldTask: Task<Void, Never>?
-    @State private var transportGestureDirection: Int?
-    @State private var didActivateTransportHold = false
-    @State private var activeTransportDirection: Int?
     @State private var showsFullscreen = false
+    @State private var controlsVisible = true
+    @State private var autoHideTask: Task<Void, Never>?
+    @State private var isLocked = false
+    @State private var frameStep = CMTime(value: 1, timescale: 30)
+    @State private var stepRepeatTask: Task<Void, Never>?
+    @State private var activeStepDirection: Int?
+    // Only the edge press-and-hold zones surface the on-screen scrub bubble;
+    // the control-bar frame-step buttons leave it nil so it stays hidden.
+    @State private var scrubFeedbackDirection: Int?
 
     private let speedOptions: [Float] = [0.25, 0.5, 0.75, 1.0]
 
@@ -1030,6 +1038,9 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         allowsFullscreen: Bool = true,
         allowsTransportGestures: Bool = true,
         contentOverlayAllowsHitTesting: Bool = false,
+        edgeToEdge: Bool = false,
+        allowsLock: Bool = false,
+        infoAction: (() -> Void)? = nil,
         contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
         @ViewBuilder header: () -> Header,
         @ViewBuilder overlayAccessory: () -> OverlayAccessory
@@ -1042,6 +1053,9 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         self.allowsFullscreen = allowsFullscreen
         self.allowsTransportGestures = allowsTransportGestures
         self.contentOverlayAllowsHitTesting = contentOverlayAllowsHitTesting
+        self.edgeToEdge = edgeToEdge
+        self.allowsLock = allowsLock
+        self.infoAction = infoAction
         self.header = header()
         self.overlayAccessory = overlayAccessory()
         self.contentOverlay = contentOverlay
@@ -1064,7 +1078,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             guard !enabled else { return }
             player?.pause()
             isPlaying = false
-            stopTransportHold()
+            stopContinuousStep()
         }
         .fullScreenCover(isPresented: $showsFullscreen) {
             fullscreenPlayback
@@ -1079,117 +1093,228 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             let accessoryBottomPadding = max(34, geometry.safeAreaInsets.bottom + 34)
 
             ZStack {
-                Group {
-                    if let player {
-                        VideoPlayer(player: player)
-                            .disabled(true)
-                            .overlay(
-                                Color.clear
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
-                                        togglePlayback()
-                                    }
-                            )
-                    } else {
-                        ProgressView()
-                            .scaleEffect(1.5)
-                            .tint(.white)
+                // Video fills its container; in edge-to-edge mode it extends behind
+                // the notch/home indicator while the chrome below keeps its insets.
+                fillLayer(
+                    Group {
+                        if let player {
+                            VideoPlayer(player: player)
+                                .disabled(true)
+                        } else {
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .tint(.white)
+                        }
                     }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                )
 
                 contentOverlay(currentTime, geometry.size)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .allowsHitTesting(contentOverlayAllowsHitTesting)
 
-                if allowsTransportGestures && !contentOverlayAllowsHitTesting {
+                // Touch handling: a single tap toggles the controls; press-and-hold
+                // the left/right edges to fast-scrub. Crucially the hold gesture is
+                // gated behind a long-press, so a horizontal swipe still falls
+                // through to the carousel pager instead of being eaten here.
+                if !contentOverlayAllowsHitTesting {
                     transportTouchLayer
                 }
 
-                VStack(spacing: 0) {
-                    LinearGradient(
-                        colors: [
-                            Color.black.opacity(0.62),
-                            Color.black.opacity(0.18),
-                            .clear
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 140)
+                if controlsVisible {
+                    chromeGradients
+                        .transition(.opacity)
 
-                    Spacer(minLength: 0)
+                    VStack(spacing: 0) {
+                        HStack(alignment: .top, spacing: 10) {
+                            header
 
-                    LinearGradient(
-                        colors: [
-                            .clear,
-                            Color.black.opacity(0.3),
-                            Color.black.opacity(0.76)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 160)
-                }
-                .allowsHitTesting(false)
+                            Spacer(minLength: 0)
 
-                VStack(spacing: 0) {
-                    HStack(alignment: .top, spacing: 10) {
-                        header
+                            playerCornerControls
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.top, topControlPadding)
 
                         Spacer(minLength: 0)
 
-                        playerCornerControls
+                        if scrubFeedbackDirection != nil {
+                            transportFeedback
+                                .padding(.bottom, isScrubbing ? 16 : 30)
+                        }
+
+                        if isScrubbing {
+                            scrubTimeBadge
+                                .padding(.bottom, 10)
+                        }
+
+                        // Timeline sits ABOVE the buttons (Twitter-style) and well
+                        // clear of the home-indicator zone so dragging it never gets
+                        // hijacked by the system swipe-up gesture.
+                        integratedTimeline(width: timelineWidth)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 6)
+
+                        transportControlBar
+                            .padding(.horizontal, 22)
+                            .padding(.bottom, bottomControlPadding + 10)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.top, topControlPadding)
+                    .transition(.opacity)
 
-                    Spacer(minLength: 0)
-
-                    if activeTransportDirection != nil {
-                        transportFeedback
-                            .padding(.bottom, isScrubbing ? 16 : 30)
-                    }
-
-                    if isScrubbing {
-                        scrubTimeBadge
-                            .padding(.bottom, 10)
-                    }
-
-                    integratedTimeline(width: timelineWidth)
-                        .padding(.horizontal, 14)
-                        .padding(.bottom, bottomControlPadding)
-                }
-
-                VStack {
-                    Spacer()
-
-                    HStack {
+                    VStack {
                         Spacer()
-                        overlayAccessory
+
+                        HStack {
+                            Spacer()
+                            overlayAccessory
+                        }
+                        .padding(.trailing, 12)
+                        .padding(.bottom, accessoryBottomPadding)
                     }
-                    .padding(.trailing, 12)
-                    .padding(.bottom, accessoryBottomPadding)
                 }
             }
             .background(Color.black)
         }
     }
 
+    @ViewBuilder
+    private func fillLayer<Content: View>(_ content: Content) -> some View {
+        if edgeToEdge {
+            content.ignoresSafeArea()
+        } else {
+            content
+        }
+    }
+
+    private var chromeGradients: some View {
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(0.62),
+                    Color.black.opacity(0.18),
+                    .clear
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 140)
+
+            Spacer(minLength: 0)
+
+            LinearGradient(
+                colors: [
+                    .clear,
+                    Color.black.opacity(0.3),
+                    Color.black.opacity(0.76)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 160)
+        }
+        .allowsHitTesting(false)
+    }
+
+    private var transportControlBar: some View {
+        HStack(spacing: 0) {
+            // Left: time readout (fixed width balances the right side so the
+            // transport buttons stay centered). fixedSize stops it wrapping into
+            // a vertical "0/0/./0" column when space gets tight.
+            Text(formatTime(currentTime))
+                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                .foregroundColor(.white.opacity(0.85))
+                .lineLimit(1)
+                .fixedSize()
+                .frame(width: 58, alignment: .leading)
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 26) {
+                frameStepButton(systemImage: "backward.frame.fill", direction: -1)
+
+                Button {
+                    togglePlayback()
+                } label: {
+                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 40, height: 40)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(isPlaying ? "Pause" : "Play")
+
+                frameStepButton(systemImage: "forward.frame.fill", direction: 1)
+            }
+
+            Spacer(minLength: 0)
+
+            // Right: lock toggle (also the tap target to unlock). The swipe-down
+            // gesture is the primary way to lock; this keeps it discoverable.
+            if allowsLock {
+                Button {
+                    setLocked(!isLocked)
+                } label: {
+                    Image(systemName: isLocked ? "lock.fill" : "lock.open")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(isLocked ? .black : .white)
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(isLocked ? Color.yellow : Color.black.opacity(0.45)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(isLocked ? "Unlock controls" : "Keep controls on screen")
+                .frame(width: 58, alignment: .trailing)
+            } else {
+                Color.clear.frame(width: 58, height: 1)
+            }
+        }
+    }
+
+    private func frameStepButton(systemImage: String, direction: Int) -> some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundColor(.white)
+            .frame(width: 40, height: 40)
+            .background(
+                Circle()
+                    .fill(Color.white.opacity(activeStepDirection == direction ? 0.24 : 0.0))
+            )
+            .contentShape(Circle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in startContinuousStep(direction: direction) }
+                    .onEnded { _ in stopContinuousStep() }
+            )
+            .accessibilityLabel(direction < 0 ? "Step back one frame" : "Step forward one frame")
+    }
+
     private var playerCornerControls: some View {
-        HStack(spacing: 8) {
+        VStack(spacing: 10) {
+            if let infoAction {
+                Button {
+                    infoAction()
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(width: 38, height: 38)
+                        .background(Circle().fill(Color.black.opacity(0.45)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Show swing metadata")
+            }
+
             if showsSpeedControls {
                 Button {
                     cyclePlaybackSpeed()
                 } label: {
                     Text(speedLabel(playbackSpeed))
                         .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.black)
-                        .frame(width: 44, height: 34)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.yellow)
-                        )
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .fixedSize()
+                        .frame(width: 38, height: 38)
+                        .background(Circle().fill(Color.black.opacity(0.45)))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Change playback speed")
@@ -1201,13 +1326,10 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     showsFullscreen = true
                 } label: {
                     Image(systemName: "arrow.up.left.and.arrow.down.right")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.white)
-                        .frame(width: 34, height: 34)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.black.opacity(0.58))
-                        )
+                        .frame(width: 38, height: 38)
+                        .background(Circle().fill(Color.black.opacity(0.45)))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Open full screen")
@@ -1228,6 +1350,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 allowsFullscreen: false,
                 allowsTransportGestures: allowsTransportGestures,
                 contentOverlayAllowsHitTesting: contentOverlayAllowsHitTesting,
+                edgeToEdge: true,
+                allowsLock: allowsLock,
                 contentOverlay: contentOverlay
             ) {
                 EmptyView()
@@ -1260,16 +1384,49 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
     private var transportTouchLayer: some View {
         HStack(spacing: 0) {
-            transportTouchZone(direction: -1)
-            transportTouchZone(direction: 0)
-            transportTouchZone(direction: 1)
+            if allowsTransportGestures {
+                scrubTouchZone(direction: -1)
+                tapTouchZone
+                scrubTouchZone(direction: 1)
+            } else {
+                tapTouchZone
+            }
         }
         .padding(.bottom, 44)
     }
 
+    /// A tap toggles the controls. No drag gesture here, so horizontal swipes
+    /// pass straight through to the carousel pager.
+    private var tapTouchZone: some View {
+        Color.clear
+            .contentShape(Rectangle())
+            .onTapGesture { toggleControls() }
+    }
+
+    /// Tap toggles controls; press-and-hold fast-scrubs in `direction`. The
+    /// long-press requirement means a horizontal swipe (which moves before the
+    /// press registers) cancels this gesture and reaches the carousel pager.
+    private func scrubTouchZone(direction: Int) -> some View {
+        Color.clear
+            .contentShape(Rectangle())
+            .onTapGesture { toggleControls() }
+            .gesture(
+                LongPressGesture(minimumDuration: 0.2)
+                    .sequenced(before: DragGesture(minimumDistance: 0))
+                    .onChanged { value in
+                        if case .second(true, _) = value {
+                            startContinuousStep(direction: direction, showsFeedback: true)
+                        }
+                    }
+                    .onEnded { _ in
+                        stopContinuousStep()
+                    }
+            )
+    }
+
     private var transportFeedback: some View {
         HStack {
-            if activeTransportDirection == -1 {
+            if scrubFeedbackDirection == -1 {
                 transportFeedbackIcon(systemName: "backward.fill")
             } else {
                 Spacer(minLength: 0)
@@ -1277,7 +1434,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
             Spacer(minLength: 0)
 
-            if activeTransportDirection == 1 {
+            if scrubFeedbackDirection == 1 {
                 transportFeedbackIcon(systemName: "forward.fill")
             } else {
                 Spacer(minLength: 0)
@@ -1292,20 +1449,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             .foregroundColor(.white)
             .frame(width: 48, height: 48)
             .background(Circle().fill(Color.black.opacity(0.46)))
-    }
-
-    private func transportTouchZone(direction: Int) -> some View {
-        Color.clear
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
-                        beginTransportGesture(direction: direction)
-                    }
-                    .onEnded { _ in
-                        endTransportGesture(direction: direction)
-                    }
-            )
     }
 
     private var scrubTimeBadge: some View {
@@ -1369,6 +1512,14 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     duration = dur
                 }
             }
+            // Load the real frame rate so a single step lands exactly one frame
+            // on 60/120/240 fps swing clips (otherwise we'd assume 30 fps).
+            if let track = try? await playbackItem.asset.loadTracks(withMediaType: .video).first,
+               let fps = try? await track.load(.nominalFrameRate), fps > 0 {
+                await MainActor.run {
+                    frameStep = CMTime(value: 1, timescale: CMTimeScale(max(1, fps.rounded())))
+                }
+            }
         }
 
         let interval = CMTime(seconds: 0.05, preferredTimescale: 600)
@@ -1383,6 +1534,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         guard playbackEnabled, startsPlaying else { return }
         newPlayer.playImmediately(atRate: playbackSpeed)
         isPlaying = true
+        scheduleAutoHide()
     }
 
     private func cleanup() {
@@ -1391,7 +1543,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         }
         player?.pause()
         player = nil
-        stopTransportHold()
+        stopContinuousStep()
+        autoHideTask?.cancel()
     }
 
     private func togglePlayback() {
@@ -1399,13 +1552,16 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
         if isPlaying {
             player.pause()
+            isPlaying = false
+            autoHideTask?.cancel()
         } else {
             if CMTimeCompare(currentTime, duration) >= 0 {
                 seek(to: .zero)
             }
             player.rate = playbackSpeed
+            isPlaying = true
+            scheduleAutoHide()
         }
-        isPlaying.toggle()
     }
 
     private func seek(to time: CMTime) {
@@ -1419,67 +1575,115 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         player?.pause()
         isPlaying = false
         isScrubbing = true
+        autoHideTask?.cancel()
     }
 
     private func endScrubbing() {
         isScrubbing = false
-        guard playbackEnabled, resumePlaybackAfterScrub else { return }
-        player?.playImmediately(atRate: playbackSpeed)
-        isPlaying = true
-        resumePlaybackAfterScrub = false
+        if playbackEnabled, resumePlaybackAfterScrub {
+            player?.playImmediately(atRate: playbackSpeed)
+            isPlaying = true
+            resumePlaybackAfterScrub = false
+        }
+        scheduleAutoHide()
     }
 
-    private func beginTransportGesture(direction: Int) {
-        guard playbackEnabled, !isScrubbing else { return }
-        guard transportGestureDirection != direction else { return }
+    // MARK: - Controls visibility & lock
 
-        stopTransportHold()
-        transportGestureDirection = direction
-        didActivateTransportHold = false
-        activeTransportDirection = nil
+    private func toggleControls() {
+        if isLocked {
+            // Locked keeps the controls pinned; a tap shouldn't hide them.
+            showControls()
+            return
+        }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            controlsVisible.toggle()
+        }
+        if controlsVisible {
+            scheduleAutoHide()
+        } else {
+            autoHideTask?.cancel()
+        }
+    }
 
-        guard direction != 0 else { return }
-
-        transportHoldTask = Task {
-            let holdStart = Date()
-            try? await Task.sleep(nanoseconds: 180_000_000)
-            guard !Task.isCancelled else { return }
-
-            await MainActor.run {
-                didActivateTransportHold = true
-                activeTransportDirection = direction
-                step(direction: direction)
+    private func showControls() {
+        autoHideTask?.cancel()
+        if !controlsVisible {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                controlsVisible = true
             }
+        }
+        scheduleAutoHide()
+    }
 
-            while !Task.isCancelled {
-                let elapsed = Date().timeIntervalSince(holdStart)
-                let interval = transportRepeatInterval(for: elapsed)
-                let multiplier = transportStepMultiplier(for: elapsed)
-                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
-                guard !Task.isCancelled else { return }
-                await MainActor.run {
-                    step(direction: direction, multiplier: multiplier)
+    private func scheduleAutoHide() {
+        autoHideTask?.cancel()
+        guard isPlaying, !isLocked, !isScrubbing else { return }
+        autoHideTask = Task {
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                guard isPlaying, !isLocked, !isScrubbing else { return }
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    controlsVisible = false
                 }
             }
         }
     }
 
-    private func endTransportGesture(direction: Int) {
-        guard transportGestureDirection == direction else { return }
-        let didHold = didActivateTransportHold
-        stopTransportHold()
-
-        if !didHold {
-            togglePlayback()
+    private func setLocked(_ locked: Bool) {
+        guard allowsLock else { return }
+        isLocked = locked
+        if locked {
+            successHaptic()
+            autoHideTask?.cancel()
+            withAnimation(.easeInOut(duration: 0.2)) {
+                controlsVisible = true
+            }
+        } else {
+            lightHaptic()
+            scheduleAutoHide()
         }
     }
 
-    private func stopTransportHold() {
-        transportHoldTask?.cancel()
-        transportHoldTask = nil
-        transportGestureDirection = nil
-        didActivateTransportHold = false
-        activeTransportDirection = nil
+    private func lightHaptic() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+    }
+
+    private func successHaptic() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+
+    private func startContinuousStep(direction: Int, showsFeedback: Bool = false) {
+        guard activeStepDirection != direction else { return }
+        stopContinuousStep()
+        showControls()
+        activeStepDirection = direction
+        if showsFeedback {
+            scrubFeedbackDirection = direction
+        }
+        step(direction: direction)
+
+        stepRepeatTask = Task {
+            let holdStart = Date()
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            while !Task.isCancelled {
+                let elapsed = Date().timeIntervalSince(holdStart)
+                await MainActor.run {
+                    step(direction: direction, multiplier: transportStepMultiplier(for: elapsed))
+                }
+                try? await Task.sleep(nanoseconds: UInt64(transportRepeatInterval(for: elapsed) * 1_000_000_000))
+            }
+        }
+    }
+
+    private func stopContinuousStep() {
+        stepRepeatTask?.cancel()
+        stepRepeatTask = nil
+        activeStepDirection = nil
+        scrubFeedbackDirection = nil
     }
 
     private func step(direction: Int, multiplier: Int = 1) {
@@ -1489,7 +1693,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         }
 
         let frameDuration = CMTimeMultiplyByFloat64(
-            CMTime(value: 1, timescale: 30),
+            frameStep,
             multiplier: Double(multiplier)
         )
         let candidateTime = direction >= 0
@@ -1506,14 +1710,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         }
 
         seek(to: clampedTime)
-    }
-
-    private func stepForward() {
-        step(direction: 1)
-    }
-
-    private func stepBackward() {
-        step(direction: -1)
     }
 
     private func transportRepeatInterval(for holdDuration: TimeInterval) -> Double {
@@ -1598,6 +1794,9 @@ extension PlaybackChromeView where OverlayAccessory == EmptyView {
         startsPlaying: Bool = true,
         allowsFullscreen: Bool = true,
         allowsTransportGestures: Bool = true,
+        edgeToEdge: Bool = false,
+        allowsLock: Bool = false,
+        infoAction: (() -> Void)? = nil,
         contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
         @ViewBuilder header: () -> Header
     ) {
@@ -1609,6 +1808,9 @@ extension PlaybackChromeView where OverlayAccessory == EmptyView {
             startsPlaying: startsPlaying,
             allowsFullscreen: allowsFullscreen,
             allowsTransportGestures: allowsTransportGestures,
+            edgeToEdge: edgeToEdge,
+            allowsLock: allowsLock,
+            infoAction: infoAction,
             contentOverlay: contentOverlay,
             header: header,
             overlayAccessory: { EmptyView() }
