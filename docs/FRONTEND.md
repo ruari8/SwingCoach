@@ -2,42 +2,42 @@
 
 ## Scope
 
-The frontend is a SwiftUI app in [SwingCoach/](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach) with three production tabs:
+The frontend is a SwiftUI app in [SwingCoach/](../SwingCoach) with three production tabs:
 - Library
 - Capture
 - Coach (analysis)
 
 DEBUG builds can show a Replay Debug tab for detector development. The tab is controlled by the in-app Experiments settings.
 
-Primary app root: [AppRootView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AppRootView.swift)
+Primary app root: [AppRootView.swift](../SwingCoach/AppRootView.swift)
 
 ## App Architecture
 
 ### Entry and Navigation
 
-- App entry: [SwingCoachApp.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/SwingCoachApp.swift)
-- Tab coordinator: [AppRootView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AppRootView.swift)
+- App entry: [SwingCoachApp.swift](../SwingCoach/SwingCoachApp.swift)
+- Tab coordinator: [AppRootView.swift](../SwingCoach/AppRootView.swift)
 - Shared handoff state: `swingsToAnalyze` (passed from Library/Capture into Coach tab)
 
 ### Core Domains
 
-- Capture and camera session: [CaptureView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/CaptureView.swift)
-- Library and playback/import: [LibraryView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/LibraryView.swift)
-- Trim workflow: [TrimView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/TrimView/TrimView.swift)
-- Analysis UX: [AnalyseView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AnalyseView.swift)
-- DEBUG replay harness: [DebugReplayView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/DebugReplayView.swift)
-- Experimental settings: [ExperimentalSettingsView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/ExperimentalSettingsView.swift)
-- Swing detail workspace: [SwingDetailView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/SwingDetailView.swift)
-- Shared analysis result rendering: [AnalysisResultView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AnalysisResultView.swift)
-- API client: [SwingCoachAPI.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingCoachAPI.swift)
-- Persistence: [SwingLibrary.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingLibrary.swift)
-- Local manual analysis drawings: [ManualAnnotationStore.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/ManualAnnotationStore.swift)
+- Capture and camera session: [CaptureView.swift](../SwingCoach/CaptureView.swift)
+- Library and playback/import: [LibraryView.swift](../SwingCoach/LibraryView.swift)
+- Trim workflow: [TrimView.swift](../SwingCoach/TrimView/TrimView.swift)
+- Analysis UX: [AnalyseView.swift](../SwingCoach/AnalyseView.swift)
+- DEBUG replay harness: [DebugReplayView.swift](../SwingCoach/DebugReplayView.swift)
+- Experimental settings: [ExperimentalSettingsView.swift](../SwingCoach/ExperimentalSettingsView.swift)
+- Swing detail workspace: [SwingDetailView.swift](../SwingCoach/SwingDetailView.swift)
+- Shared analysis result rendering: [AnalysisResultView.swift](../SwingCoach/AnalysisResultView.swift)
+- API client: [SwingCoachAPI.swift](../SwingCoach/Models/SwingCoachAPI.swift)
+- Persistence: [SwingLibrary.swift](../SwingCoach/Models/SwingLibrary.swift)
+- Local manual analysis drawings: [ManualAnnotationStore.swift](../SwingCoach/Models/ManualAnnotationStore.swift)
 
 ## Feature Inventory
 
 ## 1. Library Tab
 
-File: [LibraryView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/LibraryView.swift)
+File: [LibraryView.swift](../SwingCoach/LibraryView.swift)
 
 Implemented feature set:
 - Import videos from Photos (`PHPicker` flow with progress/cancel UI).
@@ -61,7 +61,7 @@ Implemented feature set:
 
 ## 2. Capture Tab
 
-File: [CaptureView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/CaptureView.swift)
+File: [CaptureView.swift](../SwingCoach/CaptureView.swift)
 
 Implemented feature set:
 - AVFoundation recording session with video input and microphone input when available, so newly captured clips can carry audio for export and detector experiments.
@@ -88,12 +88,12 @@ Implemented feature set:
 ## 3. Trim Workflow
 
 Files:
-- [TrimView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/TrimView/TrimView.swift)
-- [ThumbnailTimeline.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/TrimView/ThumbnailTimeline.swift)
-- [VideoTrimmer.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/VideoTrimmer.swift)
-- [ModelBackedSwingDetector.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/ModelBackedSwingDetector.swift)
-- [GolfObjectDetector.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/GolfObjectDetector.swift)
-- [SwingObjectsYOLO11n.mlpackage](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/MLModels/SwingObjectsYOLO11n.mlpackage)
+- [TrimView.swift](../SwingCoach/TrimView/TrimView.swift)
+- [ThumbnailTimeline.swift](../SwingCoach/TrimView/ThumbnailTimeline.swift)
+- [VideoTrimmer.swift](../SwingCoach/Models/VideoTrimmer.swift)
+- [ModelBackedSwingDetector.swift](../SwingCoach/Models/ModelBackedSwingDetector.swift)
+- [GolfObjectDetector.swift](../SwingCoach/Models/GolfObjectDetector.swift)
+- [SwingObjectsYOLO11n.mlpackage](../SwingCoach/MLModels/SwingObjectsYOLO11n.mlpackage)
 
 Implemented feature set:
 - Timeline opens immediately with placeholder/progressive thumbnail loading.
@@ -119,7 +119,7 @@ Implemented feature set:
 
 ## 4. Coach Tab (Analysis)
 
-File: [AnalyseView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AnalyseView.swift)
+File: [AnalyseView.swift](../SwingCoach/AnalyseView.swift)
 
 Implemented feature set:
 - Queue multiple swings for analysis.
@@ -129,7 +129,7 @@ Implemented feature set:
 
 ## 5. Swing Detail
 
-File: [SwingDetailView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/SwingDetailView.swift)
+File: [SwingDetailView.swift](../SwingCoach/SwingDetailView.swift)
 
 Implemented feature set:
 - Treat a saved swing as the primary product object.
@@ -143,11 +143,11 @@ Implemented feature set:
 - Show swing metadata and local analysis status in the detail info sheet or video overlay instead of reserving persistent space beside the footage.
 - Run the current R2-backed analysis flow for a single swing, with retry controls reserved for failed analysis attempts.
 - Attach completed analysis to the swing through `AnalysisLibrary`.
-- Render annotated video, metrics, coach notes, and recommendations with the shared [AnalysisResultView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/AnalysisResultView.swift).
+- Render annotated video, metrics, coach notes, and recommendations with the shared [AnalysisResultView.swift](../SwingCoach/AnalysisResultView.swift).
 
 ## 6. Replay Debug Tab
 
-File: [DebugReplayView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/DebugReplayView.swift)
+File: [DebugReplayView.swift](../SwingCoach/DebugReplayView.swift)
 
 Implemented feature set:
 - DEBUG-only tab for home/range development of live swing detection, controlled from Library > Experiments.
@@ -176,7 +176,7 @@ Local detector fixture workflow:
 
 ## 7. Experimental Settings
 
-File: [ExperimentalSettingsView.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/ExperimentalSettingsView.swift)
+File: [ExperimentalSettingsView.swift](../SwingCoach/ExperimentalSettingsView.swift)
 
 Implemented feature set:
 - Library toolbar gear opens Experiments.
@@ -190,18 +190,18 @@ Implemented feature set:
 
 ### Swing metadata
 
-- `SavedSwing` model: [SwingLibrary.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingLibrary.swift)
+- `SavedSwing` model: [SwingLibrary.swift](../SwingCoach/Models/SwingLibrary.swift)
 - Fields include: `photoAssetID`, `vantage`, `duration`, timestamps, notes, analyzed flag.
 - Persisted to app Documents as `swing_library.json`.
 
 ### Vantage model
 
-- Enum in [SwingClip.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingClip.swift)
+- Enum in [SwingClip.swift](../SwingCoach/Models/SwingClip.swift)
 - Values: `DTL`, `Face-On`
 
 ## Backend Integration Contract
 
-File: [SwingCoachAPI.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingCoachAPI.swift)
+File: [SwingCoachAPI.swift](../SwingCoach/Models/SwingCoachAPI.swift)
 
 Current flow:
 1. `GET /upload-url`

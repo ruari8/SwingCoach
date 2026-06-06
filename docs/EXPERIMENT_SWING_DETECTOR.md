@@ -1,6 +1,6 @@
 # Experimental On-Device Swing Detector
 
-For the proposed clean restart architecture, see [Swing Detector Restart Design](/Users/ruari/Documents/Startups/SwingCoach/docs/SWING_DETECTOR_DESIGN.md). This file remains the historical/current experiment record.
+For the proposed clean restart architecture, see [Swing Detector Restart Design](./SWING_DETECTOR_DESIGN.md). This file remains the historical/current experiment record.
 
 ## Decision
 

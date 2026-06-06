@@ -8,8 +8,8 @@ Generate a clear coaching explanation that connects metrics, visuals, and drills
 
 ### Coaching bundle generation
 
-- Builder: [coach_response_builder.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/coach_response_builder.py)
-- Pipeline integration: [pipeline_3d.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/pipeline_3d.py)
+- Builder: [coach_response_builder.py](../../analysis/coach_response_builder.py)
+- Pipeline integration: [pipeline_3d.py](../../analysis/pipeline_3d.py)
 
 Behavior:
 - Uses priorities from metric cards and confidence gates.
@@ -19,7 +19,7 @@ Behavior:
 
 ### Follow-up chat
 
-- Endpoint: `POST /chat` in [main.py](/Users/ruari/Documents/Startups/SwingCoach/backend/main.py)
+- Endpoint: `POST /chat` in [main.py](../../main.py)
 - Context source: prior run artifacts (`metrics.json`, `coach_summary.json`)
 
 ## Current Gaps
@@ -38,7 +38,7 @@ Behavior:
 
 ## Key Files
 
-- [analysis/coach_response_builder.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/coach_response_builder.py)
-- [main.py](/Users/ruari/Documents/Startups/SwingCoach/backend/main.py)
-- [models.py](/Users/ruari/Documents/Startups/SwingCoach/backend/models.py)
+- [analysis/coach_response_builder.py](../../analysis/coach_response_builder.py)
+- [main.py](../../main.py)
+- [models.py](../../models.py)
 

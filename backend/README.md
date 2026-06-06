@@ -10,15 +10,15 @@ Given one uploaded swing video, the backend returns:
 3. Coaching seed output (summary, priorities, drills)
 4. Run-quality metadata (warnings, missing data, timings)
 
-Primary orchestrator: [analysis/pipeline_3d.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/pipeline_3d.py)
+Primary orchestrator: [analysis/pipeline_3d.py](./analysis/pipeline_3d.py)
 
 ## Canonical Backend Docs
 
-- [Backend Docs Index](/Users/ruari/Documents/Startups/SwingCoach/backend/docs/README.md)
-- [Pipeline Stage: Metrics](/Users/ruari/Documents/Startups/SwingCoach/backend/docs/pipeline/01-metrics.md)
-- [Pipeline Stage: Video Annotations](/Users/ruari/Documents/Startups/SwingCoach/backend/docs/pipeline/02-video-annotations.md)
-- [Pipeline Stage: Drills and Feels](/Users/ruari/Documents/Startups/SwingCoach/backend/docs/pipeline/03-drills-feels.md)
-- [Pipeline Stage: Teaching Voice](/Users/ruari/Documents/Startups/SwingCoach/backend/docs/pipeline/04-teaching-voice.md)
+- [Backend Docs Index](./docs/README.md)
+- [Pipeline Stage: Metrics](./docs/pipeline/01-metrics.md)
+- [Pipeline Stage: Video Annotations](./docs/pipeline/02-video-annotations.md)
+- [Pipeline Stage: Drills and Feels](./docs/pipeline/03-drills-feels.md)
+- [Pipeline Stage: Teaching Voice](./docs/pipeline/04-teaching-voice.md)
 
 ## Quick Start
 
@@ -51,7 +51,7 @@ R2 HTTPS certificate verification is enabled by default. If a local machine has 
 
 ## API Contract
 
-Main server file: [main.py](/Users/ruari/Documents/Startups/SwingCoach/backend/main.py)
+Main server file: [main.py](./main.py)
 
 ### `GET /health`
 
@@ -165,7 +165,7 @@ Response shape:
 ## Run Artifacts
 
 Output location:
-- [backend/output/runs/](/Users/ruari/Documents/Startups/SwingCoach/backend/output/runs)
+- [backend/output/runs/](./output/runs)
 
 Typical files per successful run:
 - `input_meta.json`
@@ -235,7 +235,7 @@ Current recommendation:
 - Do not use SAM3/SAM3.1 as the planned live iPhone detector; train/export a small Core ML golf-object detector instead.
 - Treat SAM3D separately. The MLX SAM3 image findings do not prove SAM3D performance or compatibility.
 
-See [Experimental Swing Detector](/Users/ruari/Documents/Startups/SwingCoach/docs/EXPERIMENT_SWING_DETECTOR.md) for benchmark numbers and labeling strategy.
+See [Experimental Swing Detector](../docs/EXPERIMENT_SWING_DETECTOR.md) for benchmark numbers and labeling strategy.
 
 ## Known Reliability Notes
 

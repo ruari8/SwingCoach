@@ -2,7 +2,7 @@
 
 This document is the target design for a cleaner on-device swing detector restart. It is not a description of the current production detector. The current implementation should be treated as a legacy baseline while this design is built and A/B tested beside it.
 
-For the fixture-gated execution plan and milestone order, see [Swing Detector V2 Implementation Plan](/Users/ruari/Documents/Startups/SwingCoach/docs/SWING_DETECTOR_V2_IMPLEMENTATION_PLAN.md).
+For the fixture-gated execution plan and milestone order, see [Swing Detector V2 Implementation Plan](./SWING_DETECTOR_V2_IMPLEMENTATION_PLAN.md).
 
 ## Implementation Status
 

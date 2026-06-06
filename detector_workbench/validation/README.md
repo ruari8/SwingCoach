@@ -6,7 +6,7 @@ These scripts validate the app's model-backed live detector against local fixtur
 
 `SwingDetectorV2` is the clean-restart detector path. It is validated through a separate fail-fast harness so it can be iterated beside the legacy detector before any app wiring changes.
 
-The canonical milestone order is documented in [Swing Detector V2 Implementation Plan](/Users/ruari/Documents/Startups/SwingCoach/docs/SWING_DETECTOR_V2_IMPLEMENTATION_PLAN.md). Advance one fixture at a time and stop on the first mismatch.
+The canonical milestone order is documented in [Swing Detector V2 Implementation Plan](../../docs/SWING_DETECTOR_V2_IMPLEMENTATION_PLAN.md). Advance one fixture at a time and stop on the first mismatch.
 
 Compile and run the v2 evaluator:
 

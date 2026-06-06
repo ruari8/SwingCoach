@@ -2,11 +2,11 @@
 
 This is the working plan for building `SwingDetectorV2`. It preserves the fixture-gated sequence agreed during the detector restart so the milestone order does not get lost across context compaction.
 
-The design source of truth remains [Swing Detector Restart Design](/Users/ruari/Documents/Startups/SwingCoach/docs/SWING_DETECTOR_DESIGN.md). This file is the execution plan: what to build, what to run, and when to stop.
+The design source of truth remains [Swing Detector Restart Design](./SWING_DETECTOR_DESIGN.md). This file is the execution plan: what to build, what to run, and when to stop.
 
 ## Context
 
-The shipping swing detector, `LiveModelSwingDetector` in [ModelBackedSwingDetector.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/ModelBackedSwingDetector.swift), has become hard to reason about because its accept decision is a set of interacting boolean rescue branches. Tuning one branch can silently change which branch wins on another clip.
+The shipping swing detector, `LiveModelSwingDetector` in [ModelBackedSwingDetector.swift](../SwingCoach/Models/ModelBackedSwingDetector.swift), has become hard to reason about because its accept decision is a set of interacting boolean rescue branches. Tuning one branch can silently change which branch wins on another clip.
 
 `SwingDetectorV2` restarts from first principles:
 
@@ -30,15 +30,15 @@ The shipping swing detector, `LiveModelSwingDetector` in [ModelBackedSwingDetect
 
 ## Reused Types And Tools
 
-- [GolfObjectDetector.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/GolfObjectDetector.swift): reused object detector.
-- [OnDeviceSwingDetector.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/OnDeviceSwingDetector.swift): `DetectedSwing` output type.
-- [LiveSwingDetector.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/LiveSwingDetector.swift): live status snapshot/status types.
-- [generate_model_detection_contact_sheet.swift](/Users/ruari/Documents/Startups/SwingCoach/detector_workbench/modeling/generate_model_detection_contact_sheet.swift): contact sheet renderer.
-- [detector_test_v3_labels.json](/Users/ruari/Documents/Startups/SwingCoach/detector_workbench/validation/labels/detector_test_v3_labels.json): fixture labels and `source_time_scale`.
+- [GolfObjectDetector.swift](../SwingCoach/Models/GolfObjectDetector.swift): reused object detector.
+- [OnDeviceSwingDetector.swift](../SwingCoach/Models/OnDeviceSwingDetector.swift): `DetectedSwing` output type.
+- [LiveSwingDetector.swift](../SwingCoach/Models/LiveSwingDetector.swift): live status snapshot/status types.
+- [generate_model_detection_contact_sheet.swift](../detector_workbench/modeling/generate_model_detection_contact_sheet.swift): contact sheet renderer.
+- [detector_test_v3_labels.json](../detector_workbench/validation/labels/detector_test_v3_labels.json): fixture labels and `source_time_scale`.
 
 ## New V2 Module
 
-All new Swift detector code lives under [SwingDetectorV2](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/SwingDetectorV2/SwingDetectorV2.swift).
+All new Swift detector code lives under [SwingDetectorV2](../SwingCoach/Models/SwingDetectorV2/SwingDetectorV2.swift).
 
 | File | Responsibility |
 | --- | --- |
@@ -51,7 +51,7 @@ All new Swift detector code lives under [SwingDetectorV2](/Users/ruari/Documents
 | `SwingCandidateTrace.swift` | Debug-only candidate traces with evidence, score, state, lock, and primary failure. |
 | `SwingDetectorV2.swift` | Driver that feeds YOLO objects, motion, trackers, state machine, scorer, detections, and traces. |
 
-The shared interface is [LiveSwingDetecting.swift](/Users/ruari/Documents/Startups/SwingCoach/SwingCoach/Models/LiveSwingDetecting.swift). `SwingDetectorV2` is the app-wired implementation; the legacy detector remains in source for reference/evaluator comparison only.
+The shared interface is [LiveSwingDetecting.swift](../SwingCoach/Models/LiveSwingDetecting.swift). `SwingDetectorV2` is the app-wired implementation; the legacy detector remains in source for reference/evaluator comparison only.
 
 ## Offline Dev Loop
 

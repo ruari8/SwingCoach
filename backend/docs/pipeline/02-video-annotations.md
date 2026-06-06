@@ -8,9 +8,9 @@ Generate visual proof for coaching by rendering analysis overlays and replay art
 
 ### 2D annotated video
 
-- Renderer: [artifact_renderer.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/artifact_renderer.py)
-- Overlay engine: [visualizer.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/visualizer.py)
-- Exporter: [video_exporter.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/video_exporter.py)
+- Renderer: [artifact_renderer.py](../../analysis/artifact_renderer.py)
+- Overlay engine: [visualizer.py](../../analysis/visualizer.py)
+- Exporter: [video_exporter.py](../../analysis/video_exporter.py)
 
 Current overlay layers available:
 - Skeleton (coaching-focused; face and finger landmarks are suppressed)
@@ -36,10 +36,10 @@ The annotated MP4 remains as a flattened compatibility render. True layer toggle
 The guide builder is intentionally sparse. It samples shaft-mask work on key frames and clubhead path frames rather than running dense segmentation across the full video. Shaft and plane work must call `detect_shaft()` with prompt `"club shaft"`; broad `"golf club"` masks are not the source for shaft-plane claims. On local Apple Silicon, `EquipmentTracker` defaults to the MLX SAM3 image runtime when `detector_model/mlx_sam3` is available, with PyTorch SAM3 retained as the fallback.
 
 Contract coverage:
-- [test_annotation_tracks.py](/Users/ruari/Documents/Startups/SwingCoach/backend/test_annotation_tracks.py) verifies normalized skeleton/reference/path/club-plane/ball-contact layers, generic guides, phase marker source-frame mapping, confidence evidence generation, prompt-sourced shaft-plane preference, and the artifact boundary where `base.mp4`, `annotated.mp4`, `annotation_metadata.json`, and `annotation_tracks.json` are written together.
-- [test_analysis_runs.py](/Users/ruari/Documents/Startups/SwingCoach/backend/test_analysis_runs.py) verifies async run progress events remain ordered and terminal state stores the analysis result.
-- [test_event_detector.py](/Users/ruari/Documents/Startups/SwingCoach/backend/test_event_detector.py) verifies phase detection omits unavailable impact/downswing phases instead of indexing past the dense pose window.
-- [test_annotation_visuals.py](/Users/ruari/Documents/Startups/SwingCoach/backend/test_annotation_visuals.py) verifies the fallback rendered overlay path at pixel level for skeleton, reference lines, club plane, and swing path, including layer-off behavior.
+- [test_annotation_tracks.py](../../test_annotation_tracks.py) verifies normalized skeleton/reference/path/club-plane/ball-contact layers, generic guides, phase marker source-frame mapping, confidence evidence generation, prompt-sourced shaft-plane preference, and the artifact boundary where `base.mp4`, `annotated.mp4`, `annotation_metadata.json`, and `annotation_tracks.json` are written together.
+- [test_analysis_runs.py](../../test_analysis_runs.py) verifies async run progress events remain ordered and terminal state stores the analysis result.
+- [test_event_detector.py](../../test_event_detector.py) verifies phase detection omits unavailable impact/downswing phases instead of indexing past the dense pose window.
+- [test_annotation_visuals.py](../../test_annotation_visuals.py) verifies the fallback rendered overlay path at pixel level for skeleton, reference lines, club plane, and swing path, including layer-off behavior.
 - `annotation_metadata.layers[]` is the UI layer contract. Every frame-level track layer, generic guide layer, and top-level toggle layer (`phase_markers`, `confidence`) should either appear there or be intentionally treated as a client-only fallback. `speed` is emitted as metadata when speed samples exist.
 
 Frame extraction hardening:
@@ -47,9 +47,9 @@ Frame extraction hardening:
 
 ### 3D replay artifact
 
-- Body 3D detection: [body_3d.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/body_3d.py)
-- 3D runner: [body3d_runner.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/body3d_runner.py)
-- GLTF export: [animation_exporter.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/animation_exporter.py)
+- Body 3D detection: [body_3d.py](../../analysis/body_3d.py)
+- 3D runner: [body3d_runner.py](../../analysis/body3d_runner.py)
+- GLTF export: [animation_exporter.py](../../analysis/animation_exporter.py)
 
 Output files:
 - `base.mp4`
@@ -92,12 +92,12 @@ Local SAM3 runtime finding:
 - Hugging Face Transformers SAM3 on MPS ran but reported missing text encoder weights and had severe runtime stalls; do not adopt it without another investigation.
 - SAM3D is a separate model family and needs its own Apple Silicon/runtime validation.
 
-Detailed findings live in [Experimental Swing Detector](/Users/ruari/Documents/Startups/SwingCoach/docs/EXPERIMENT_SWING_DETECTOR.md).
+Detailed findings live in [Experimental Swing Detector](../../../docs/EXPERIMENT_SWING_DETECTOR.md).
 
 ## Key Files
 
-- [analysis/artifact_renderer.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/artifact_renderer.py)
-- [analysis/visualizer.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/visualizer.py)
-- [analysis/frame_extractor.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/frame_extractor.py)
-- [analysis/animation_exporter.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/animation_exporter.py)
-- [test_full_annotation.py](/Users/ruari/Documents/Startups/SwingCoach/backend/test_full_annotation.py)
+- [analysis/artifact_renderer.py](../../analysis/artifact_renderer.py)
+- [analysis/visualizer.py](../../analysis/visualizer.py)
+- [analysis/frame_extractor.py](../../analysis/frame_extractor.py)
+- [analysis/animation_exporter.py](../../analysis/animation_exporter.py)
+- [test_full_annotation.py](../../test_full_annotation.py)

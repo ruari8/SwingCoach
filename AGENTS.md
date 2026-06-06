@@ -10,11 +10,11 @@ This file is the operator/LLM quick guide. Detailed docs are listed below.
 
 ## Canonical Documentation
 
-- [Root README](/Users/ruari/Documents/Startups/SwingCoach/README.md)
-- [Docs Index](/Users/ruari/Documents/Startups/SwingCoach/docs/README.md)
-- [Frontend Documentation](/Users/ruari/Documents/Startups/SwingCoach/docs/FRONTEND.md)
-- [Backend README](/Users/ruari/Documents/Startups/SwingCoach/backend/README.md)
-- [Backend Docs Index](/Users/ruari/Documents/Startups/SwingCoach/backend/docs/README.md)
+- [Root README](./README.md)
+- [Docs Index](./docs/README.md)
+- [Frontend Documentation](./docs/FRONTEND.md)
+- [Backend README](./backend/README.md)
+- [Backend Docs Index](./backend/docs/README.md)
 
 ## Documentation Maintenance Rule
 

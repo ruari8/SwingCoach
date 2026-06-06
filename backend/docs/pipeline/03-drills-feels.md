@@ -8,8 +8,8 @@ Map diagnosed issues to practical drills/feels worth practicing.
 
 ### Drill corpus and selection
 
-- Drill data source: [data/curated_drills.json](/Users/ruari/Documents/Startups/SwingCoach/backend/data/curated_drills.json)
-- Selection logic: [coach_response_builder.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/coach_response_builder.py)
+- Drill data source: [data/curated_drills.json](../../data/curated_drills.json)
+- Selection logic: [coach_response_builder.py](../../analysis/coach_response_builder.py)
 
 Current flow:
 1. Rank top priorities from metric cards.
@@ -32,6 +32,6 @@ Current flow:
 
 ## Key Files
 
-- [analysis/coach_response_builder.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/coach_response_builder.py)
-- [data/curated_drills.json](/Users/ruari/Documents/Startups/SwingCoach/backend/data/curated_drills.json)
+- [analysis/coach_response_builder.py](../../analysis/coach_response_builder.py)
+- [data/curated_drills.json](../../data/curated_drills.json)
 

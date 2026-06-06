@@ -8,22 +8,22 @@ Produce coachable metrics with explicit confidence, not raw calculations without
 
 ### Inputs
 
-- 2D dense poses from [pose_detector.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/pose_detector.py)
-- Event frames from [event_detector.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/event_detector.py)
-- Club 3D fused track from [club3d_fuser.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/club3d_fuser.py)
+- 2D dense poses from [pose_detector.py](../../analysis/pose_detector.py)
+- Event frames from [event_detector.py](../../analysis/event_detector.py)
+- Club 3D fused track from [club3d_fuser.py](../../analysis/club3d_fuser.py)
 
 ### Metric computation layers
 
-1. Base biomechanical metrics in [metrics.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/metrics.py)
+1. Base biomechanical metrics in [metrics.py](../../analysis/metrics.py)
    - tempo ratio
    - head sway/dip
    - spine angle change
    - shoulder/hip turn proxies
-2. Coachable metric cards in [metrics_engine.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/metrics_engine.py)
+2. Coachable metric cards in [metrics_engine.py](../../analysis/metrics_engine.py)
    - unified card format
    - confidence bounds
    - explanations and fix hints
-3. Pipeline persistence in [pipeline_3d.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/pipeline_3d.py)
+3. Pipeline persistence in [pipeline_3d.py](../../analysis/pipeline_3d.py)
    - writes `metrics.json`
    - includes `quality.missing_data` and warnings
 
@@ -54,8 +54,8 @@ Each metric card includes:
 
 ## Key Files
 
-- [analysis/metrics.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/metrics.py)
-- [analysis/metrics_engine.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/metrics_engine.py)
-- [analysis/pipeline_3d.py](/Users/ruari/Documents/Startups/SwingCoach/backend/analysis/pipeline_3d.py)
-- [output/runs/](/Users/ruari/Documents/Startups/SwingCoach/backend/output/runs)
+- [analysis/metrics.py](../../analysis/metrics.py)
+- [analysis/metrics_engine.py](../../analysis/metrics_engine.py)
+- [analysis/pipeline_3d.py](../../analysis/pipeline_3d.py)
+- [output/runs/](../../output/runs)
 
