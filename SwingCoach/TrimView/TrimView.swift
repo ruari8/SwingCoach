@@ -989,7 +989,8 @@ struct TrimView: View {
                                 photoAssetID: assetID,
                                 vantage: clip.vantage,
                                 duration: clip.duration * displayTimeScale,
-                                initialThumbnail: libraryThumbnail
+                                initialThumbnail: libraryThumbnail,
+                                localSourceURL: url
                             )
                         }
                         savedCount += 1
@@ -1101,7 +1102,8 @@ struct TrimView: View {
                         photoAssetID: assetID,
                         vantage: fullClip.vantage,
                         duration: fullClip.duration * displayTimeScale,
-                        initialThumbnail: thumbnail
+                        initialThumbnail: thumbnail,
+                        localSourceURL: outputURL
                     )
                     isExporting = false
                     onComplete([fullClip], [outputURL])

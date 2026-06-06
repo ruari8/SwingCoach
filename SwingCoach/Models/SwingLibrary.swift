@@ -19,15 +19,18 @@ struct SavedSwing: Identifiable, Codable, Equatable {
     var createdAt: Date
     var notes: String?
     var analyzed: Bool
-    
+    // Filename (not full path) of an app-owned copy of the clip, if one exists.
+    // Lets playback open the local file directly instead of resolving Photos.
+    var localVideoFilename: String? = nil
+
     // Not persisted - loaded at runtime
     var thumbnail: UIImage?
     var videoURL: URL?
-    
+
     enum CodingKeys: String, CodingKey {
-        case id, photoAssetID, vantage, duration, createdAt, notes, analyzed
+        case id, photoAssetID, vantage, duration, createdAt, notes, analyzed, localVideoFilename
     }
-    
+
     // Custom Equatable (ignore non-codable properties)
     static func == (lhs: SavedSwing, rhs: SavedSwing) -> Bool {
         lhs.id == rhs.id &&
@@ -36,7 +39,8 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         lhs.duration == rhs.duration &&
         lhs.createdAt == rhs.createdAt &&
         lhs.notes == rhs.notes &&
-        lhs.analyzed == rhs.analyzed
+        lhs.analyzed == rhs.analyzed &&
+        lhs.localVideoFilename == rhs.localVideoFilename
     }
 }
 
@@ -48,28 +52,91 @@ class SwingLibrary: ObservableObject {
     @Published var isLoading = false
     
     private let storageURL: URL
+    private let videosDirectory: URL
     private let thumbnailTargetSize = CGSize(width: 240, height: 140)
-    
+
     static let shared = SwingLibrary()
-    
+
     private init() {
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         storageURL = documents.appendingPathComponent("swing_library.json")
+
+        // App-owned copies of swing clips live here. Application Support is
+        // persistent (unlike Caches) and we exclude it from iCloud/device backup
+        // since every clip is re-derivable from Photos.
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        var videos = support.appendingPathComponent("SwingVideos", isDirectory: true)
+        try? FileManager.default.createDirectory(at: videos, withIntermediateDirectories: true)
+        var resourceValues = URLResourceValues()
+        resourceValues.isExcludedFromBackup = true
+        try? videos.setResourceValues(resourceValues)
+        videosDirectory = videos
+
         loadFromDisk()
+    }
+
+    /// Local URL of the app-owned clip copy, if it exists on disk.
+    func localVideoURL(for swing: SavedSwing) -> URL? {
+        guard let name = swing.localVideoFilename else { return nil }
+        let url = videosDirectory.appendingPathComponent(name)
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
+
+    /// Copy a clip file into app storage, returning the stored filename.
+    private func storeLocalVideo(from sourceURL: URL, swingID: UUID) -> String? {
+        let ext = sourceURL.pathExtension.isEmpty ? "mov" : sourceURL.pathExtension
+        let filename = "\(swingID.uuidString).\(ext)"
+        let destination = videosDirectory.appendingPathComponent(filename)
+        do {
+            try? FileManager.default.removeItem(at: destination)
+            try FileManager.default.copyItem(at: sourceURL, to: destination)
+            return filename
+        } catch {
+            print("⚠️ Failed to store local swing video: \(error)")
+            return nil
+        }
+    }
+
+    /// One-time backfill: after resolving a swing from Photos, copy the file
+    /// locally (off the main thread) so the next open is instant.
+    private func backfillLocalVideo(from sourceURL: URL, for swing: SavedSwing) {
+        guard swing.localVideoFilename == nil else { return }
+        let directory = videosDirectory
+        let swingID = swing.id
+        Task.detached(priority: .utility) {
+            let ext = sourceURL.pathExtension.isEmpty ? "mov" : sourceURL.pathExtension
+            let filename = "\(swingID.uuidString).\(ext)"
+            let destination = directory.appendingPathComponent(filename)
+            do {
+                try? FileManager.default.removeItem(at: destination)
+                try FileManager.default.copyItem(at: sourceURL, to: destination)
+            } catch {
+                return
+            }
+            await MainActor.run {
+                guard let index = SwingLibrary.shared.swings.firstIndex(where: { $0.id == swingID }) else { return }
+                SwingLibrary.shared.swings[index].localVideoFilename = filename
+                SwingLibrary.shared.saveToDisk()
+            }
+        }
     }
     
     // MARK: - CRUD Operations
     
-    /// Add a new swing after saving to Photos
+    /// Add a new swing after saving to Photos. If `localSourceURL` is provided
+    /// (the just-exported clip file), a copy is retained in app storage so the
+    /// swing plays back instantly without resolving Photos.
     func addSwing(
         photoAssetID: String,
         vantage: Vantage,
         duration: Double,
         notes: String? = nil,
-        initialThumbnail: UIImage? = nil
+        initialThumbnail: UIImage? = nil,
+        localSourceURL: URL? = nil
     ) {
+        let id = UUID()
         var swing = SavedSwing(
-            id: UUID(),
+            id: id,
             photoAssetID: photoAssetID,
             vantage: vantage,
             duration: duration,
@@ -78,9 +145,12 @@ class SwingLibrary: ObservableObject {
             analyzed: false
         )
         swing.thumbnail = initialThumbnail
+        if let localSourceURL {
+            swing.localVideoFilename = storeLocalVideo(from: localSourceURL, swingID: id)
+        }
         swings.insert(swing, at: 0)  // Newest first
         saveToDisk()
-        
+
         Task {
             await refreshThumbnail(
                 forPhotoAssetID: photoAssetID,
@@ -88,10 +158,13 @@ class SwingLibrary: ObservableObject {
             )
         }
     }
-    
+
     /// Remove a swing (doesn't delete from Photos - user manages that)
     func removeSwing(_ swing: SavedSwing) {
         swings.removeAll { $0.id == swing.id }
+        if let name = swing.localVideoFilename {
+            try? FileManager.default.removeItem(at: videosDirectory.appendingPathComponent(name))
+        }
         saveToDisk()
     }
     
@@ -204,7 +277,14 @@ class SwingLibrary: ObservableObject {
     
     /// Get an AVPlayerItem for a swing (handles slow-mo and edited videos properly)
     func getPlayerItem(for swing: SavedSwing) async -> AVPlayerItem? {
-        await withCheckedContinuation { continuation in
+        // Fast path: an app-owned local copy plays instantly, no Photos round-trip.
+        if let localURL = localVideoURL(for: swing) {
+            return AVPlayerItem(url: localURL)
+        }
+
+        // Resolve the on-device file directly (AVURLAsset, or AVComposition for
+        // slow-mo). This avoids requestPlayerItem's heavyweight "prepare/wait" path.
+        let avAsset: AVAsset? = await withCheckedContinuation { continuation in
             let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [swing.photoAssetID], options: nil)
 
             guard let asset = fetchResult.firstObject else {
@@ -217,21 +297,23 @@ class SwingLibrary: ObservableObject {
             options.deliveryMode = .automatic
             options.isNetworkAccessAllowed = true  // Allow iCloud downloads when offloaded
 
-            // Resolve the on-device file directly (AVURLAsset, or AVComposition for
-            // slow-mo) and play it straight away. This avoids requestPlayerItem's
-            // heavyweight "prepare/wait" path, so local clips open ~instantly with
-            // no copy and no extra storage.
             var didResume = false
             PHImageManager.default().requestAVAsset(forVideo: asset, options: options) { avAsset, _, _ in
                 guard !didResume else { return }
                 didResume = true
-                if let avAsset {
-                    continuation.resume(returning: AVPlayerItem(asset: avAsset))
-                } else {
-                    continuation.resume(returning: nil)
-                }
+                continuation.resume(returning: avAsset)
             }
         }
+
+        guard let avAsset else { return nil }
+
+        // Backfill a local copy for next time (file-backed assets only; slow-mo
+        // compositions don't expose a file URL and keep using the Photos path).
+        if let urlAsset = avAsset as? AVURLAsset {
+            backfillLocalVideo(from: urlAsset.url, for: swing)
+        }
+
+        return AVPlayerItem(asset: avAsset)
     }
     
     /// Get the video URL for a swing (for export/upload - may not work for slow-mo)

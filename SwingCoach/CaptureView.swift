@@ -477,7 +477,8 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                             photoAssetID: assetID,
                             vantage: clip.vantage,
                             duration: clip.duration * recordedMode.sourceTimeScale,
-                            initialThumbnail: thumbnail
+                            initialThumbnail: thumbnail,
+                            localSourceURL: outputURL
                         )
                 }
                 savedCount = 1
