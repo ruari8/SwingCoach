@@ -96,6 +96,47 @@ struct AnnotatedAnalysisVideo: View {
         case immersive
     }
 
+    private enum ImmersiveRailSide {
+        case leading
+        case trailing
+
+        var alignment: Alignment {
+            switch self {
+            case .leading:
+                return .leading
+            case .trailing:
+                return .trailing
+            }
+        }
+
+        var edgePadding: EdgeInsets {
+            switch self {
+            case .leading:
+                return EdgeInsets(top: 0, leading: 12, bottom: 64, trailing: 0)
+            case .trailing:
+                return EdgeInsets(top: 0, leading: 0, bottom: 64, trailing: 12)
+            }
+        }
+
+        var toggleIconName: String {
+            switch self {
+            case .leading:
+                return "arrow.right"
+            case .trailing:
+                return "arrow.left"
+            }
+        }
+
+        var toggleAccessibilityLabel: String {
+            switch self {
+            case .leading:
+                return "Move annotation tools to right side"
+            case .trailing:
+                return "Move annotation tools to left side"
+            }
+        }
+    }
+
     let video: SavedAnalysisVideo
     let analysisID: String
     let presentation: Presentation
@@ -113,6 +154,7 @@ struct AnnotatedAnalysisVideo: View {
     @State private var manualAppliesToFullSwing = true
     @State private var manualLabelText = "Checkpoint"
     @State private var draftManualAnnotation: ManualAnnotation?
+    @State private var immersiveRailSide: ImmersiveRailSide = .trailing
 
     init(video: SavedAnalysisVideo, analysisID: String, presentation: Presentation = .card) {
         self.video = video
@@ -139,14 +181,29 @@ struct AnnotatedAnalysisVideo: View {
                     }
                 }
             case .immersive:
-                ZStack(alignment: .trailing) {
+                ZStack(alignment: immersiveRailSide.alignment) {
                     playerSurface
                         .ignoresSafeArea(edges: .top)
 
+                    if let tracksErrorMessage {
+                        VStack {
+                            Spacer()
+                            Text(tracksErrorMessage)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 7)
+                                .background(Capsule().fill(Color.black.opacity(0.68)))
+                                .padding(.bottom, 102)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .allowsHitTesting(false)
+                    }
+
                     if !annotationLayerControls.isEmpty {
                         immersiveToolRail
-                            .padding(.trailing, 12)
-                            .padding(.bottom, 64)
+                            .padding(immersiveRailSide.edgePadding)
+                            .simultaneousGesture(railSideDragGesture)
                     }
                 }
             }
@@ -453,22 +510,26 @@ struct AnnotatedAnalysisVideo: View {
 
     private var immersiveToolRail: some View {
         VStack(spacing: 10) {
-            ForEach(annotationLayerControls.prefix(6), id: \.name) { layer in
-                Button {
-                    toggleLayer(layer.name)
-                } label: {
-                    Image(systemName: layerIconName(layer.name))
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(enabledLayerNames.contains(layer.name) ? .black : .white)
-                        .frame(width: 42, height: 42)
-                        .background(
-                            Circle()
-                                .fill(enabledLayerNames.contains(layer.name) ? Color.yellow : Color.black.opacity(0.54))
-                        )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Toggle \(layer.displayName)")
+            Button {
+                toggleImmersiveRailSide()
+            } label: {
+                Image(systemName: immersiveRailSide.toggleIconName)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 38, height: 34)
+                    .background(Circle().fill(Color.black.opacity(0.54)))
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(immersiveRailSide.toggleAccessibilityLabel)
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 8) {
+                    ForEach(annotationLayerControls, id: \.name) { layer in
+                        immersiveLayerButton(layer)
+                    }
+                }
+            }
+            .frame(maxHeight: 430)
 
             Divider()
                 .frame(width: 28)
@@ -522,22 +583,83 @@ struct AnnotatedAnalysisVideo: View {
         .background(Capsule().fill(Color.black.opacity(0.22)))
     }
 
+    private var railSideDragGesture: some Gesture {
+        DragGesture(minimumDistance: 24)
+            .onEnded { value in
+                if value.translation.width < -24 {
+                    immersiveRailSide = .leading
+                } else if value.translation.width > 24 {
+                    immersiveRailSide = .trailing
+                }
+            }
+    }
+
+    private func toggleImmersiveRailSide() {
+        immersiveRailSide = immersiveRailSide == .trailing ? .leading : .trailing
+    }
+
+    private func immersiveLayerButton(_ layer: SavedVisualizationLayer) -> some View {
+        let isEnabled = enabledLayerNames.contains(layer.name)
+        return Button {
+            toggleLayer(layer.name)
+        } label: {
+            VStack(spacing: 3) {
+                Image(systemName: layerIconName(layer.name))
+                    .font(.system(size: 15, weight: .bold))
+                    .frame(width: 38, height: 30)
+
+                Text(layer.shortDisplayName)
+                    .font(.system(size: 8, weight: .bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+                    .frame(width: 54)
+            }
+            .foregroundColor(isEnabled ? .black : .white)
+            .frame(width: 58, height: 52)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isEnabled ? Color.yellow : Color.black.opacity(0.54))
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Toggle \(layer.displayName)")
+        .accessibilityHint(layer.description)
+    }
+
     private func layerIconName(_ name: String) -> String {
         switch name {
         case "skeleton":
             return "figure.golf"
-        case "reference_lines", "club_plane":
-            return "line.diagonal"
+        case "reference_lines":
+            return "ruler"
+        case "club_plane":
+            return "angle"
         case "swing_path":
-            return "point.topleft.down.curvedto.point.bottomright.up"
+            return "scribble.variable"
         case "ball_contact":
-            return "circle.circle"
+            return "smallcircle.filled.circle"
         case "phase_markers":
             return "flag.checkered"
         case "confidence":
-            return "gauge.with.dots.needle.50percent"
+            return "checkmark.seal"
         case "speed":
             return "speedometer"
+        case "shaft_checkpoints":
+            return "target"
+        case "clubhead_path":
+            return "scope"
+        case "setup_geometry":
+            return "ruler.fill"
+        case "head_reference":
+            return "person.crop.circle"
+        case "hip_depth":
+            return "arrow.left.and.right"
+        case "hand_depth":
+            return "hand.raised"
+        case "lead_arm_plane":
+            return "line.3.horizontal.decrease"
+        case "takeaway_checkpoint":
+            return "arrow.turn.up.right"
         case "manual":
             return "pencil.tip.crop.circle"
         default:
@@ -865,6 +987,19 @@ private struct AnnotationTrackPayload: Decodable {
         let name: String
         let start: NormalizedPoint
         let end: NormalizedPoint
+
+        enum CodingKeys: String, CodingKey {
+            case name
+            case start
+            case end
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            name = try container.decodeIfPresent(String.self, forKey: .name) ?? "reference"
+            start = try container.decode(NormalizedPoint.self, forKey: .start)
+            end = try container.decode(NormalizedPoint.self, forKey: .end)
+        }
     }
 
     struct NormalizedPoint: Decodable {
@@ -1255,22 +1390,100 @@ private struct AnnotationVideoOverlay: View {
 
 private extension SavedVisualizationLayer {
     var displayName: String {
-        name
-            .replacingOccurrences(of: "_", with: " ")
-            .split(separator: " ")
-            .map { $0.capitalized }
-            .joined(separator: " ")
+        switch name {
+        case "skeleton":
+            return "Body Pose"
+        case "reference_lines":
+            return "Body Lines"
+        case "club_plane":
+            return "Shaft Plane"
+        case "swing_path":
+            return "Swing Path"
+        case "ball_contact":
+            return "Ball Contact"
+        case "phase_markers":
+            return "Phase Markers"
+        case "confidence":
+            return "Confidence"
+        case "speed":
+            return "Speed"
+        case "shaft_checkpoints":
+            return "Shaft Checkpoints"
+        case "clubhead_path":
+            return "Clubhead Path"
+        case "setup_geometry":
+            return "Setup Geometry"
+        case "head_reference":
+            return "Head Reference"
+        case "hip_depth":
+            return "Hip Depth"
+        case "hand_depth":
+            return "Hand Path"
+        case "lead_arm_plane":
+            return "Lead Arm Plane"
+        case "takeaway_checkpoint":
+            return "Takeaway"
+        case "manual":
+            return "Draw"
+        default:
+            return name
+                .replacingOccurrences(of: "_", with: " ")
+                .split(separator: " ")
+                .map { $0.capitalized }
+                .joined(separator: " ")
+        }
+    }
+
+    var shortDisplayName: String {
+        switch name {
+        case "skeleton":
+            return "Pose"
+        case "reference_lines":
+            return "Body"
+        case "club_plane":
+            return "Plane"
+        case "swing_path":
+            return "Path"
+        case "ball_contact":
+            return "Ball"
+        case "phase_markers":
+            return "Phase"
+        case "confidence":
+            return "Conf"
+        case "speed":
+            return "Speed"
+        case "shaft_checkpoints":
+            return "Shaft"
+        case "clubhead_path":
+            return "Club"
+        case "setup_geometry":
+            return "Setup"
+        case "head_reference":
+            return "Head"
+        case "hip_depth":
+            return "Hips"
+        case "hand_depth":
+            return "Hands"
+        case "lead_arm_plane":
+            return "Arm"
+        case "takeaway_checkpoint":
+            return "Take"
+        case "manual":
+            return "Draw"
+        default:
+            return displayName
+        }
     }
 
     static func defaultGuideLayer(named name: String) -> SavedVisualizationLayer {
         let catalog: [String: (String, String, Bool)] = [
             "shaft_checkpoints": ("#FFD400", "Shaft checkpoints at key swing phases", true),
             "clubhead_path": ("#FF3B30", "Clubhead trace through the analyzed swing window", true),
-            "setup_geometry": ("#00E5FF", "Setup posture, stance, and alignment references", true),
+            "setup_geometry": ("#00E5FF", "Setup posture, stance, and alignment references", false),
             "head_reference": ("#FFFFFF", "Address head reference compared with later swing positions", true),
-            "hip_depth": ("#FF9500", "Address hip-depth reference for posture checks", true),
-            "hand_depth": ("#BF5AF2", "Hand-depth path and top-position checkpoint", true),
-            "lead_arm_plane": ("#34C759", "Lead-arm plane compared with shoulder plane at the top", true),
+            "hip_depth": ("#FF9500", "Address hip-depth reference for posture checks", false),
+            "hand_depth": ("#BF5AF2", "Hand-depth path and top-position checkpoint", false),
+            "lead_arm_plane": ("#34C759", "Lead-arm plane compared with shoulder plane at the top", false),
             "takeaway_checkpoint": ("#FFD60A", "Takeaway hand and shaft relationship checkpoint", true),
         ]
         let item = catalog[name] ?? ("#FFD60A", "Swing checkpoint guide", true)

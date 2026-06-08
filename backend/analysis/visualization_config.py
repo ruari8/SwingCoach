@@ -79,13 +79,13 @@ LAYER_DEFINITIONS = {
         name="skeleton",
         color="#00FFFF",  # Cyan
         description="Body pose skeleton showing joint positions",
-        enabled=True,
+        enabled=False,
     ),
     "reference_lines": LayerInfo(
         name="reference_lines",
         color="#FFFF00",  # Yellow
         description="Shoulder plane and spine angle reference lines",
-        enabled=True,
+        enabled=False,
     ),
     "club_plane": LayerInfo(
         name="club_plane",
@@ -97,31 +97,31 @@ LAYER_DEFINITIONS = {
         name="swing_path",
         color="#FF0000",  # Red
         description="Trajectory of club head through the swing",
-        enabled=True,
+        enabled=False,
     ),
     "speed": LayerInfo(
         name="speed",
         color="#00FF80",
         description="Estimated clubhead speed overlay",
-        enabled=True,
+        enabled=False,
     ),
     "ball_contact": LayerInfo(
         name="ball_contact",
         color="#FFFFFF",
         description="Ball/contact evidence near the detected impact window",
-        enabled=True,
+        enabled=False,
     ),
     "phase_markers": LayerInfo(
         name="phase_markers",
         color="#FFFFFF",
         description="Detected P1-P10 swing phase markers",
-        enabled=True,
+        enabled=False,
     ),
     "confidence": LayerInfo(
         name="confidence",
         color="#00FF80",
         description="Confidence and evidence badges for phase and impact detection",
-        enabled=True,
+        enabled=False,
     ),
     "shaft_checkpoints": LayerInfo(
         name="shaft_checkpoints",
@@ -139,7 +139,7 @@ LAYER_DEFINITIONS = {
         name="setup_geometry",
         color="#00E5FF",
         description="Setup posture, stance, and alignment references",
-        enabled=True,
+        enabled=False,
     ),
     "head_reference": LayerInfo(
         name="head_reference",
@@ -151,19 +151,19 @@ LAYER_DEFINITIONS = {
         name="hip_depth",
         color="#FF9500",
         description="Address hip-depth reference for posture and early-extension checks",
-        enabled=True,
+        enabled=False,
     ),
     "hand_depth": LayerInfo(
         name="hand_depth",
         color="#BF5AF2",
         description="Hand-depth path and top-position checkpoint",
-        enabled=True,
+        enabled=False,
     ),
     "lead_arm_plane": LayerInfo(
         name="lead_arm_plane",
         color="#34C759",
         description="Lead-arm plane compared with shoulder plane at the top",
-        enabled=True,
+        enabled=False,
     ),
     "takeaway_checkpoint": LayerInfo(
         name="takeaway_checkpoint",

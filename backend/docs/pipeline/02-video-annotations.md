@@ -24,19 +24,23 @@ Current overlay layers available:
 - Generic guide shapes for richer coaching checkpoints: `club_plane`, `shaft_checkpoints`, `clubhead_path`, `setup_geometry`, `head_reference`, `hip_depth`, `hand_depth`, `lead_arm_plane`, and `takeaway_checkpoint`
 
 The unified renderer writes `base.mp4`, `annotation_metadata.json`, and `annotation_tracks.json` beside `annotated.mp4`. The app-facing `annotated_video` payload includes:
-- `base_key` / `base_url` for a clean dense-window video when client-side overlays are available
+- `base_key` / `base_url` for a clean full-duration source-timeline video when client-side overlays are available
 - the rendered layer list (`name`, `color`, `description`, `enabled`)
 - `tracks_key` / `tracks_url` for normalized, machine-readable overlay tracks, including top-level `phase_markers[]`, `confidence_evidence`, top-level `guide_layers[]`, and per-frame `layers.guides[]`
 - top-level `ball_contact` when contact-zone evidence can be anchored from clubhead data
 
-The annotated MP4 remains as a flattened compatibility render. True layer toggles should use `base_url` plus `tracks_url`, so disabling a layer removes the client-rendered overlay instead of leaving a burned-in server layer visible.
+The annotated MP4 is an unbaked full-duration fallback by default. Set `SWINGCOACH_EXPORT_BAKED_ANNOTATED_VIDEO=true` only when a flattened server-rendered overlay MP4 is needed for debug or legacy review. True layer toggles should use `base_url` plus `tracks_url`, so disabling a layer removes the client-rendered overlay instead of leaving a burned-in server layer visible.
 
 `layers.guides[]` is additive and uses normalized video coordinates so old clients can ignore it safely. Supported guide shape kinds are `line`, `arrow`, `polyline`, `rectangle`, `circle`, and `label`. Each guide carries an `id`, `layer`, optional display `label`, `color`, `confidence`, and the geometry fields needed for its shape. Low-confidence or unsupported detections should omit the affected guide shape instead of emitting an approximate coaching claim.
 
-The guide builder is intentionally sparse. It samples shaft-mask work on key frames and clubhead path frames rather than running dense segmentation across the full video. Shaft and plane work must call `detect_shaft()` with prompt `"club shaft"`; broad `"golf club"` masks are not the source for shaft-plane claims. On local Apple Silicon, `EquipmentTracker` defaults to the MLX SAM3 image runtime when `detector_model/mlx_sam3` is available, with PyTorch SAM3 retained as the fallback.
+Checkpoint guides are intentionally not single-frame flashes. Phase-specific shaft, takeaway, hand-depth, hip-depth, head-reference, and lead-arm guides are emitted across a short inspection window around the detected checkpoint, while address plane and address head/hip references persist for comparison. The clubhead path appears from the first tracked clubhead point through the end of the artifact timeline.
+
+The guide builder is intentionally sparse. It keeps early setup probes even when the dense analysis window is capped, then samples shaft-mask work on setup/key frames and clubhead path frames rather than running dense segmentation across the full video. The address shaft plane is chosen from the setup probe candidates with `detect_shaft()` using prompt `"club shaft"` and then extended across the video frame; broad `"golf club"` masks are not the source for shaft-plane claims. On local Apple Silicon, `EquipmentTracker` defaults to the MLX SAM3 image runtime when `detector_model/mlx_sam3` is available, with PyTorch SAM3 retained as the fallback.
+
+When the capped analysis set mixes setup probes with a later top/impact focus window, phase-dependent guides and P1-P10 markers are suppressed instead of connecting unrelated source-frame segments or publishing mislabeled checkpoints. Address-only references still render because they can be anchored directly to setup pose and shaft evidence.
 
 Contract coverage:
-- [test_annotation_tracks.py](../../test_annotation_tracks.py) verifies normalized skeleton/reference/path/club-plane/ball-contact layers, generic guides, phase marker source-frame mapping, confidence evidence generation, prompt-sourced shaft-plane preference, and the artifact boundary where `base.mp4`, `annotated.mp4`, `annotation_metadata.json`, and `annotation_tracks.json` are written together.
+- [test_annotation_tracks.py](../../test_annotation_tracks.py) verifies normalized skeleton/reference/path/club-plane/ball-contact layers, generic guides, phase marker source-frame mapping, confidence evidence generation, prompt-sourced shaft-plane preference, and the artifact boundary where full-duration `base.mp4`, `annotated.mp4`, `annotation_metadata.json`, and `annotation_tracks.json` are written together.
 - [test_analysis_runs.py](../../test_analysis_runs.py) verifies async run progress events remain ordered and terminal state stores the analysis result.
 - [test_event_detector.py](../../test_event_detector.py) verifies phase detection omits unavailable impact/downswing phases instead of indexing past the dense pose window.
 - [test_annotation_visuals.py](../../test_annotation_visuals.py) verifies the fallback rendered overlay path at pixel level for skeleton, reference lines, club plane, and swing path, including layer-off behavior.
@@ -46,6 +50,8 @@ Frame extraction hardening:
 - `FrameExtractor` now uses sequential frame numbering (not PTS-based naming) with numeric file sorting to preserve chronological order during PNG extraction.
 
 ### 3D replay artifact
+
+3D replay export is disabled by default with the metric stack. Set `SWINGCOACH_ENABLE_3D_METRICS=true` to run this path.
 
 - Body 3D detection: [body_3d.py](../../analysis/body_3d.py)
 - 3D runner: [body3d_runner.py](../../analysis/body3d_runner.py)

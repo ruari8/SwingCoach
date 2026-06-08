@@ -113,6 +113,52 @@ class ArtifactRenderer:
                 result[phase_number] = relative_frame
         return result
 
+    def _longest_contiguous_path_points(
+        self,
+        points: List[Tuple[int, int, int]],
+        max_gap_frames: int = 3,
+    ) -> List[Tuple[int, int, int]]:
+        if len(points) < 2:
+            return points
+
+        sorted_points = sorted(points, key=lambda item: item[0])
+        segments: List[List[Tuple[int, int, int]]] = []
+        current: List[Tuple[int, int, int]] = [sorted_points[0]]
+        for point in sorted_points[1:]:
+            if int(point[0]) - int(current[-1][0]) <= max_gap_frames:
+                current.append(point)
+            else:
+                segments.append(current)
+                current = [point]
+        segments.append(current)
+        return max(segments, key=len)
+
+    def _longest_contiguous_samples(
+        self,
+        samples: List[Tuple[int, Dict[str, float]]],
+        max_gap_frames: int = 3,
+    ) -> List[Tuple[int, Dict[str, float]]]:
+        if len(samples) < 2:
+            return samples
+
+        sorted_samples = sorted(samples, key=lambda item: item[0])
+        segments: List[List[Tuple[int, Dict[str, float]]]] = []
+        current: List[Tuple[int, Dict[str, float]]] = [sorted_samples[0]]
+        for sample in sorted_samples[1:]:
+            if int(sample[0]) - int(current[-1][0]) <= max_gap_frames:
+                current.append(sample)
+            else:
+                segments.append(current)
+                current = [sample]
+        segments.append(current)
+        return max(segments, key=len)
+
+    def _has_large_frame_gaps(self, frame_indices: List[int], max_gap_frames: int = 3) -> bool:
+        return any(
+            int(frame_indices[idx + 1]) - int(frame_indices[idx]) > max_gap_frames
+            for idx in range(len(frame_indices) - 1)
+        )
+
     def _extend_normalized_line(
         self,
         p1: Dict[str, float],
@@ -254,7 +300,10 @@ class ArtifactRenderer:
     ) -> Optional[Dict[str, Any]]:
         if shaft_track is not None and float(shaft_track.get("confidence", 0.0)) >= min_confidence:
             return {
-                "line": shaft_track["line"],
+                "line": {
+                    **shaft_track["line"],
+                    "name": "address_shaft_plane",
+                },
                 "pixel_line": shaft_track["pixel_line"],
                 "angle_degrees": shaft_track["angle_degrees"],
                 "confidence": shaft_track["confidence"],
@@ -302,6 +351,7 @@ class ArtifactRenderer:
         angle = float(np.degrees(np.arctan2(float(direction[1]), float(direction[0]))))
         return {
             "line": {
+                "name": "address_shaft_plane",
                 "start": self._normalize_point(start[0], start[1], frame_width, frame_height),
                 "end": self._normalize_point(end[0], end[1], frame_width, frame_height),
             },
@@ -354,6 +404,7 @@ class ArtifactRenderer:
         angle = float(np.degrees(np.arctan2(float(direction[1]), float(direction[0]))))
         return {
             "line": {
+                "name": "shaft_line",
                 "start": self._normalize_point(start[0], start[1], frame_width, frame_height),
                 "end": self._normalize_point(end[0], end[1], frame_width, frame_height),
             },
@@ -376,14 +427,16 @@ class ArtifactRenderer:
             return {}
 
         phase_map = self._phase_relative_frames(swing_phases, frame_indices)
-        requested = {
-            "address": phase_map.get(1, 0),
-            "takeaway": phase_map.get(2),
-            "top": phase_map.get(5),
-            "transition": phase_map.get(6),
-            "delivery": phase_map.get(7),
-            "impact": phase_map.get(8),
-        }
+        address_candidates = self._setup_candidate_relative_indices(frame_indices)
+        requested = {}
+        if not self._has_large_frame_gaps(frame_indices):
+            requested = {
+                "takeaway": phase_map.get(2),
+                "top": phase_map.get(5),
+                "transition": phase_map.get(6),
+                "delivery": phase_map.get(7),
+                "impact": phase_map.get(8),
+            }
         selected = {
             name: relative_idx
             for name, relative_idx in requested.items()
@@ -397,6 +450,18 @@ class ArtifactRenderer:
 
             tracks: Dict[str, Dict[str, Any]] = {}
             with EquipmentTracker() as tracker:
+                address_track = self._best_address_shaft_track(
+                    tracker=tracker,
+                    frames=frames,
+                    frame_indices=frame_indices,
+                    candidate_relative_indices=address_candidates,
+                    phase_relative_idx=phase_map.get(1),
+                    frame_width=frame_width,
+                    frame_height=frame_height,
+                )
+                if address_track is not None:
+                    tracks["address"] = address_track
+
                 for name, relative_idx in selected.items():
                     source_frame = int(frame_indices[int(relative_idx)])
                     detection = tracker.detect_shaft(frames[int(relative_idx)], frame_index=source_frame)
@@ -416,6 +481,94 @@ class ArtifactRenderer:
             return tracks
         except Exception:
             return {}
+
+    def _setup_candidate_relative_indices(
+        self,
+        frame_indices: List[int],
+        max_candidates: int = 12,
+    ) -> List[int]:
+        if not frame_indices:
+            return []
+        if len(frame_indices) == 1:
+            return [0]
+
+        diffs = [
+            int(frame_indices[idx + 1]) - int(frame_indices[idx])
+            for idx in range(len(frame_indices) - 1)
+            if int(frame_indices[idx + 1]) > int(frame_indices[idx])
+        ]
+        typical_gap = float(np.median(diffs)) if diffs else 1.0
+        gap_cutoff = max(12.0, typical_gap * 3.0)
+        setup_end_relative = None
+        for idx in range(len(frame_indices) - 1):
+            if int(frame_indices[idx + 1]) - int(frame_indices[idx]) > gap_cutoff:
+                setup_end_relative = idx
+                break
+
+        if setup_end_relative is None:
+            setup_count = min(len(frame_indices), max(max_candidates, len(frame_indices) // 4))
+            setup_indices = list(range(setup_count))
+        else:
+            setup_indices = list(range(setup_end_relative + 1))
+
+        if len(setup_indices) <= max(24, max_candidates):
+            return setup_indices
+
+        return sorted(
+            {
+                setup_indices[int(round(i * (len(setup_indices) - 1) / max(max_candidates - 1, 1)))]
+                for i in range(max_candidates)
+            }
+        )
+
+    def _best_address_shaft_track(
+        self,
+        *,
+        tracker: Any,
+        frames: List[bytes],
+        frame_indices: List[int],
+        candidate_relative_indices: List[int],
+        phase_relative_idx: Optional[int],
+        frame_width: int,
+        frame_height: int,
+    ) -> Optional[Dict[str, Any]]:
+        candidates = list(candidate_relative_indices)
+        if phase_relative_idx is not None and 0 <= int(phase_relative_idx) < len(frames):
+            candidates.append(int(phase_relative_idx))
+        candidates = sorted(set(candidates))
+        if not candidates:
+            return None
+
+        best_track = None
+        best_score = -1.0
+        for relative_idx in candidates:
+            source_frame = int(frame_indices[int(relative_idx)])
+            detection = tracker.detect_shaft(frames[int(relative_idx)], frame_index=source_frame)
+            if detection is None:
+                continue
+            line = self._shaft_line_from_mask(
+                getattr(detection, "mask", None),
+                confidence=float(getattr(detection, "confidence", 0.0)),
+                frame_index=source_frame,
+                frame_width=frame_width,
+                frame_height=frame_height,
+            )
+            if line is None:
+                continue
+            confidence = float(line.get("confidence", 0.0))
+            score = confidence
+            if phase_relative_idx is not None and int(relative_idx) == int(phase_relative_idx):
+                score += 0.03
+            if score > best_score:
+                best_score = score
+                best_track = line
+
+        if best_track is not None:
+            source_frame = int(best_track["frame_index"])
+            source_to_relative = {int(source): idx for idx, source in enumerate(frame_indices)}
+            best_track["relative_frame_index"] = source_to_relative.get(source_frame, 0)
+            best_track["phase"] = "address"
+        return best_track
 
     def _short_line_from_center_and_direction(
         self,
@@ -792,6 +945,22 @@ class ArtifactRenderer:
         for relative_idx in range(frame_count):
             self._add_guide(frames, relative_idx, shape)
 
+    def _add_windowed_guide(
+        self,
+        frames: Dict[int, List[Dict[str, Any]]],
+        relative_idx: int,
+        frame_count: int,
+        shape: Optional[Dict[str, Any]],
+        half_window_frames: int,
+    ) -> None:
+        """Keep momentary checkpoint guides visible long enough to inspect."""
+        if shape is None:
+            return
+        start = max(0, int(relative_idx) - half_window_frames)
+        end = min(frame_count - 1, int(relative_idx) + half_window_frames)
+        for output_idx in range(start, end + 1):
+            self._add_guide(frames, output_idx, shape)
+
     def _phase_pose(
         self,
         poses2d: List[Optional[Any]],
@@ -818,11 +987,74 @@ class ArtifactRenderer:
             self._pose_point(pose, "right_ear", min_visibility=0.35),
         )
 
+    def _head_top(self, pose: Optional[Any]) -> Optional[Dict[str, float]]:
+        face_points = [
+            self._pose_point(pose, name, min_visibility=0.25)
+            for name in [
+                "nose",
+                "left_eye_inner",
+                "left_eye",
+                "left_eye_outer",
+                "right_eye_inner",
+                "right_eye",
+                "right_eye_outer",
+                "left_ear",
+                "right_ear",
+                "mouth_left",
+                "mouth_right",
+            ]
+        ]
+        visible_face = [point for point in face_points if point is not None]
+        if visible_face:
+            top_y = min(point["y"] for point in visible_face)
+            bottom_y = max(point["y"] for point in visible_face)
+            min_x = min(point["x"] for point in visible_face)
+            max_x = max(point["x"] for point in visible_face)
+            face_height = max(0.0, bottom_y - top_y)
+            face_width = max(0.0, max_x - min_x)
+            offset = max(0.028, min(0.07, max(face_height * 1.35, face_width * 0.75)))
+            return self._normalized_point(
+                sum(point["x"] for point in visible_face) / len(visible_face),
+                top_y - offset,
+            )
+
+        shoulder_center = self._midpoint(
+            self._pose_point(pose, "left_shoulder", min_visibility=0.35),
+            self._pose_point(pose, "right_shoulder", min_visibility=0.35),
+        )
+        if shoulder_center is None:
+            return None
+        return self._normalized_point(shoulder_center["x"], shoulder_center["y"] - 0.11)
+
     def _hip_center(self, pose: Optional[Any]) -> Optional[Dict[str, float]]:
         return self._midpoint(
             self._pose_point(pose, "left_hip"),
             self._pose_point(pose, "right_hip"),
         )
+
+    def _posterior_hip_depth(self, pose: Optional[Any]) -> Optional[Dict[str, float]]:
+        left_hip = self._pose_point(pose, "left_hip")
+        right_hip = self._pose_point(pose, "right_hip")
+        if left_hip is None and right_hip is None:
+            return None
+        if left_hip is None:
+            return right_hip
+        if right_hip is None:
+            return left_hip
+
+        hip_center = self._midpoint(left_hip, right_hip)
+        shoulder_center = self._midpoint(
+            self._pose_point(pose, "left_shoulder", min_visibility=0.35),
+            self._pose_point(pose, "right_shoulder", min_visibility=0.35),
+        )
+        hip_width = abs(left_hip["x"] - right_hip["x"])
+        padding = max(0.012, min(0.04, hip_width * 0.35))
+        if shoulder_center is not None and hip_center is not None and shoulder_center["x"] >= hip_center["x"]:
+            x = min(left_hip["x"], right_hip["x"]) - padding
+        else:
+            x = max(left_hip["x"], right_hip["x"]) + padding
+
+        return self._normalized_point(x, (left_hip["y"] + right_hip["y"]) / 2.0)
 
     def _guide_tracks(
         self,
@@ -835,14 +1067,59 @@ class ArtifactRenderer:
         club_plane: Optional[Dict[str, Any]],
         shaft_prompt_tracks: Dict[str, Dict[str, Any]],
         swing_phases: Optional[Any],
+        output_frame_indices: Optional[List[int]] = None,
+        video_fps: float = 30.0,
     ) -> Tuple[Dict[int, List[Dict[str, Any]]], List[str]]:
         guide_frames: Dict[int, List[Dict[str, Any]]] = {}
         frame_count = len(poses2d)
         if frame_count == 0:
             return guide_frames, []
+        output_frame_indices = output_frame_indices or frame_indices
+        output_frame_count = len(output_frame_indices)
+        output_source_to_relative = {
+            int(source): idx for idx, source in enumerate(output_frame_indices)
+        }
+        analysis_to_output_relative = {
+            idx: output_source_to_relative[int(source)]
+            for idx, source in enumerate(frame_indices)
+            if int(source) in output_source_to_relative
+        }
+
+        def add_guide(relative_idx: Optional[int], shape: Optional[Dict[str, Any]]) -> None:
+            if relative_idx is None:
+                return
+            output_relative_idx = analysis_to_output_relative.get(int(relative_idx))
+            if output_relative_idx is None:
+                return
+            self._add_guide(guide_frames, output_relative_idx, shape)
+
+        checkpoint_half_window = max(4, min(14, int(round(float(video_fps) * 0.35))))
+
+        def add_checkpoint_guide(relative_idx: Optional[int], shape: Optional[Dict[str, Any]]) -> None:
+            if relative_idx is None:
+                return
+            output_relative_idx = analysis_to_output_relative.get(int(relative_idx))
+            if output_relative_idx is None:
+                return
+            self._add_windowed_guide(
+                guide_frames,
+                output_relative_idx,
+                output_frame_count,
+                shape,
+                half_window_frames=checkpoint_half_window,
+            )
+
+        def add_persistent_guide(shape: Optional[Dict[str, Any]]) -> None:
+            self._add_persistent_guide(guide_frames, output_frame_count, shape)
 
         phase_map = self._phase_relative_frames(swing_phases, frame_indices)
-        address_idx, address_pose = self._phase_pose(poses2d, phase_map, 1)
+        phase_guides_reliable = not self._has_large_frame_gaps(frame_indices)
+        address_track = shaft_prompt_tracks.get("address")
+        address_track_idx = address_track.get("relative_frame_index") if address_track else None
+        if address_track_idx is not None and 0 <= int(address_track_idx) < len(poses2d):
+            address_idx, address_pose = int(address_track_idx), poses2d[int(address_track_idx)]
+        else:
+            address_idx, address_pose = self._phase_pose(poses2d, phase_map, 1)
         if address_pose is None and poses2d:
             address_idx, address_pose = 0, poses2d[0]
 
@@ -862,8 +1139,7 @@ class ArtifactRenderer:
         right_heel = self._pose_point(address_pose, "right_heel", min_visibility=0.35) or self._pose_point(address_pose, "right_ankle", min_visibility=0.35)
 
         if left_shoulder and right_shoulder:
-            self._add_guide(
-                guide_frames,
+            add_checkpoint_guide(
                 address_idx or 0,
                 self._guide_shape(
                     guide_id="setup_geometry.shoulder_line",
@@ -878,8 +1154,7 @@ class ArtifactRenderer:
         if left_shoulder and right_shoulder and left_hip and right_hip:
             shoulder_center = self._midpoint(left_shoulder, right_shoulder)
             hip_center = self._midpoint(left_hip, right_hip)
-            self._add_guide(
-                guide_frames,
+            add_checkpoint_guide(
                 address_idx or 0,
                 self._guide_shape(
                     guide_id="setup_geometry.spine_line",
@@ -892,8 +1167,7 @@ class ArtifactRenderer:
                 ),
             )
         if left_heel and right_heel:
-            self._add_guide(
-                guide_frames,
+            add_checkpoint_guide(
                 address_idx or 0,
                 self._guide_shape(
                     guide_id="setup_geometry.stance_width",
@@ -906,16 +1180,14 @@ class ArtifactRenderer:
                 ),
             )
 
-        address_head = self._head_center(address_pose)
+        address_head = self._head_top(address_pose)
         if address_head:
-            self._add_persistent_guide(
-                guide_frames,
-                frame_count,
+            add_persistent_guide(
                 self._guide_shape(
                     guide_id="head_reference.address_height",
                     layer="head_reference",
                     kind="line",
-                    label="Address head height",
+                    label="Head line",
                     color="#FFFFFF",
                     confidence=address_conf,
                     points=[
@@ -925,12 +1197,11 @@ class ArtifactRenderer:
                     style="dashed",
                 ),
             )
-            for phase_number, name in [(5, "top"), (8, "impact")]:
+            for phase_number, name in ([(5, "top"), (8, "impact")] if phase_guides_reliable else []):
                 relative_idx, pose = self._phase_pose(poses2d, phase_map, phase_number)
                 current_head = self._head_center(pose)
                 if relative_idx is not None and current_head is not None:
-                    self._add_guide(
-                        guide_frames,
+                    add_checkpoint_guide(
                         relative_idx,
                         self._guide_shape(
                             guide_id=f"head_reference.{name}_head",
@@ -944,16 +1215,14 @@ class ArtifactRenderer:
                         ),
                     )
 
-        address_hip = self._hip_center(address_pose)
+        address_hip = self._posterior_hip_depth(address_pose)
         if address_hip:
-            self._add_persistent_guide(
-                guide_frames,
-                frame_count,
+            add_persistent_guide(
                 self._guide_shape(
                     guide_id="hip_depth.address_line",
                     layer="hip_depth",
                     kind="line",
-                    label="Address hip depth",
+                    label="Hip depth",
                     color="#FF9500",
                     confidence=address_conf,
                     points=[
@@ -963,12 +1232,11 @@ class ArtifactRenderer:
                     style="dashed",
                 ),
             )
-            for phase_number, name in [(5, "top"), (8, "impact")]:
+            for phase_number, name in ([(5, "top"), (8, "impact")] if phase_guides_reliable else []):
                 relative_idx, pose = self._phase_pose(poses2d, phase_map, phase_number)
                 current_hip = self._hip_center(pose)
                 if relative_idx is not None and current_hip is not None:
-                    self._add_guide(
-                        guide_frames,
+                    add_checkpoint_guide(
                         relative_idx,
                         self._guide_shape(
                             guide_id=f"hip_depth.{name}_hip",
@@ -982,33 +1250,42 @@ class ArtifactRenderer:
                         ),
                     )
 
-        hand_path: List[Dict[str, float]] = []
+        hand_path_samples: List[Tuple[int, Dict[str, float]]] = []
+        hand_path_confidence = 0.0
         for relative_idx, pose in enumerate(poses2d):
             hand = self._hand_center(pose)
             if hand is None:
                 continue
-            hand_path.append(hand)
-            if len(hand_path) >= 2:
+            hand_path_confidence = max(hand_path_confidence, float(getattr(pose, "confidence", 0.0)))
+            source_frame = int(frame_indices[relative_idx]) if relative_idx < len(frame_indices) else relative_idx
+            hand_path_samples.append((source_frame, hand))
+
+        hand_path_segment = self._longest_contiguous_samples(hand_path_samples)
+        hand_path = [point for _, point in hand_path_segment]
+        if len(hand_path) >= 2 and hand_path_segment:
+            hand_path_start_source = int(hand_path_segment[0][0])
+            output_start_relative = output_source_to_relative.get(hand_path_start_source, 0)
+            hand_path_shape = self._guide_shape(
+                guide_id="hand_depth.path",
+                layer="hand_depth",
+                kind="polyline",
+                label="Hand path",
+                color="#BF5AF2",
+                confidence=hand_path_confidence,
+                points=hand_path,
+            )
+            for output_idx in range(max(0, output_start_relative), output_frame_count):
                 self._add_guide(
                     guide_frames,
-                    relative_idx,
-                    self._guide_shape(
-                        guide_id="hand_depth.path",
-                        layer="hand_depth",
-                        kind="polyline",
-                        label="Hand path",
-                        color="#BF5AF2",
-                        confidence=float(getattr(pose, "confidence", 0.0)),
-                        points=list(hand_path),
-                    ),
+                    output_idx,
+                    hand_path_shape,
                 )
 
-        top_idx, top_pose = self._phase_pose(poses2d, phase_map, 5)
+        top_idx, top_pose = self._phase_pose(poses2d, phase_map, 5) if phase_guides_reliable else (None, None)
         if top_idx is not None and top_pose is not None:
             top_hand = self._hand_center(top_pose)
             if top_hand is not None:
-                self._add_guide(
-                    guide_frames,
+                add_checkpoint_guide(
                     top_idx,
                     self._guide_shape(
                         guide_id="hand_depth.top_position",
@@ -1029,8 +1306,7 @@ class ArtifactRenderer:
             top_right_shoulder = self._pose_point(top_pose, "right_shoulder")
             top_left_wrist = self._pose_point(top_pose, "left_wrist")
             if top_left_shoulder and top_right_shoulder:
-                self._add_guide(
-                    guide_frames,
+                add_checkpoint_guide(
                     top_idx,
                     self._guide_shape(
                         guide_id="lead_arm_plane.shoulder_plane",
@@ -1043,8 +1319,7 @@ class ArtifactRenderer:
                     ),
                 )
             if top_left_shoulder and top_left_wrist:
-                self._add_guide(
-                    guide_frames,
+                add_checkpoint_guide(
                     top_idx,
                     self._guide_shape(
                         guide_id="lead_arm_plane.lead_arm_proxy",
@@ -1058,35 +1333,43 @@ class ArtifactRenderer:
                 )
 
         for phase_name, shaft_track in shaft_prompt_tracks.items():
+            if phase_name != "address" and not phase_guides_reliable:
+                continue
             relative_idx = int(shaft_track.get("relative_frame_index", source_to_relative.get(int(shaft_track["frame_index"]), 0)))
             layer_name = "shaft_checkpoints" if phase_name != "takeaway" else "takeaway_checkpoint"
-            self._add_guide(
-                guide_frames,
+            phase_label = {
+                "address": "P1 shaft",
+                "takeaway": "P2 shaft",
+                "top": "Top shaft",
+                "transition": "Transition shaft",
+                "delivery": "Delivery shaft",
+                "impact": "Impact shaft",
+            }.get(phase_name, f"{phase_name.replace('_', ' ').title()} shaft")
+            add_checkpoint_guide(
                 relative_idx,
                 self._guide_shape(
                     guide_id=f"{layer_name}.{phase_name}_shaft",
                     layer=layer_name,
                     kind="line",
-                    label=f"{phase_name.replace('_', ' ').title()} shaft",
+                    label=phase_label,
                     color="#FFD400",
                     confidence=float(shaft_track.get("confidence", 0.0)),
                     points=[shaft_track["line"]["start"], shaft_track["line"]["end"]],
                 ),
             )
 
-        takeaway_idx = phase_map.get(2) or phase_map.get(3)
+        takeaway_idx = (phase_map.get(2) or phase_map.get(3)) if phase_guides_reliable else None
         if takeaway_idx is not None and 0 <= takeaway_idx < len(poses2d):
             takeaway_pose = poses2d[takeaway_idx]
             takeaway_hand = self._hand_center(takeaway_pose)
             if takeaway_hand is not None:
-                self._add_guide(
-                    guide_frames,
+                add_checkpoint_guide(
                     takeaway_idx,
                     self._guide_shape(
                         guide_id="takeaway_checkpoint.hands",
                         layer="takeaway_checkpoint",
                         kind="circle",
-                        label="Takeaway hands",
+                        label="Hands",
                         color="#FFD60A",
                         confidence=float(getattr(takeaway_pose, "confidence", 0.0)),
                         center=takeaway_hand,
@@ -1100,24 +1383,24 @@ class ArtifactRenderer:
                 if head is not None and direction is not None:
                     line = self._short_line_from_center_and_direction(head, direction, frame_width, frame_height)
                     if line is not None:
-                        self._add_guide(
-                            guide_frames,
+                        add_checkpoint_guide(
                             takeaway_idx,
                             self._guide_shape(
                                 guide_id="takeaway_checkpoint.shaft_to_ball",
                                 layer="takeaway_checkpoint",
                                 kind="line",
-                                label="Shaft direction",
+                                label="Takeaway shaft",
                                 color="#FFD60A",
                                 confidence=float(getattr(club_item, "shaft_confidence", 0.0)),
                                 points=[line["start"], line["end"]],
                             ),
                         )
 
-        if path_points:
-            points = [self._normalize_point(x, y, frame_width, frame_height) for _, x, y in path_points]
-            last_relative = max(relative for relative, _, _ in path_points)
-            for relative_idx in range(max(0, last_relative), frame_count):
+        path_segment = self._longest_contiguous_path_points(path_points)
+        if path_segment:
+            points = [self._normalize_point(x, y, frame_width, frame_height) for _, x, y in path_segment]
+            first_relative = min(relative for relative, _, _ in path_segment)
+            for relative_idx in range(max(0, first_relative), output_frame_count):
                 self._add_guide(
                     guide_frames,
                     relative_idx,
@@ -1133,14 +1416,12 @@ class ArtifactRenderer:
                 )
 
         if club_plane is not None:
-            self._add_persistent_guide(
-                guide_frames,
-                frame_count,
+            add_persistent_guide(
                 self._guide_shape(
                     guide_id="club_plane.address_plane",
                     layer="club_plane",
                     kind="line",
-                    label="Address shaft plane",
+                    label="Shaft plane",
                     color="#FFA500",
                     confidence=float(club_plane.get("confidence", 0.0)),
                     points=[club_plane["line"]["start"], club_plane["line"]["end"]],
@@ -1166,20 +1447,35 @@ class ArtifactRenderer:
         guide_frames: Optional[Dict[int, List[Dict[str, Any]]]] = None,
         guide_layers: Optional[List[str]] = None,
         swing_phases: Optional[Any] = None,
+        track_frame_indices: Optional[List[int]] = None,
     ) -> Dict[str, Any]:
+        track_frame_indices = track_frame_indices or frame_indices
+        track_source_to_relative = {
+            int(source): idx for idx, source in enumerate(track_frame_indices)
+        }
+        pose_by_source = {
+            int(source): pose for source, pose in zip(frame_indices, poses2d)
+        }
         path_by_relative_frame = {
             relative_frame: self._normalize_point(x, y, frame_width, frame_height)
             for relative_frame, x, y in path_points
         }
         phase_markers: List[Dict[str, Any]] = []
-        if visualization_config.draw_phase_markers and swing_phases is not None:
+        if (
+            visualization_config.draw_phase_markers
+            and swing_phases is not None
+            and not self._has_large_frame_gaps(frame_indices)
+        ):
             source_to_relative = {int(source): idx for idx, source in enumerate(frame_indices)}
             for phase in getattr(swing_phases, "phases", []):
                 raw_frame = int(getattr(phase, "frame_index", -1))
-                relative_frame = self._dense_relative_frame(raw_frame, frame_indices, source_to_relative)
+                analysis_relative_frame = self._dense_relative_frame(raw_frame, frame_indices, source_to_relative)
+                if analysis_relative_frame is None:
+                    continue
+                source_frame = int(frame_indices[analysis_relative_frame])
+                relative_frame = track_source_to_relative.get(source_frame)
                 if relative_frame is None:
                     continue
-                source_frame = int(frame_indices[relative_frame])
                 phase_markers.append(
                     {
                         "phase": int(getattr(phase, "phase_number", 0)),
@@ -1198,12 +1494,27 @@ class ArtifactRenderer:
             if visualization_config.draw_confidence
             else None
         )
-        ball_contact_frames = ball_contact.get("frames", {}) if ball_contact else {}
+        raw_ball_contact_frames = ball_contact.get("frames", {}) if ball_contact else {}
+        ball_contact_frames: Dict[int, Any] = {}
+        if raw_ball_contact_frames:
+            for raw_relative_idx, layer in raw_ball_contact_frames.items():
+                try:
+                    analysis_relative_idx = int(raw_relative_idx)
+                except (TypeError, ValueError):
+                    continue
+                if not 0 <= analysis_relative_idx < len(frame_indices):
+                    continue
+                source_frame = int(frame_indices[analysis_relative_idx])
+                output_relative_idx = track_source_to_relative.get(source_frame)
+                if output_relative_idx is not None:
+                    ball_contact_frames[output_relative_idx] = layer
         guide_frames = guide_frames or {}
         guide_layers = guide_layers or []
 
         frames: List[Dict[str, Any]] = []
-        for relative_idx, (source_frame, pose) in enumerate(zip(frame_indices, poses2d)):
+        for relative_idx, source_frame in enumerate(track_frame_indices):
+            source_frame = int(source_frame)
+            pose = pose_by_source.get(source_frame)
             layers: Dict[str, Any] = {}
 
             if visualization_config.draw_skeleton or visualization_config.draw_reference_lines:
@@ -1286,11 +1597,18 @@ class ArtifactRenderer:
         poses3d: List[Optional[Any]],
         club3d_frames: List[Any],
         swing_phases: Optional[Any] = None,
+        artifact_frames: Optional[List[bytes]] = None,
+        artifact_frame_indices: Optional[List[int]] = None,
+        export_baked_overlays: bool = False,
     ) -> ArtifactRenderResult:
         debug_files: List[str] = []
+        render_frames = artifact_frames or frames
+        render_frame_indices = artifact_frame_indices or frame_indices
+        if len(render_frames) != len(render_frame_indices):
+            render_frame_indices = list(range(len(render_frames)))
 
         path_points = []
-        source_to_relative = {int(source): idx for idx, source in enumerate(frame_indices)}
+        source_to_relative = {int(source): idx for idx, source in enumerate(render_frame_indices)}
         for item in club2d_frames:
             if item.clubhead_centroid_px is None:
                 continue
@@ -1298,6 +1616,7 @@ class ArtifactRenderer:
             relative_idx = source_to_relative.get(int(item.frame_index))
             if relative_idx is not None:
                 path_points.append((relative_idx, x, y))
+        path_points = self._longest_contiguous_path_points(path_points)
 
         swing_path = _SwingPathProxy(points_with_frame=path_points) if path_points else None
         shaft_prompt_tracks = self._shaft_prompt_tracks(
@@ -1327,10 +1646,11 @@ class ArtifactRenderer:
 
         speed_data, peak_speed, peak_frame = self._speed_map(club3d_frames, fps=video_fps)
         relative_speed_data = {
-            max(0, frame_index - frame_indices[0]): speed
+            source_to_relative[frame_index]: speed
             for frame_index, speed in speed_data.items()
+            if frame_index in source_to_relative
         }
-        relative_peak_frame = peak_frame - frame_indices[0] if peak_frame is not None else None
+        relative_peak_frame = source_to_relative.get(peak_frame) if peak_frame is not None else None
 
         visualization_config = VisualizationConfig(
             draw_skeleton=True,
@@ -1354,32 +1674,40 @@ class ArtifactRenderer:
             club_plane=club_plane,
             shaft_prompt_tracks=shaft_prompt_tracks,
             swing_phases=swing_phases,
+            output_frame_indices=render_frame_indices,
+            video_fps=video_fps,
         )
 
         exporter = VideoExporter()
-        base_video_bytes = exporter.export_video(frames, fps=video_fps)
+        base_video_bytes = exporter.export_video(render_frames, fps=video_fps)
         run_store.save_bytes("base.mp4", base_video_bytes)
 
-        visualizer = SwingVisualizer(frame_width=frame_width, frame_height=frame_height)
-        annotated_frames = visualizer.draw_complete_analysis_batch(
-            frames=frames,
-            poses=poses2d,
-            club_plane_line=club_plane_line,
-            swing_path=swing_path,
-            club_masks=None,
-            draw_skeleton=visualization_config.draw_skeleton,
-            draw_reference_lines=visualization_config.draw_reference_lines,
-            draw_club_plane=visualization_config.draw_club_plane,
-            draw_swing_path=visualization_config.draw_swing_path,
-            draw_club_mask=visualization_config.draw_club_mask,
-            min_visibility=visualization_config.min_visibility,
-            speed_data=relative_speed_data,
-            peak_speed=peak_speed,
-            peak_speed_frame=relative_peak_frame,
-            draw_speed=bool(speed_data),
-        )
-
-        video_bytes = exporter.export_video(annotated_frames, fps=video_fps)
+        if export_baked_overlays:
+            pose_by_source = {
+                int(source): pose for source, pose in zip(frame_indices, poses2d)
+            }
+            render_poses = [pose_by_source.get(int(source)) for source in render_frame_indices]
+            visualizer = SwingVisualizer(frame_width=frame_width, frame_height=frame_height)
+            annotated_frames = visualizer.draw_complete_analysis_batch(
+                frames=render_frames,
+                poses=render_poses,
+                club_plane_line=club_plane_line,
+                swing_path=swing_path,
+                club_masks=None,
+                draw_skeleton=visualization_config.draw_skeleton,
+                draw_reference_lines=visualization_config.draw_reference_lines,
+                draw_club_plane=visualization_config.draw_club_plane,
+                draw_swing_path=visualization_config.draw_swing_path,
+                draw_club_mask=visualization_config.draw_club_mask,
+                min_visibility=visualization_config.min_visibility,
+                speed_data=relative_speed_data,
+                peak_speed=peak_speed,
+                peak_speed_frame=relative_peak_frame,
+                draw_speed=bool(speed_data),
+            )
+            video_bytes = exporter.export_video(annotated_frames, fps=video_fps)
+        else:
+            video_bytes = base_video_bytes
         run_store.save_bytes("annotated.mp4", video_bytes)
 
         swing_3d_name: Optional[str] = None
@@ -1397,7 +1725,7 @@ class ArtifactRenderer:
 
         metadata = VisualizationMetadata.from_config(visualization_config)
         metadata.video_fps = video_fps
-        metadata.frame_count = len(frames)
+        metadata.frame_count = len(render_frames)
         metadata.swing_path_point_count = len(path_points)
         if club_plane is not None:
             metadata.club_plane_angle_degrees = club_plane["angle_degrees"]
@@ -1424,6 +1752,7 @@ class ArtifactRenderer:
             guide_frames=guide_frames,
             guide_layers=guide_layers,
             swing_phases=swing_phases,
+            track_frame_indices=render_frame_indices,
         )
         run_store.save_json("annotation_tracks.json", annotation_tracks)
 

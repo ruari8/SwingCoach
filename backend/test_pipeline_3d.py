@@ -13,6 +13,24 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def test_capped_dense_indices_keep_setup_samples() -> None:
+    pipeline = SwingCoachPipeline3D()
+    indices = pipeline._capped_dense_indices(
+        frame_count=927,
+        fps=47.0,
+        dense_window_start=0,
+        dense_window_end=801,
+        top_estimate=12,
+        impact_estimate=786,
+        dense_frame_cap=96,
+    )
+
+    assert len(indices) <= 96
+    assert min(indices) == 0
+    assert any(90 <= frame <= 120 for frame in indices)
+    assert max(indices) > 420
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run unified 3D pipeline on a local video")
     parser.add_argument(
@@ -68,4 +86,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    test_capped_dense_indices_keep_setup_samples()
     raise SystemExit(main())

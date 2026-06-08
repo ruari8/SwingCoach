@@ -26,7 +26,7 @@ Cloudflare R2
         | video_key
         v
 FastAPI backend
-  /analysis-runs -> 2D pose -> optional 3D body -> club tracking -> metrics -> artifacts -> coaching bundle
+  /analysis-runs -> 2D pose -> 2D club/shaft annotation tracking -> full-video artifacts -> coaching bundle
         |
         | status + SSE progress + signed artifact URLs
         v
@@ -71,7 +71,7 @@ The backend is a FastAPI service. Its main mobile path is asynchronous:
 4. Stream `GET /analysis-runs/{run_id}/events`
 5. Fetch `GET /analysis-runs/{run_id}` for the completed result
 
-The pipeline currently covers video metadata, sparse and dense 2D pose, optional SAM 3D Body recovery, club tracking/fusion, metric cards, artifact rendering, drill selection, and coaching text. The app-facing response is intentionally lightweight: summary, display metrics, annotated/base video artifacts, overlay-track metadata, and drills.
+The default pipeline currently covers video metadata, sparse and dense 2D pose, 2D club/shaft annotation tracking, full-duration clean video artifacts, normalized overlay tracks, and annotation-focused coaching text. 3D body recovery, club 3D fusion, metric cards, and 3D replay export are behind `SWINGCOACH_ENABLE_3D_METRICS` and are off by default while annotation quality is the priority.
 
 See [backend/README.md](backend/README.md) and [backend/docs/README.md](backend/docs/README.md) for API details and pipeline notes.
 
@@ -107,6 +107,16 @@ cd backend
 
 The optional 3D stack is intentionally separate because SAM/SAM 3D Body dependencies and model assets are heavy.
 
+Optional backend flags:
+
+```bash
+# Defaults to false. Enables SAM 3D Body, club 3D fusion, metric cards, and GLTF replay.
+SWINGCOACH_ENABLE_3D_METRICS=true
+
+# Defaults to false. When false, annotated.mp4 is an unbaked full-duration fallback and client-side tracks provide toggles.
+SWINGCOACH_EXPORT_BAKED_ANNOTATED_VIDEO=true
+```
+
 ## Useful Checks
 
 Backend smoke and regression checks:
@@ -134,7 +144,7 @@ Heavy local fixture videos, generated detector reports, model-training outputs, 
 - The iOS capture, library, trim, analysis queue, swing detail, annotated playback, and manual drawing workflows are implemented.
 - The async backend analysis API is implemented, including progress events, R2 artifacts, `/chat`, and a legacy synchronous `/analyze` fallback.
 - The on-device detector is still experimental. It is useful for clip preselection and auto-capture iteration, but it is not treated as a solved detection problem.
-- Metrics and coaching output are confidence-gated. Low-quality detection should produce uncertainty or omitted metrics instead of overconfident claims.
+- Metrics and coaching output are confidence-gated when `SWINGCOACH_ENABLE_3D_METRICS=true`. With the default annotation-only mode, metric rows are omitted instead of publishing unstable numbers.
 - The current mobile product path is DTL-first. Face-on exists in the data model, but the most mature flows and validation focus on down-the-line swings.
 - Async run state is currently in memory, so active jobs do not survive backend restarts.
 

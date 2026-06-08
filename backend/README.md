@@ -5,9 +5,9 @@ Python FastAPI backend for the SwingCoach coaching pipeline.
 ## Purpose
 
 Given one uploaded swing video, the backend returns:
-1. Coachable metric cards with confidence
-2. Visual artifacts (annotated video and optional 3D replay)
-3. Coaching seed output (summary, priorities, drills)
+1. Full-duration visual artifacts and normalized overlay tracks
+2. Annotation-focused coaching seed output
+3. Optional coachable metric cards with confidence when 3D metrics are enabled
 4. Run-quality metadata (warnings, missing data, timings)
 
 Primary orchestrator: [analysis/pipeline_3d.py](./analysis/pipeline_3d.py)
@@ -49,6 +49,11 @@ cp .env.example .env
 
 R2 HTTPS certificate verification is enabled by default. If a local machine has a temporary certificate-store problem, set `R2_VERIFY_SSL=false` in `backend/.env`; do not use that setting for deployed backends.
 
+Optional analysis flags:
+
+- `SWINGCOACH_ENABLE_3D_METRICS=false` by default. Set to `true` to enable SAM 3D Body, club 3D fusion, metric cards, and GLTF replay export.
+- `SWINGCOACH_EXPORT_BAKED_ANNOTATED_VIDEO=false` by default. Set to `true` only for debug/legacy review when a flattened server-rendered overlay MP4 is needed. Normal app playback uses `base_url` plus `tracks_url` so every annotation layer can be toggled.
+
 ## API Contract
 
 Main server file: [main.py](./main.py)
@@ -82,7 +87,7 @@ Response shape (`AnalyzeResponse`):
 - `annotated_video` (`key`, fresh signed `url`, optional `base_key` / `base_url`, optional `tracks_key` / `tracks_url`, rendered `layers[]`)
 - `drills[]` (lightweight `title`, `summary` suggestions)
 
-The pipeline still records richer internal data such as confidence, warnings, timings, 3D artifacts, annotation metadata, and raw files. The mobile MVP contract exposes the fields needed by the current Coach tab plus annotation layer metadata, a clean base video, and a normalized overlay-track artifact for client-side toggles, including club plane, ball/contact evidence, P1-P10 phase markers, confidence evidence, and generic guide shapes for setup/head/hip/hand/shaft checkpoint overlays when detected.
+The pipeline still records richer internal data such as confidence, warnings, timings, annotation metadata, and raw files. The mobile MVP contract exposes the fields needed by the current Coach tab plus annotation layer metadata, a full-duration clean base video, and a normalized overlay-track artifact for client-side toggles, including club plane, ball/contact evidence, P1-P10 phase markers, confidence evidence, and generic guide shapes for setup/head/hip/hand/shaft checkpoint overlays when detected. 3D artifacts and metric cards are emitted only when `SWINGCOACH_ENABLE_3D_METRICS=true`.
 
 Phase detection is confidence and window gated. If the dense analysis window does not contain enough post-top motion to find impact/follow-through phases, those phases are omitted instead of raising an analysis failure.
 
@@ -155,10 +160,10 @@ Response shape:
 1. Read video metadata
 2. Sparse 2D pose scan and event estimate
 3. Dense window selection and dense 2D pose
-4. Optional 3D body recovery (SAM 3D Body)
-5. Club 2D/3D fusion
-6. Metrics build (base + club delivery)
-7. Artifact rendering (clean base video, flattened annotated MP4 fallback, normalized overlay tracks, optional GLTF)
+4. Full-frame extraction for artifact timeline preservation
+5. 2D club/shaft annotation tracking
+6. Optional 3D body recovery, club 3D fusion, and metrics when `SWINGCOACH_ENABLE_3D_METRICS=true`
+7. Artifact rendering (full-duration clean base video, unbaked annotated MP4 fallback, normalized overlay tracks, optional GLTF)
 8. Coaching bundle generation
 9. Persist run artifacts and timings
 
@@ -171,7 +176,7 @@ Typical files per successful run:
 - `input_meta.json`
 - `events.json`
 - `poses_2d.npz`
-- `poses_3d.npz` (if 3D stage available)
+- `poses_3d.npz` (empty unless 3D metrics are enabled and available)
 - `club_2d.npz`
 - `club_3d.npz`
 - `metrics.json`
@@ -180,7 +185,7 @@ Typical files per successful run:
 - `annotated.mp4`
 - `annotation_metadata.json`
 - `annotation_tracks.json`
-- `swing_3d.gltf` (if 3D available)
+- `swing_3d.gltf` (if 3D metrics are enabled and valid 3D poses exist)
 - `timings.json`
 
 ## Local Test Commands

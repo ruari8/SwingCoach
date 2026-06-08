@@ -91,6 +91,26 @@ class _FakeEquipmentTracker:
         return _FakeShaftDetection(mask=mask, confidence=0.82, frame_index=frame_index)
 
 
+class _VariableConfidenceShaftTracker:
+    def __init__(self, confidences: dict[int, float]):
+        self.confidences = confidences
+        self.prompts: list[int] = []
+
+    def detect_shaft(self, frame_bytes, frame_index: int = 0):
+        import numpy as np
+
+        self.prompts.append(frame_index)
+        confidence = self.confidences.get(frame_index)
+        if confidence is None:
+            return None
+        mask = np.zeros((180, 320), dtype=np.uint8)
+        for offset in range(0, 130):
+            x = min(319, 80 + offset)
+            y = min(179, 150 - offset // 2)
+            mask[max(0, y - 1): min(180, y + 2), max(0, x - 1): min(320, x + 2)] = 1
+        return _FakeShaftDetection(mask=mask, confidence=confidence, frame_index=frame_index)
+
+
 def test_tracks_include_layers_markers_and_confidence() -> None:
     renderer = ArtifactRenderer()
     frame_indices = [100, 101, 102, 103, 104]
@@ -269,6 +289,105 @@ def test_club_plane_prefers_prompted_shaft_track() -> None:
     assert club_plane["confidence"] == 0.82
 
 
+def test_address_shaft_prompt_scans_setup_candidates() -> None:
+    renderer = ArtifactRenderer()
+    frame_indices = [0, 8, 16, 23, 31, 39, 47, 55, 63, 70, 78, 86, 94, 102, 110, 117, 125, 363]
+    frames = [_frame() for _ in frame_indices]
+    tracker = _VariableConfidenceShaftTracker({0: 0.62, 94: 0.76, 102: 0.81, 110: 0.84, 117: 0.79})
+
+    candidates = renderer._setup_candidate_relative_indices(frame_indices, max_candidates=12)
+    track = renderer._best_address_shaft_track(
+        tracker=tracker,
+        frames=frames,
+        frame_indices=frame_indices,
+        candidate_relative_indices=candidates,
+        phase_relative_idx=0,
+        frame_width=320,
+        frame_height=180,
+    )
+
+    assert track is not None
+    assert track["frame_index"] == 110
+    assert track["relative_frame_index"] == frame_indices.index(110)
+
+
+def test_gapped_analysis_window_suppresses_phase_claims() -> None:
+    renderer = ArtifactRenderer()
+    frame_indices = [0, 8, 16, 363, 364]
+    poses = [_pose(frame_index) for frame_index in frame_indices]
+    swing_phases = SimpleNamespace(
+        phases=[
+            _phase(1, "address", 0, confidence=0.8),
+            _phase(5, "top", 363, confidence=0.82),
+            _phase(8, "impact", 364, confidence=0.84),
+        ]
+    )
+
+    tracks = renderer._annotation_tracks(
+        poses2d=poses,
+        frame_indices=frame_indices,
+        video_fps=30.0,
+        frame_width=320,
+        frame_height=180,
+        path_points=[],
+        speed_data={},
+        peak_speed=None,
+        peak_frame=None,
+        visualization_config=VisualizationConfig(draw_phase_markers=True, draw_confidence=True),
+        swing_phases=swing_phases,
+    )
+
+    assert tracks["phase_markers"] == []
+    assert tracks["confidence_evidence"]["level"] == "missing"
+
+    guide_frames, _ = renderer._guide_tracks(
+        poses2d=poses,
+        frame_indices=frame_indices,
+        frame_width=320,
+        frame_height=180,
+        club2d_frames=[],
+        path_points=[],
+        club_plane={
+            "line": {
+                "start": {"x": 0.1, "y": 0.8},
+                "end": {"x": 0.9, "y": 0.2},
+            },
+            "confidence": 0.82,
+        },
+        shaft_prompt_tracks={
+            "address": {
+                "frame_index": 0,
+                "relative_frame_index": 0,
+                "line": {
+                    "start": {"x": 0.1, "y": 0.8},
+                    "end": {"x": 0.9, "y": 0.2},
+                },
+                "confidence": 0.82,
+            },
+            "top": {
+                "frame_index": 363,
+                "relative_frame_index": 3,
+                "line": {
+                    "start": {"x": 0.2, "y": 0.2},
+                    "end": {"x": 0.8, "y": 0.8},
+                },
+                "confidence": 0.82,
+            },
+        },
+        swing_phases=swing_phases,
+    )
+
+    guide_ids = {
+        guide["id"]
+        for frame_guides in guide_frames.values()
+        for guide in frame_guides
+    }
+    assert "shaft_checkpoints.address_shaft" in guide_ids
+    assert "shaft_checkpoints.top_shaft" not in guide_ids
+    assert not any(guide_id.startswith("head_reference.top") for guide_id in guide_ids)
+    assert not any(guide_id.startswith("hip_depth.impact") for guide_id in guide_ids)
+
+
 def test_low_confidence_guides_are_omitted() -> None:
     renderer = ArtifactRenderer()
     guide_frames, guide_layers = renderer._guide_tracks(
@@ -301,6 +420,41 @@ def test_low_confidence_guides_are_omitted() -> None:
 
     assert guide_layers
     assert guide_frames == {}
+
+
+def test_head_reference_uses_top_of_head_not_face_center() -> None:
+    renderer = ArtifactRenderer()
+    pose = _pose(100)
+    pose.keypoints.update(
+        {
+            "nose": _kp("nose", 0.55, 0.31),
+            "left_eye": _kp("left_eye", 0.54, 0.29),
+            "right_eye": _kp("right_eye", 0.56, 0.29),
+            "left_ear": _kp("left_ear", 0.52, 0.30),
+            "right_ear": _kp("right_ear", 0.58, 0.30),
+            "mouth_left": _kp("mouth_left", 0.54, 0.34),
+            "mouth_right": _kp("mouth_right", 0.56, 0.34),
+        }
+    )
+
+    head_top = renderer._head_top(pose)
+
+    assert head_top is not None
+    assert head_top["y"] < 0.29
+
+
+def test_hip_depth_uses_posterior_edge_not_hip_center() -> None:
+    renderer = ArtifactRenderer()
+    pose = _pose(100)
+    pose.keypoints["left_hip"] = _kp("left_hip", 0.42, 0.58)
+    pose.keypoints["right_hip"] = _kp("right_hip", 0.34, 0.58)
+    pose.keypoints["left_shoulder"] = _kp("left_shoulder", 0.52, 0.35)
+    pose.keypoints["right_shoulder"] = _kp("right_shoulder", 0.46, 0.35)
+
+    hip_depth = renderer._posterior_hip_depth(pose)
+
+    assert hip_depth is not None
+    assert hip_depth["x"] < 0.34
 
 
 def test_ball_contact_tracks_luma_change_near_impact() -> None:
@@ -342,6 +496,8 @@ def test_render_writes_aligned_artifact_contract() -> None:
     renderer = ArtifactRenderer()
     frame_indices = [100, 101, 102, 103, 104]
     frames = [_frame(ball=True), _frame(ball=True), _frame(ball=True), _frame(ball=False), _frame(ball=False)]
+    artifact_indices = [98, 99, 100, 101, 102, 103, 104, 105]
+    artifact_frames = [_frame(ball=True) for _ in artifact_indices]
     poses = [_pose(frame_index) for frame_index in frame_indices]
     club2d_frames = [
         SimpleNamespace(
@@ -406,13 +562,15 @@ def test_render_writes_aligned_artifact_contract() -> None:
                     _phase(8, "impact", 103, confidence=0.84),
                 ]
             ),
+            artifact_frames=artifact_frames,
+            artifact_frame_indices=artifact_indices,
         )
 
         assert result.base_video_filename == "base.mp4"
         assert result.annotated_video_filename == "annotated.mp4"
         assert result.annotation_tracks_filename == "annotation_tracks.json"
-        assert run_store.path("base.mp4").read_bytes().startswith(b"fake-video")
-        assert run_store.path("annotated.mp4").read_bytes().startswith(b"fake-video")
+        assert run_store.path("base.mp4").read_bytes().startswith(b"fake-video:8")
+        assert run_store.path("annotated.mp4").read_bytes().startswith(b"fake-video:8")
 
         metadata = json.loads(run_store.path("annotation_metadata.json").read_text())
         tracks = json.loads(run_store.path("annotation_tracks.json").read_text())
@@ -445,19 +603,35 @@ def test_render_writes_aligned_artifact_contract() -> None:
         "takeaway_checkpoint",
     }.issubset(metadata_layers)
     assert frame_layer_names.union(top_level_toggle_layers).issubset(metadata_layers)
-    assert metadata["frame_count"] == len(frame_indices)
+    assert metadata["frame_count"] == len(artifact_indices)
+    assert len(tracks["frames"]) == len(artifact_indices)
+    assert tracks["phase_markers"][0]["relative_frame_index"] == 2
+    assert tracks["phase_markers"][1]["relative_frame_index"] == 5
     assert tracks["ball_contact"]["detected"] is True
     assert any(frame["layers"].get("speed") for frame in tracks["frames"])
     assert "guides" in tracks["frames"][0]["layers"]
     assert "shaft_checkpoints" in tracks["guide_layers"]
     assert tracks["frames"][0]["layers"]["club_plane"]["frame_index"] == 100
+    assert tracks["frames"][0]["layers"]["club_plane"]["line"]["name"] == "address_shaft_plane"
+
+    guide_counts: dict[str, int] = {}
+    for frame in tracks["frames"]:
+        for guide in frame["layers"].get("guides", []):
+            guide_counts[guide["id"]] = guide_counts.get(guide["id"], 0) + 1
+
+    assert guide_counts["shaft_checkpoints.address_shaft"] > 1
+    assert guide_counts["shaft_checkpoints.impact_shaft"] > 1
 
 
 if __name__ == "__main__":
     test_tracks_include_layers_markers_and_confidence()
     test_club_plane_prefers_address_near_confident_shaft()
     test_club_plane_prefers_prompted_shaft_track()
+    test_address_shaft_prompt_scans_setup_candidates()
+    test_gapped_analysis_window_suppresses_phase_claims()
     test_low_confidence_guides_are_omitted()
+    test_head_reference_uses_top_of_head_not_face_center()
+    test_hip_depth_uses_posterior_edge_not_hip_center()
     test_ball_contact_tracks_luma_change_near_impact()
     test_render_writes_aligned_artifact_contract()
     print("annotation track regression checks passed")
