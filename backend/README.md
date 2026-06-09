@@ -5,9 +5,9 @@ Python FastAPI backend for the SwingCoach coaching pipeline.
 ## Purpose
 
 Given one uploaded swing video, the backend returns:
-1. Full-duration visual artifacts and normalized overlay tracks
-2. Annotation-focused coaching seed output
-3. Optional coachable metric cards with confidence when 3D metrics are enabled
+1. Full-duration clean video artifacts
+2. An empty normalized overlay-track contract
+3. Reset-state coaching output
 4. Run-quality metadata (warnings, missing data, timings)
 
 Primary orchestrator: [analysis/pipeline_3d.py](./analysis/pipeline_3d.py)
@@ -30,7 +30,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Optional 3D dependencies:
+Dormant optional 3D dependencies:
 
 ```bash
 cd backend
@@ -49,10 +49,7 @@ cp .env.example .env
 
 R2 HTTPS certificate verification is enabled by default. If a local machine has a temporary certificate-store problem, set `R2_VERIFY_SSL=false` in `backend/.env`; do not use that setting for deployed backends.
 
-Optional analysis flags:
-
-- `SWINGCOACH_ENABLE_3D_METRICS=false` by default. Set to `true` to enable SAM 3D Body, club 3D fusion, metric cards, and GLTF replay export.
-- `SWINGCOACH_EXPORT_BAKED_ANNOTATED_VIDEO=false` by default. Set to `true` only for debug/legacy review when a flattened server-rendered overlay MP4 is needed. Normal app playback uses `base_url` plus `tracks_url` so every annotation layer can be toggled.
+Generated annotations, SAM3 equipment prompting, pose/event detection, 3D replay export, and metric cards are disabled in the reset pipeline; the optional 3D dependencies are retained only for future experiments.
 
 ## API Contract
 
@@ -87,9 +84,7 @@ Response shape (`AnalyzeResponse`):
 - `annotated_video` (`key`, fresh signed `url`, optional `base_key` / `base_url`, optional `tracks_key` / `tracks_url`, rendered `layers[]`)
 - `drills[]` (lightweight `title`, `summary` suggestions)
 
-The pipeline still records richer internal data such as confidence, warnings, timings, annotation metadata, and raw files. The mobile MVP contract exposes the fields needed by the current Coach tab plus annotation layer metadata, a full-duration clean base video, and a normalized overlay-track artifact for client-side toggles, including club plane, ball/contact evidence, P1-P10 phase markers, confidence evidence, and generic guide shapes for setup/head/hip/hand/shaft checkpoint overlays when detected. 3D artifacts and metric cards are emitted only when `SWINGCOACH_ENABLE_3D_METRICS=true`.
-
-Phase detection is confidence and window gated. If the dense analysis window does not contain enough post-top motion to find impact/follow-through phases, those phases are omitted instead of raising an analysis failure.
+The reset pipeline records warnings, timings, a full-duration clean base video, and an empty overlay-track artifact. `annotated_video.layers` is empty, and generated phase markers, club planes, pose skeletons, paths, confidence badges, metrics, and drills are omitted by design.
 
 ### `POST /analysis-runs`
 
@@ -157,15 +152,12 @@ Response shape:
 
 ## Pipeline Outline
 
-1. Read video metadata
-2. Sparse 2D pose scan and event estimate
-3. Dense window selection and dense 2D pose
-4. Full-frame extraction for artifact timeline preservation
-5. 2D club/shaft annotation tracking
-6. Optional 3D body recovery, club 3D fusion, and metrics when `SWINGCOACH_ENABLE_3D_METRICS=true`
-7. Artifact rendering (full-duration clean base video, unbaked annotated MP4 fallback, normalized overlay tracks, optional GLTF)
-8. Coaching bundle generation
-9. Persist run artifacts and timings
+1. Read video metadata.
+2. Extract the full source timeline.
+3. Render `base.mp4` and clean compatibility `annotated.mp4`.
+4. Write empty `annotation_metadata.json` and `annotation_tracks.json`.
+5. Write empty metrics plus reset coaching summary.
+6. Persist run artifacts and timings.
 
 ## Run Artifacts
 
@@ -176,7 +168,7 @@ Typical files per successful run:
 - `input_meta.json`
 - `events.json`
 - `poses_2d.npz`
-- `poses_3d.npz` (empty unless 3D metrics are enabled and available)
+- `poses_3d.npz`
 - `club_2d.npz`
 - `club_3d.npz`
 - `metrics.json`
@@ -185,7 +177,6 @@ Typical files per successful run:
 - `annotated.mp4`
 - `annotation_metadata.json`
 - `annotation_tracks.json`
-- `swing_3d.gltf` (if 3D metrics are enabled and valid 3D poses exist)
 - `timings.json`
 
 ## Local Test Commands
@@ -200,50 +191,22 @@ python test_pipeline_3d.py
 # 2D pipeline test
 python test_pipeline.py
 
-# Full annotation export test
-python test_full_annotation.py --sample
-
-# Annotation track contract test
+# Annotation reset contract test
 python test_annotation_tracks.py
 
 # Async run lifecycle test
 python test_analysis_runs.py
 
-# Annotation rendered-overlay visual regression
-python test_annotation_visuals.py
-
-# SAM3 prompt diagnostics
-python test_sam3_detection.py
-
 # Temporal smoothing tests
 python test_temporal_smoothing.py
 ```
 
-## SAM3 Runtime Notes
+## Annotation Reset Notes
 
-For Mac-side pseudo-labeling and local annotation analysis, prefer the MLX SAM3 image path over the current Meta PyTorch SAM3 CPU path. Local testing found that the official PyTorch package is CUDA-first: selecting `mps` did not move model weights or the processor to Apple GPU, while forcing MPS required community patches and still fell back to CPU for unsupported operations.
-
-`EquipmentTracker` now selects the runtime from `SAM3_RUNTIME`:
-- `auto` (default): use MLX SAM3 when `detector_model/mlx_sam3` is present, otherwise fall back to PyTorch SAM3.
-- `mlx`: require MLX SAM3 and fail fast if unavailable.
-- `torch`: force the existing Meta PyTorch SAM3 path.
-
-Useful MLX settings:
-- `MLX_SAM3_REPO`: override the local MLX repo path.
-- `MLX_SAM3_WEIGHTS_DIR`: override converted weight cache/download location.
-- `MLX_SAM3_MAX_SIDE`: resize longest frame side before prompting, default `960`.
-
-Current recommendation:
-
-- MLX SAM3 image for Apple Silicon frame pseudo-labeling.
-- SAM3.1 only as a separate video-tracking/mask-propagation experiment.
-- Do not use SAM3/SAM3.1 as the planned live iPhone detector; train/export a small Core ML golf-object detector instead.
-- Treat SAM3D separately. The MLX SAM3 image findings do not prove SAM3D performance or compatibility.
-
-See [Experimental Swing Detector](../docs/EXPERIMENT_SWING_DETECTOR.md) for benchmark numbers and labeling strategy.
+The previous experimental annotation implementation is preserved in git commit `abc12c4` (`experimental: annotation impl`). Do not re-enable SAM3, pose/event, or metric stages until the next annotation contract is agreed and covered by fixture-level visual validation.
 
 ## Known Reliability Notes
 
-1. Some metrics are confidence-gated and may be absent if detection confidence is low.
-2. Club and impact-related metrics depend on club tracking quality and event alignment.
+1. Generated annotations and metrics are currently absent by design.
+2. The overlay-track artifact is present for API compatibility but has no generated layers.
 3. Async run state is currently in-memory; production deployment should persist run state if jobs need to survive process restarts.

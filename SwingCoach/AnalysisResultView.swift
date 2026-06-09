@@ -305,6 +305,17 @@ struct AnnotatedAnalysisVideo: View {
 
     private var annotationLayerControls: [SavedVisualizationLayer] {
         var controls = video.layers
+        let hasServerAnnotationData =
+            annotationTracks?.hasSpeedData == true ||
+            annotationTracks?.hasClubPlaneData == true ||
+            annotationTracks?.hasBallContactData == true ||
+            annotationTracks?.hasPhaseMarkers == true ||
+            annotationTracks?.hasConfidenceEvidence == true ||
+            !(annotationTracks?.guideLayerNames ?? []).isEmpty
+        guard !controls.isEmpty || hasServerAnnotationData else {
+            return []
+        }
+
         if annotationTracks?.hasSpeedData == true && !controls.contains(where: { $0.name == "speed" }) {
             controls.append(
                 SavedVisualizationLayer(
@@ -358,7 +369,7 @@ struct AnnotatedAnalysisVideo: View {
         for guideLayerName in annotationTracks?.guideLayerNames ?? [] where !controls.contains(where: { $0.name == guideLayerName }) {
             controls.append(SavedVisualizationLayer.defaultGuideLayer(named: guideLayerName))
         }
-        if !controls.contains(where: { $0.name == "manual" }) {
+        if hasServerAnnotationData && !controls.contains(where: { $0.name == "manual" }) {
             controls.append(
                 SavedVisualizationLayer(
                     name: "manual",

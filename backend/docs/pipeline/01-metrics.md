@@ -1,63 +1,34 @@
 # Pipeline Stage 1: Metrics
 
-## Goal
+## Current Status
 
-Produce coachable metrics with explicit confidence, not raw calculations without quality gating.
+Generated metrics are intentionally disabled while the annotation and detection contract is rebuilt.
 
-Metrics are currently feature-flagged off by default while annotation quality is the active product focus. Set `SWINGCOACH_ENABLE_3D_METRICS=true` to run SAM 3D Body, club 3D fusion, metric-card generation, and 3D replay export.
+The reset pipeline writes `metrics.json` with an empty `cards` array and `raw.metrics_enabled = false`. App-facing `metrics[]` is empty. This avoids publishing unstable biomechanical or club-delivery values before the source detections are agreed and validated.
 
-## What Is Implemented
+## Disabled Work
 
-### Inputs
+The current default pipeline does not run:
 
-- 2D dense poses from [pose_detector.py](../../analysis/pose_detector.py)
-- Event frames from [event_detector.py](../../analysis/event_detector.py)
-- Club 3D fused track from [club3d_fuser.py](../../analysis/club3d_fuser.py) when `SWINGCOACH_ENABLE_3D_METRICS=true`
+- 2D pose-derived biomechanical metrics
+- 3D body recovery
+- 3D club fusion
+- tempo/head/spine/turn metric cards
+- club delivery metrics
 
-### Metric computation layers
+## Re-Enable Criteria
 
-1. Base biomechanical metrics in [metrics.py](../../analysis/metrics.py)
-   - tempo ratio
-   - head sway/dip
-   - spine angle change
-   - shoulder/hip turn proxies
-2. Coachable metric cards in [metrics_engine.py](../../analysis/metrics_engine.py)
-   - unified card format
-   - confidence bounds
-   - explanations and fix hints
-3. Pipeline persistence in [pipeline_3d.py](../../analysis/pipeline_3d.py)
-   - writes `metrics.json`
-   - includes `quality.missing_data` and warnings
-   - writes an empty metrics payload in default annotation-only mode
+Before metrics return to the app, define:
 
-## Current Output Shape
-
-Each metric card includes:
-- `key`
-- `name`
-- `value`
-- `unit`
-- `confidence`
-- `explanation`
-- `fix_hint`
-
-## Current Gaps
-
-1. Absolute metric accuracy remains uneven, especially club delivery metrics, so metric publication is disabled by default.
-2. Scale and calibration assumptions are still coarse for phone-only capture.
-3. Event/frame alignment can degrade impact-dependent calculations.
-4. Ball metrics are not yet integrated into the unified metrics stage.
-
-## Next Development Tasks
-
-1. Fix event/frame index consistency across sparse/dense scans before deeper metric tuning.
-2. Add benchmark harness against labeled swings or launch-monitor subsets.
-3. Introduce calibration checks and stricter confidence gating for publish/no-publish decisions.
-4. Expand metric set to include validated body, club, and ball categories with explicit confidence thresholds.
+1. The exact coaching metric names and visual/user-facing meaning.
+2. The detector source required for each metric.
+3. The calibration assumptions.
+4. The confidence threshold for publish vs. omit.
+5. Fixture videos or labeled references that prove the metric is directionally correct.
 
 ## Key Files
 
+- [analysis/pipeline_3d.py](../../analysis/pipeline_3d.py)
 - [analysis/metrics.py](../../analysis/metrics.py)
 - [analysis/metrics_engine.py](../../analysis/metrics_engine.py)
-- [analysis/pipeline_3d.py](../../analysis/pipeline_3d.py)
 - [output/runs/](../../output/runs)

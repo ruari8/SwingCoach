@@ -1,33 +1,15 @@
-"""
-Swing analysis modules.
-"""
+"""Swing analysis modules.
 
-from .frame_extractor import FrameExtractor
-from .pose_detector import PoseDetector
-from .event_detector import (
-    EventDetector,
-    SwingEvent,
-    SwingEvents,
-    SwingPhase,
-    SwingPhases,
-    PHASE_NAMES,
-    PHASE_DESCRIPTIONS,
-)
-from .metrics import MetricsCalculator
-from .coach import SwingCoach
-from .visualizer import SwingVisualizer
-from .visualization_config import (
-    VisualizationConfig,
-    LayerInfo,
-    VisualizationMetadata,
-    LAYER_DEFINITIONS,
-)
-from .club_analyzer import ClubAnalyzer, ClubPlane
-from .video_exporter import VideoExporter
-from .velocity_estimator import VelocityEstimator, VelocityMetrics, VelocityPoint
+The active backend pipeline is currently in annotation-reset mode. Heavy legacy
+analysis modules remain importable lazily for experiments, but importing the
+package no longer initializes pose, event, visualizer, or SAM-related code.
+"""
 
 __all__ = [
     "FrameExtractor",
+    "VideoExporter",
+    "SwingCoachPipeline3D",
+    "Pipeline3DResult",
     "PoseDetector",
     "EventDetector",
     "SwingEvent",
@@ -45,12 +27,9 @@ __all__ = [
     "LAYER_DEFINITIONS",
     "ClubAnalyzer",
     "ClubPlane",
-    "VideoExporter",
     "VelocityEstimator",
     "VelocityMetrics",
     "VelocityPoint",
-    "SwingCoachPipeline3D",
-    "Pipeline3DResult",
     "CoachMetricsEngine",
     "MetricCard",
     "MetricsEngineResult",
@@ -61,18 +40,87 @@ __all__ = [
 
 
 def __getattr__(name):
-    """
-    Lazily import heavyweight modules.
+    if name == "FrameExtractor":
+        from .frame_extractor import FrameExtractor
 
-    This avoids importing optional 3D-related dependencies when callers only
-    need lightweight utilities (e.g., frame extraction or 2D annotation tests).
-    """
+        return FrameExtractor
+
+    if name == "VideoExporter":
+        from .video_exporter import VideoExporter
+
+        return VideoExporter
+
     if name in {"SwingCoachPipeline3D", "Pipeline3DResult"}:
         from .pipeline_3d import Pipeline3DResult, SwingCoachPipeline3D
 
         return {
             "SwingCoachPipeline3D": SwingCoachPipeline3D,
             "Pipeline3DResult": Pipeline3DResult,
+        }[name]
+
+    if name == "PoseDetector":
+        from .pose_detector import PoseDetector
+
+        return PoseDetector
+
+    if name in {"EventDetector", "SwingEvent", "SwingEvents", "SwingPhase", "SwingPhases", "PHASE_NAMES", "PHASE_DESCRIPTIONS"}:
+        from .event_detector import (
+            EventDetector,
+            PHASE_DESCRIPTIONS,
+            PHASE_NAMES,
+            SwingEvent,
+            SwingEvents,
+            SwingPhase,
+            SwingPhases,
+        )
+
+        return {
+            "EventDetector": EventDetector,
+            "SwingEvent": SwingEvent,
+            "SwingEvents": SwingEvents,
+            "SwingPhase": SwingPhase,
+            "SwingPhases": SwingPhases,
+            "PHASE_NAMES": PHASE_NAMES,
+            "PHASE_DESCRIPTIONS": PHASE_DESCRIPTIONS,
+        }[name]
+
+    if name == "MetricsCalculator":
+        from .metrics import MetricsCalculator
+
+        return MetricsCalculator
+
+    if name == "SwingCoach":
+        from .coach import SwingCoach
+
+        return SwingCoach
+
+    if name == "SwingVisualizer":
+        from .visualizer import SwingVisualizer
+
+        return SwingVisualizer
+
+    if name in {"VisualizationConfig", "LayerInfo", "VisualizationMetadata", "LAYER_DEFINITIONS"}:
+        from .visualization_config import LAYER_DEFINITIONS, LayerInfo, VisualizationConfig, VisualizationMetadata
+
+        return {
+            "VisualizationConfig": VisualizationConfig,
+            "LayerInfo": LayerInfo,
+            "VisualizationMetadata": VisualizationMetadata,
+            "LAYER_DEFINITIONS": LAYER_DEFINITIONS,
+        }[name]
+
+    if name in {"ClubAnalyzer", "ClubPlane"}:
+        from .club_analyzer import ClubAnalyzer, ClubPlane
+
+        return {"ClubAnalyzer": ClubAnalyzer, "ClubPlane": ClubPlane}[name]
+
+    if name in {"VelocityEstimator", "VelocityMetrics", "VelocityPoint"}:
+        from .velocity_estimator import VelocityEstimator, VelocityMetrics, VelocityPoint
+
+        return {
+            "VelocityEstimator": VelocityEstimator,
+            "VelocityMetrics": VelocityMetrics,
+            "VelocityPoint": VelocityPoint,
         }[name]
 
     if name in {"CoachMetricsEngine", "MetricCard", "MetricsEngineResult"}:

@@ -13,22 +13,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def test_capped_dense_indices_keep_setup_samples() -> None:
+def test_pipeline_reset_mode_is_annotation_free() -> None:
     pipeline = SwingCoachPipeline3D()
-    indices = pipeline._capped_dense_indices(
-        frame_count=927,
-        fps=47.0,
-        dense_window_start=0,
-        dense_window_end=801,
-        top_estimate=12,
-        impact_estimate=786,
-        dense_frame_cap=96,
-    )
 
-    assert len(indices) <= 96
-    assert min(indices) == 0
-    assert any(90 <= frame <= 120 for frame in indices)
-    assert max(indices) > 420
+    assert not hasattr(pipeline, "_capped_dense_indices")
+    assert not hasattr(pipeline, "metrics_engine")
+    assert not hasattr(pipeline, "coach_builder")
 
 
 def main() -> int:
@@ -86,5 +76,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    test_capped_dense_indices_keep_setup_samples()
+    test_pipeline_reset_mode_is_annotation_free()
     raise SystemExit(main())

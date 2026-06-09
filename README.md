@@ -1,6 +1,6 @@
 # SwingCoach
 
-SwingCoach is an experimental AI golf coaching system for turning iPhone swing video into coachable feedback. It combines a native SwiftUI capture/library app with a FastAPI backend that runs analysis, renders video artifacts, and returns metrics, drills, and coaching notes.
+SwingCoach is an experimental AI golf coaching system for turning iPhone swing video into coachable feedback. It combines a native SwiftUI capture/library app with a FastAPI backend that stores analysis runs, renders video artifacts, and returns coaching notes.
 
 This is an active prototype rather than a polished App Store product. The repo is useful as a full-stack product/ML engineering sample: native media workflows, on-device detection experiments, async backend jobs, cloud artifact storage, and confidence-gated coaching output.
 
@@ -10,8 +10,7 @@ This is an active prototype rather than a polished App Store product. The repo i
 - Runs an experimental on-device `SwingDetectorV2` using a YOLO/Core ML golf-object model to preselect likely swing windows.
 - Uploads clips to a Python backend through Cloudflare R2 pre-signed URLs.
 - Queues asynchronous analysis runs and streams backend progress back to the app with Server-Sent Events.
-- Produces clean and annotated video artifacts, normalized overlay tracks, metric cards, drill recommendations, and a coaching summary.
-- Lets the app render server-side guide overlays over clean video and add local manual drawing annotations for self-analysis.
+- Produces clean analyzed-video artifacts and a stable, currently empty overlay-track contract while generated annotations are redesigned.
 
 ## System Shape
 
@@ -26,12 +25,12 @@ Cloudflare R2
         | video_key
         v
 FastAPI backend
-  /analysis-runs -> 2D pose -> 2D club/shaft annotation tracking -> full-video artifacts -> coaching bundle
+  /analysis-runs -> video metadata -> clean full-video artifacts -> reset coaching bundle
         |
         | status + SSE progress + signed artifact URLs
         v
 iOS Swing Detail
-  original video, annotated video, overlay toggles, metrics, drills, coach notes
+  original video, clean analyzed video, coach notes
 ```
 
 ## Repository Layout
@@ -71,7 +70,7 @@ The backend is a FastAPI service. Its main mobile path is asynchronous:
 4. Stream `GET /analysis-runs/{run_id}/events`
 5. Fetch `GET /analysis-runs/{run_id}` for the completed result
 
-The default pipeline currently covers video metadata, sparse and dense 2D pose, 2D club/shaft annotation tracking, full-duration clean video artifacts, normalized overlay tracks, and annotation-focused coaching text. 3D body recovery, club 3D fusion, metric cards, and 3D replay export are behind `SWINGCOACH_ENABLE_3D_METRICS` and are off by default while annotation quality is the priority.
+The default pipeline currently covers video metadata, full-duration clean video artifacts, an empty overlay-track contract, and a reset coaching summary. Generated annotations, pose/event detection, SAM3 equipment prompting, metric cards, and 3D replay export are intentionally disabled while the annotation contract is redesigned.
 
 See [backend/README.md](backend/README.md) and [backend/docs/README.md](backend/docs/README.md) for API details and pipeline notes.
 
@@ -98,24 +97,7 @@ cp .env.example .env
 
 Configure `backend/.env` with Cloudflare R2 credentials before running real upload/analysis flows. Without R2 configuration, `/health` reports a degraded state and storage-backed endpoints will not complete.
 
-Optional 3D dependencies:
-
-```bash
-cd backend
-./venv/bin/pip install -r requirements-3d.txt
-```
-
-The optional 3D stack is intentionally separate because SAM/SAM 3D Body dependencies and model assets are heavy.
-
-Optional backend flags:
-
-```bash
-# Defaults to false. Enables SAM 3D Body, club 3D fusion, metric cards, and GLTF replay.
-SWINGCOACH_ENABLE_3D_METRICS=true
-
-# Defaults to false. When false, annotated.mp4 is an unbaked full-duration fallback and client-side tracks provide toggles.
-SWINGCOACH_EXPORT_BAKED_ANNOTATED_VIDEO=true
-```
+The optional 3D/SAM dependency stack is not used by the reset analysis pipeline.
 
 ## Useful Checks
 
@@ -124,7 +106,6 @@ Backend smoke and regression checks:
 ```bash
 cd backend
 ./venv/bin/python test_pipeline_3d.py
-./venv/bin/python test_full_annotation.py --sample
 ./venv/bin/python test_annotation_tracks.py
 ./venv/bin/python test_analysis_runs.py
 ./venv/bin/python test_temporal_smoothing.py
@@ -141,10 +122,10 @@ Heavy local fixture videos, generated detector reports, model-training outputs, 
 
 ## Current Status
 
-- The iOS capture, library, trim, analysis queue, swing detail, annotated playback, and manual drawing workflows are implemented.
+- The iOS capture, library, trim, analysis queue, swing detail, and analyzed-video playback workflows are implemented.
 - The async backend analysis API is implemented, including progress events, R2 artifacts, `/chat`, and a legacy synchronous `/analyze` fallback.
 - The on-device detector is still experimental. It is useful for clip preselection and auto-capture iteration, but it is not treated as a solved detection problem.
-- Metrics and coaching output are confidence-gated when `SWINGCOACH_ENABLE_3D_METRICS=true`. With the default annotation-only mode, metric rows are omitted instead of publishing unstable numbers.
+- Generated annotations and metric rows are currently omitted by design. The committed rollback point for the previous experimental annotation implementation is `abc12c4`.
 - The current mobile product path is DTL-first. Face-on exists in the data model, but the most mature flows and validation focus on down-the-line swings.
 - Async run state is currently in memory, so active jobs do not survive backend restarts.
 

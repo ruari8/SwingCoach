@@ -134,17 +134,14 @@ File: [SwingDetailView.swift](../SwingCoach/SwingDetailView.swift)
 Implemented feature set:
 - Treat a saved swing as the primary product object.
 - Show the original swing as a full-screen playback surface by default, with metadata moved behind a top-right info button and no persistent title/metadata caption over the video.
-- Once analysis exists, present the detail workspace as a TikTok/Instagram-style paged carousel: slide 1 is the original full-screen video, slide 2 is the annotated full-screen video, and slide 3 is coach notes, metrics, and drill recommendations.
+- Once analysis exists, present the detail workspace as a TikTok/Instagram-style paged carousel: slide 1 is the original full-screen video, slide 2 is the analyzed video artifact, and slide 3 is coach notes.
 - Carousel page dots are rendered above the fixed bottom tab bar, and carousel video pages disable hold-to-step transport gestures so horizontal swipes remain reliable.
-- Display original and annotated swing playback using the shared playback chrome, including timeline, compact cycle-through playback speed control, and full-screen viewing.
-- The carousel annotated-video slide embeds all annotation layer toggles in a scrollable vertical rail over the video, with short labels plus distinct icons. The rail defaults to the right side but can be moved left or right by tapping its side arrow or dragging horizontally, so it can avoid captions or social UI baked into imported clips. The existing embedded Coach result keeps the compact card controls below the player.
-- For backend results that include `annotated_video.base_url` and `annotated_video.tracks_url`, the annotated video card plays the clean base video and draws/toggles skeleton, reference-line, swing-path, club-plane, ball-contact, phase-marker, confidence, speed, and generic guide overlays over playback. Generic guide toggles currently include shaft checkpoints, clubhead path, setup geometry, head reference, hip depth, hand depth, lead-arm plane, and takeaway checkpoint. If no base video is available, it falls back to the flattened annotated MP4. The selected overlay state is preserved when the annotated player opens full-screen.
-- Checkpoint overlays are expected to remain visible for short inspection windows rather than flashing for a single frame; persistent comparison references include address shaft plane and address head/hip references.
-- Annotated playback includes a local Manual layer and canvas mode for self-analysis. Tools are line, arrow, freehand, rectangle, circle, text label, eraser, undo, and clear; controls use icon buttons, color swatches, and a full-swing/moment scope selector. Drawings are stored as normalized video coordinates with timestamp/scope/color/stroke/tool metadata in app Documents through `ManualAnnotationStore`; they are not synced to the backend.
+- Display original and analyzed swing playback using the shared playback chrome, including timeline, compact cycle-through playback speed control, and full-screen viewing.
+- Generated backend annotations are currently reset. When `annotated_video.layers` and track data are empty, the analyzed-video slide plays clean video and hides the annotation/manual rail.
 - Show swing metadata and local analysis status in the detail info sheet or video overlay instead of reserving persistent space beside the footage.
 - Run the current R2-backed analysis flow for a single swing, with retry controls reserved for failed analysis attempts.
 - Attach completed analysis to the swing through `AnalysisLibrary`.
-- Render annotated video, metrics, coach notes, and recommendations with the shared [AnalysisResultView.swift](../SwingCoach/AnalysisResultView.swift).
+- Render analyzed video and coach notes with the shared [AnalysisResultView.swift](../SwingCoach/AnalysisResultView.swift).
 
 ## 6. Replay Debug Tab
 
@@ -229,9 +226,7 @@ Current frontend `AnalysisResponse` expectation:
 - `annotated_video: {key, url, base_key?, base_url?, tracks_key?, tracks_url?, layers?}?`
 - `drills: [{title, summary}]`
 
-`annotated_video.layers` is metadata for the rendered annotation layers and should list every server-backed toggle layer, including dynamic layers such as `speed` when samples exist. `base_url` points to a clean full-duration video for true client-side toggles, while `url` remains the fallback MP4. `tracks_url` points to normalized JSON overlay tracks on the same source timeline; saved analysis results persist the video key/URL, base key/URL, track key/URL, and layer metadata. The current track decoder supports `skeleton`, `reference_lines`, `club_plane`, `ball_contact`, `swing_path`, top-level `phase_markers`, top-level `confidence_evidence`, `speed`, top-level `guide_layers`, and per-frame `layers.guides`.
-
-`layers.guides` is a generic shape layer in normalized video space. Supported guide shape kinds are `line`, `arrow`, `polyline`, `rectangle`, `circle`, and `label`; shapes are filtered by their `layer` field against the same toggle set as the legacy overlay layers. When both a generic `club_plane` or `clubhead_path` guide and the legacy track are present, the client prefers the guide drawing to avoid duplicate overlays.
+`annotated_video.layers` is currently expected to be empty from the reset backend pipeline. `base_url` points to the clean full-duration analyzed video, while `url` remains the compatibility MP4. `tracks_url` may point to a normalized JSON envelope on the same source timeline, but current frames contain empty `layers` objects and no guide layers or markers.
 
 ## Known Gaps and Risks
 
@@ -239,10 +234,10 @@ Current frontend `AnalysisResponse` expectation:
 - Run status is currently server-memory-backed. If the backend restarts while a run is active, the app will lose that run and should show the backend error.
 - SSE is one-way progress only. Cancellation, resumable background processing, and persisted run history are future work.
 
-2. Annotated video playback
-- UI embeds the annotated video in the Coach result when available.
+2. Analyzed video playback
+- UI embeds the analyzed video artifact in the Coach result when available.
 - Saved analyses persist artifact keys and refresh signed video and track URLs through `POST /artifact-url` when stale.
-- Track overlays are a first pass. They cover skeleton, reference lines, club plane, ball/contact evidence, swing path, phase markers, confidence evidence, speed, and generic guide shapes, but not club masks, clubface orientation, ball-flight tracking, force/pressure claims, or 3D replay controls yet.
+- Generated overlays are disabled until the next annotation contract is agreed.
 
 3. Trim-to-analyze handoff
 - The capture trim footer currently shows a single primary action.
