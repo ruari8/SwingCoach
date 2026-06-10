@@ -371,8 +371,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     private func liveV2Configuration() -> SwingDetectorV2Configuration {
+        // Live sample-buffer timestamps advance at wall-clock rate regardless of
+        // capture FPS; the slow-motion timeline only exists after export retiming.
+        // recordedMode.sourceTimeScale applies to playback rate and export only.
         SwingDetectorV2Configuration.live(
-            sourceTimeScale: recordedMode.sourceTimeScale,
+            sourceTimeScale: 1.0,
             lowSampleFPS: liveModelDetectorSampleFPS,
             burstSampleFPS: max(16.0, liveModelDetectorSampleFPS * 2.0)
         )

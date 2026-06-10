@@ -75,7 +75,11 @@ struct TrimView: View {
     }
 
     private var detectorTimelineScale: Double {
-        sourceCaptureMode?.sourceTimeScale ?? 8.0
+        // A freshly captured file has a wall-clock timeline regardless of capture
+        // FPS — slow-motion retiming only happens on export. Only sources without
+        // a capture mode (library imports of already-retimed slow-mo files) are
+        // assumed to carry the 8x slowed timeline.
+        sourceCaptureMode != nil ? 1.0 : 8.0
     }
 
     var body: some View {
