@@ -585,7 +585,7 @@
         <aside class="hero-facts" aria-label="Current status facts">
           <div class="fact">
             <strong>UI shell: largely built</strong>
-            <span>Capture, Library, Trim, Coach, Detail, Replay Debug, and manual annotation surfaces exist.</span>
+            <span>Capture, Library, Trim, Coach, Detail, and Replay Debug exist; annotation code exists but is not a real user path yet.</span>
           </div>
           <div class="fact">
             <strong>Detector: useful but experimental</strong>
@@ -675,9 +675,9 @@
               <h3>What to avoid</h3>
               <p>
                 Do not chase dozens of metrics from weak monocular evidence. Do not publish 3D-looking
-                numbers before calibration is clear. Do not copy a creator's style wholesale. Borrow
-                the general coaching pattern: clear checkpoints, simple visual proof, cause/effect,
-                and a drill constraint.
+                numbers before calibration is clear. Do not anchor product strategy to any one coach
+                or creator. Borrow the general coaching pattern: clear checkpoints, simple visual
+                proof, cause/effect, and a drill constraint.
               </p>
             </div>
           </div>
@@ -722,7 +722,7 @@
                 <td><strong>Detector model bug</strong></td>
                 <td><span class="status risky">Needs phone build</span></td>
                 <td>Model loading code checks bundled <code>SwingObjectsYOLO11n.mlmodelc</code> or compiles <code>.mlpackage</code>.</td>
-                <td>User memory says a fix landed but has not been built on phone. Treat as unverified until a device smoke test passes.</td>
+                <td>Treat model loading as unverified until a physical-device smoke test proves the bundle loads and V2 emits detections.</td>
               </tr>
               <tr>
                 <td><strong>Backend API</strong></td>
@@ -733,8 +733,8 @@
               <tr>
                 <td><strong>Annotations</strong></td>
                 <td><span class="status missing">Generated missing</span></td>
-                <td>Frontend renderer/manual drawing surface and backend artifact contract exist.</td>
-                <td>Server sends empty tracks; automatic layers are disabled after the annotation reset.</td>
+                <td>Client renderer, manual annotation code, and backend artifact contract exist.</td>
+                <td>Server sends empty tracks; automatic layers are disabled, and the reset path does not expose a useful manual/generated annotation workflow yet.</td>
               </tr>
               <tr>
                 <td><strong>Metrics</strong></td>
@@ -940,9 +940,9 @@
           <h2>Annotations</h2>
           <p class="section-lede">
             The target is Snapchat-like coach markup: bold, readable, scrub-aware overlays that feel
-            alive on video but are grounded in a strict JSON track contract. Use the existing Dom
-            Caminiti research notes as inspiration for checkpoint-led feedback, without copying a
-            creator's protected expression.
+            alive on video but are grounded in a strict JSON track contract. Use social golf analysis
+            research as pattern inspiration: checkpoint-first, one or two strong marks, cause/effect,
+            and a drill constraint. Keep SwingCoach's visuals and wording original.
           </p>
 
           <div class="grid three">
@@ -982,10 +982,49 @@
             <h3>Annotation contract</h3>
             <p>
               Keep clean video as the source of truth. Render overlays client-side from JSON tracks with normalized coordinates,
-              event windows, layer names, confidence, and source frame references. Burned-in MP4 overlays can remain an export
-              feature, not the normal app path.
+              event windows, layer names, confidence, source frame references, and an explicit publish/withhold decision.
+              Burned-in MP4 overlays can remain an export feature, not the normal app path.
             </p>
           </div>
+
+          <table class="matrix">
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>Why it must exist before publishing a layer or finding</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>View gate</strong></td>
+                <td>DTL, face-on, handedness, golfer framing, and camera stability decide which claims are even allowed.</td>
+              </tr>
+              <tr>
+                <td><strong>Source-frame references</strong></td>
+                <td>Every claim should point back to the exact frame/time window that proves it, so the UI can pause there.</td>
+              </tr>
+              <tr>
+                <td><strong>Phase confidence</strong></td>
+                <td>Address, takeaway, top, delivery, impact estimate, and finish need independent confidence, not one run-level score.</td>
+              </tr>
+              <tr>
+                <td><strong>Detector confidence</strong></td>
+                <td>Club shaft, clubhead, ball, wrist, hip, and shoulder evidence should publish or withhold separately.</td>
+              </tr>
+              <tr>
+                <td><strong>Temporal stability</strong></td>
+                <td>A line is not trustworthy if it jumps frame-to-frame or appears for only one frame.</td>
+              </tr>
+              <tr>
+                <td><strong>Calibration status</strong></td>
+                <td>Mark whether a value is a 2D visual proxy, calibrated 3D estimate, multi-view measurement, or withheld.</td>
+              </tr>
+              <tr>
+                <td><strong>Fallback UX</strong></td>
+                <td>If the claim is withheld, the app should show why and offer retake/camera guidance instead of silent emptiness.</td>
+              </tr>
+            </tbody>
+          </table>
 
           <table class="matrix">
             <thead>
@@ -1300,7 +1339,7 @@
               <div class="dot"></div>
               <div class="timeline-body">
                 <h3>M0: Device smoke and cleanup</h3>
-                <p>Build to phone, verify detector model loads, record/import a few swings, verify analysis upload still works, and log current UI pain points.</p>
+                <p>Build to phone, verify detector model loads, record/import a few swings, verify analysis upload still works, and log current UI pain points. Add capture-quality guidance and retake prompts for bad framing, missing ball, unstable camera, or wrong view.</p>
               </div>
             </div>
             <div class="timeline-card">
@@ -1321,7 +1360,7 @@
               <div class="dot"></div>
               <div class="timeline-body">
                 <h3>M3: Coaching Finding V1</h3>
-                <p>Choose one or two findings from high-confidence annotations. Pair each with evidence, uncertainty, and a drill from an expanded taxonomy.</p>
+                <p>Choose one or two findings from high-confidence annotations. Pair each with evidence, uncertainty, user goal/profile context, and a drill from an expanded taxonomy.</p>
               </div>
             </div>
             <div class="timeline-card">
@@ -1335,10 +1374,45 @@
               <div class="dot"></div>
               <div class="timeline-body">
                 <h3>M5: Practice loop</h3>
-                <p>Let users compare before/after swings against the same finding and mark whether a drill helped.</p>
+                <p>Let users compare before/after swings against the same finding and mark whether a drill helped. Capture outcome feedback so the coaching ranker can improve over time.</p>
               </div>
             </div>
           </div>
+
+          <table class="matrix">
+            <thead>
+              <tr>
+                <th>Release gate</th>
+                <th>Acceptance criteria before enabling generated coaching broadly</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Device matrix</strong></td>
+                <td>Smoke on at least one older supported iPhone and one current iPhone: model loads, capture remains responsive, imported trim detection runs, async analysis completes.</td>
+              </tr>
+              <tr>
+                <td><strong>Detector fixtures</strong></td>
+                <td>Track expected count, false positives, false negatives, and impact timing across DTL/FO, left/right handed, mats/grass, bright/dim light, multiple balls, and no-swing hard negatives.</td>
+              </tr>
+              <tr>
+                <td><strong>Overlay review</strong></td>
+                <td>Every generated layer needs visual fixture review: no one-frame flashes, no jumping geometry, source-frame references, and clear withhold behavior when confidence drops.</td>
+              </tr>
+              <tr>
+                <td><strong>Coach review</strong></td>
+                <td>A human coach should approve the first finding taxonomy and reject misleading claims before they reach users.</td>
+              </tr>
+              <tr>
+                <td><strong>User context</strong></td>
+                <td>Collect optional goal, handicap/skill level, pain or mobility constraints, club, and practice setting before making personalized drill recommendations.</td>
+              </tr>
+              <tr>
+                <td><strong>Privacy and consent</strong></td>
+                <td>Separate analysis upload consent from training-data consent. Document retention, deletion, and whether videos may be used to improve models.</td>
+              </tr>
+            </tbody>
+          </table>
         </section>
 
         <section id="cleanup">
@@ -1360,6 +1434,18 @@
             <div class="panel">
               <h3>Validation harness</h3>
               <p>Add fixture-level visual tests for every generated overlay before re-enabling automatic annotations.</p>
+            </div>
+            <div class="panel">
+              <h3>Capture guidance</h3>
+              <p>Detect bad framing, wrong view, missing ball, unstable camera, and poor lighting before analysis spends time on unusable video.</p>
+            </div>
+            <div class="panel">
+              <h3>User constraints</h3>
+              <p>Store optional goal, club, skill level, injury or mobility notes, and practice setting so drills do not become generic advice.</p>
+            </div>
+            <div class="panel">
+              <h3>Privacy and consent</h3>
+              <p>Separate upload for analysis from opt-in training consent, and make deletion/retention rules visible before dataset collection scales.</p>
             </div>
             <div class="panel">
               <h3>Docs</h3>
@@ -1391,6 +1477,7 @@
             <li><a href="../backend/docs/pipeline/02-video-annotations.md">Backend annotation stage docs</a></li>
             <li><a href="../annotations.md">Swing annotation research notes</a></li>
             <li><a href="https://www.mytpi.com/en/articles/biomechanics/kinematic-sequence-basics">TPI: Kinematic Sequence Basics</a></li>
+            <li><a href="https://www.mytpi.com/en/articles/biomechanics/kinematic-sequence-revisited">TPI: Kinematic Sequence Revisited</a></li>
             <li><a href="https://www.mytpi.com/articles/biomechanics/the-linear-kinematic-sequence">TPI: The Linear Kinematic Sequence</a></li>
             <li><a href="https://www.mytpi.com/improve-my-game/swing-characteristics">TPI: Swing Characteristics</a></li>
             <li><a href="https://www.mytpi.com/articles/swing/x-factor-why-more-isn%27t-always-better">TPI: X-Factor, Why More Is Not Always Better</a></li>
@@ -1402,7 +1489,8 @@
             <li><a href="https://www.sportsbox.ai/">Sportsbox AI 3D Golf</a></li>
             <li><a href="https://help.sportsbox.ai/what-is-a-tracker-in-the-sportsbox-3dgolf-app">Sportsbox tracker concepts</a></li>
             <li><a href="https://onform.com/sports/golf/">Onform golf 3D data overview</a></li>
-            <li><a href="https://arxiv.org/html/2508.20491v1">CaddieSet: golf swing dataset with joint and ball information</a></li>
+            <li><a href="https://arxiv.org/abs/1903.06528">GolfDB: event detection dataset for golf swings</a></li>
+            <li><a href="https://arxiv.org/abs/2508.20491">CaddieSet: golf swing dataset with joint and ball information</a></li>
           </ol>
 
           <p class="small">
