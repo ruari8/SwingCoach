@@ -1,0 +1,1505 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SwingCoach Master Plan</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #161713;
+      --muted: #5e6258;
+      --paper: #f6f1e7;
+      --paper-deep: #ebe0cf;
+      --panel: #fffaf0;
+      --line: rgba(36, 39, 29, 0.17);
+      --green: #2f6847;
+      --green-soft: #dce8d8;
+      --teal: #225d67;
+      --amber: #b96d24;
+      --rust: #963f2c;
+      --violet: #594870;
+      --charcoal: #22241f;
+      --shadow: 0 18px 50px rgba(38, 35, 27, 0.13);
+      --radius: 8px;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --body: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+      --sans: Avenir Next, "Segoe UI", Helvetica, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(90deg, rgba(34, 93, 103, 0.08) 1px, transparent 1px),
+        linear-gradient(rgba(34, 93, 103, 0.08) 1px, transparent 1px),
+        radial-gradient(circle at 12% 4%, rgba(185, 109, 36, 0.16), transparent 28rem),
+        var(--paper);
+      background-size: 42px 42px, 42px 42px, auto, auto;
+      color: var(--ink);
+      font-family: var(--body);
+      line-height: 1.55;
+    }
+
+    a {
+      color: var(--teal);
+      text-decoration-thickness: 0.08em;
+      text-underline-offset: 0.18em;
+    }
+
+    h1, h2, h3, h4, .eyebrow, .tag, .nav a, .status, .chip, .buttonish, th {
+      font-family: var(--sans);
+    }
+
+    h1, h2, h3, h4, p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 920px;
+      font-size: clamp(3rem, 8vw, 7.2rem);
+      line-height: 0.88;
+      letter-spacing: 0;
+      margin-bottom: 1.2rem;
+    }
+
+    h2 {
+      font-size: clamp(1.85rem, 4vw, 3.5rem);
+      line-height: 1;
+      letter-spacing: 0;
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      font-size: 1.08rem;
+      line-height: 1.2;
+      margin-bottom: 0.55rem;
+    }
+
+    h4 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.55rem;
+    }
+
+    p {
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: rgba(34, 36, 31, 0.08);
+      padding: 0.08rem 0.28rem;
+      border-radius: 4px;
+    }
+
+    .shell {
+      min-height: 100vh;
+    }
+
+    .hero {
+      min-height: 86vh;
+      display: grid;
+      align-items: end;
+      padding: 7vw;
+      color: #fffdf6;
+      background:
+        linear-gradient(90deg, rgba(22, 23, 19, 0.82), rgba(22, 23, 19, 0.32)),
+        linear-gradient(135deg, rgba(47, 104, 71, 0.96), rgba(34, 93, 103, 0.78) 48%, rgba(150, 63, 44, 0.88)),
+        repeating-linear-gradient(120deg, rgba(255,255,255,0.08) 0 1px, transparent 1px 22px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero:after {
+      content: "";
+      position: absolute;
+      inset: auto -5% -16% 24%;
+      height: 32vh;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-bottom: none;
+      transform: rotate(-7deg);
+      opacity: 0.55;
+    }
+
+    .hero p {
+      max-width: 760px;
+      color: rgba(255, 253, 246, 0.82);
+      font-size: clamp(1.08rem, 2vw, 1.42rem);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 1.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.78rem;
+      color: rgba(255, 253, 246, 0.78);
+    }
+
+    .hero-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 4rem;
+      width: 100%;
+      align-items: end;
+    }
+
+    .hero-facts {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .fact {
+      padding: 0.9rem 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 253, 246, 0.08);
+      backdrop-filter: blur(12px);
+      border-radius: var(--radius);
+    }
+
+    .fact strong {
+      display: block;
+      font-family: var(--sans);
+      color: #fffdf6;
+      line-height: 1.15;
+    }
+
+    .fact span {
+      color: rgba(255, 253, 246, 0.72);
+      font-size: 0.94rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 0;
+      max-width: 1540px;
+      margin: 0 auto;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      align-self: start;
+      min-height: 100vh;
+      padding: 2rem 1.35rem;
+      border-right: 1px solid var(--line);
+      background: rgba(246, 241, 231, 0.82);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-title {
+      font-family: var(--sans);
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 1rem;
+    }
+
+    .nav a {
+      display: block;
+      padding: 0.44rem 0;
+      color: var(--muted);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      font-size: 0.92rem;
+    }
+
+    .nav a:hover {
+      color: var(--ink);
+      border-bottom-color: var(--line);
+    }
+
+    main {
+      min-width: 0;
+      padding: 3.2rem clamp(1.25rem, 4vw, 4rem) 6rem;
+    }
+
+    section {
+      scroll-margin-top: 1.5rem;
+      padding: 3rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-lede {
+      max-width: 850px;
+      font-size: 1.08rem;
+    }
+
+    .grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid.four {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.05rem;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.7) inset;
+    }
+
+    .panel.big {
+      padding: 1.35rem;
+      box-shadow: var(--shadow);
+    }
+
+    .panel p:last-child,
+    .callout p:last-child,
+    .timeline-card p:last-child {
+      margin-bottom: 0;
+    }
+
+    .callout {
+      padding: 1.15rem 1.2rem;
+      border-left: 5px solid var(--green);
+      background: rgba(220, 232, 216, 0.72);
+      margin: 1.2rem 0;
+      border-radius: 0 var(--radius) var(--radius) 0;
+    }
+
+    .callout.warning {
+      border-left-color: var(--rust);
+      background: rgba(150, 63, 44, 0.1);
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin: 0.5rem 0 1rem;
+    }
+
+    .tag,
+    .chip,
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      border-radius: 999px;
+      padding: 0.28rem 0.55rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+
+    .tag {
+      color: var(--ink);
+      background: rgba(34, 36, 31, 0.08);
+    }
+
+    .status.shipped {
+      color: #133d27;
+      background: #cfe5c8;
+    }
+
+    .status.partial {
+      color: #70400d;
+      background: #f0d4a8;
+    }
+
+    .status.missing {
+      color: #6c2319;
+      background: #efc1b8;
+    }
+
+    .status.risky {
+      color: #403150;
+      background: #dacde7;
+    }
+
+    .scoreboard {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.8rem;
+      margin-top: 1.4rem;
+    }
+
+    .score {
+      min-height: 145px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: var(--charcoal);
+      color: #fffdf6;
+      border-radius: var(--radius);
+      padding: 1rem;
+      box-shadow: var(--shadow);
+    }
+
+    .score span {
+      font-family: var(--sans);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(255, 253, 246, 0.62);
+    }
+
+    .score strong {
+      font-family: var(--sans);
+      font-size: 1.3rem;
+      line-height: 1.1;
+    }
+
+    .matrix {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: var(--radius);
+      background: var(--panel);
+      border: 1px solid var(--line);
+    }
+
+    th,
+    td {
+      vertical-align: top;
+      text-align: left;
+      padding: 0.85rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: rgba(34, 36, 31, 0.05);
+    }
+
+    td {
+      color: var(--muted);
+    }
+
+    td strong {
+      color: var(--ink);
+      font-family: var(--sans);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .flow {
+      display: grid;
+      gap: 0.8rem;
+      margin-top: 1rem;
+    }
+
+    .flow-step {
+      display: grid;
+      grid-template-columns: 46px minmax(0, 1fr);
+      gap: 0.8rem;
+      align-items: start;
+      padding: 1rem;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .num {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--ink);
+      color: var(--paper);
+      font-family: var(--sans);
+      font-weight: 800;
+    }
+
+    .timeline {
+      position: relative;
+      display: grid;
+      gap: 1rem;
+      margin-top: 1.2rem;
+    }
+
+    .timeline:before {
+      content: "";
+      position: absolute;
+      left: 1.15rem;
+      top: 0.5rem;
+      bottom: 0.5rem;
+      width: 2px;
+      background: var(--line);
+    }
+
+    .timeline-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: 2.8rem minmax(0, 1fr);
+      gap: 0.8rem;
+      align-items: start;
+    }
+
+    .dot {
+      width: 2.3rem;
+      height: 2.3rem;
+      border-radius: 50%;
+      background: var(--paper-deep);
+      border: 2px solid var(--green);
+      z-index: 1;
+    }
+
+    .timeline-body {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+
+    .quote {
+      font-size: 1.28rem;
+      line-height: 1.35;
+      color: var(--ink);
+      padding: 1.2rem;
+      border: 1px solid var(--line);
+      background: #fffdf7;
+      border-radius: var(--radius);
+    }
+
+    .source-list {
+      columns: 2 320px;
+      column-gap: 2rem;
+      padding-left: 1.2rem;
+    }
+
+    .source-list li {
+      break-inside: avoid;
+      margin-bottom: 0.6rem;
+      color: var(--muted);
+    }
+
+    .small {
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 1050px) {
+      .hero-grid,
+      .layout,
+      .grid.two,
+      .grid.three,
+      .grid.four,
+      .scoreboard {
+        grid-template-columns: 1fr;
+      }
+
+      .nav {
+        position: relative;
+        min-height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .nav-links {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0 1rem;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .hero {
+        min-height: 92vh;
+        padding: 2rem 1.1rem;
+      }
+
+      main {
+        padding-inline: 1rem;
+      }
+
+      .nav-links {
+        grid-template-columns: 1fr;
+      }
+
+      th,
+      td {
+        display: block;
+        width: 100%;
+      }
+
+      th {
+        display: none;
+      }
+
+      tr {
+        display: block;
+        border-bottom: 1px solid var(--line);
+      }
+
+      tr:last-child {
+        border-bottom: none;
+      }
+
+      td {
+        border-bottom: none;
+        padding: 0.62rem 0.85rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <div class="hero-grid">
+        <div>
+          <div class="eyebrow">SwingCoach master plan <span>/</span> updated 2026-06-20</div>
+          <h1>From swing capture to coachable proof.</h1>
+          <p>
+            The app has a lot of useful product infrastructure now. The next milestone is not
+            another screen: it is a reliable coaching pipeline that turns a detected swing into
+            evidence, feedback, annotations, metrics, drills, and a practice loop.
+          </p>
+        </div>
+        <aside class="hero-facts" aria-label="Current status facts">
+          <div class="fact">
+            <strong>UI shell: largely built</strong>
+            <span>Capture, Library, Trim, Coach, Detail, and Replay Debug exist; annotation code exists but is not a real user path yet.</span>
+          </div>
+          <div class="fact">
+            <strong>Detector: useful but experimental</strong>
+            <span>V2 is app-wired and fixture-gated, but still needs on-phone mileage and harder negative sets.</span>
+          </div>
+          <div class="fact">
+            <strong>Backend intelligence: reset state</strong>
+            <span>Async runs and artifact contracts work; generated metrics and overlays are intentionally disabled.</span>
+          </div>
+        </aside>
+      </div>
+    </header>
+
+    <div class="layout">
+      <nav class="nav" aria-label="Master plan navigation">
+        <div class="nav-title">Plan Index</div>
+        <div class="nav-links">
+          <a href="#executive">Executive Read</a>
+          <a href="#current-state">Current State</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#detected-swing">Using A Detected Swing</a>
+          <a href="#coaching-pipeline">Coaching Pipeline</a>
+          <a href="#annotations">Annotations</a>
+          <a href="#metrics">Metrics</a>
+          <a href="#vision">Computer Vision</a>
+          <a href="#golf-theory">Golf Theory</a>
+          <a href="#unlimited">Unlimited Resources</a>
+          <a href="#roadmap">Roadmap</a>
+          <a href="#cleanup">Cleanup</a>
+          <a href="#sources">Sources</a>
+        </div>
+      </nav>
+
+      <main>
+        <section id="executive">
+          <h2>Executive Read</h2>
+          <p class="section-lede">
+            SwingCoach is past the "can I get videos into an app?" stage. The product now needs a
+            stricter definition of what it means to analyze a swing. The core answer: a detected
+            swing should become a typed evidence bundle, and every feedback claim should trace back
+            to a visible checkpoint, metric, or confidence-gated detector output.
+          </p>
+
+          <div class="scoreboard">
+            <div class="score">
+              <span>Capture and Library</span>
+              <strong>Good MVP bones</strong>
+            </div>
+            <div class="score">
+              <span>Detector</span>
+              <strong>Promising V2, not solved</strong>
+            </div>
+            <div class="score">
+              <span>Backend</span>
+              <strong>Pipeline shell only</strong>
+            </div>
+            <div class="score">
+              <span>Annotations</span>
+              <strong>UI exists, evidence missing</strong>
+            </div>
+            <div class="score">
+              <span>Coaching</span>
+              <strong>Needs product brain</strong>
+            </div>
+          </div>
+
+          <div class="callout">
+            <h3>Recommended next big milestone</h3>
+            <p>
+              Build Coaching Pipeline V1 around a small, reliable annotation set: address plane,
+              takeaway checkpoint, top checkpoint, delivery shaft checkpoint, head/hip reference,
+              and a confidence-gated immediate feedback card. Defer broad biomechanical metrics
+              until the evidence contract is proven on fixtures and real phone videos.
+            </p>
+          </div>
+
+          <div class="grid two">
+            <div class="panel big">
+              <h3>What "full coaching pipeline" should mean first</h3>
+              <p>
+                Not a full golf scientist in the cloud. First it means: upload a swing, find phases,
+                draw the two or three most useful coach marks, produce one or two priority findings,
+                explain uncertainty, and suggest a drill tied to the finding.
+              </p>
+            </div>
+            <div class="panel big">
+              <h3>What to avoid</h3>
+              <p>
+                Do not chase dozens of metrics from weak monocular evidence. Do not publish 3D-looking
+                numbers before calibration is clear. Do not anchor product strategy to any one coach
+                or creator. Borrow the general coaching pattern: clear checkpoints, simple visual
+                proof, cause/effect, and a drill constraint.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="current-state">
+          <h2>Current State</h2>
+          <p class="section-lede">
+            This snapshot is based on the current repo documentation and implementation. It should
+            be treated as the product baseline before the next architecture push.
+          </p>
+
+          <table class="matrix">
+            <thead>
+              <tr>
+                <th>Area</th>
+                <th>Status</th>
+                <th>What exists</th>
+                <th>Main hole</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>iOS shell</strong></td>
+                <td><span class="status shipped">Shipped-ish</span></td>
+                <td>SwiftUI tabs for Library, Capture, Coach; trim workflow; swing detail carousel; replay debug; experiments screen.</td>
+                <td>Architecture likely needs tightening around shared state, analysis lifecycle, and product object boundaries.</td>
+              </tr>
+              <tr>
+                <td><strong>Capture and trim</strong></td>
+                <td><span class="status partial">Partial</span></td>
+                <td>Manual capture, auto capture, imported video trimming, V2 candidate ranges, thumbnails, Photos integration.</td>
+                <td>Real device validation, edge cases, high-fps timing, and smoother analyze handoff.</td>
+              </tr>
+              <tr>
+                <td><strong>Detector V2</strong></td>
+                <td><span class="status partial">Partial</span></td>
+                <td>YOLO/Core ML object model, addressed-ball lock, club/patch state machine, app-wired capture/trim/replay paths.</td>
+                <td>Generalization. Needs harder fixtures: mats, grass, multiple balls, glare, partial occlusion, lefties, FO, false positives.</td>
+              </tr>
+              <tr>
+                <td><strong>Detector model bug</strong></td>
+                <td><span class="status risky">Needs phone build</span></td>
+                <td>Model loading code checks bundled <code>SwingObjectsYOLO11n.mlmodelc</code> or compiles <code>.mlpackage</code>.</td>
+                <td>Treat model loading as unverified until a physical-device smoke test proves the bundle loads and V2 emits detections.</td>
+              </tr>
+              <tr>
+                <td><strong>Backend API</strong></td>
+                <td><span class="status shipped">Shell works</span></td>
+                <td>FastAPI, R2 upload flow, async analysis runs, SSE progress, artifact URL refresh, chat endpoint.</td>
+                <td>Run state is in memory; pipeline output is mostly a placeholder contract.</td>
+              </tr>
+              <tr>
+                <td><strong>Annotations</strong></td>
+                <td><span class="status missing">Generated missing</span></td>
+                <td>Client renderer, manual annotation code, and backend artifact contract exist.</td>
+                <td>Server sends empty tracks; automatic layers are disabled, and the reset path does not expose a useful manual/generated annotation workflow yet.</td>
+              </tr>
+              <tr>
+                <td><strong>Metrics</strong></td>
+                <td><span class="status missing">Missing</span></td>
+                <td>Old metric modules and docs exist; app can render metrics rows.</td>
+                <td>No trustworthy metric source is active. Need definitions, calibration assumptions, confidence gates, and fixture validation.</td>
+              </tr>
+              <tr>
+                <td><strong>Drills and feels</strong></td>
+                <td><span class="status partial">Early</span></td>
+                <td>Curated drill JSON and simple matching logic exist.</td>
+                <td>Needs richer taxonomy, coaching provenance, constraints, progression, and outcome feedback.</td>
+              </tr>
+              <tr>
+                <td><strong>Teaching voice</strong></td>
+                <td><span class="status partial">Lightweight</span></td>
+                <td>Summary builder, fallback behavior, optional LLM, follow-up chat.</td>
+                <td>Needs evidence-grounded pedagogy, priorities, uncertainty, and user profile context.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="architecture">
+          <h2>Architecture Direction</h2>
+          <p class="section-lede">
+            The app should stop treating "analysis" as one blob. A detected swing should become a
+            durable product object with source video, event timings, evidence tracks, coach claims,
+            generated assets, manual edits, and user feedback over time.
+          </p>
+
+          <div class="grid two">
+            <div class="panel big">
+              <h3>Proposed domain objects</h3>
+              <div class="tag-row">
+                <span class="tag">SavedSwing</span>
+                <span class="tag">SwingWindow</span>
+                <span class="tag">AnalysisRun</span>
+                <span class="tag">EvidenceBundle</span>
+                <span class="tag">CoachFinding</span>
+              </div>
+              <p>
+                <strong>SavedSwing</strong> is the user's clip. <strong>SwingWindow</strong> is the detected
+                address-to-finish range plus phase timestamps. <strong>EvidenceBundle</strong> stores pose,
+                club, ball, event, and confidence data. <strong>CoachFinding</strong> is the human-facing claim
+                that references evidence and a drill.
+              </p>
+            </div>
+            <div class="panel big">
+              <h3>Why this matters</h3>
+              <p>
+                It lets the UI say "we are confident about shaft plane but not hip rotation" instead of
+                "analysis succeeded" or "analysis failed." It also makes it possible to re-run only a
+                metric model, only an annotation renderer, or only the coaching voice when those modules improve.
+              </p>
+            </div>
+          </div>
+
+          <div class="flow">
+            <div class="flow-step">
+              <div class="num">1</div>
+              <div>
+                <h3>Capture or import</h3>
+                <p>Produce a playable source and one or more candidate swing windows. User can trim or accept.</p>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="num">2</div>
+              <div>
+                <h3>Normalize the swing</h3>
+                <p>Extract frames, infer fps/source time scale, find address/top/impact/finish, and save a versioned event timeline.</p>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="num">3</div>
+              <div>
+                <h3>Build evidence tracks</h3>
+                <p>Run only the evidence sources needed for the selected analysis mode: immediate, standard, deep dive, or research.</p>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="num">4</div>
+              <div>
+                <h3>Generate coach findings</h3>
+                <p>Pick a small number of findings, each backed by a visual checkpoint, confidence, and a drill progression.</p>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="num">5</div>
+              <div>
+                <h3>Render overlays and practice loop</h3>
+                <p>Client-render JSON tracks over clean video, let users save manual notes, then compare future swings against the same finding.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="detected-swing">
+          <h2>How To Use A Detected Swing</h2>
+          <p class="section-lede">
+            Detection is not the end product. It is the entry point into a sequence of increasingly
+            expensive interpretations. The app should offer immediate feedback quickly and reserve
+            deeper analysis for explicit user intent or background processing.
+          </p>
+
+          <div class="grid three">
+            <div class="panel">
+              <span class="status shipped">Now</span>
+              <h3>Clip selection</h3>
+              <p>Use detector ranges to preselect candidate clips in Trim or Auto capture. Let the golfer correct boundaries.</p>
+            </div>
+            <div class="panel">
+              <span class="status partial">Next</span>
+              <h3>Immediate feedback</h3>
+              <p>Return a fast card: swing found, confidence, rough phase timings, one visible checkpoint, and "worth deep dive?"</p>
+            </div>
+            <div class="panel">
+              <span class="status missing">Milestone</span>
+              <h3>Deep dive</h3>
+              <p>Run pose/club/ball/event fusion, generate overlays, compute safe metrics, and produce a prioritized coaching plan.</p>
+            </div>
+          </div>
+
+          <div class="callout warning">
+            <h3>Rule for confidence</h3>
+            <p>
+              Confidence should be first-class. If the ball is occluded, the club shaft is blurred, the camera view is off,
+              or the model cannot infer depth, the app should say so and narrow the feedback instead of pretending to know.
+            </p>
+          </div>
+        </section>
+
+        <section id="coaching-pipeline">
+          <h2>Coaching Pipeline</h2>
+          <p class="section-lede">
+            A useful V1 should be checkpoint-led, not metric-led. The best social swing reviews often
+            freeze one frame, draw one or two strong references, explain what that visible fact causes
+            later, and prescribe one constraint drill.
+          </p>
+
+          <table class="matrix">
+            <thead>
+              <tr>
+                <th>Stage</th>
+                <th>V1 action</th>
+                <th>Evidence required</th>
+                <th>Output</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1. Intake</strong></td>
+                <td>Classify view, handedness, source timing, camera quality, ball visibility, and golfer framing.</td>
+                <td>Video metadata, object detections, simple pose/person box.</td>
+                <td>Analysis mode and warnings.</td>
+              </tr>
+              <tr>
+                <td><strong>2. Events</strong></td>
+                <td>Find address, takeaway, lead-arm-parallel, top, delivery, impact estimate, finish.</td>
+                <td>Object detector plus pose/club tracker and temporal smoothing.</td>
+                <td>Versioned event timeline.</td>
+              </tr>
+              <tr>
+                <td><strong>3. Evidence</strong></td>
+                <td>Compute only high-trust facts: shaft plane, clubhead relative to hands, head/hip reference, tempo.</td>
+                <td>Per-layer confidence and visible frame evidence.</td>
+                <td>EvidenceBundle JSON.</td>
+              </tr>
+              <tr>
+                <td><strong>4. Findings</strong></td>
+                <td>Rank one to three issues by severity, confidence, and user goal.</td>
+                <td>EvidenceBundle plus rules/templates.</td>
+                <td>CoachFinding cards.</td>
+              </tr>
+              <tr>
+                <td><strong>5. Teaching</strong></td>
+                <td>Explain cause/effect with uncertainty and drills.</td>
+                <td>Finding references, drill taxonomy, user profile.</td>
+                <td>Summary, drill plan, follow-up chat context.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="grid two">
+            <div class="panel">
+              <h3>Immediate mode</h3>
+              <p>
+                Target under 10 seconds. No broad 3D. Use existing detector outputs, thumbnail-level pose if cheap,
+                simple event timeline, and one coachable observation such as "club started too far inside" only when visible.
+              </p>
+            </div>
+            <div class="panel">
+              <h3>Deep dive mode</h3>
+              <p>
+                Can take longer. Run denser frame extraction, pose, club tracking, ball/impact evidence, visual layer generation,
+                metrics, and a richer coaching summary. Use background jobs and persisted run state.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="annotations">
+          <h2>Annotations</h2>
+          <p class="section-lede">
+            The target is Snapchat-like coach markup: bold, readable, scrub-aware overlays that feel
+            alive on video but are grounded in a strict JSON track contract. Use social golf analysis
+            research as pattern inspiration: checkpoint-first, one or two strong marks, cause/effect,
+            and a drill constraint. Keep SwingCoach's visuals and wording original.
+          </p>
+
+          <div class="grid three">
+            <div class="panel">
+              <span class="status partial">Priority</span>
+              <h3>Address shaft plane</h3>
+              <p>Persistent line through shaft at setup. Useful for later comparison against takeaway and delivery.</p>
+            </div>
+            <div class="panel">
+              <span class="status partial">Priority</span>
+              <h3>Takeaway checkpoint</h3>
+              <p>Clubhead relative to hands and shaft pointing near ball line at lead-arm-parallel.</p>
+            </div>
+            <div class="panel">
+              <span class="status partial">Priority</span>
+              <h3>Delivery shaft</h3>
+              <p>Transition/delivery shaft line compared with trail forearm or original plane, only when confident.</p>
+            </div>
+            <div class="panel">
+              <span class="status partial">Priority</span>
+              <h3>Head and hip reference</h3>
+              <p>Address reference lines for posture loss, early extension, sway, and slide checks.</p>
+            </div>
+            <div class="panel">
+              <span class="status risky">Later</span>
+              <h3>Clubface and wrist</h3>
+              <p>High value but risky from weak video. Do not claim face angle until orientation is actually validated.</p>
+            </div>
+            <div class="panel">
+              <span class="status risky">Later</span>
+              <h3>3D skeleton replay</h3>
+              <p>Useful for explanation, but only after monocular/multiview accuracy is known for golf-specific poses.</p>
+            </div>
+          </div>
+
+          <div class="callout">
+            <h3>Annotation contract</h3>
+            <p>
+              Keep clean video as the source of truth. Render overlays client-side from JSON tracks with normalized coordinates,
+              event windows, layer names, confidence, source frame references, and an explicit publish/withhold decision.
+              Burned-in MP4 overlays can remain an export feature, not the normal app path.
+            </p>
+          </div>
+
+          <table class="matrix">
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>Why it must exist before publishing a layer or finding</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>View gate</strong></td>
+                <td>DTL, face-on, handedness, golfer framing, and camera stability decide which claims are even allowed.</td>
+              </tr>
+              <tr>
+                <td><strong>Source-frame references</strong></td>
+                <td>Every claim should point back to the exact frame/time window that proves it, so the UI can pause there.</td>
+              </tr>
+              <tr>
+                <td><strong>Phase confidence</strong></td>
+                <td>Address, takeaway, top, delivery, impact estimate, and finish need independent confidence, not one run-level score.</td>
+              </tr>
+              <tr>
+                <td><strong>Detector confidence</strong></td>
+                <td>Club shaft, clubhead, ball, wrist, hip, and shoulder evidence should publish or withhold separately.</td>
+              </tr>
+              <tr>
+                <td><strong>Temporal stability</strong></td>
+                <td>A line is not trustworthy if it jumps frame-to-frame or appears for only one frame.</td>
+              </tr>
+              <tr>
+                <td><strong>Calibration status</strong></td>
+                <td>Mark whether a value is a 2D visual proxy, calibrated 3D estimate, multi-view measurement, or withheld.</td>
+              </tr>
+              <tr>
+                <td><strong>Fallback UX</strong></td>
+                <td>If the claim is withheld, the app should show why and offer retake/camera guidance instead of silent emptiness.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <table class="matrix">
+            <thead>
+              <tr>
+                <th>Preset</th>
+                <th>When shown</th>
+                <th>Required confidence</th>
+                <th>Coach wording pattern</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Plane compare</strong></td>
+                <td>Address through delivery</td>
+                <td>Reliable shaft detection for both frames</td>
+                <td>"At setup the shaft is here; by delivery it is here; that changes path/face management."</td>
+              </tr>
+              <tr>
+                <td><strong>Hands depth gate</strong></td>
+                <td>Takeaway/top</td>
+                <td>Pose wrists plus torso/feet landmarks</td>
+                <td>"Your hands are too far in/out relative to your body, which makes the transition compensation likely."</td>
+              </tr>
+              <tr>
+                <td><strong>Early extension wall</strong></td>
+                <td>Address to impact</td>
+                <td>DTL view, pelvis/hip confidence, stable camera</td>
+                <td>"The pelvis moves toward the ball, reducing room for the arms."</td>
+              </tr>
+              <tr>
+                <td><strong>Setup geometry</strong></td>
+                <td>Address still</td>
+                <td>Ball, feet, shoulders, target proxy</td>
+                <td>"Setup is the root cause. Fix this before chasing the downswing symptom."</td>
+              </tr>
+              <tr>
+                <td><strong>Drill constraint</strong></td>
+                <td>After diagnosis</td>
+                <td>Manual or generated template, no metric needed</td>
+                <td>"Put an alignment stick/noodle here so the body gets immediate feedback."</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="metrics">
+          <h2>Metrics</h2>
+          <p class="section-lede">
+            Metrics should start as "publish only when the measurement is honest." A metric that looks
+            precise but is not calibrated will damage trust faster than a missing metric.
+          </p>
+
+          <div class="grid two">
+            <div class="panel big">
+              <h3>V1 safe metrics</h3>
+              <div class="tag-row">
+                <span class="tag">tempo</span>
+                <span class="tag">phase duration</span>
+                <span class="tag">swing window</span>
+                <span class="tag">head drift 2D</span>
+                <span class="tag">hip depth 2D</span>
+              </div>
+              <p>
+                These can be useful with clear caveats. They do not require pretending to know absolute
+                3D joint angles. Express them as visual deltas and categories before exact numbers.
+              </p>
+            </div>
+            <div class="panel big">
+              <h3>Deep metrics</h3>
+              <div class="tag-row">
+                <span class="tag">X-factor</span>
+                <span class="tag">pelvis/chest turn</span>
+                <span class="tag">side bend</span>
+                <span class="tag">club path</span>
+                <span class="tag">kinematic sequence</span>
+              </div>
+              <p>
+                These need calibrated 3D, strong view constraints, or a trained golf-specific model.
+                They are roadmap items, not immediate app claims.
+              </p>
+            </div>
+          </div>
+
+          <table class="matrix">
+            <thead>
+              <tr>
+                <th>Metric family</th>
+                <th>Feasibility</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Tempo and timing</strong></td>
+                <td><span class="status partial">Good</span></td>
+                <td>Requires reliable phase events. Good first feedback because it is temporal rather than geometric.</td>
+              </tr>
+              <tr>
+                <td><strong>2D checkpoint deltas</strong></td>
+                <td><span class="status partial">Good if view-gated</span></td>
+                <td>Head drift, hip depth, hand depth, and shaft plane can be useful from DTL/FO with explicit camera assumptions.</td>
+              </tr>
+              <tr>
+                <td><strong>Club delivery</strong></td>
+                <td><span class="status risky">Hard</span></td>
+                <td>Club path, face angle, attack angle, and dynamic loft are launch-monitor-grade concepts. Video can estimate proxies, not truth, without validation.</td>
+              </tr>
+              <tr>
+                <td><strong>3D body kinematics</strong></td>
+                <td><span class="status risky">Possible, validate hard</span></td>
+                <td>Commercial apps now claim single-video 3D golf data. SwingCoach should benchmark before publishing similar numbers.</td>
+              </tr>
+              <tr>
+                <td><strong>Kinematic sequence</strong></td>
+                <td><span class="status missing">Deep research</span></td>
+                <td>True segment velocity sequence needs pelvis, thorax, arm, and club angular velocity. Monocular estimates may be directionally useful but need ground truth.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="vision">
+          <h2>Computer Vision Ladder</h2>
+          <p class="section-lede">
+            The practical approach is a ladder: start with evidence the phone can gather now, then
+            climb toward richer 3D only when validation proves each rung.
+          </p>
+
+          <div class="timeline">
+            <div class="timeline-card">
+              <div class="dot"></div>
+              <div class="timeline-body">
+                <h3>Rung 1: Current on-device detector</h3>
+                <p>YOLO/Core ML object detector for shaft, clubhead, and ball candidate; V2 state machine for addressed ball, club sweep, and ball departure.</p>
+              </div>
+            </div>
+            <div class="timeline-card">
+              <div class="dot"></div>
+              <div class="timeline-body">
+                <h3>Rung 2: Dense offline evidence</h3>
+                <p>Use the same detector at denser sampling for uploaded clips. Add temporal smoothing and strict event windows.</p>
+              </div>
+            </div>
+            <div class="timeline-card">
+              <div class="dot"></div>
+              <div class="timeline-body">
+                <h3>Rung 3: Pose plus club fusion</h3>
+                <p>Run pose landmarks and custom club keypoints. Fuse wrists, shaft, clubhead, ball, and event timings into a versioned evidence bundle.</p>
+              </div>
+            </div>
+            <div class="timeline-card">
+              <div class="dot"></div>
+              <div class="timeline-body">
+                <h3>Rung 4: Golf-specific monocular 3D</h3>
+                <p>Benchmark SAM 3D Body, MediaPipe/BlazePose-style outputs, MotionBERT-like temporal models, Sportsbox/Onform-style claims, and custom golf models against labelled fixtures.</p>
+              </div>
+            </div>
+            <div class="timeline-card">
+              <div class="dot"></div>
+              <div class="timeline-body">
+                <h3>Rung 5: Multi-view and calibration</h3>
+                <p>Two-phone capture or calibrated practice bay. This is closer to OpenCap and TPI-style workflows and is the most credible path for body kinematics.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid three">
+            <div class="panel">
+              <h3>SAM 3D</h3>
+              <p>Promising for body/object reconstruction from images, but golf swing analysis needs temporal consistency, club/ball handling, and metric validation.</p>
+            </div>
+            <div class="panel">
+              <h3>MediaPipe / Apple Vision</h3>
+              <p>Useful for pose landmarks, posture, and event support. Treat world coordinates as model-relative until calibrated.</p>
+            </div>
+            <div class="panel">
+              <h3>Custom golf model</h3>
+              <p>Likely needed for club shaft, clubhead, ball, wrists, and golf-specific event detection under motion blur.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="golf-theory">
+          <h2>Golf Theory Notes</h2>
+          <p class="section-lede">
+            TPI's useful product lesson is not "force everyone into one look." It is "separate WHAT
+            the swing is doing, HOW forces and sequence are produced, and WHY the golfer's body or
+            intent may be creating that pattern."
+          </p>
+
+          <div class="grid two">
+            <div class="panel big">
+              <h3>Kinematic sequence</h3>
+              <p>
+                TPI describes efficient downswing speed transfer as lower body, trunk, arms, then club.
+                The idea is valuable, but SwingCoach should avoid claiming true sequence until it can
+                estimate segment angular velocities reliably.
+              </p>
+            </div>
+            <div class="panel big">
+              <h3>Swing characteristics</h3>
+              <p>
+                TPI's common characteristics are a useful issue taxonomy: loss of posture, flat shoulder
+                plane, early extension, over the top, sway, slide, reverse spine angle, casting, scooping,
+                chicken wing, and others.
+              </p>
+            </div>
+            <div class="panel big">
+              <h3>Ball flight laws</h3>
+              <p>
+                TrackMan/Titleist concepts such as face angle, path, attack angle, low point, and dynamic
+                loft are the right language for ball outcome, but most of them are not directly visible
+                from one normal phone video.
+              </p>
+            </div>
+            <div class="panel big">
+              <h3>Teaching method</h3>
+              <p>
+                The app should prioritize root cause over symptom: setup and takeaway often explain
+                transition and impact compensations. Coach findings should say "fix this first" when confidence allows.
+              </p>
+            </div>
+          </div>
+
+          <div class="quote">
+            Product principle: compare the golfer to a useful task model, not to a celebrity swing.
+            The best feedback explains an efficient pattern while respecting that different bodies can
+            arrive there through different styles.
+          </div>
+        </section>
+
+        <section id="unlimited">
+          <h2>Unlimited Resources Version</h2>
+          <p class="section-lede">
+            If resources were not constrained, SwingCoach would train a golf-specific perception and
+            coaching model, not simply glue generic pose models together.
+          </p>
+
+          <div class="grid two">
+            <div class="panel big">
+              <h3>Data engine</h3>
+              <p>
+                Build a multi-view dataset with synchronized iPhones, launch monitor, force plates,
+                optional IMUs, and expert coach labels. Capture DTL, face-on, left/right handed players,
+                many clubs, many surfaces, and bad/noisy examples.
+              </p>
+            </div>
+            <div class="panel big">
+              <h3>Foundation model</h3>
+              <p>
+                Train a temporal golf model that predicts phase events, body keypoints, club keypoints,
+                ball state, camera calibration, confidence, and coach-relevant embeddings from video.
+              </p>
+            </div>
+            <div class="panel big">
+              <h3>Metric calibration</h3>
+              <p>
+                Distill lab-grade signals into phone-visible proxies. Learn which metrics can be safely
+                estimated from one view, which need two views, and which should be withheld.
+              </p>
+            </div>
+            <div class="panel big">
+              <h3>Coaching intelligence</h3>
+              <p>
+                Train/evaluate a finding ranker using coach labels and longitudinal outcomes: what changed
+                after a drill, what made the next swing better, and what feedback caused confusion.
+              </p>
+            </div>
+          </div>
+
+          <table class="matrix">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>What it would do</th>
+                <th>Why it matters</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Swing foundation model</strong></td>
+                <td>Temporal encoder over video frames, object tracks, pose, audio, and metadata.</td>
+                <td>One model can share context across detector, events, metrics, and coaching.</td>
+              </tr>
+              <tr>
+                <td><strong>Golf club keypoint model</strong></td>
+                <td>Predict grip, hands, shaft endpoints, clubhead, face proxy, and blur-aware confidence.</td>
+                <td>The club is the object generic pose systems ignore, but coaches care about most.</td>
+              </tr>
+              <tr>
+                <td><strong>Camera calibration model</strong></td>
+                <td>Infer view quality, target line, horizon, lens effects, scale cues, and when not to measure.</td>
+                <td>Prevents false precision and guides users to capture better video.</td>
+              </tr>
+              <tr>
+                <td><strong>Coach finding ranker</strong></td>
+                <td>Map evidence to priority, drill, and explanation style using expert labels.</td>
+                <td>Turns analysis from "detected flaw list" into a lesson plan.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="roadmap">
+          <h2>Roadmap</h2>
+          <p class="section-lede">
+            This sequence aims to get one narrow coaching path right before expanding the system.
+          </p>
+
+          <div class="timeline">
+            <div class="timeline-card">
+              <div class="dot"></div>
+              <div class="timeline-body">
+                <h3>M0: Device smoke and cleanup</h3>
+                <p>Build to phone, verify detector model loads, record/import a few swings, verify analysis upload still works, and log current UI pain points. Add capture-quality guidance and retake prompts for bad framing, missing ball, unstable camera, or wrong view.</p>
+              </div>
+            </div>
+            <div class="timeline-card">
+              <div class="dot"></div>
+              <div class="timeline-body">
+                <h3>M1: Evidence bundle contract</h3>
+                <p>Define versioned JSON for events, layers, confidence, source frames, and generated findings. Add tests with empty and populated tracks.</p>
+              </div>
+            </div>
+            <div class="timeline-card">
+              <div class="dot"></div>
+              <div class="timeline-body">
+                <h3>M2: Annotation V1</h3>
+                <p>Generate address shaft plane, takeaway checkpoint, delivery shaft, head/hip reference, and phase markers. Validate visually on fixtures.</p>
+              </div>
+            </div>
+            <div class="timeline-card">
+              <div class="dot"></div>
+              <div class="timeline-body">
+                <h3>M3: Coaching Finding V1</h3>
+                <p>Choose one or two findings from high-confidence annotations. Pair each with evidence, uncertainty, user goal/profile context, and a drill from an expanded taxonomy.</p>
+              </div>
+            </div>
+            <div class="timeline-card">
+              <div class="dot"></div>
+              <div class="timeline-body">
+                <h3>M4: Metrics V1</h3>
+                <p>Publish safe timing and 2D checkpoint metrics. Keep deeper body/club delivery metrics behind research flags.</p>
+              </div>
+            </div>
+            <div class="timeline-card">
+              <div class="dot"></div>
+              <div class="timeline-body">
+                <h3>M5: Practice loop</h3>
+                <p>Let users compare before/after swings against the same finding and mark whether a drill helped. Capture outcome feedback so the coaching ranker can improve over time.</p>
+              </div>
+            </div>
+          </div>
+
+          <table class="matrix">
+            <thead>
+              <tr>
+                <th>Release gate</th>
+                <th>Acceptance criteria before enabling generated coaching broadly</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Device matrix</strong></td>
+                <td>Smoke on at least one older supported iPhone and one current iPhone: model loads, capture remains responsive, imported trim detection runs, async analysis completes.</td>
+              </tr>
+              <tr>
+                <td><strong>Detector fixtures</strong></td>
+                <td>Track expected count, false positives, false negatives, and impact timing across DTL/FO, left/right handed, mats/grass, bright/dim light, multiple balls, and no-swing hard negatives.</td>
+              </tr>
+              <tr>
+                <td><strong>Overlay review</strong></td>
+                <td>Every generated layer needs visual fixture review: no one-frame flashes, no jumping geometry, source-frame references, and clear withhold behavior when confidence drops.</td>
+              </tr>
+              <tr>
+                <td><strong>Coach review</strong></td>
+                <td>A human coach should approve the first finding taxonomy and reject misleading claims before they reach users.</td>
+              </tr>
+              <tr>
+                <td><strong>User context</strong></td>
+                <td>Collect optional goal, handicap/skill level, pain or mobility constraints, club, and practice setting before making personalized drill recommendations.</td>
+              </tr>
+              <tr>
+                <td><strong>Privacy and consent</strong></td>
+                <td>Separate analysis upload consent from training-data consent. Document retention, deletion, and whether videos may be used to improve models.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="cleanup">
+          <h2>General Cleanup</h2>
+          <p class="section-lede">
+            The cleanup should support the coaching pipeline rather than become an abstract refactor.
+            The highest leverage work is around boundaries, state persistence, and validation.
+          </p>
+
+          <div class="grid three">
+            <div class="panel">
+              <h3>iOS architecture</h3>
+              <p>Audit shared singletons, tab handoff state, analysis persistence, retry flows, and model loading failure states.</p>
+            </div>
+            <div class="panel">
+              <h3>Backend reliability</h3>
+              <p>Persist analysis runs, make jobs resumable/cancellable, and separate artifact generation from coaching generation.</p>
+            </div>
+            <div class="panel">
+              <h3>Validation harness</h3>
+              <p>Add fixture-level visual tests for every generated overlay before re-enabling automatic annotations.</p>
+            </div>
+            <div class="panel">
+              <h3>Capture guidance</h3>
+              <p>Detect bad framing, wrong view, missing ball, unstable camera, and poor lighting before analysis spends time on unusable video.</p>
+            </div>
+            <div class="panel">
+              <h3>User constraints</h3>
+              <p>Store optional goal, club, skill level, injury or mobility notes, and practice setting so drills do not become generic advice.</p>
+            </div>
+            <div class="panel">
+              <h3>Privacy and consent</h3>
+              <p>Separate upload for analysis from opt-in training consent, and make deletion/retention rules visible before dataset collection scales.</p>
+            </div>
+            <div class="panel">
+              <h3>Docs</h3>
+              <p>Keep this plan linked from docs. Update it when pipeline behavior changes.</p>
+            </div>
+            <div class="panel">
+              <h3>Dataset hygiene</h3>
+              <p>Track source timing, view, handedness, club, surface, ball visibility, and labels for detector training videos.</p>
+            </div>
+            <div class="panel">
+              <h3>Product language</h3>
+              <p>Use confidence-aware text. Say "visible from this view" and "not enough evidence" often.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="sources">
+          <h2>Sources And Anchors</h2>
+          <p class="section-lede">
+            This plan combines repo state with current golf and computer-vision research. Local code
+            remains the source of truth for shipped behavior.
+          </p>
+
+          <ol class="source-list">
+            <li><a href="../README.md">SwingCoach root README</a></li>
+            <li><a href="./FRONTEND.md">SwingCoach frontend docs</a></li>
+            <li><a href="../backend/README.md">Backend README</a></li>
+            <li><a href="../backend/docs/pipeline/01-metrics.md">Backend metrics stage docs</a></li>
+            <li><a href="../backend/docs/pipeline/02-video-annotations.md">Backend annotation stage docs</a></li>
+            <li><a href="../annotations.md">Swing annotation research notes</a></li>
+            <li><a href="https://www.mytpi.com/en/articles/biomechanics/kinematic-sequence-basics">TPI: Kinematic Sequence Basics</a></li>
+            <li><a href="https://www.mytpi.com/en/articles/biomechanics/kinematic-sequence-revisited">TPI: Kinematic Sequence Revisited</a></li>
+            <li><a href="https://www.mytpi.com/articles/biomechanics/the-linear-kinematic-sequence">TPI: The Linear Kinematic Sequence</a></li>
+            <li><a href="https://www.mytpi.com/improve-my-game/swing-characteristics">TPI: Swing Characteristics</a></li>
+            <li><a href="https://www.mytpi.com/articles/swing/x-factor-why-more-isn%27t-always-better">TPI: X-Factor, Why More Is Not Always Better</a></li>
+            <li><a href="https://www.titleist.com/learning-lab/performance/golf-club-path">Titleist: Golf Club Path</a></li>
+            <li><a href="https://www.trackman.com/blog/golf/the-ultimate-guide-to-understanding-trackman">TrackMan: glossary and metric definitions</a></li>
+            <li><a href="https://engineering.stanford.edu/news/opencap-sophisticated-human-biomechanics-smartphone-video">Stanford Engineering: OpenCap smartphone biomechanics</a></li>
+            <li><a href="https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker">Google AI Edge: MediaPipe Pose Landmarker</a></li>
+            <li><a href="https://ai.meta.com/research/sam3d/">Meta AI: SAM 3D</a></li>
+            <li><a href="https://www.sportsbox.ai/">Sportsbox AI 3D Golf</a></li>
+            <li><a href="https://help.sportsbox.ai/what-is-a-tracker-in-the-sportsbox-3dgolf-app">Sportsbox tracker concepts</a></li>
+            <li><a href="https://onform.com/sports/golf/">Onform golf 3D data overview</a></li>
+            <li><a href="https://arxiv.org/abs/1903.06528">GolfDB: event detection dataset for golf swings</a></li>
+            <li><a href="https://arxiv.org/abs/2508.20491">CaddieSet: golf swing dataset with joint and ball information</a></li>
+          </ol>
+
+          <p class="small">
+            Note: Instagram/TikTok creator research should stay descriptive. Use general coaching conventions
+            and original UI/wording; do not clone a creator's exact videos, phrasing, editing, or visual identity.
+          </p>
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

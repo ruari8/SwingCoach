@@ -6,6 +6,7 @@ This folder and `backend/docs` are the active documentation set.
 
 - [Root README](../README.md)
 - [AGENTS](../AGENTS.md)
+- [Master Plan](./master_plan.html)
 - [Market Thesis](./MARKET.md)
 - [Out Of Scope](./OUT_OF_SCOPE.md)
 - [Experimental Swing Detector](./EXPERIMENT_SWING_DETECTOR.md)
