@@ -14,6 +14,7 @@ This folder and `backend/docs` are the active documentation set.
 - [Swing Detector V2 Implementation Plan](./SWING_DETECTOR_V2_IMPLEMENTATION_PLAN.md)
 - [Deployment](./DEPLOYMENT.md)
 - [Swing Annotation Research Notes](../annotations.md)
+- [Dom Caminiti Video Annotation Reference](./DOMCAMINITI_VIDEO_ANNOTATION_REFERENCE.md)
 
 ## Frontend
 
