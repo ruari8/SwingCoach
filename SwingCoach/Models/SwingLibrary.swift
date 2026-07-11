@@ -48,6 +48,20 @@ struct SavedSwing: Identifiable, Codable, Equatable {
 /// Videos live in Photos library, metadata lives in app's Documents
 @MainActor
 class SwingLibrary: ObservableObject {
+    enum DeletionError: LocalizedError {
+        case photosAccessDenied
+        case photosDeleteFailed(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .photosAccessDenied:
+                return "Photos access is required to delete this swing from the phone."
+            case .photosDeleteFailed(let message):
+                return "The swing could not be deleted from Photos: \(message)"
+            }
+        }
+    }
+
     @Published var swings: [SavedSwing] = []
     @Published var isLoading = false
     
@@ -126,6 +140,7 @@ class SwingLibrary: ObservableObject {
     /// Add a new swing after saving to Photos. If `localSourceURL` is provided
     /// (the just-exported clip file), a copy is retained in app storage so the
     /// swing plays back instantly without resolving Photos.
+    @discardableResult
     func addSwing(
         photoAssetID: String,
         vantage: Vantage,
@@ -133,7 +148,7 @@ class SwingLibrary: ObservableObject {
         notes: String? = nil,
         initialThumbnail: UIImage? = nil,
         localSourceURL: URL? = nil
-    ) {
+    ) -> SavedSwing {
         let id = UUID()
         var swing = SavedSwing(
             id: id,
@@ -157,6 +172,7 @@ class SwingLibrary: ObservableObject {
                 retryDelays: initialThumbnail == nil ? [0.35, 1.0, 2.0, 4.0] : [1.0, 3.0]
             )
         }
+        return swing
     }
 
     /// Remove a swing (doesn't delete from Photos - user manages that)
@@ -166,6 +182,40 @@ class SwingLibrary: ObservableObject {
             try? FileManager.default.removeItem(at: videosDirectory.appendingPathComponent(name))
         }
         saveToDisk()
+    }
+
+    /// Delete an Auto-captured swing from Photos and the app-owned library copy.
+    /// The library entry is retained if Photos rejects the deletion.
+    func deleteSwingAndPhoto(_ swing: SavedSwing) async throws {
+        let status = await withCheckedContinuation { continuation in
+            PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
+                continuation.resume(returning: status)
+            }
+        }
+        guard status == .authorized || status == .limited else {
+            throw DeletionError.photosAccessDenied
+        }
+
+        let assets = PHAsset.fetchAssets(withLocalIdentifiers: [swing.photoAssetID], options: nil)
+        if assets.firstObject != nil {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                PHPhotoLibrary.shared().performChanges {
+                    PHAssetChangeRequest.deleteAssets(assets)
+                } completionHandler: { success, error in
+                    if success {
+                        continuation.resume()
+                    } else {
+                        continuation.resume(
+                            throwing: DeletionError.photosDeleteFailed(
+                                error?.localizedDescription ?? "Unknown error"
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
+        removeSwing(swing)
     }
     
     /// Update swing metadata

@@ -11,6 +11,7 @@ import SwiftUI
 enum ExperimentalSettingKey {
     static let liveAutoSwingDetectionEnabled = "experimental.liveAutoSwingDetectionEnabled"
     static let liveModelDetectorSampleFPS = "experimental.liveModelDetectorSampleFPS"
+    static let capturePracticeSwings = "capture.capturePracticeSwings"
     static let backendTarget = "experimental.backendTarget"
     static let customBackendURL = "experimental.customBackendURL"
     static let useMockAnalysis = "experimental.useMockAnalysis"
@@ -42,6 +43,7 @@ enum ExperimentalDetectorDefaults {
 struct ExperimentalSettingsView: View {
     @AppStorage(ExperimentalSettingKey.liveAutoSwingDetectionEnabled) private var liveAutoSwingDetectionEnabled = true
     @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
+    @AppStorage(ExperimentalSettingKey.capturePracticeSwings) private var capturePracticeSwings = false
     @AppStorage(ExperimentalSettingKey.backendTarget) private var backendTargetRaw = BackendTarget.local.rawValue
     @AppStorage(ExperimentalSettingKey.customBackendURL) private var customBackendURL = ""
     @AppStorage(ExperimentalSettingKey.useMockAnalysis) private var useMockAnalysis = false
@@ -51,6 +53,14 @@ struct ExperimentalSettingsView: View {
 
     var body: some View {
         List {
+            Section {
+                Toggle("Capture practice swings", isOn: $capturePracticeSwings)
+            } header: {
+                Text("Auto Capture")
+            } footer: {
+                Text("Off by default: Auto saves real shots only. Turn this on to save strong club-motion swing sequences even when no ball is struck, such as garden testing.")
+            }
+
             Section {
                 Toggle("Model swing detection", isOn: $liveAutoSwingDetectionEnabled)
 

@@ -98,42 +98,91 @@ struct AutoCaptureStatus: Equatable {
 }
 
 final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecordingDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
+    private enum AutoCaptureExportError: LocalizedError {
+        case photosSaveFailed
+
+        var errorDescription: String? {
+            switch self {
+            case .photosSaveFailed:
+                return "Swing clip could not be saved. Check Photos access and available storage."
+            }
+        }
+    }
+
     let session = AVCaptureSession()
     private let queue = DispatchQueue(label: "camera.session.queue")
-    private let qualityQueue = DispatchQueue(label: "camera.quality.queue")
+    /// The AVCapture delegate must return immediately or the camera drops source
+    /// frames. Encoding and model inference therefore live on separate queues.
+    private let qualityQueue = DispatchQueue(label: "camera.capture-output.queue")
+    private let analysisQueue = DispatchQueue(label: "camera.swing-analysis.queue")
+    private let bufferQueue = DispatchQueue(label: "camera.auto-buffer.queue")
     private let movieOutput = AVCaptureMovieFileOutput()
     private let videoDataOutput = AVCaptureVideoDataOutput()
+    private var rotationCoordinator: AVCaptureDevice.RotationCoordinator?
+    private var isConfigured = false
+    private var captureOutputIsPaused = false
+
+    private struct PendingAnalysisFrame {
+        let sampleBuffer: CMSampleBuffer
+        let relativeTime: Double
+        let rotationAngle: CGFloat
+    }
+
+    private var analysisIsInFlight = false
+    private var pendingAnalysisFrame: PendingAnalysisFrame?
 
     private var liveSwingDetector = SwingDetectorV2()
     private var recordingStartSampleTime: CMTime?
     private var recordingStartWallTime: Date?
     private var lastLiveSwingSampleTime = -Double.greatestFiniteMagnitude
     private var autoCaptureIsActive = false
+    private var autoCaptureIsPausedForReview = false
     private var autoSavedSwingCount = 0
     private var autoPendingSwingCount = 0
     private var autoExportedDetectionIDs: Set<UUID> = []
-    private let autoRollingBuffer = AutoRollingVideoBuffer()
+    private lazy var autoRollingBuffer = AutoRollingVideoBuffer(writerQueue: bufferQueue)
     private let autoTrimmer = VideoTrimmer()
 
     @Published var lastRecordingURL: URL?
     @Published var lastRecordingSwingDetections: [DetectedSwing] = []
     @Published var lastRecordingSwingDetectionSummary: LiveSwingDetectionSnapshot?
     @Published var recordingError: Error?
-    @Published var captureMode: SloMoMode = .ultra  // Default to 240 fps
+    @Published var captureMode: SloMoMode = .ultra
     @Published var liveSwingDetection = LiveSwingDetectionSnapshot.idle
     @Published var autoCaptureStatus = AutoCaptureStatus.idle
+    @Published private(set) var autoSessionSwings: [SavedSwing] = []
     var isLiveSwingDetectionEnabled = true
     var liveModelDetectorSampleFPS = 8.0
+    var capturesPracticeSwings = false
 
     /// The mode that was active when recording started (for correct playback rate)
     private(set) var recordedMode: SloMoMode = .ultra
 
     override init() {
         super.init()
-        configure()
+        if AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
+            configure()
+        }
     }
 
     private func configure() {
+        guard !isConfigured else { return }
+
+        // With a mic input attached, AVCaptureSession would otherwise activate
+        // a NON-mixable record audio session on start, stopping the golfer's
+        // music (Spotify). Configure a mixable session ourselves instead.
+        // allowBluetoothA2DP keeps AirPods playback in high quality (recording
+        // uses the phone's own mic); defaultToSpeaker keeps speaker playback
+        // audible instead of routing to the earpiece.
+        session.automaticallyConfiguresApplicationAudioSession = false
+        let audioSession = AVAudioSession.sharedInstance()
+        try? audioSession.setCategory(
+            .playAndRecord,
+            mode: .videoRecording,
+            options: [.mixWithOthers, .allowBluetoothA2DP, .defaultToSpeaker]
+        )
+        try? audioSession.setActive(true)
+
         session.beginConfiguration()
         // Note: We do NOT set sessionPreset — it would override our manual format selection
 
@@ -148,6 +197,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
         // Add input and output FIRST
         session.addInput(input)
+        rotationCoordinator = AVCaptureDevice.RotationCoordinator(device: device, previewLayer: nil)
         configureAudioInput()
         if session.canAddOutput(movieOutput) {
             session.addOutput(movieOutput)
@@ -159,6 +209,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         configureHighFPS(device: device, mode: captureMode)
 
         session.commitConfiguration()
+        isConfigured = true
     }
 
     private func configureAudioInput() {
@@ -173,7 +224,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     private func configureQualityOutput() {
-        videoDataOutput.alwaysDiscardsLateVideoFrames = true
+        // The delegate only fans frames out to dedicated queues. Keeping this
+        // false preserves the high-FPS source cadence used by the rolling writer.
+        videoDataOutput.alwaysDiscardsLateVideoFrames = false
         videoDataOutput.videoSettings = [
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
         ]
@@ -221,12 +274,26 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
     /// Switch capture mode without stopping the session (prevents errors)
     func switchMode(to mode: SloMoMode) {
-        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else { return }
+        queue.async {
+            guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else { return }
 
-        session.beginConfiguration()
-        captureMode = mode
-        configureHighFPS(device: device, mode: mode)
-        session.commitConfiguration()
+            self.captureOutputIsPaused = true
+            if self.autoCaptureIsActive {
+                self.bufferQueue.sync {
+                    self.autoRollingBuffer.reset(preservingPendingExports: true)
+                }
+            }
+
+            self.session.beginConfiguration()
+            DispatchQueue.main.async {
+                self.captureMode = mode
+            }
+            self.recordedMode = mode
+            self.configureHighFPS(device: device, mode: mode)
+            self.session.commitConfiguration()
+            self.resetLiveSwingDetection()
+            self.captureOutputIsPaused = false
+        }
     }
 
     /// Focus and expose at the given point (normalized 0-1 coordinates)
@@ -254,9 +321,76 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
     func start() {
         queue.async {
-            guard !self.session.isRunning else { return }
-            self.session.startRunning()
+            switch AVCaptureDevice.authorizationStatus(for: .video) {
+            case .authorized:
+                self.configureAndStartSession()
+            case .notDetermined:
+                AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                    guard let self else { return }
+                    guard granted else {
+                        self.reportCameraAccessUnavailable()
+                        return
+                    }
+                    self.queue.async {
+                        self.configureAndStartSession()
+                    }
+                }
+            case .denied, .restricted:
+                self.reportCameraAccessUnavailable()
+                return
+            @unknown default:
+                return
+            }
         }
+    }
+
+    private func configureAndStartSession() {
+        configure()
+        guard isConfigured, !session.isRunning else { return }
+        session.startRunning()
+    }
+
+    private func reportCameraAccessUnavailable() {
+        DispatchQueue.main.async {
+            self.liveSwingDetection = LiveSwingDetectionSnapshot(
+                status: .unavailable,
+                primaryMessage: "Camera access needed",
+                detailMessage: "Enable Camera access in Settings, then reopen Capture."
+            )
+            self.autoCaptureStatus = AutoCaptureStatus(
+                isActive: false,
+                savedSwingCount: self.autoSavedSwingCount,
+                pendingSwingCount: self.autoPendingSwingCount,
+                message: "Auto capture unavailable",
+                lastErrorMessage: "Camera access is disabled."
+            )
+        }
+    }
+
+    func reportPhotosAccessUnavailable() {
+        DispatchQueue.main.async {
+            self.autoCaptureStatus = AutoCaptureStatus(
+                isActive: self.autoCaptureIsActive,
+                savedSwingCount: self.autoSavedSwingCount,
+                pendingSwingCount: self.autoPendingSwingCount,
+                message: "Photos access needed",
+                lastErrorMessage: "Enable Photos add access in Settings before the range session."
+            )
+        }
+    }
+
+    @MainActor
+    func deleteAutoCapturedSwing(_ swing: SavedSwing) async throws {
+        try await SwingLibrary.shared.deleteSwingAndPhoto(swing)
+        autoSessionSwings.removeAll { $0.id == swing.id }
+        autoSavedSwingCount = autoSessionSwings.count
+        autoCaptureStatus = AutoCaptureStatus(
+            isActive: autoCaptureIsActive,
+            savedSwingCount: autoSavedSwingCount,
+            pendingSwingCount: autoPendingSwingCount,
+            message: autoCaptureIsActive ? "Auto watching" : "Auto capture off",
+            lastErrorMessage: nil
+        )
     }
 
     func stop() {
@@ -272,6 +406,13 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         // Capture the mode at recording start for correct playback rate
         recordedMode = captureMode
         resetLiveSwingDetection()
+        let rotationAngle = currentCardinalCaptureRotationAngle()
+        if let connection = movieOutput.connection(with: .video),
+           connection.isVideoRotationAngleSupported(rotationAngle) {
+            // MovieFileOutput records this as a track matrix; it does not
+            // physically rotate every source pixel buffer.
+            connection.videoRotationAngle = rotationAngle
+        }
 
         let url = Self.tempURL()
         movieOutput.startRecording(to: url, recordingDelegate: self)
@@ -301,13 +442,16 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             }
 
             self.autoCaptureIsActive = true
+            self.autoCaptureIsPausedForReview = false
             self.autoSavedSwingCount = 0
             self.autoPendingSwingCount = 0
-            self.autoExportedDetectionIDs = []
             self.recordedMode = self.captureMode
             self.resetLiveSwingDetection()
-            self.autoRollingBuffer.reset(preservingPendingExports: true)
+            self.bufferQueue.async {
+                self.autoRollingBuffer.reset(preservingPendingExports: true)
+            }
             DispatchQueue.main.async {
+                self.autoSessionSwings = []
                 self.autoCaptureStatus = AutoCaptureStatus(
                     isActive: true,
                     savedSwingCount: 0,
@@ -322,7 +466,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     func stopAutoCapture() {
         queue.async {
             self.autoCaptureIsActive = false
-            self.autoRollingBuffer.reset(preservingPendingExports: true)
+            self.autoCaptureIsPausedForReview = false
+            self.bufferQueue.async {
+                self.autoRollingBuffer.reset(preservingPendingExports: true)
+            }
             DispatchQueue.main.async {
                 self.autoCaptureStatus = AutoCaptureStatus(
                     isActive: false,
@@ -347,6 +494,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             self.recordingStartSampleTime = nil
             self.recordingStartWallTime = nil
             self.lastLiveSwingSampleTime = -Double.greatestFiniteMagnitude
+            self.analysisIsInFlight = false
+            self.pendingAnalysisFrame = nil
+        }
+        analysisQueue.async {
+            self.autoExportedDetectionIDs = []
             self.liveSwingDetector = SwingDetectorV2(configuration: self.liveV2Configuration())
             self.liveSwingDetector.reset(enabled: detectorEnabled)
         }
@@ -377,12 +529,40 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         SwingDetectorV2Configuration.live(
             sourceTimeScale: 1.0,
             lowSampleFPS: liveModelDetectorSampleFPS,
-            burstSampleFPS: max(16.0, liveModelDetectorSampleFPS * 2.0)
+            burstSampleFPS: max(16.0, liveModelDetectorSampleFPS * 2.0),
+            allowsPracticeSwings: capturesPracticeSwings
         )
     }
 
+    func restartAutoDetection() {
+        guard autoCaptureIsActive else { return }
+        resetLiveSwingDetection()
+    }
+
+    func pauseAutoCaptureForReview() {
+        queue.async {
+            guard self.autoCaptureIsActive else { return }
+            self.autoCaptureIsPausedForReview = true
+            self.bufferQueue.async {
+                self.autoRollingBuffer.reset(preservingPendingExports: true)
+            }
+        }
+    }
+
+    func resumeAutoCaptureAfterReview() {
+        queue.async {
+            guard self.autoCaptureIsActive, self.autoCaptureIsPausedForReview else { return }
+            self.autoCaptureIsPausedForReview = false
+            self.recordedMode = self.captureMode
+            self.resetLiveSwingDetection()
+            self.bufferQueue.async {
+                self.autoRollingBuffer.reset(preservingPendingExports: true)
+            }
+        }
+    }
+
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
-        qualityQueue.async {
+        analysisQueue.async {
             let detectionResult: (items: [DetectedSwing], summary: LiveSwingDetectionSnapshot?)
             if self.isLiveSwingDetectionEnabled {
                 let finished = self.finishLiveSwingDetection()
@@ -440,9 +620,47 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        if movieOutput.isRecording, isLiveSwingDetectionEnabled || autoCaptureIsActive {
-            processLiveModelSwingFrame(sampleBuffer)
+        let shouldProcessAuto = autoCaptureIsActive && !autoCaptureIsPausedForReview
+        guard !captureOutputIsPaused,
+              shouldProcessAuto || (movieOutput.isRecording && isLiveSwingDetectionEnabled)
+        else { return }
+
+        let sampleTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+        if recordingStartSampleTime == nil {
+            recordingStartSampleTime = sampleTime
+            recordingStartWallTime = Date()
         }
+
+        guard let recordingStartSampleTime else { return }
+        let relativeTime = CMTimeGetSeconds(CMTimeSubtract(sampleTime, recordingStartSampleTime))
+        guard relativeTime.isFinite else { return }
+        lastLiveSwingSampleTime = relativeTime
+
+        let rotationAngle = currentCardinalCaptureRotationAngle()
+        if shouldProcessAuto {
+            let sourceFPS = captureMode.targetFPS
+            bufferQueue.async {
+                self.autoRollingBuffer.append(
+                    sampleBuffer: sampleBuffer,
+                    relativeTime: relativeTime,
+                    videoRotationAngle: rotationAngle,
+                    sourceFPS: sourceFPS
+                )
+            }
+        }
+        enqueueAnalysis(
+            sampleBuffer: sampleBuffer,
+            relativeTime: relativeTime,
+            rotationAngle: rotationAngle
+        )
+    }
+
+    private func currentCardinalCaptureRotationAngle() -> CGFloat {
+        let rawAngle = rotationCoordinator?.videoRotationAngleForHorizonLevelCapture ?? 0
+        let normalized = rawAngle.truncatingRemainder(dividingBy: 360)
+        let positive = normalized < 0 ? normalized + 360 : normalized
+        let cardinal = (positive / 90).rounded() * 90
+        return cardinal >= 360 ? 0 : cardinal
     }
 
     private func exportAutoDetectedSwing(
@@ -465,6 +683,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
             let outputURL = FileManager.default.temporaryDirectory
                 .appendingPathComponent("auto_swing_\(clip.id.uuidString.prefix(8)).mp4")
+            defer { try? FileManager.default.removeItem(at: outputURL) }
             try await autoTrimmer.exportClip(
                 from: asset,
                 startTime: clip.startCMTime,
@@ -473,21 +692,25 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 slowMotionFactor: recordedMode.exportSlowMotionFactor
             )
 
-            if let assetID = await PHPhotoLibrary.saveVideoAndGetID(url: outputURL) {
-                let thumbnail = try? await autoTrimmer.generateThumbnail(for: asset, at: clip.startCMTime)
-                await MainActor.run {
-                        SwingLibrary.shared.addSwing(
-                            photoAssetID: assetID,
-                            vantage: clip.vantage,
-                            duration: clip.duration * recordedMode.sourceTimeScale,
-                            initialThumbnail: thumbnail,
-                            localSourceURL: outputURL
-                        )
-                }
-                savedCount = 1
+            guard let assetID = await PHPhotoLibrary.saveVideoAndGetID(url: outputURL) else {
+                throw AutoCaptureExportError.photosSaveFailed
             }
 
-            try? FileManager.default.removeItem(at: outputURL)
+            let thumbnail = try? await autoTrimmer.generateThumbnail(for: asset, at: clip.startCMTime)
+            let savedSwing = await MainActor.run {
+                SwingLibrary.shared.addSwing(
+                    photoAssetID: assetID,
+                    vantage: clip.vantage,
+                    duration: clip.duration * recordedMode.sourceTimeScale,
+                    initialThumbnail: thumbnail,
+                    localSourceURL: outputURL
+                )
+            }
+            savedCount = 1
+
+            await MainActor.run {
+                self.autoSessionSwings.append(savedSwing)
+            }
         } catch {
             lastErrorMessage = error.localizedDescription
         }
@@ -504,37 +727,73 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             )
         }
 
-        qualityQueue.async {
+        bufferQueue.async {
             self.autoRollingBuffer.release(preparedClip)
         }
     }
 
-    private func processLiveModelSwingFrame(_ sampleBuffer: CMSampleBuffer) {
-        let sampleTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-
-        if recordingStartSampleTime == nil {
-            recordingStartSampleTime = sampleTime
-            recordingStartWallTime = Date()
-        }
-
-        guard let recordingStartSampleTime,
-              let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
-        else {
+    private func enqueueAnalysis(
+        sampleBuffer: CMSampleBuffer,
+        relativeTime: Double,
+        rotationAngle: CGFloat
+    ) {
+        let frame = PendingAnalysisFrame(
+            sampleBuffer: sampleBuffer,
+            relativeTime: relativeTime,
+            rotationAngle: rotationAngle
+        )
+        guard !analysisIsInFlight else {
+            // Coalesce backlog to the newest frame. The detector samples by
+            // timestamp, so stale queued frames only create lag and heat.
+            pendingAnalysisFrame = frame
             return
         }
 
-        let relativeTime = CMTimeGetSeconds(CMTimeSubtract(sampleTime, recordingStartSampleTime))
-        guard relativeTime.isFinite else { return }
-        lastLiveSwingSampleTime = relativeTime
-        if autoCaptureIsActive {
-            autoRollingBuffer.append(sampleBuffer: sampleBuffer, relativeTime: relativeTime)
-        }
+        analysisIsInFlight = true
+        processAnalysis(frame)
+    }
 
-        let orientation: CGImagePropertyOrientation = .right
-        let orientedImageSize = CGSize(
-            width: CVPixelBufferGetHeight(pixelBuffer),
-            height: CVPixelBufferGetWidth(pixelBuffer)
+    private func processAnalysis(_ frame: PendingAnalysisFrame) {
+        analysisQueue.async {
+            self.processLiveModelSwingFrame(
+                frame.sampleBuffer,
+                relativeTime: frame.relativeTime,
+                rotationAngle: frame.rotationAngle
+            )
+            self.qualityQueue.async {
+                if let pending = self.pendingAnalysisFrame {
+                    self.pendingAnalysisFrame = nil
+                    self.processAnalysis(pending)
+                } else {
+                    self.analysisIsInFlight = false
+                }
+            }
+        }
+    }
+
+    private func processLiveModelSwingFrame(
+        _ sampleBuffer: CMSampleBuffer,
+        relativeTime: Double,
+        rotationAngle: CGFloat
+    ) {
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+
+        // Match the device orientation so YOLO and the pose gate see upright
+        // golfers in landscape too, not just portrait.
+        let orientation: CGImagePropertyOrientation
+        switch Int(rotationAngle.rounded()) % 360 {
+        case 90: orientation = .right
+        case 180: orientation = .down
+        case 270: orientation = .left
+        default: orientation = .up
+        }
+        let bufferSize = CGSize(
+            width: CVPixelBufferGetWidth(pixelBuffer),
+            height: CVPixelBufferGetHeight(pixelBuffer)
         )
+        let orientedImageSize = (orientation == .right || orientation == .left)
+            ? CGSize(width: bufferSize.height, height: bufferSize.width)
+            : bufferSize
         var snapshot = liveSwingDetector.process(
             sampleBuffer: sampleBuffer,
             recordingTime: relativeTime,
@@ -543,11 +802,13 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         )
         snapshot = liveTelemetrySnapshot(base: snapshot, recordingTime: relativeTime)
 
-        DispatchQueue.main.async {
-            self.liveSwingDetection = snapshot
+        if !autoCaptureIsActive || movieOutput.isRecording {
+            DispatchQueue.main.async {
+                self.liveSwingDetection = snapshot
+            }
         }
 
-        if autoCaptureIsActive {
+        if autoCaptureIsActive, !autoCaptureIsPausedForReview {
             enqueueNewAutoDetections()
         }
     }
@@ -559,7 +820,21 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
         for detection in newDetections {
             autoExportedDetectionIDs.insert(detection.id)
-            autoRollingBuffer.prepareClip(for: detection) { [weak self] result in
+            prepareAutoClip(detection)
+        }
+    }
+
+    /// Detector confirmation can arrive shortly before the configured post-roll
+    /// window has reached the rolling buffer. Wait for those frames instead of
+    /// immediately rejecting an otherwise valid swing as unavailable.
+    private func prepareAutoClip(_ detection: DetectedSwing, attemptsRemaining: Int = 8) {
+        let requestedEnd = CMTimeGetSeconds(detection.endTime)
+        let declaredAt = detection.declaredAt ?? requestedEnd
+        let secondsUntilPostRollIsBuffered = max(0.08, requestedEnd - declaredAt + 0.08)
+
+        bufferQueue.asyncAfter(deadline: .now() + secondsUntilPostRollIsBuffered) { [weak self] in
+            guard let self else { return }
+            self.autoRollingBuffer.prepareClip(for: detection) { [weak self] result in
                 guard let self else { return }
                 switch result {
                 case .success(let preparedClip):
@@ -582,6 +857,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                         )
                     }
                 case .failure(let error):
+                    if attemptsRemaining > 0,
+                       requestedEnd > self.autoRollingBuffer.latestRelativeTime {
+                        self.prepareAutoClip(detection, attemptsRemaining: attemptsRemaining - 1)
+                        return
+                    }
+
                     DispatchQueue.main.async {
                         self.autoCaptureStatus = AutoCaptureStatus(
                             isActive: self.autoCaptureIsActive,
@@ -614,6 +895,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 }
 
 private final class AutoRollingVideoBuffer {
+    private struct BufferedSample {
+        let sampleBuffer: CMSampleBuffer
+        let relativeTime: Double
+    }
+
     struct PreparedClip {
         let sourceURL: URL
         let sourceStartTime: Double
@@ -649,10 +935,14 @@ private final class AutoRollingVideoBuffer {
         let input: AVAssetWriterInput
         let startRelativeTime: Double
         let startSampleTime: CMTime
+        let videoRotationAngle: CGFloat
         var endRelativeTime: Double
         var isFinishing = false
         var isFinished = false
+        var didMarkInputFinished = false
         var pendingExports = 0
+        var pendingSamples: [BufferedSample] = []
+        var pendingReadIndex = 0
         var completionHandlers: [() -> Void] = []
 
         init(
@@ -660,22 +950,30 @@ private final class AutoRollingVideoBuffer {
             writer: AVAssetWriter,
             input: AVAssetWriterInput,
             startRelativeTime: Double,
-            startSampleTime: CMTime
+            startSampleTime: CMTime,
+            videoRotationAngle: CGFloat
         ) {
             self.url = url
             self.writer = writer
             self.input = input
             self.startRelativeTime = startRelativeTime
             self.startSampleTime = startSampleTime
+            self.videoRotationAngle = videoRotationAngle
             self.endRelativeTime = startRelativeTime
         }
     }
 
     private var chunks: [Chunk] = []
-    private let chunkDuration = 12.0
-    private let chunkStartInterval = 6.0
-    private let retentionDuration = 30.0
+    private(set) var latestRelativeTime = -Double.greatestFiniteMagnitude
+    private let writerQueue: DispatchQueue
+    private let chunkDuration = 20.0
+    private let chunkStartInterval = 17.4
+    private let retentionDuration = 45.0
     private var nextChunkStartTime: Double?
+
+    init(writerQueue: DispatchQueue) {
+        self.writerQueue = writerQueue
+    }
 
     func reset(preservingPendingExports: Bool = false) {
         var preservedChunks: [Chunk] = []
@@ -687,26 +985,53 @@ private final class AutoRollingVideoBuffer {
             }
 
             if !chunk.isFinishing && !chunk.isFinished {
-                chunk.input.markAsFinished()
+                chunk.pendingSamples.removeAll(keepingCapacity: false)
                 chunk.writer.cancelWriting()
             }
             try? FileManager.default.removeItem(at: chunk.url)
         }
         chunks = preservedChunks
         nextChunkStartTime = nil
+        latestRelativeTime = -Double.greatestFiniteMagnitude
     }
 
-    func append(sampleBuffer: CMSampleBuffer, relativeTime: Double) {
+    func append(
+        sampleBuffer: CMSampleBuffer,
+        relativeTime: Double,
+        videoRotationAngle: CGFloat,
+        sourceFPS: Double
+    ) {
         guard relativeTime.isFinite else { return }
+        latestRelativeTime = relativeTime
         let sampleTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
         guard sampleTime.isValid else { return }
 
-        if chunks.isEmpty {
-            startChunk(sampleBuffer: sampleBuffer, relativeTime: relativeTime, sampleTime: sampleTime)
+        let activeChunks = chunks.filter { !$0.isFinishing && !$0.isFinished }
+        if activeChunks.contains(where: { $0.videoRotationAngle != videoRotationAngle }) {
+            for chunk in activeChunks {
+                finish(chunk)
+            }
+            nextChunkStartTime = nil
+        }
+
+        if !chunks.contains(where: { !$0.isFinishing && !$0.isFinished }) {
+            startChunk(
+                sampleBuffer: sampleBuffer,
+                relativeTime: relativeTime,
+                sampleTime: sampleTime,
+                videoRotationAngle: videoRotationAngle,
+                sourceFPS: sourceFPS
+            )
         }
 
         while let nextChunkStartTime, relativeTime >= nextChunkStartTime {
-            startChunk(sampleBuffer: sampleBuffer, relativeTime: relativeTime, sampleTime: sampleTime)
+            startChunk(
+                sampleBuffer: sampleBuffer,
+                relativeTime: relativeTime,
+                sampleTime: sampleTime,
+                videoRotationAngle: videoRotationAngle,
+                sourceFPS: sourceFPS
+            )
         }
 
         for chunk in chunks where !chunk.isFinishing && !chunk.isFinished {
@@ -771,17 +1096,40 @@ private final class AutoRollingVideoBuffer {
         cleanupOldChunks(currentTime: chunks.map(\.endRelativeTime).max() ?? chunk.endRelativeTime)
     }
 
-    private func startChunk(sampleBuffer: CMSampleBuffer, relativeTime: Double, sampleTime: CMTime) {
+    private func startChunk(
+        sampleBuffer: CMSampleBuffer,
+        relativeTime: Double,
+        sampleTime: CMTime,
+        videoRotationAngle: CGFloat,
+        sourceFPS: Double
+    ) {
         do {
             guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else {
                 throw BufferError.missingFormatDescription
             }
 
             let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
+            let expectedFPS = max(30, Int(sourceFPS.rounded()))
+            let averageBitRate: Int
+            switch expectedFPS {
+            case 180...:
+                averageBitRate = 50_000_000
+            case 90...:
+                averageBitRate = 32_000_000
+            case 45...:
+                averageBitRate = 20_000_000
+            default:
+                averageBitRate = 14_000_000
+            }
             let outputSettings: [String: Any] = [
                 AVVideoCodecKey: AVVideoCodecType.h264,
                 AVVideoWidthKey: Int(dimensions.width),
-                AVVideoHeightKey: Int(dimensions.height)
+                AVVideoHeightKey: Int(dimensions.height),
+                AVVideoCompressionPropertiesKey: [
+                    AVVideoExpectedSourceFrameRateKey: expectedFPS,
+                    AVVideoAverageBitRateKey: averageBitRate,
+                    AVVideoMaxKeyFrameIntervalKey: expectedFPS * 2
+                ]
             ]
             let url = Self.tempURL()
             let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
@@ -791,6 +1139,12 @@ private final class AutoRollingVideoBuffer {
                 sourceFormatHint: formatDescription
             )
             input.expectsMediaDataInRealTime = true
+            // Keep raw pixel buffers untouched for detector performance, and
+            // record the device-aware orientation as the movie track transform.
+            input.transform = Self.videoTransform(
+                rotationAngle: videoRotationAngle,
+                dimensions: dimensions
+            )
 
             guard writer.canAdd(input) else {
                 throw BufferError.writerCreationFailed("Video input could not be added.")
@@ -807,7 +1161,8 @@ private final class AutoRollingVideoBuffer {
                 writer: writer,
                 input: input,
                 startRelativeTime: relativeTime,
-                startSampleTime: sampleTime
+                startSampleTime: sampleTime,
+                videoRotationAngle: videoRotationAngle
             )
             chunks.append(chunk)
             nextChunkStartTime = relativeTime + chunkStartInterval
@@ -817,32 +1172,72 @@ private final class AutoRollingVideoBuffer {
     }
 
     private func append(_ sampleBuffer: CMSampleBuffer, to chunk: Chunk, relativeTime: Double) {
-        guard chunk.input.isReadyForMoreMediaData,
-              let retimedBuffer = Self.copy(sampleBuffer, relativeTo: chunk.startSampleTime)
-        else {
-            return
-        }
-
-        if chunk.input.append(retimedBuffer) {
-            chunk.endRelativeTime = relativeTime
-        } else if let error = chunk.writer.error {
-            print("❌ Auto rolling buffer append failed: \(error.localizedDescription)")
-            finish(chunk)
-        }
+        guard let retimedBuffer = Self.copy(sampleBuffer, relativeTo: chunk.startSampleTime) else { return }
+        chunk.pendingSamples.append(
+            BufferedSample(sampleBuffer: retimedBuffer, relativeTime: relativeTime)
+        )
+        drainPendingSamples(for: chunk)
     }
 
     private func finish(_ chunk: Chunk) {
         guard !chunk.isFinishing, !chunk.isFinished else { return }
         chunk.isFinishing = true
+        drainPendingSamples(for: chunk)
+    }
+
+    private func drainPendingSamples(for chunk: Chunk) {
+        guard !chunk.isFinished, !chunk.didMarkInputFinished else { return }
+
+        while chunk.input.isReadyForMoreMediaData,
+              chunk.pendingReadIndex < chunk.pendingSamples.count {
+            let sample = chunk.pendingSamples[chunk.pendingReadIndex]
+            if chunk.input.append(sample.sampleBuffer) {
+                chunk.endRelativeTime = sample.relativeTime
+                chunk.pendingReadIndex += 1
+            } else {
+                let message = chunk.writer.error?.localizedDescription ?? "unknown writer error"
+                print("❌ Auto rolling buffer append failed: \(message)")
+                chunk.pendingSamples.removeAll(keepingCapacity: false)
+                chunk.pendingReadIndex = 0
+                chunk.isFinishing = true
+                break
+            }
+        }
+
+        // Every buffered sample pins one pixel buffer from the camera's small
+        // fixed pool; holding consumed samples starves the capture pipeline and
+        // the camera stops delivering frames. Release them as soon as the
+        // encoder has accepted them.
+        if chunk.pendingReadIndex > 0 {
+            chunk.pendingSamples.removeFirst(chunk.pendingReadIndex)
+            chunk.pendingReadIndex = 0
+        }
+
+        guard chunk.isFinishing else { return }
+        guard chunk.pendingReadIndex >= chunk.pendingSamples.count else {
+            writerQueue.asyncAfter(deadline: .now() + 0.005) { [weak self, weak chunk] in
+                guard let self, let chunk else { return }
+                self.drainPendingSamples(for: chunk)
+            }
+            return
+        }
+
+        chunk.pendingSamples.removeAll(keepingCapacity: false)
+        chunk.pendingReadIndex = 0
+        chunk.didMarkInputFinished = true
         chunk.input.markAsFinished()
-        chunk.writer.finishWriting { [weak chunk] in
-            guard let chunk else { return }
-            chunk.isFinished = true
-            chunk.isFinishing = false
-            let handlers = chunk.completionHandlers
-            chunk.completionHandlers = []
-            for handler in handlers {
-                handler()
+        // finishWriting calls back on AVFoundation's own queue; all chunk state
+        // is owned by writerQueue, so hop back before touching it.
+        chunk.writer.finishWriting { [weak self, weak chunk] in
+            guard let self, let chunk else { return }
+            self.writerQueue.async {
+                chunk.isFinished = true
+                chunk.isFinishing = false
+                let handlers = chunk.completionHandlers
+                chunk.completionHandlers = []
+                for handler in handlers {
+                    handler()
+                }
             }
         }
     }
@@ -912,6 +1307,25 @@ private final class AutoRollingVideoBuffer {
         FileManager.default.temporaryDirectory
             .appendingPathComponent("auto_buffer_\(UUID().uuidString).mov")
     }
+
+    private static func videoTransform(
+        rotationAngle: CGFloat,
+        dimensions: CMVideoDimensions
+    ) -> CGAffineTransform {
+        let width = CGFloat(dimensions.width)
+        let height = CGFloat(dimensions.height)
+
+        switch Int(rotationAngle.rounded()) % 360 {
+        case 90:
+            return CGAffineTransform(a: 0, b: 1, c: -1, d: 0, tx: height, ty: 0)
+        case 180:
+            return CGAffineTransform(a: -1, b: 0, c: 0, d: -1, tx: width, ty: height)
+        case 270:
+            return CGAffineTransform(a: 0, b: -1, c: 1, d: 0, tx: 0, ty: width)
+        default:
+            return .identity
+        }
+    }
 }
 
 final class CameraPreviewView: UIView {
@@ -974,7 +1388,8 @@ struct CaptureView: View {
     @StateObject private var camera = CameraSession()
     @AppStorage(ExperimentalSettingKey.liveAutoSwingDetectionEnabled) private var liveAutoSwingDetectionEnabled = true
     @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
-    @State private var workflowMode: CaptureWorkflowMode = .manual
+    @AppStorage(ExperimentalSettingKey.capturePracticeSwings) private var capturePracticeSwings = false
+    @State private var workflowMode: CaptureWorkflowMode = .auto
     @State private var isRecording = false
     @State private var previewPlayerItem: AVPlayerItem?
     @State private var currentRecordingURL: URL?
@@ -995,6 +1410,7 @@ struct CaptureView: View {
 
     // Trim view presentation
     @State private var showTrimView = false
+    @State private var autoReviewPresentation: AutoSwingReviewPresentation?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -1111,8 +1527,8 @@ struct CaptureView: View {
                                         .fill(Color.black.opacity(0.5))
                                 )
                             }
-                            .disabled(isRecording || workflowMode == .auto)
-                            .opacity((isRecording || workflowMode == .auto) ? 0.5 : 1.0)
+                            .disabled(isRecording)
+                            .opacity(isRecording ? 0.5 : 1.0)
 
                             Spacer()
 
@@ -1148,15 +1564,28 @@ struct CaptureView: View {
                         .padding(.horizontal, 16)
                         .padding(.top, 8)
 
-                        if isRecording || workflowMode == .auto {
+                        if isRecording {
                             LiveSwingDetectionBadge(snapshot: camera.liveSwingDetection)
                                 .padding(.top, 10)
                                 .padding(.horizontal, 16)
                         }
 
                         if workflowMode == .auto {
-                            AutoCaptureStatusBadge(status: camera.autoCaptureStatus)
-                                .padding(.top, 8)
+                            AutoCaptureGuideCard(
+                                status: camera.autoCaptureStatus,
+                                swingCount: camera.autoSessionSwings.count,
+                                capturesPracticeSwings: capturePracticeSwings,
+                                onReview: {
+                                    guard !camera.autoSessionSwings.isEmpty else { return }
+                                    camera.pauseAutoCaptureForReview()
+                                    // Fully stop the session while reviewing: no green
+                                    // camera indicator, no encode/inference load behind
+                                    // the carousel, no new detections mid-review.
+                                    camera.stop()
+                                    autoReviewPresentation = AutoSwingReviewPresentation()
+                                }
+                            )
+                                .padding(.top, 10)
                                 .padding(.horizontal, 16)
                         }
 
@@ -1179,13 +1608,23 @@ struct CaptureView: View {
             ExperimentalDetectorDefaults.migrateIfNeeded()
             camera.isLiveSwingDetectionEnabled = liveAutoSwingDetectionEnabled
             camera.liveModelDetectorSampleFPS = liveModelDetectorSampleFPS
+            camera.capturesPracticeSwings = capturePracticeSwings
             camera.start()
+            if workflowMode == .auto {
+                preventIdleTimer()
+                requestAutoCapturePhotosAccess()
+                camera.startAutoCapture()
+            }
         }
         .onChange(of: liveAutoSwingDetectionEnabled) { _, isEnabled in
             camera.isLiveSwingDetectionEnabled = isEnabled
         }
         .onChange(of: liveModelDetectorSampleFPS) { _, sampleFPS in
             camera.liveModelDetectorSampleFPS = sampleFPS
+        }
+        .onChange(of: capturePracticeSwings) { _, isEnabled in
+            camera.capturesPracticeSwings = isEnabled
+            camera.restartAutoDetection()
         }
         .onChange(of: workflowMode) { _, mode in
             switch mode {
@@ -1250,6 +1689,13 @@ struct CaptureView: View {
                 )
             }
         }
+        .fullScreenCover(item: $autoReviewPresentation) { _ in
+            AutoSwingReviewView(camera: camera)
+                .onDisappear {
+                    camera.resumeAutoCaptureAfterReview()
+                    camera.start()
+                }
+        }
     }
 
     // MARK: - Actions
@@ -1294,6 +1740,15 @@ struct CaptureView: View {
             previousIdleTimerDisabled = UIApplication.shared.isIdleTimerDisabled
         }
         UIApplication.shared.isIdleTimerDisabled = true
+    }
+
+    private func requestAutoCapturePhotosAccess() {
+        PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+            guard status == .authorized else {
+                camera.reportPhotosAccessUnavailable()
+                return
+            }
+        }
     }
 
     private func restoreIdleTimer() {
@@ -1414,80 +1869,72 @@ struct FocusIndicatorView: View {
     }
 }
 
-struct AutoCaptureStatusBadge: View {
+struct AutoCaptureGuideCard: View {
     let status: AutoCaptureStatus
+    let swingCount: Int
+    let capturesPracticeSwings: Bool
+    let onReview: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: iconName)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(iconColor)
-                .frame(width: 22)
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: status.lastErrorMessage == nil ? "dot.radiowaves.left.and.right" : "exclamationmark.triangle.fill")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(status.lastErrorMessage == nil ? .yellow : .orange)
+                    .frame(width: 22)
 
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 8) {
-                    Text(status.message)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(primaryText)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                    if status.savedSwingCount > 0 {
-                        Text("\(status.savedSwingCount) saved")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
-                            .foregroundColor(.black)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Capsule().fill(Color.green))
+                    if status.pendingSwingCount > 0 {
+                        Text("Saving \(status.pendingSwingCount) swing\(status.pendingSwingCount == 1 ? "" : "s")…")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.70))
                     }
                 }
 
-                Text(detailText)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(detailColor)
-                    .lineLimit(2)
+                Spacer(minLength: 0)
             }
 
-            Spacer(minLength: 0)
+            Button(action: onReview) {
+                HStack {
+                    Text("\(swingCount) swing\(swingCount == 1 ? "" : "s") captured")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                    Spacer()
+                    if swingCount > 0 {
+                        Text("Review")
+                            .font(.system(size: 12, weight: .semibold))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                }
+                .foregroundStyle(swingCount > 0 ? Color.black : Color.white.opacity(0.74))
+                .padding(.horizontal, 12)
+                .frame(height: 38)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(swingCount > 0 ? Color.yellow : Color.white.opacity(0.10))
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(swingCount == 0)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(12)
         .background(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: 12)
                 .fill(Color.black.opacity(0.54))
         )
     }
 
-    private var iconName: String {
-        if status.lastErrorMessage != nil {
-            return "exclamationmark.triangle.fill"
-        }
-        if status.pendingSwingCount > 0 {
-            return "square.and.arrow.down.fill"
-        }
-        return status.isActive ? "dot.radiowaves.left.and.right" : "pause.circle.fill"
-    }
-
-    private var iconColor: Color {
-        if status.lastErrorMessage != nil {
-            return .yellow
-        }
-        if status.pendingSwingCount > 0 {
-            return .green
-        }
-        return status.isActive ? .yellow : .white.opacity(0.68)
-    }
-
-    private var detailText: String {
+    private var primaryText: String {
         if let error = status.lastErrorMessage {
             return error
         }
-        if status.pendingSwingCount > 0 {
-            return "\(status.pendingSwingCount) clip\(status.pendingSwingCount == 1 ? "" : "s") exporting to Library"
-        }
-        return "Saved swings appear in Library"
-    }
-
-    private var detailColor: Color {
-        status.lastErrorMessage == nil ? .white.opacity(0.70) : .yellow.opacity(0.92)
+        let practiceText = capturesPracticeSwings ? " Ball-free practice swings are enabled." : ""
+        return "Set up your phone, point it at your swing, then start swinging. Videos save automatically.\(practiceText)"
     }
 }
 
