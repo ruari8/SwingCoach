@@ -6,6 +6,7 @@ overlay tracks, drawing logic, and visual reference material.
 Planning docs:
 
 - [Event Detector Plan](./event_detector.md)
+- [Event Detector Training Plan](./event_detector_training_plan.html)
 
 Large generated/reference media belongs in `reference/` and is intentionally
 gitignored. Keep lightweight specs, code, and test fixtures tracked outside

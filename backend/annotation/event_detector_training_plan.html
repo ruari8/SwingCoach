@@ -1,0 +1,1116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SwingCoach Event Detector Training Plan</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #181818;
+      --muted: #424850;
+      --line: #d9d4ca;
+      --paper: #f8f6f0;
+      --panel: #ffffff;
+      --dark: #151515;
+      --gold: #c79a2b;
+      --green: #2f8f72;
+      --blue: #2b68a0;
+      --red: #b74438;
+      --purple: #7656a6;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.10);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-size: 18px;
+      line-height: 1.65;
+    }
+
+    main {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 34px 28px 80px;
+    }
+
+    header {
+      padding: 28px 0 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 5vw, 66px);
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 0 0 18px;
+      font-size: clamp(28px, 3vw, 42px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 14px;
+    }
+
+    code {
+      background: #efebe1;
+      border: 1px solid #ded7c9;
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.95em;
+    }
+
+    pre {
+      margin: 14px 0 0;
+      padding: 18px 20px;
+      overflow-x: auto;
+      color: #f7f5ee;
+      background: #151515;
+      border-radius: 8px;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    section {
+      padding: 42px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    a {
+      color: #1f5f95;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    .lede {
+      max-width: 880px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: clamp(18px, 2.2vw, 23px);
+    }
+
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 8px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fffaf0;
+      color: #413b30;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 18px;
+    }
+
+    .span-4 {
+      grid-column: span 4;
+    }
+
+    .span-5 {
+      grid-column: span 5;
+    }
+
+    .span-6 {
+      grid-column: span 6;
+    }
+
+    .span-7 {
+      grid-column: span 7;
+    }
+
+    .span-8 {
+      grid-column: span 8;
+    }
+
+    .span-12 {
+      grid-column: span 12;
+    }
+
+    .panel {
+      min-height: 100%;
+      padding: 24px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.8) inset;
+    }
+
+    .panel.dark {
+      color: #f7f4ea;
+      background: var(--dark);
+      border-color: #252525;
+      box-shadow: var(--shadow);
+    }
+
+    .panel.dark p,
+    .panel.dark li {
+      color: #ece8dc;
+    }
+
+    .callout {
+      padding: 22px 24px;
+      border-left: 5px solid var(--gold);
+      background: #fff9e9;
+      border-radius: 8px;
+    }
+
+    .callout strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .list-clean {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .list-clean li {
+      margin: 8px 0;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .flow .box {
+      padding: 18px;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #fff;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    .flow .box small {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .arrow {
+      color: var(--muted);
+      font-weight: 900;
+      font-size: 28px;
+    }
+
+    .timeline {
+      position: relative;
+      margin-top: 24px;
+      padding: 44px 22px 22px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .timeline-track {
+      position: relative;
+      height: 7px;
+      background: #dad3c4;
+      border-radius: 999px;
+    }
+
+    .event-dot {
+      --x: 0%;
+      position: absolute;
+      top: 50%;
+      left: var(--x);
+      width: 18px;
+      height: 18px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 3px solid #fff;
+      background: var(--blue);
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.16);
+    }
+
+    .event-dot.fast {
+      background: var(--red);
+    }
+
+    .event-label {
+      position: absolute;
+      top: -34px;
+      left: var(--x);
+      transform: translateX(-50%);
+      white-space: nowrap;
+      font-size: 15px;
+      font-weight: 800;
+      color: #2d2d2d;
+    }
+
+    .frames {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(60px, 1fr));
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .frame {
+      min-height: 86px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #cfc8ba;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #fdfdfb, #eee7d9);
+      font-weight: 900;
+    }
+
+    .frame span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .heatmap {
+      margin-top: 18px;
+      padding: 16px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .heat-row {
+      display: grid;
+      grid-template-columns: 48px repeat(16, minmax(18px, 1fr));
+      gap: 5px;
+      align-items: center;
+      margin: 10px 0;
+    }
+
+    .heat-label {
+      font-weight: 900;
+      color: #2e2e2e;
+    }
+
+    .heat-cell {
+      height: 24px;
+      border-radius: 3px;
+      background: rgba(43, 104, 160, var(--a));
+    }
+
+    .heat-cell.red {
+      background: rgba(183, 68, 56, var(--a));
+    }
+
+    .animation-stage {
+      position: relative;
+      height: 390px;
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, rgba(24,24,24,0.06) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(24,24,24,0.06) 1px, transparent 1px),
+        #fff;
+      background-size: 36px 36px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .machine {
+      position: absolute;
+      top: 92px;
+      left: 50%;
+      width: 270px;
+      height: 138px;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      background: #151515;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .machine small {
+      display: block;
+      margin-top: 7px;
+      color: #d0ccc2;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .moving-frame {
+      position: absolute;
+      top: 130px;
+      left: -90px;
+      width: 84px;
+      height: 84px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: #fffaf0;
+      border: 2px solid #cdbb8e;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      animation: pass-frame 5.4s infinite linear;
+      font-weight: 900;
+    }
+
+    .moving-frame:nth-child(2) { animation-delay: .45s; }
+    .moving-frame:nth-child(3) { animation-delay: .9s; }
+    .moving-frame:nth-child(4) { animation-delay: 1.35s; }
+    .moving-frame:nth-child(5) { animation-delay: 1.8s; }
+
+    .output-pulse {
+      position: absolute;
+      right: 42px;
+      bottom: 38px;
+      width: 470px;
+      max-width: calc(100% - 84px);
+      padding: 18px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .pulse-line {
+      position: relative;
+      height: 44px;
+      border-bottom: 2px solid #cfc8ba;
+      overflow: hidden;
+    }
+
+    .pulse-line::before {
+      content: "";
+      position: absolute;
+      bottom: -2px;
+      left: -35%;
+      width: 32%;
+      height: 40px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(47, 143, 114, .72), rgba(47, 143, 114, 0) 68%);
+      animation: pulse-scan 5.4s infinite linear;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .swatch {
+      width: 13px;
+      height: 13px;
+      display: inline-block;
+      vertical-align: -2px;
+      margin-right: 5px;
+      border-radius: 3px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      min-width: 980px;
+      border-collapse: collapse;
+      font-size: 16px;
+    }
+
+    th,
+    td {
+      padding: 15px 16px;
+      border-bottom: 1px solid #e6e0d4;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #151515;
+      color: #fff;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .source-list {
+      columns: 1;
+      max-width: 900px;
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .source-list li {
+      break-inside: avoid;
+      margin: 0 0 10px;
+    }
+
+    @keyframes pass-frame {
+      0% { transform: translateX(0) scale(1); opacity: 0; }
+      7% { opacity: 1; }
+      44% { transform: translateX(calc(50vw - 42px)) scale(1); opacity: 1; }
+      51% { transform: translateX(calc(50vw - 42px)) scale(.72); opacity: .2; }
+      61% { transform: translateX(calc(100vw + 110px)) scale(.72); opacity: .2; }
+      100% { transform: translateX(calc(100vw + 110px)) scale(.72); opacity: 0; }
+    }
+
+    @keyframes pulse-scan {
+      0% { left: -35%; }
+      38% { left: 8%; }
+      50% { left: 42%; }
+      65% { left: 62%; }
+      100% { left: 112%; }
+    }
+
+    @media (max-width: 820px) {
+      main {
+        padding: 24px 16px 56px;
+      }
+
+      body {
+        font-size: 17px;
+      }
+
+      pre {
+        font-size: 14px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .span-4,
+      .span-5,
+      .span-6,
+      .span-7,
+      .span-8,
+      .span-12 {
+        grid-column: 1;
+      }
+
+      .flow {
+        grid-template-columns: 1fr;
+      }
+
+      .arrow {
+        transform: rotate(90deg);
+        text-align: center;
+      }
+
+      .frames {
+        grid-template-columns: repeat(5, 1fr);
+      }
+
+      .animation-stage {
+        height: 440px;
+      }
+
+      .machine {
+        left: 50%;
+        width: calc(100% - 44px);
+      }
+
+      .output-pulse {
+        left: 22px;
+        right: 22px;
+        width: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Event Detector Training Plan</h1>
+    <p class="lede">
+      A practical plan for turning 500+ manually corrected P1-P10 swing labels
+      into a video event detector that finds coaching checkpoints for DTL annotations.
+    </p>
+    <div class="status-row">
+      <span class="pill">Dataset: full swing videos</span>
+      <span class="pill">Labels: P1-P10 timestamps</span>
+      <span class="pill">Task: event localization</span>
+      <span class="pill">First target: DTL</span>
+    </div>
+  </header>
+
+  <section>
+    <h2>The Short Answer</h2>
+    <div class="grid">
+      <div class="panel dark span-5">
+        <h3>What we have</h3>
+        <p>
+          We have videos and ten timestamps per video. That is enough to train
+          an event detector.
+        </p>
+        <pre><code>video_001.mp4
+P1 = 0.42s
+P2 = 0.81s
+P3 = 1.08s
+...
+P10 = 2.64s</code></pre>
+      </div>
+      <div class="panel span-7">
+        <h3>What we train</h3>
+        <p>
+          The model should not be a still-image classifier. It should read the
+          swing as a short sequence and output one probability curve for each
+          P-position.
+        </p>
+        <div class="flow" aria-label="Video event detector flow">
+          <div class="box">Video frames <small>pixels over time</small></div>
+          <div class="arrow">-></div>
+          <div class="box">Temporal model <small>understands sequence</small></div>
+          <div class="arrow">-></div>
+          <div class="box">P-event windows <small>P1-P10 peaks</small></div>
+        </div>
+      </div>
+    </div>
+    <div class="callout" style="margin-top: 18px;">
+      <strong>Important correction to earlier wording</strong>
+      A contact sheet is not required because your labels are suspicious. Its
+      purpose is to catch boring pipeline mistakes: wrong video path, timebase
+      mismatch, slow-mo factor confusion, off-by-one frame conversion, or label
+      JSON parsing errors. If the labels are already manually corrected, use
+      contact sheets as optional spot-check evidence, not as a blocker.
+    </div>
+  </section>
+
+  <section>
+    <h2>Features, Labels, And Data</h2>
+    <div class="grid">
+      <div class="panel span-4">
+        <h3>Labels</h3>
+        <p>
+          Labels are the answers. For our task, labels are the human-approved
+          P1-P10 timestamps.
+        </p>
+        <pre><code>{
+  "p6": 1.43,
+  "p7": 1.51
+}</code></pre>
+      </div>
+      <div class="panel span-4">
+        <h3>Features</h3>
+        <p>
+          Features are what the model looks at. In old-school tabular ML, you
+          hand-design them. In deep vision, the model usually learns them from
+          pixels.
+        </p>
+        <pre><code>fruit:
+  width, height, area
+
+golf video:
+  pixels, motion, shape</code></pre>
+      </div>
+      <div class="panel span-4">
+        <h3>Data</h3>
+        <p>
+          The training data should be full trimmed swing videos plus timestamps,
+          not just the ten extracted P frames.
+        </p>
+        <pre><code>input:
+  swing video
+
+target:
+  P1-P10 event times</code></pre>
+      </div>
+    </div>
+
+    <div class="timeline">
+      <div class="timeline-track">
+        <span class="event-label" style="--x: 6%;">P1</span>
+        <span class="event-dot" style="--x: 6%;"></span>
+        <span class="event-label" style="--x: 20%;">P2</span>
+        <span class="event-dot" style="--x: 20%;"></span>
+        <span class="event-label" style="--x: 33%;">P3</span>
+        <span class="event-dot" style="--x: 33%;"></span>
+        <span class="event-label" style="--x: 47%;">P4</span>
+        <span class="event-dot" style="--x: 47%;"></span>
+        <span class="event-label" style="--x: 59%;">P5</span>
+        <span class="event-dot fast" style="--x: 59%;"></span>
+        <span class="event-label" style="--x: 66%;">P6</span>
+        <span class="event-dot fast" style="--x: 66%;"></span>
+        <span class="event-label" style="--x: 71%;">P7</span>
+        <span class="event-dot fast" style="--x: 71%;"></span>
+        <span class="event-label" style="--x: 78%;">P8</span>
+        <span class="event-dot fast" style="--x: 78%;"></span>
+        <span class="event-label" style="--x: 88%;">P9</span>
+        <span class="event-dot" style="--x: 88%;"></span>
+        <span class="event-label" style="--x: 97%;">P10</span>
+        <span class="event-dot" style="--x: 97%;"></span>
+      </div>
+      <div class="legend">
+        <span><span class="swatch" style="background: var(--blue);"></span>normal checkpoint</span>
+        <span><span class="swatch" style="background: var(--red);"></span>fast downswing / blur-sensitive checkpoint</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Why Not Train On Only The Ten Frames?</h2>
+    <div class="grid">
+      <div class="panel span-6">
+        <h3>Ten-frame classifier</h3>
+        <p>
+          You could train a still classifier:
+        </p>
+        <pre><code>input = one labelled frame
+label = P1 or P2 or ... P10</code></pre>
+        <p>
+          This teaches the model what a selected P-position looks like, but it
+          does not teach the model how to find that position inside a full swing.
+        </p>
+      </div>
+      <div class="panel span-6">
+        <h3>Video event detector</h3>
+        <p>
+          Production gives us a video. The model has to search through the
+          sequence and find the moments.
+        </p>
+        <pre><code>input = all sampled frames
+label = probability curve for each P</code></pre>
+        <p>
+          This also helps with ambiguous stills. P3 and P5 can look similar;
+          motion direction separates them.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What "Fixed Frame Count" Means</h2>
+    <div class="grid">
+      <div class="panel span-7">
+        <p>
+          Neural networks train in batches. Batches are easiest when every input
+          has the same tensor shape. That does not mean the original videos must
+          have the same length, FPS, resolution, or slow-mo speed.
+        </p>
+        <p>
+          It means we create a model input by sampling each swing into a fixed
+          number of frames.
+        </p>
+        <pre><code>video A: 1.6s normal speed -> sample 160 frames
+video B: 8.0s slow-mo      -> sample 160 frames
+video C: 2.4s normal speed -> sample 160 frames</code></pre>
+        <p>
+          The timestamp labels are converted into positions on that sampled
+          timeline. We keep the mapping back to original frame/time for output.
+        </p>
+      </div>
+      <div class="panel span-5">
+        <h3>Alternative</h3>
+        <p>
+          We can support variable-length videos using padding and masks. That is
+          common too, but fixed sampling is simpler for the first model and
+          usually good enough for trimmed swing clips.
+        </p>
+        <p>
+          Resolution is also normalized for the model, usually something like
+          <code>224x224</code> or <code>256x256</code>. The original video stays
+          untouched for rendering annotations.
+        </p>
+      </div>
+    </div>
+
+    <div class="frames" aria-label="Sampled model frames">
+      <div class="frame">1<span>sample</span></div>
+      <div class="frame">18<span>P1-ish</span></div>
+      <div class="frame">36<span>P2-ish</span></div>
+      <div class="frame">54<span>P3-ish</span></div>
+      <div class="frame">72<span>P4-ish</span></div>
+      <div class="frame">96<span>P5/P6</span></div>
+      <div class="frame">104<span>P7</span></div>
+      <div class="frame">118<span>P8</span></div>
+      <div class="frame">140<span>P9</span></div>
+      <div class="frame">160<span>P10</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>How The Model Learns Events</h2>
+    <div class="grid">
+      <div class="panel span-5">
+        <h3>Hard timestamp becomes soft target</h3>
+        <p>
+          Your label says: <code>P6 = frame 96</code>. During training we do
+          not only mark one frame as right and every neighboring frame as
+          completely wrong. We create a small soft peak around the label.
+        </p>
+        <p>
+          This matters because P6/P7 can be separated by one frame in low-FPS
+          video, and sometimes the best visible frame is adjacent to the true
+          mechanical instant.
+        </p>
+      </div>
+      <div class="panel span-7">
+        <h3>Event heatmaps</h3>
+        <div class="heatmap" aria-label="Event probability heatmap example">
+          <div class="heat-row">
+            <span class="heat-label">P4</span>
+            <span class="heat-cell" style="--a:.02"></span>
+            <span class="heat-cell" style="--a:.04"></span>
+            <span class="heat-cell" style="--a:.10"></span>
+            <span class="heat-cell" style="--a:.28"></span>
+            <span class="heat-cell" style="--a:.62"></span>
+            <span class="heat-cell" style="--a:.94"></span>
+            <span class="heat-cell" style="--a:.68"></span>
+            <span class="heat-cell" style="--a:.24"></span>
+            <span class="heat-cell" style="--a:.08"></span>
+            <span class="heat-cell" style="--a:.02"></span>
+            <span class="heat-cell" style="--a:.01"></span>
+            <span class="heat-cell" style="--a:.01"></span>
+            <span class="heat-cell" style="--a:.01"></span>
+            <span class="heat-cell" style="--a:.01"></span>
+            <span class="heat-cell" style="--a:.01"></span>
+            <span class="heat-cell" style="--a:.01"></span>
+          </div>
+          <div class="heat-row">
+            <span class="heat-label">P6</span>
+            <span class="heat-cell red" style="--a:.01"></span>
+            <span class="heat-cell red" style="--a:.01"></span>
+            <span class="heat-cell red" style="--a:.01"></span>
+            <span class="heat-cell red" style="--a:.01"></span>
+            <span class="heat-cell red" style="--a:.02"></span>
+            <span class="heat-cell red" style="--a:.06"></span>
+            <span class="heat-cell red" style="--a:.12"></span>
+            <span class="heat-cell red" style="--a:.35"></span>
+            <span class="heat-cell red" style="--a:.82"></span>
+            <span class="heat-cell red" style="--a:1"></span>
+            <span class="heat-cell red" style="--a:.44"></span>
+            <span class="heat-cell red" style="--a:.11"></span>
+            <span class="heat-cell red" style="--a:.03"></span>
+            <span class="heat-cell red" style="--a:.01"></span>
+            <span class="heat-cell red" style="--a:.01"></span>
+            <span class="heat-cell red" style="--a:.01"></span>
+          </div>
+        </div>
+        <p style="margin-top: 12px;">
+          Inference is simple: find the peak of each row. The peak becomes the
+          anchor frame. The surrounding high-probability area becomes the event
+          window.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Animation: Pixels To Event Peaks</h2>
+    <div class="animation-stage" aria-label="Animated model flow">
+      <div class="moving-frame">F1</div>
+      <div class="moving-frame">F2</div>
+      <div class="moving-frame">F3</div>
+      <div class="moving-frame">F4</div>
+      <div class="moving-frame">F5</div>
+      <div class="machine">
+        Frame encoder<br>
+        + temporal head
+        <small>learned features over time</small>
+      </div>
+      <div class="output-pulse">
+        <strong>Output: probability peaks</strong>
+        <div class="pulse-line"></div>
+        <div class="legend">
+          <span><span class="swatch" style="background: var(--green);"></span>event likelihood moves across timeline</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Model Options</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Option</th>
+            <th>Input</th>
+            <th>How It Works</th>
+            <th>Pros</th>
+            <th>Cons</th>
+            <th>Recommendation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Still-frame classifier</td>
+            <td>Individual frames</td>
+            <td>Classifies each frame as P1/P2/etc or no-event.</td>
+            <td>Easy to understand.</td>
+            <td>Weak motion context; P3/P5 ambiguity; not ideal for event localization.</td>
+            <td>Useful only as a teaching baseline.</td>
+          </tr>
+          <tr>
+            <td>Pixel video model</td>
+            <td>Sampled video frames</td>
+            <td>Video model learns visual and temporal features from pixels.</td>
+            <td>Clean concept; no manual feature engineering.</td>
+            <td>Needs transfer learning and careful compute choices with 500 videos.</td>
+            <td>Good candidate if we use a pretrained video backbone.</td>
+          </tr>
+          <tr>
+            <td>Frame encoder + temporal head</td>
+            <td>Sampled frames</td>
+            <td>Pretrained image encoder converts each frame into a feature vector; TCN/LSTM/Transformer finds P peaks.</td>
+            <td>Data-efficient; easy to debug; practical first real model.</td>
+            <td>May miss motion blur cues unless temporal head is strong.</td>
+            <td>Best first training path.</td>
+          </tr>
+          <tr>
+            <td>Feature-based temporal model</td>
+            <td>Pose/YOLO tracks</td>
+            <td>Uses body/object coordinates instead of raw pixels.</td>
+            <td>Interpretable; smaller model.</td>
+            <td>Depends on detectors; shaft/club can fail in blur.</td>
+            <td>Useful as an auxiliary model or confidence signal.</td>
+          </tr>
+          <tr>
+            <td>Hybrid model</td>
+            <td>Pixels + pose + YOLO</td>
+            <td>Combines learned visual features with golf-specific tracks.</td>
+            <td>Likely strongest eventually.</td>
+            <td>More moving parts.</td>
+            <td>V2 after pixel/event baseline works.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Recommended First Training Architecture</h2>
+    <div class="grid">
+      <div class="panel span-7">
+        <h3>V1: pretrained frame encoder + temporal head</h3>
+        <pre><code>full swing video
+-> sample 160 frames
+-> resize/crop frames to model input size
+-> pretrained frame encoder
+-> feature vector per sampled frame
+-> TCN or small Transformer over time
+-> 10 event heatmaps
+-> P1-P10 peaks/windows</code></pre>
+        <p>
+          This keeps the user-facing data simple: videos plus timestamps. The
+          "features" are learned automatically by the encoder.
+        </p>
+      </div>
+      <div class="panel span-5">
+        <h3>Why this first?</h3>
+        <ul class="list-clean">
+          <li>500 videos is enough to fine-tune a small head, but may be small for training a video model from scratch.</li>
+          <li>Transfer learning lets us reuse a model that already understands edges, bodies, objects, motion, and visual structure.</li>
+          <li>TCNs/Transformers over frame features are easier to inspect than a giant end-to-end video model.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Modern CV Landscape As Of July 2026</h2>
+    <p>
+      The current broad pattern is not "train a CNN from scratch on 500 golf
+      swings." It is transfer learning from large pretrained vision/video
+      models, then fine-tune a smaller head for the specific task.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Area</th>
+            <th>Modern Families</th>
+            <th>Why It Matters Here</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>General image representation</td>
+            <td>ViT, DINOv2/DINOv3, ConvNeXt V2, EVA-02, SigLIP/SigLIP 2</td>
+            <td>Good frame encoders. They turn a frame into useful learned features.</td>
+          </tr>
+          <tr>
+            <td>Video understanding</td>
+            <td>VideoMAE/VideoMAE V2, Video Swin, Hiera, InternVideo2, long-video MAE variants</td>
+            <td>Good candidates when we want the model to learn temporal motion directly from video.</td>
+          </tr>
+          <tr>
+            <td>Object detection</td>
+            <td>YOLO family, RT-DETR, DETR/DINO-style detectors</td>
+            <td>Useful for ball, clubhead, shaft, and later annotation geometry.</td>
+          </tr>
+          <tr>
+            <td>Pose estimation</td>
+            <td>ViTPose, RTMPose, RTMO, MMPose ecosystem</td>
+            <td>Useful auxiliary signals for P3/P4/P5/P6 and body-reference annotations.</td>
+          </tr>
+          <tr>
+            <td>Segmentation/tracking</td>
+            <td>SAM 2 and video segmentation models</td>
+            <td>Useful later for club/shaft masks, but likely too heavy for the first event detector.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Training Pipeline</h2>
+    <div class="grid">
+      <div class="panel span-4">
+        <h3>1. Prepare manifest</h3>
+        <p>
+          One JSON/CSV row per swing, with video path, metadata, and P1-P10
+          timestamps. The timestamps are the source of truth.
+        </p>
+      </div>
+      <div class="panel span-4">
+        <h3>2. Split by source</h3>
+        <p>
+          Train/val/test split by YouTube video, range session, or original
+          source. Do not let near-duplicate swings leak across splits.
+        </p>
+      </div>
+      <div class="panel span-4">
+        <h3>3. Sample frames</h3>
+        <p>
+          Convert every video into a fixed number of sampled model frames while
+          preserving mapping back to original time and frame index.
+        </p>
+      </div>
+      <div class="panel span-4">
+        <h3>4. Build heatmaps</h3>
+        <p>
+          Convert each P timestamp into a soft target curve over the sampled
+          frames.
+        </p>
+      </div>
+      <div class="panel span-4">
+        <h3>5. Train model</h3>
+        <p>
+          Fine-tune the temporal head first. Optionally unfreeze the encoder
+          later if validation error plateaus.
+        </p>
+      </div>
+      <div class="panel span-4">
+        <h3>6. Evaluate</h3>
+        <p>
+          Measure milliseconds/frame error per P-position, especially P6/P7,
+          and inspect failure sheets for the worst cases.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What To Ignore For Now</h2>
+    <div class="callout">
+      <strong>We do not need to solve every ML question before starting.</strong>
+      Do not start with full hybrid pose+YOLO+pixels unless the pixel/temporal
+      baseline fails. Do not spend weeks perfecting a contact-sheet review flow
+      if labels are already corrected. Do not train from scratch. Do not let
+      annotation geometry leak into the event detector milestone.
+    </div>
+  </section>
+
+  <section>
+    <h2>Concrete Next Build</h2>
+    <div class="grid">
+      <div class="panel dark span-6">
+        <h3>Build first</h3>
+        <ul class="list-clean">
+          <li>Dataset manifest loader.</li>
+          <li>Timestamp-to-sampled-frame converter.</li>
+          <li>Soft heatmap target generator.</li>
+          <li>Simple training script for frame encoder + TCN/Transformer head.</li>
+          <li>Evaluation report with per-P timing errors.</li>
+        </ul>
+      </div>
+      <div class="panel span-6">
+        <h3>Model starting point</h3>
+        <p>
+          Start with a frozen pretrained frame encoder and a lightweight temporal
+          head. Candidate encoders: DINOv3/DINOv2, ConvNeXt V2, or a VideoMAE
+          family model if the runtime makes video backbones easy.
+        </p>
+        <p>
+          Candidate temporal heads: TCN first for simplicity, small Transformer
+          if we need more global sequence reasoning.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <ul class="source-list">
+      <li><a href="https://arxiv.org/abs/1903.06528">GolfDB / SwingNet</a></li>
+      <li><a href="https://arxiv.org/abs/2303.16727">VideoMAE V2</a></li>
+      <li><a href="https://arxiv.org/abs/2403.15377">InternVideo2</a></li>
+      <li><a href="https://arxiv.org/abs/2106.13230">Video Swin Transformer</a></li>
+      <li><a href="https://arxiv.org/abs/2508.10104">DINOv3</a></li>
+      <li><a href="https://arxiv.org/abs/2304.07193">DINOv2</a></li>
+      <li><a href="https://arxiv.org/abs/2301.00808">ConvNeXt V2</a></li>
+      <li><a href="https://arxiv.org/abs/2303.15343">SigLIP</a></li>
+      <li><a href="https://arxiv.org/abs/2502.14786">SigLIP 2</a></li>
+      <li><a href="https://arxiv.org/abs/2306.00989">Hiera</a></li>
+      <li><a href="https://arxiv.org/abs/2408.00714">SAM 2</a></li>
+      <li><a href="https://arxiv.org/abs/2005.12872">DETR</a></li>
+      <li><a href="https://arxiv.org/abs/2405.14458">YOLOv10</a></li>
+      <li><a href="https://arxiv.org/abs/2304.08069">RT-DETR</a></li>
+      <li><a href="https://arxiv.org/abs/2204.12484">ViTPose</a></li>
+      <li><a href="https://arxiv.org/abs/2303.07399">RTMPose</a></li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>
