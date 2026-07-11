@@ -16,6 +16,7 @@ import CoreGraphics
 import CoreML
 import CoreVideo
 import Foundation
+import Vision
 
 nonisolated final class SwingDetectorV2: LiveSwingDetecting {
     enum DetectorError: Error {
@@ -31,6 +32,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
     private let clubTracker: ClubTracker
     private let stateMachine: SwingStateMachine
     private let scorer: SwingScorer
+    private let bodyPoseRequest = VNDetectHumanBodyPoseRequest()
 
     private var features: [FrameSampleV2] = []
     private var detections: [DetectedSwing] = []
@@ -48,6 +50,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
     private var enabled = false
     private var startupInFlightResolved = false
     private var startupEvaluatedImpactTimes: [Double] = []
+    private var lastPracticeSwingRealTime = -Double.greatestFiniteMagnitude
 
     private let featureRetentionLimit = 4_000
     private let startupInFlightEndRealTime = 2.25
@@ -106,6 +109,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
         nextCandidateId = 1
         startupInFlightResolved = false
         startupEvaluatedImpactTimes.removeAll(keepingCapacity: true)
+        lastPracticeSwingRealTime = -Double.greatestFiniteMagnitude
         addressMonitor.reset()
         clubTracker.reset()
         stateMachine.reset()
@@ -199,10 +203,15 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
             return lastSnapshot
         }
 
+        let pose = detectPoseSample(in: sampleBuffer, orientation: orientation)
         let frame = FrameSampleV2(
             realTime: realTime,
             sourceTime: recordingTime,
             detections: objects,
+            humanPoseConfidence: pose.coreJointConfidence,
+            handHeight: pose.handHeight,
+            wristPoint: pose.wristPoint,
+            torsoHeight: pose.torsoHeight,
             lumaMotion: lumaMotion
         )
         features.append(frame)
@@ -247,6 +256,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
             evaluate(resolved: resolved, club: clubWindow)
         }
         evaluateStartupInFlightIfNeeded(frame: frame, lock: lock)
+        evaluatePracticeSwingIfNeeded(frame: frame)
 
         recordProcessing(startedAt: startedAt)
         lastSnapshot = makeSnapshot(frame: frame, lock: lock, targetFPS: targetFPSForFrame)
@@ -273,12 +283,56 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
 
     // MARK: - Candidate evaluation
 
+    /// detectSwings design: the pose full-swing pattern (top → dip → finish)
+    /// carries the swing conviction on its own; ball logic then splits real
+    /// shots from practice swings. Ball-departure swings are handled by the
+    /// main candidate path, so any full-swing pattern left over — with a club
+    /// anchored near the wrists and no ball event nearby — is a practice
+    /// swing. A dip confirms ~2.5s after impact once its finish is observed.
+    private func evaluatePracticeSwingIfNeeded(frame: FrameSampleV2) {
+        guard configuration.allowsPracticeSwings else { return }
+
+        let samples = featuresInWindow(
+            start: max(0, frame.realTime - 10.0),
+            end: frame.realTime
+        )
+        for dip in FullSwingPattern.confirmedDips(in: samples) {
+            guard dip - lastPracticeSwingRealTime >= max(3.0, configuration.minImpactGap) else { continue }
+
+            let coveredByContactSwing = detections.contains { detection in
+                guard let impactTime = detection.impactTime else { return false }
+                return abs(configuration.realTime(fromSource: impactTime) - dip) <= 3.0
+            }
+            if coveredByContactSwing {
+                lastPracticeSwingRealTime = dip
+                continue
+            }
+
+            guard FullSwingPattern.swungClubVisible(around: dip, in: samples) else { continue }
+
+            let impactSource = configuration.sourceTime(fromReal: dip)
+            let startSource = max(0, impactSource - configuration.sourceTime(fromReal: configuration.impactPreRoll))
+            let endSource = impactSource + configuration.sourceTime(fromReal: configuration.impactPostRoll)
+            detections.append(
+                DetectedSwing(
+                    startTime: CMTime(seconds: startSource, preferredTimescale: 600),
+                    endTime: CMTime(seconds: endSource, preferredTimescale: 600),
+                    confidence: 0.9,
+                    impactTime: impactSource,
+                    declaredAt: frame.sourceTime
+                )
+            )
+            lastPracticeSwingRealTime = dip
+        }
+    }
+
     private func evaluate(resolved: ResolvedSwingCandidate, club: ClubEvidence) {
         let candidateWindow = featuresInWindow(
             start: max(0, resolved.impactRealTime - 1.45),
             end: resolved.impactRealTime + 0.55
         )
         let candidateClub = clubTracker.evidence(in: candidateWindow[...], lock: resolved.lock)
+        let presence = candidatePresence(in: candidateWindow)
         let departure = departureEvidence(
             impactRealTime: resolved.impactRealTime,
             lock: resolved.lock
@@ -295,7 +349,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
             swingSequence: max(club.swingSequenceScore, candidateClub.swingSequenceScore, useAccumulatedSwingEvidence ? resolved.bestSequence : 0),
             ballInventoryDrop: departure.ballInventoryDrop,
             audioTransient: nil,
-            poseConsistency: nil
+            poseConsistency: presence.humanConfidence
         )
         let score = scorer.score(evidence)
         let retargetLockIsStrong: Bool
@@ -308,6 +362,8 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
             && evidence.disappearancePersistence >= 0.35
             && (evidence.swingSequence ?? 1) > 0
             && retargetLockIsStrong
+            && presence.hasHuman
+            && presence.hasClub
         let failure = primaryFailure(evidence: evidence, accepted: accepted)
 
         let lockTrace = resolved.lock.map { lock in
@@ -387,6 +443,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
             end: candidate.impactRealTime + 0.55
         )
         let club = clubTracker.evidence(in: candidateWindow[...], lock: candidate.lock)
+        let presence = candidatePresence(in: candidateWindow)
         let departure = departureEvidence(
             impactRealTime: candidate.impactRealTime,
             lock: candidate.lock
@@ -399,7 +456,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
             swingSequence: club.swingSequenceScore,
             ballInventoryDrop: departure.ballInventoryDrop,
             audioTransient: nil,
-            poseConsistency: nil
+            poseConsistency: presence.humanConfidence
         )
         let score = scorer.score(evidence)
         let strongStartupSwing = evidence.clubSweptThrough >= 0.62
@@ -408,6 +465,8 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
         let accepted = score >= startupThreshold
             && evidence.disappearancePersistence >= 0.35
             && ((evidence.swingSequence ?? 0) > 0 || strongStartupSwing)
+            && presence.hasHuman
+            && presence.hasClub
         let failure = primaryFailure(evidence: evidence, accepted: accepted)
 
         traces.append(
@@ -580,6 +639,96 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
         )
     }
 
+    private func candidatePresence(
+        in window: [FrameSampleV2]
+    ) -> (hasHuman: Bool, hasClub: Bool, humanConfidence: Double) {
+        guard !window.isEmpty else { return (false, false, 0) }
+
+        let humanFrames = window.filter { $0.humanPoseConfidence >= 0.45 }.count
+        let requiredHumanFrames = max(2, Int((Double(window.count) * 0.18).rounded(.up)))
+        let humanConfidence = window.map(\.humanPoseConfidence).max() ?? 0
+
+        let clubFrames = window.filter { $0.bestClubScore >= 0.32 }.count
+        let requiredClubFrames = max(3, Int((Double(window.count) * 0.12).rounded(.up)))
+
+        return (
+            humanFrames >= requiredHumanFrames,
+            clubFrames >= requiredClubFrames,
+            humanConfidence
+        )
+    }
+
+    private struct PoseSampleV2 {
+        var coreJointConfidence: Double = 0
+        var handHeight: Double?
+        var wristPoint: CGPoint?
+        var torsoHeight: Double?
+    }
+
+    private func detectPoseSample(
+        in sampleBuffer: CMSampleBuffer,
+        orientation: CGImagePropertyOrientation
+    ) -> PoseSampleV2 {
+        let handler = VNImageRequestHandler(
+            cmSampleBuffer: sampleBuffer,
+            orientation: orientation,
+            options: [:]
+        )
+        do {
+            try handler.perform([bodyPoseRequest])
+            guard let observation = bodyPoseRequest.results?.first else { return PoseSampleV2() }
+            let points = try observation.recognizedPoints(.all)
+            let coreJoints: [VNHumanBodyPoseObservation.JointName] = [
+                .neck,
+                .leftShoulder,
+                .rightShoulder,
+                .root,
+                .leftHip,
+                .rightHip,
+                .leftKnee,
+                .rightKnee
+            ]
+            let visible = coreJoints.filter { joint in
+                (points[joint]?.confidence ?? 0) >= 0.25
+            }.count
+            var pose = PoseSampleV2(coreJointConfidence: Double(visible) / Double(coreJoints.count))
+
+            // detectSwings hand-height signal: mean wrist height above the
+            // hips, in torso units. Requires the shoulder/hip core and at
+            // least one wrist to be confidently tracked.
+            guard let leftShoulder = points[.leftShoulder],
+                  let rightShoulder = points[.rightShoulder],
+                  let leftHip = points[.leftHip],
+                  let rightHip = points[.rightHip],
+                  min(leftShoulder.confidence, rightShoulder.confidence,
+                      leftHip.confidence, rightHip.confidence) >= 0.3
+            else {
+                return pose
+            }
+            let wrists = [points[.leftWrist], points[.rightWrist]]
+                .compactMap { $0 }
+                .filter { $0.confidence >= 0.3 }
+            guard !wrists.isEmpty else { return pose }
+
+            // Vision points are normalized with a bottom-left origin, so
+            // shoulders sit at a larger y than hips.
+            let hipY = (leftHip.location.y + rightHip.location.y) / 2
+            let shoulderY = (leftShoulder.location.y + rightShoulder.location.y) / 2
+            let torso = shoulderY - hipY
+            guard torso > 0.02 else { return pose }
+
+            let wristY = wrists.map(\.location.y).reduce(0, +) / Double(wrists.count)
+            let wristX = wrists.map(\.location.x).reduce(0, +) / Double(wrists.count)
+            pose.handHeight = (wristY - hipY) / torso
+            // Flip into the top-left-origin space YOLO detection rects use.
+            pose.wristPoint = CGPoint(x: wristX, y: 1 - wristY)
+            pose.torsoHeight = torso
+            return pose
+        } catch {
+            return PoseSampleV2()
+        }
+    }
+
     private func recordProcessing(startedAt: Date) {
         lastProcessingMS = Date().timeIntervalSince(startedAt) * 1_000
         totalProcessingMS += lastProcessingMS
@@ -657,6 +806,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
 
     private func primaryFailure(evidence: EvidenceVector, accepted: Bool) -> SwingPrimaryFailure {
         if accepted { return .none }
+        if (evidence.poseConsistency ?? 0) < 0.35 { return .noHuman }
         if evidence.anchorStability < 0.25 { return .noAddressLock }
         if evidence.disappearancePersistence < 0.35 { return .ballReappeared }
         if (evidence.ballInventoryDrop ?? 0) < 0.25 { return .noBallDeparture }

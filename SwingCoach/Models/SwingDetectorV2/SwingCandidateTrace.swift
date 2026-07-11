@@ -21,6 +21,8 @@ nonisolated enum SwingPrimaryFailure: String, Encodable {
     case noClubSweep = "no_club_sweep"
     case noSwingSequence = "no_swing_sequence"
     case lowSwingArc = "low_swing_arc"
+    case noHuman = "no_human"
+    case noClubPresence = "no_club_presence"
     case belowThreshold = "below_threshold"
     case duplicate
     case timedOut = "timed_out"

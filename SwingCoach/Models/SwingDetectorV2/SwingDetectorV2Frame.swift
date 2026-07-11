@@ -12,6 +12,17 @@ nonisolated struct FrameSampleV2 {
     let realTime: Double
     let sourceTime: Double
     let detections: [GolfObjectDetection]
+    /// Fraction of core Vision body joints confidently visible in this frame.
+    let humanPoseConfidence: Double
+    /// Wrist height above the hips in torso units (detectSwings hand-height
+    /// signal): ~0 at address, >0.6 at the backswing top, >0.95 at a held
+    /// finish. Nil when the core joints or wrists are not confidently visible.
+    let handHeight: Double?
+    /// Mean wrist position in the same normalized top-left space as YOLO
+    /// detection rects, for anchoring club detections to the swinger.
+    let wristPoint: CGPoint?
+    /// Shoulder-to-hip distance as a fraction of oriented image height.
+    let torsoHeight: Double?
     /// Mean absolute luma difference vs the previous sampled frame, 0...1.
     let lumaMotion: Double
 

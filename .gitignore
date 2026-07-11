@@ -21,3 +21,8 @@ build/
 detector_model/
 .detectorTestV2
 .detectorTestV3
+
+# Xcode user state
+xcuserdata/
+*.xcuserstate
+DerivedData/

@@ -22,6 +22,9 @@ nonisolated struct SwingDetectorV2Configuration: Equatable {
     /// Playback-vs-real-time scale of the source. 1.0 = real-time camera,
     /// 8.0 = 240fps captured exported at 8x slow motion, 4.0 = 120fps @ 4x.
     var sourceTimeScale: Double
+    /// Accept club-motion-only swing sequences when no ball departs. This is
+    /// intended for explicit practice/testing sessions and is off by default.
+    var allowsPracticeSwings: Bool
 
     // MARK: Sampling (real-time fps)
 
@@ -85,7 +88,8 @@ nonisolated struct SwingDetectorV2Configuration: Equatable {
     static func live(
         sourceTimeScale: Double = 1.0,
         lowSampleFPS: Double = 8.0,
-        burstSampleFPS: Double = 16.0
+        burstSampleFPS: Double = 16.0,
+        allowsPracticeSwings: Bool = false
     ) -> SwingDetectorV2Configuration {
         let clampedScale = min(12.0, max(1.0, sourceTimeScale))
         let clampedLow = min(24.0, max(1.0, lowSampleFPS))
@@ -93,6 +97,7 @@ nonisolated struct SwingDetectorV2Configuration: Equatable {
         return SwingDetectorV2Configuration(
             name: "v2 \(formatted(clampedLow))->\(formatted(clampedBurst))fps / \(formatted(clampedScale))x",
             sourceTimeScale: clampedScale,
+            allowsPracticeSwings: allowsPracticeSwings,
             lowSampleFPS: clampedLow,
             burstSampleFPS: clampedBurst,
             startupBurstDuration: 2.0,
