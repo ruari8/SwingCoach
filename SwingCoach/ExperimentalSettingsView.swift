@@ -71,7 +71,7 @@ struct ExperimentalSettingsView: View {
                 }
 
             } footer: {
-                Text("Capture and Replay Debug use SwingDetectorV2. The sample rate controls idle/address sampling; V2 raises its rate during startup and active swing evidence.")
+                Text("Capture, Trim, and Replay Debug use SwingDetectorV3. The sample rate controls idle/address sampling; V3 raises its rate during an active swing episode.")
             }
 
             #if DEBUG

@@ -155,6 +155,21 @@
         {"start": 1472.0, "end": 1473.0}
       ],
       "notes": "User note listed this as a second test13; mapped to the present test14.mp4 fixture."
+    },
+    {
+      "id": "test15",
+      "filename": "test15.mp4",
+      "source_time_scale": 8.0,
+      "expected_swing_count": 3,
+      "review_status": "reviewed",
+      "reviewed_on": "2026-08-30",
+      "label_method": "event_model_p7_predictions_accepted_by_user",
+      "impact_time_labels": [
+        {"start": 156.53333333333333, "end": 156.53333333333333},
+        {"start": 330.4, "end": 330.4},
+        {"start": 527.2, "end": 527.2}
+      ],
+      "notes": "User reviewed all three P7 proposals as 'pretty much perfect labelling' before the first SwingDetectorV2 evaluation. Times are point estimates on the 30fps export timeline from 240fps capture, already stretched 8x. Event-model sampling resolution is 8 source frames, about 33ms real time. Original model proposals and provenance remain in proposed/test15_p7_labels.json; no timing corrections were made."
     }
   ]
 }

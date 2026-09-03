@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "video_id": "test15",
+  "path": ".detectorTestV3/test15.mp4",
+  "review_status": "needs_review",
+  "label_method": "event_model_sliding_window_p7_peaks",
+  "timebase": "source video timeline seconds; zero-based source frame indices",
+  "capture_fps": 240,
+  "encoded_fps": 30,
+  "source_time_scale": 8,
+  "frame_count": 17122,
+  "duration": 570.7333333333333,
+  "view": "dtl",
+  "created_at": "2026-08-30T14:11:20.818669+00:00",
+  "model": {
+    "run": "tcn_vision_club_v1",
+    "epoch": 125,
+    "in_dim": 107,
+    "checkpoint_sha256": "164b8ca0f35604dd9d9a8ce3eb136af32cd62b47572ae9eb31404eef70300dd8"
+  },
+  "method": {
+    "window_real_seconds": 4.0,
+    "stride_real_seconds": 0.5,
+    "aggregation": "Hann-weighted mean of per-window sigmoid scores; end weights extended",
+    "threshold": 0.5,
+    "minimum_peak_prominence": 0.1,
+    "minimum_separation_real_seconds": 0.4,
+    "pose_extraction": "Apple Vision, all native frames",
+    "club_extraction": "club_seg_v2_960, imgsz=960, conf=0.25, MPS, batch=16, all native frames",
+    "feature_extraction": "Existing dataset.build_features per window, then existing 30 fps real-time resampling",
+    "source_frame_spacing": 8,
+    "all_peak_audit": ".verification-artifacts/test15-event-labels/all-p7-peaks.csv"
+  },
+  "limitations": [
+    "Single-swing event model used experimentally on a continuous recording.",
+    "P7 scores are uncalibrated model scores, not probabilities of ball contact.",
+    "Proposal rule was chosen before reviewing predictions; not validated on continuous recordings.",
+    "Sampling grid is 8 source frames, about 0.267 source seconds or 33 ms real time.",
+    "No human labels or SwingDetectorV2 results were used. Excluded from reviewed baseline until user review."
+  ],
+  "proposed_impact_count": 3,
+  "events": [
+    {
+      "id": "test15-p7-01",
+      "event": "p7",
+      "frame": 4696,
+      "time": 156.53333333333333,
+      "source_timecode": "02:36.533",
+      "real_time_seconds": 19.566666666666666,
+      "p7_score": 0.8981330214326881,
+      "quality": "estimated",
+      "review_status": "needs_review",
+      "boundary_candidate": false
+    },
+    {
+      "id": "test15-p7-02",
+      "event": "p7",
+      "frame": 9912,
+      "time": 330.4,
+      "source_timecode": "05:30.400",
+      "real_time_seconds": 41.3,
+      "p7_score": 0.8977997887318426,
+      "quality": "estimated",
+      "review_status": "needs_review",
+      "boundary_candidate": false
+    },
+    {
+      "id": "test15-p7-03",
+      "event": "p7",
+      "frame": 15816,
+      "time": 527.2,
+      "source_timecode": "08:47.200",
+      "real_time_seconds": 65.9,
+      "p7_score": 0.8908966175794357,
+      "quality": "estimated",
+      "review_status": "needs_review",
+      "boundary_candidate": false
+    }
+  ]
+}

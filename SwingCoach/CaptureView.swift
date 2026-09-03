@@ -131,7 +131,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private var analysisIsInFlight = false
     private var pendingAnalysisFrame: PendingAnalysisFrame?
 
-    private var liveSwingDetector = SwingDetectorV2()
+    private var liveSwingDetector = SwingDetectorV3()
     private var recordingStartSampleTime: CMTime?
     private var recordingStartWallTime: Date?
     private var lastLiveSwingSampleTime = -Double.greatestFiniteMagnitude
@@ -499,17 +499,17 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         }
         analysisQueue.async {
             self.autoExportedDetectionIDs = []
-            self.liveSwingDetector = SwingDetectorV2(configuration: self.liveV2Configuration())
+            self.liveSwingDetector = SwingDetectorV3(configuration: self.liveV3Configuration())
             self.liveSwingDetector.reset(enabled: detectorEnabled)
         }
 
         DispatchQueue.main.async {
-            let configuration = self.liveV2Configuration()
+            let configuration = self.liveV3Configuration()
             self.lastRecordingSwingDetections = []
             self.lastRecordingSwingDetectionSummary = nil
             self.liveSwingDetection = detectorEnabled ? LiveSwingDetectionSnapshot(
                 status: .idle,
-                primaryMessage: "V2 detect starting",
+                primaryMessage: "V3 detect starting",
                 detailMessage: "Scanning sampled frames while recording.",
                 targetSampleFPS: configuration.lowSampleFPS,
                 detectorConfigurationName: configuration.name
@@ -522,11 +522,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         }
     }
 
-    private func liveV2Configuration() -> SwingDetectorV2Configuration {
+    private func liveV3Configuration() -> SwingDetectorV3Configuration {
         // Live sample-buffer timestamps advance at wall-clock rate regardless of
         // capture FPS; the slow-motion timeline only exists after export retiming.
         // recordedMode.sourceTimeScale applies to playback rate and export only.
-        SwingDetectorV2Configuration.live(
+        SwingDetectorV3Configuration.live(
             sourceTimeScale: 1.0,
             lowSampleFPS: liveModelDetectorSampleFPS,
             burstSampleFPS: max(16.0, liveModelDetectorSampleFPS * 2.0),

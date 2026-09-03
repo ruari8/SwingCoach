@@ -9,6 +9,7 @@ import Foundation
 import Photos
 import UIKit
 import Combine
+import AVFoundation
 
 /// Metadata for a saved swing clip (the actual video lives in Photos library)
 struct SavedSwing: Identifiable, Codable, Equatable {
@@ -19,6 +20,9 @@ struct SavedSwing: Identifiable, Codable, Equatable {
     var createdAt: Date
     var notes: String?
     var analyzed: Bool
+    var isFavorite: Bool
+    var isReference: Bool
+    var title: String?
     // Filename (not full path) of an app-owned copy of the clip, if one exists.
     // Lets playback open the local file directly instead of resolving Photos.
     var localVideoFilename: String? = nil
@@ -27,8 +31,49 @@ struct SavedSwing: Identifiable, Codable, Equatable {
     var thumbnail: UIImage?
     var videoURL: URL?
 
+    init(
+        id: UUID,
+        photoAssetID: String,
+        vantage: Vantage,
+        duration: Double,
+        createdAt: Date,
+        notes: String?,
+        analyzed: Bool,
+        isFavorite: Bool = false,
+        isReference: Bool = false,
+        title: String? = nil,
+        localVideoFilename: String? = nil
+    ) {
+        self.id = id
+        self.photoAssetID = photoAssetID
+        self.vantage = vantage
+        self.duration = duration
+        self.createdAt = createdAt
+        self.notes = notes
+        self.analyzed = analyzed
+        self.isFavorite = isFavorite
+        self.isReference = isReference
+        self.title = title
+        self.localVideoFilename = localVideoFilename
+    }
+
     enum CodingKeys: String, CodingKey {
-        case id, photoAssetID, vantage, duration, createdAt, notes, analyzed, localVideoFilename
+        case id, photoAssetID, vantage, duration, createdAt, notes, analyzed, isFavorite, isReference, title, localVideoFilename
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        photoAssetID = try container.decode(String.self, forKey: .photoAssetID)
+        vantage = try container.decode(Vantage.self, forKey: .vantage)
+        duration = try container.decode(Double.self, forKey: .duration)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        analyzed = try container.decode(Bool.self, forKey: .analyzed)
+        isFavorite = try container.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
+        isReference = try container.decodeIfPresent(Bool.self, forKey: .isReference) ?? false
+        title = try container.decodeIfPresent(String.self, forKey: .title)
+        localVideoFilename = try container.decodeIfPresent(String.self, forKey: .localVideoFilename)
     }
 
     // Custom Equatable (ignore non-codable properties)
@@ -40,6 +85,9 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         lhs.createdAt == rhs.createdAt &&
         lhs.notes == rhs.notes &&
         lhs.analyzed == rhs.analyzed &&
+        lhs.isFavorite == rhs.isFavorite &&
+        lhs.isReference == rhs.isReference &&
+        lhs.title == rhs.title &&
         lhs.localVideoFilename == rhs.localVideoFilename
     }
 }
@@ -87,6 +135,7 @@ class SwingLibrary: ObservableObject {
         videosDirectory = videos
 
         loadFromDisk()
+        installBundledReferenceSwings()
     }
 
     /// Local URL of the app-owned clip copy, if it exists on disk.
@@ -184,6 +233,12 @@ class SwingLibrary: ObservableObject {
         saveToDisk()
     }
 
+    func toggleFavorite(_ swing: SavedSwing) {
+        guard let index = swings.firstIndex(where: { $0.id == swing.id }) else { return }
+        swings[index].isFavorite.toggle()
+        saveToDisk()
+    }
+
     /// Delete an Auto-captured swing from Photos and the app-owned library copy.
     /// The library entry is retained if Photos rejects the deletion.
     func deleteSwingAndPhoto(_ swing: SavedSwing) async throws {
@@ -239,8 +294,10 @@ class SwingLibrary: ObservableObject {
     /// Load thumbnails for all swings from Photos library
     func loadThumbnails() async {
         isLoading = true
+
+        await loadLocalThumbnails()
         
-        let assetIDs = swings.map { $0.photoAssetID }
+        let assetIDs = swings.filter { !$0.photoAssetID.isEmpty }.map { $0.photoAssetID }
         guard !assetIDs.isEmpty else {
             isLoading = false
             return
@@ -292,7 +349,7 @@ class SwingLibrary: ObservableObject {
     }
     
     private func requestThumbnailImage(for asset: PHAsset) async -> UIImage? {
-        await withCheckedContinuation { continuation in
+        return await withCheckedContinuation { continuation in
             let options = PHImageRequestOptions()
             options.deliveryMode = .highQualityFormat
             options.resizeMode = .fast
@@ -368,7 +425,11 @@ class SwingLibrary: ObservableObject {
     
     /// Get the video URL for a swing (for export/upload - may not work for slow-mo)
     func getVideoURL(for swing: SavedSwing) async -> URL? {
-        await withCheckedContinuation { continuation in
+        if let localURL = localVideoURL(for: swing) {
+            return localURL
+        }
+
+        return await withCheckedContinuation { continuation in
             let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [swing.photoAssetID], options: nil)
             
             guard let asset = fetchResult.firstObject else {
@@ -392,7 +453,7 @@ class SwingLibrary: ObservableObject {
     
     /// Check if Photos contains the assets we expect (user may have deleted some)
     func validateAssets() {
-        let assetIDs = swings.map { $0.photoAssetID }
+        let assetIDs = swings.filter { !$0.photoAssetID.isEmpty }.map { $0.photoAssetID }
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: assetIDs, options: nil)
         
         var validIDs = Set<String>()
@@ -402,7 +463,7 @@ class SwingLibrary: ObservableObject {
         
         // Remove swings whose assets no longer exist
         let originalCount = swings.count
-        swings.removeAll { !validIDs.contains($0.photoAssetID) }
+        swings.removeAll { !$0.isReference && !validIDs.contains($0.photoAssetID) }
         
         if swings.count != originalCount {
             print("⚠️ Removed \(originalCount - swings.count) swings with missing assets")
@@ -436,11 +497,110 @@ class SwingLibrary: ObservableObject {
     
     // MARK: - Stats
     
-    var totalSwings: Int { swings.count }
-    var analyzedSwings: Int { swings.filter { $0.analyzed }.count }
+    var totalSwings: Int { swings.filter { !$0.isReference }.count }
+    var analyzedSwings: Int { swings.filter { !$0.isReference && $0.analyzed }.count }
     
     func swings(for vantage: Vantage) -> [SavedSwing] {
-        swings.filter { $0.vantage == vantage }
+        swings.filter { !$0.isReference && $0.vantage == vantage }
+    }
+
+    private func installBundledReferenceSwings() {
+        struct ReferenceDefinition {
+            let id: UUID
+            let filename: String
+            let title: String
+            let duration: Double
+        }
+
+        let references = [
+            ReferenceDefinition(
+                id: UUID(uuidString: "93F08C01-6795-46B0-B092-7F9C17CE5A01")!,
+                filename: "DaB3eJ3gAcv_1.mp4",
+                title: "Reference swing 1",
+                duration: 14.626
+            ),
+            ReferenceDefinition(
+                id: UUID(uuidString: "93F08C01-6795-46B0-B092-7F9C17CE5A02")!,
+                filename: "DaBMIbhpel9_1.mp4",
+                title: "Reference swing 2",
+                duration: 22.312
+            ),
+            ReferenceDefinition(
+                id: UUID(uuidString: "93F08C01-6795-46B0-B092-7F9C17CE5A03")!,
+                filename: "DaD04inv5-Z_1.mp4",
+                title: "Reference swing 3",
+                duration: 24.634
+            ),
+        ]
+
+        var changed = false
+        for reference in references {
+            if let index = swings.firstIndex(where: { $0.id == reference.id }) {
+                let destination = videosDirectory.appendingPathComponent(reference.filename)
+                if !FileManager.default.fileExists(atPath: destination.path),
+                   copyBundledReference(named: reference.filename, to: destination) {
+                    swings[index].localVideoFilename = reference.filename
+                    changed = true
+                }
+                continue
+            }
+
+            let destination = videosDirectory.appendingPathComponent(reference.filename)
+            guard copyBundledReference(named: reference.filename, to: destination) else { continue }
+
+            swings.append(
+                SavedSwing(
+                    id: reference.id,
+                    photoAssetID: "",
+                    vantage: .dtl,
+                    duration: reference.duration,
+                    createdAt: Date(timeIntervalSince1970: 0),
+                    notes: "Bundled DTL reference swing",
+                    analyzed: false,
+                    isFavorite: true,
+                    isReference: true,
+                    title: reference.title,
+                    localVideoFilename: reference.filename
+                )
+            )
+            changed = true
+        }
+
+        if changed {
+            saveToDisk()
+        }
+    }
+
+    private func copyBundledReference(named filename: String, to destination: URL) -> Bool {
+        let basename = (filename as NSString).deletingPathExtension
+        let ext = (filename as NSString).pathExtension
+        let source = Bundle.main.url(forResource: basename, withExtension: ext, subdirectory: "ReferenceSwings")
+            ?? Bundle.main.url(forResource: basename, withExtension: ext)
+        guard let source else { return false }
+
+        do {
+            try? FileManager.default.removeItem(at: destination)
+            try FileManager.default.copyItem(at: source, to: destination)
+            return true
+        } catch {
+            print("Failed to install bundled reference swing: \(error)")
+            return false
+        }
+    }
+
+    private func loadLocalThumbnails() async {
+        let pending = swings.filter { $0.thumbnail == nil && localVideoURL(for: $0) != nil }
+        for swing in pending {
+            guard let url = localVideoURL(for: swing) else { continue }
+            let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
+            generator.appliesPreferredTrackTransform = true
+            generator.maximumSize = thumbnailTargetSize
+            let thumbnailTime = CMTime(seconds: min(1, swing.duration / 2), preferredTimescale: 600)
+            guard let generated = try? await generator.image(at: thumbnailTime) else { continue }
+            if let index = swings.firstIndex(where: { $0.id == swing.id }) {
+                swings[index].thumbnail = UIImage(cgImage: generated.image)
+            }
+        }
     }
 }
 

@@ -765,7 +765,7 @@ struct AnnotatedAnalysisVideo: View {
     }
 }
 
-private struct AnnotationTrackPayload: Decodable {
+struct AnnotationTrackPayload: Decodable {
     let coordinateSpace: String
     let frameWidth: Double
     let frameHeight: Double
@@ -1502,8 +1502,9 @@ private extension SavedVisualizationLayer {
     }
 }
 
-private struct ManualAnnotationCanvasOverlay: View {
+struct ManualAnnotationCanvasOverlay: View {
     let tracks: AnnotationTrackPayload?
+    var sourceAspectRatio: Double? = nil
     let currentTime: CMTime
     let analysisID: String
     let annotations: [ManualAnnotation]
@@ -1553,9 +1554,14 @@ private struct ManualAnnotationCanvasOverlay: View {
     }
 
     private func contentRect(in size: CGSize) -> CGRect {
-        let sourceWidth = tracks?.frameWidth ?? Double(size.width)
-        let sourceHeight = tracks?.frameHeight ?? Double(size.height)
-        let sourceAspect = CGFloat(max(sourceWidth, 1) / max(sourceHeight, 1))
+        let sourceAspect: CGFloat
+        if let tracks {
+            sourceAspect = CGFloat(max(tracks.frameWidth, 1) / max(tracks.frameHeight, 1))
+        } else if let sourceAspectRatio, sourceAspectRatio.isFinite, sourceAspectRatio > 0 {
+            sourceAspect = CGFloat(sourceAspectRatio)
+        } else {
+            sourceAspect = size.width / max(size.height, 1)
+        }
         let containerAspect = size.width / max(size.height, 1)
 
         if containerAspect > sourceAspect {

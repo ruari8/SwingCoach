@@ -7,7 +7,7 @@ This is an active prototype rather than a polished App Store product. The repo i
 ## What It Does
 
 - Captures or imports golf swing video on iOS, then trims one or more swing clips into a local library.
-- Runs an experimental on-device `SwingDetectorV2` using a YOLO/Core ML golf-object model to preselect likely swing windows.
+- Runs on-device `SwingDetectorV3` using the YOLO/Core ML golf-object model, Apple Vision pose, persistent target relationships, and target-specific contact outcomes to preselect swing windows.
 - Uploads clips to a Python backend through Cloudflare R2 pre-signed URLs.
 - Queues asynchronous analysis runs and streams backend progress back to the app with Server-Sent Events.
 - Produces clean analyzed-video artifacts and a stable, currently empty overlay-track contract while generated annotations are redesigned.
@@ -49,7 +49,7 @@ SwingCoach/
 
 The app is built around three production tabs:
 
-- `Library`: import videos from Photos, browse saved swings, batch analyze/delete/export, and open swing detail.
+- `Library`: import videos from Photos, browse and star saved swings, optionally open locally supplied DTL reference swings, batch analyze/delete/export, and open swing detail. Swing detail supports left/right navigation and persistent straight-line guides over playback.
 - `Capture`: record manual clips or use the experimental auto-capture path that writes accepted detector windows directly to the library.
 - `Coach`: queue swings for analysis and review completed analysis results.
 
@@ -118,7 +118,7 @@ python3 detector_workbench/validation/evaluate_swing_detector_v2.py --build --on
 python3 detector_workbench/validation/evaluate_detector_video_data.py --force
 ```
 
-Heavy local fixture videos, generated detector reports, model-training outputs, backend videos, and model weights are intentionally git-ignored.
+Heavy local fixture videos, raw detector outputs, model-training outputs, backend videos, and local model weights are intentionally git-ignored. Small reviewed label manifests and evidence reports may be committed under `detector_workbench/validation/` when they form part of a reproducible regression record.
 
 ## Current Status
 

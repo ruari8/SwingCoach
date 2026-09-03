@@ -1,5 +1,7 @@
 # Swing Detector V2 Implementation Plan
 
+Historical V2 execution plan. For the implemented replacement, see [SwingDetectorV3](./SWING_DETECTOR_V3.md), the [2026-08-31 proposal](./SWING_DETECTOR_RECONSTRUCTION.md), and its [execution plan](./SWING_DETECTOR_RECONSTRUCTION_EXECUTION.md). The milestones below record the earlier V2 work.
+
 This is the working plan for building `SwingDetectorV2`. It preserves the fixture-gated sequence agreed during the detector restart so the milestone order does not get lost across context compaction.
 
 The design source of truth remains [Swing Detector Restart Design](./SWING_DETECTOR_DESIGN.md). This file is the execution plan: what to build, what to run, and when to stop.

@@ -8,13 +8,20 @@
 import SwiftUI
 
 struct AppRootView: View {
-    @State private var selection: Tab = .capture
+    @State private var selection: Tab
     #if DEBUG
     @AppStorage(ExperimentalSettingKey.showDebugReplayTab) private var showDebugReplayTab = true
     #endif
     
     // Shared state for analysis - set by Library or TrimView, consumed by AnalyseView
     @State private var swingsToAnalyze: [SavedSwing] = []
+
+    init() {
+        let initialTab: Tab = ProcessInfo.processInfo.arguments.contains("-ui-testing-library")
+            ? .library
+            : .capture
+        _selection = State(initialValue: initialTab)
+    }
     
     var body: some View {
         TabView(selection: $selection) {

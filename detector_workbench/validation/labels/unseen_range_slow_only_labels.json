@@ -1,0 +1,448 @@
+{
+  "version": 1,
+  "created_on": "2026-09-03",
+  "review_status": "user_approved_ball_hit_labels",
+  "timebase": "trimmed MP4 playback timeline seconds; zero is the start of the trimmed file",
+  "fixture_root": ".detectorTestV3/unseen-2026-08-31/slow-only",
+  "source_time_scale": 8,
+  "label_method": "fresh_tcn_p7_with_agent_visual_ball_contact_review",
+  "model": {
+    "run": "tcn_vision_club_v1",
+    "epoch": 125,
+    "in_dim": 107,
+    "checkpoint_sha256": "164b8ca0f35604dd9d9a8ce3eb136af32cd62b47572ae9eb31404eef70300dd8"
+  },
+  "method": {
+    "window_real_seconds": 4.0,
+    "stride_real_seconds": 0.5,
+    "threshold": 0.5,
+    "minimum_peak_prominence": 0.1,
+    "minimum_separation_real_seconds": 0.4,
+    "pose_extraction": "Apple Vision on every encoded frame",
+    "club_extraction": "club_seg_v2_960 on every encoded frame",
+    "source_time_scale_assumption": 8
+  },
+  "raw_tcn_proposal_count": 22,
+  "proposed_ball_hit_count": 19,
+  "provenance": {
+    "raw_proposals": ".verification-artifacts/unseen-range-slow-only-tcn/raw-tcn-proposals.json",
+    "raw_proposals_sha256": "5206d0b0730cec4e7c8fffc459c4c8c1f7da77a0240deb5d507a1e69d7fcabc2",
+    "feature_cache": ".verification-artifacts/unseen-range-slow-only-tcn/feature-cache-provenance.json",
+    "feature_cache_sha256": "c216c274d43f86113967de9d2bf5253a5d29f1fca632dc5108449bbd5bcfb08f",
+    "feature_reuse": "Only per-frame pose and club observations were selected from the original caches. All retained encoded video packets and TCN sample timestamps were checked against the trimmed files. TCN inference was run again. No previous labels, TCN scores, peaks, or SwingDetectorV3 results were reused."
+  },
+  "notes": [
+    "The user approved all 19 proposed ball-hit labels before this V3 run. Counts and timestamps are unchanged.",
+    "These labels apply only to the trimmed MP4 playback timelines, at a constant source_time_scale of 8.",
+    "Times are TCN peak estimates accepted by the user, not frame-by-frame refinements.",
+    "Excluded practice swings remain agent visual assessments, not separately user-confirmed negative labels.",
+    "The earlier 31/33-label mixed-speed manifests remain withdrawn.",
+    "This six-video evaluation set remains separate from the original 54-label regression manifest."
+  ],
+  "videos": [
+    {
+      "id": "test16",
+      "filename": "test16.mp4",
+      "original_filename": "IMG_4484.mov",
+      "input_sha256": "2b76cb54aa612516b3d6e69a46ea3783982df1a216b0312629875032c8543d51",
+      "source_time_scale": 8,
+      "review_status": "user_approved_ball_hit_labels",
+      "label_method": "fresh_tcn_p7_with_agent_visual_ball_contact_review",
+      "raw_tcn_proposal_count": 3,
+      "expected_swing_count": 3,
+      "impact_time_labels": [
+        {
+          "id": "test16-p7-01",
+          "start": 225.33333333333334,
+          "end": 225.33333333333334,
+          "playback_timecode": "03:45.333",
+          "p7_score": 0.9041971807455559,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test16/contact-review/test16-p7-01.jpg",
+          "evidence_sha256": "d33ee02a14ec32fea6ef74ed93d999b85f73205dc2a777fa474afa8a4d8b1688",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The addressed ball is visible before the stroke and absent from its resting position after the club passes."
+        },
+        {
+          "id": "test16-p7-02",
+          "start": 573.8666666666667,
+          "end": 573.8666666666667,
+          "playback_timecode": "09:33.867",
+          "p7_score": 0.8629317099895235,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test16/contact-review/test16-p7-02.jpg",
+          "evidence_sha256": "b6f34fc962f21ae8651de8061cba05b34247ff781eeb2b3888d64f6746d9fefb",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The addressed ball is visible before the stroke and absent from its resting position after the club passes."
+        },
+        {
+          "id": "test16-p7-03",
+          "start": 1047.4666666666667,
+          "end": 1047.4666666666667,
+          "playback_timecode": "17:27.467",
+          "p7_score": 0.8852155045539174,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test16/contact-review/test16-p7-03.jpg",
+          "evidence_sha256": "57775e5a6d4fb99fb669d5594e6ea59006ca68384cefe32d9b7441b4f4f821cb",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The addressed ball is visible before the stroke and absent from its resting position after the club passes. Other ball(s) remain visible on the mat."
+        }
+      ],
+      "excluded_motion_proposals": []
+    },
+    {
+      "id": "test17",
+      "filename": "test17.mp4",
+      "original_filename": "IMG_4485.mov",
+      "input_sha256": "c1cef7c64ce2ecbe723bfa14bc43b6a624534826544e38666f2a4a31e7c2d964",
+      "source_time_scale": 8,
+      "review_status": "user_approved_ball_hit_labels",
+      "label_method": "fresh_tcn_p7_with_agent_visual_ball_contact_review",
+      "raw_tcn_proposal_count": 3,
+      "expected_swing_count": 3,
+      "impact_time_labels": [
+        {
+          "id": "test17-p7-01",
+          "start": 164.8,
+          "end": 164.8,
+          "playback_timecode": "02:44.800",
+          "p7_score": 0.8814090935173464,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test17/contact-review/test17-p7-01.jpg",
+          "evidence_sha256": "3014ce3b24c53a4bb657fe7e8b72270a9416269c4c2ec7828ed0983b44024455",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The addressed ball is visible before the stroke and absent from its resting position after the club passes."
+        },
+        {
+          "id": "test17-p7-02",
+          "start": 697.3333333333334,
+          "end": 697.3333333333334,
+          "playback_timecode": "11:37.333",
+          "p7_score": 0.8699737039763331,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test17/contact-review/test17-p7-02.jpg",
+          "evidence_sha256": "640fbb500fc8ecfc60aab9bce8b3a666ac641e926c4aec199fca074e6954e3f6",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The addressed ball is visible before the stroke and absent from its resting position after the club passes."
+        },
+        {
+          "id": "test17-p7-03",
+          "start": 1039.7333333333333,
+          "end": 1039.7333333333333,
+          "playback_timecode": "17:19.733",
+          "p7_score": 0.8894223412437883,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test17/contact-review/test17-p7-03.jpg",
+          "evidence_sha256": "96e250289ec81b37783380f6dc77d3d72cf682ed2a7f1fcb10adf22c50511feb",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The addressed ball is visible before the stroke and absent from its resting position after the club passes."
+        }
+      ],
+      "excluded_motion_proposals": []
+    },
+    {
+      "id": "test18",
+      "filename": "test18.mp4",
+      "original_filename": "IMG_4486.mov",
+      "input_sha256": "9c69adfc2a055a494cc42f4a04225c4b7eb1df4c83ce656b7f470666f56ab161",
+      "source_time_scale": 8,
+      "review_status": "user_approved_ball_hit_labels",
+      "label_method": "fresh_tcn_p7_with_agent_visual_ball_contact_review",
+      "raw_tcn_proposal_count": 1,
+      "expected_swing_count": 1,
+      "impact_time_labels": [
+        {
+          "id": "test18-p7-01",
+          "start": 112.8,
+          "end": 112.8,
+          "playback_timecode": "01:52.800",
+          "p7_score": 0.9233596913024632,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test18/contact-review/test18-p7-01.jpg",
+          "evidence_sha256": "6434fee76faf959ddc90f1d88d817d064ed33ac700933f930580327f6ab48432",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The addressed ball is visible before the stroke and absent from its resting position after the club passes. Other ball(s) remain visible on the mat."
+        }
+      ],
+      "excluded_motion_proposals": []
+    },
+    {
+      "id": "test19",
+      "filename": "test19.mp4",
+      "original_filename": "IMG_4487.mov",
+      "input_sha256": "fa7581f6f6256bef8bc33a59415bee0e26bce5b2973412f5087b47353073c1b1",
+      "source_time_scale": 8,
+      "review_status": "user_approved_ball_hit_labels",
+      "label_method": "fresh_tcn_p7_with_agent_visual_ball_contact_review",
+      "raw_tcn_proposal_count": 7,
+      "expected_swing_count": 7,
+      "impact_time_labels": [
+        {
+          "id": "test19-p7-01",
+          "start": 49.86666666666667,
+          "end": 49.86666666666667,
+          "playback_timecode": "00:49.867",
+          "p7_score": 0.8697505097715922,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test19/contact-review/test19-p7-01.jpg",
+          "evidence_sha256": "9e369ee6849c6ae1a3671d009ee9ed9632279b29ae2a1ff5ae902824377bd51e",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The ball is visible on the tee before the stroke; the tee is empty after the club passes."
+        },
+        {
+          "id": "test19-p7-02",
+          "start": 1110.9333333333334,
+          "end": 1110.9333333333334,
+          "playback_timecode": "18:30.933",
+          "p7_score": 0.9121128695200412,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test19/contact-review/test19-p7-02.jpg",
+          "evidence_sha256": "a0a48b47c1b2cf32fb9c62088c8ddd9647beb346d1e81bca7233599b7601f856",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The ball is visible on the tee before the stroke; the tee is empty after the club passes."
+        },
+        {
+          "id": "test19-p7-03",
+          "start": 1562.1333333333334,
+          "end": 1562.1333333333334,
+          "playback_timecode": "26:02.133",
+          "p7_score": 0.8594978088242086,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test19/contact-review/test19-p7-03.jpg",
+          "evidence_sha256": "4e79b80ea888c4d80ed4d18053399c7a1c29c6f4dfca84fb8ff341c2779e8730",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The ball is visible on the tee before the stroke; the tee is empty after the club passes."
+        },
+        {
+          "id": "test19-p7-04",
+          "start": 2001.3333333333333,
+          "end": 2001.3333333333333,
+          "playback_timecode": "33:21.333",
+          "p7_score": 0.8963497719962098,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test19/contact-review/test19-p7-04.jpg",
+          "evidence_sha256": "2c03e8cb3ef0853111a4cf7283b38087b8fb4ae6bf140803aa3f89d69ca198f6",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The ball is visible on the tee before the stroke; the tee is empty after the club passes."
+        },
+        {
+          "id": "test19-p7-05",
+          "start": 2508.266666666667,
+          "end": 2508.266666666667,
+          "playback_timecode": "41:48.267",
+          "p7_score": 0.8828503344388816,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test19/contact-review/test19-p7-05.jpg",
+          "evidence_sha256": "93c2876bbe573787627aaeeb65f1a77253f31e89a7cbae785fa1570f13868a74",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The ball is visible on the tee before the stroke; the tee is empty after the club passes."
+        },
+        {
+          "id": "test19-p7-06",
+          "start": 2933.3333333333335,
+          "end": 2933.3333333333335,
+          "playback_timecode": "48:53.333",
+          "p7_score": 0.8712035952671013,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test19/contact-review/test19-p7-06.jpg",
+          "evidence_sha256": "b37dd9ed408f3a8c0c1c6c0155c1096d3c7ca4340479b77fbce48d9aa75b712e",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The ball is visible on the tee before the stroke; the tee is empty after the club passes."
+        },
+        {
+          "id": "test19-p7-07",
+          "start": 3334.4,
+          "end": 3334.4,
+          "playback_timecode": "55:34.400",
+          "p7_score": 0.865820450017025,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test19/contact-review/test19-p7-07.jpg",
+          "evidence_sha256": "79206f8c24fb60ca9b4455275237edf1d5a40f07b217357f2e8cf08c4bfd8cd4",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The ball is visible on the tee before the stroke; the tee is empty after the club passes."
+        }
+      ],
+      "excluded_motion_proposals": []
+    },
+    {
+      "id": "test20",
+      "filename": "test20.mp4",
+      "original_filename": "IMG_4488.mov",
+      "input_sha256": "f0a6281289e1e183d8e772f1e9a9bbc1d6ddf33337fdd4a7a49244cb723dfd83",
+      "source_time_scale": 8,
+      "review_status": "user_approved_ball_hit_labels",
+      "label_method": "fresh_tcn_p7_with_agent_visual_ball_contact_review",
+      "raw_tcn_proposal_count": 4,
+      "expected_swing_count": 2,
+      "impact_time_labels": [
+        {
+          "id": "test20-p7-01",
+          "start": 82.13333333333334,
+          "end": 82.13333333333334,
+          "playback_timecode": "01:22.133",
+          "p7_score": 0.8993067685653153,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test20/contact-review/test20-p7-01.jpg",
+          "evidence_sha256": "f716a68f980598e7f9e12591bca0d284a353547f9c30f83d64c017b158fd782c",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The addressed ball is visible before the stroke and absent from its resting position after the club passes. Other ball(s) remain visible on the mat."
+        },
+        {
+          "id": "test20-p7-02",
+          "start": 406.4,
+          "end": 406.4,
+          "playback_timecode": "06:46.400",
+          "p7_score": 0.886549520759916,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test20/contact-review/test20-p7-02.jpg",
+          "evidence_sha256": "d0ebeb7ff44912398b88c1f8ff41869499f04d9291868781d2f6f379b79c4a42",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The addressed ball is visible before the stroke and absent from its resting position after the club passes. Other ball(s) remain visible on the mat."
+        }
+      ],
+      "excluded_motion_proposals": [
+        {
+          "id": "test20-p7-03",
+          "start": 538.1333333333333,
+          "end": 538.1333333333333,
+          "playback_timecode": "08:58.133",
+          "p7_score": 0.8827047070410756,
+          "review_status": "needs_user_review",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test20/contact-review/test20-p7-03.jpg",
+          "evidence_sha256": "3e7ec6f5e2ab25c97403eb87e573fa86f01f3bce93eaf17136b5f389b23b177e",
+          "agent_disposition": "practice_swing_no_ball_hit",
+          "visual_observation": "The club passes beside the balls; both visible balls remain in the same positions through follow-through."
+        },
+        {
+          "id": "test20-p7-04",
+          "start": 579.2,
+          "end": 579.2,
+          "playback_timecode": "09:39.200",
+          "p7_score": 0.8887696343829428,
+          "review_status": "needs_user_review",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test20/contact-review/test20-p7-04.jpg",
+          "evidence_sha256": "fdb2b68bb32b2a88fafb2e16f7fb08d79cf6f3d9be63f36a11cbbebb1d149f01",
+          "agent_disposition": "practice_swing_no_ball_hit",
+          "visual_observation": "The club passes beside the balls; both visible balls remain in the same positions through follow-through."
+        }
+      ]
+    },
+    {
+      "id": "test21",
+      "filename": "test21.mp4",
+      "original_filename": "IMG_4489.mov",
+      "input_sha256": "921cf96bdada91181da5bbd647f1d348273895fea917271c2b885c6b7e9cb8ee",
+      "source_time_scale": 8,
+      "review_status": "user_approved_ball_hit_labels",
+      "label_method": "fresh_tcn_p7_with_agent_visual_ball_contact_review",
+      "raw_tcn_proposal_count": 4,
+      "expected_swing_count": 3,
+      "impact_time_labels": [
+        {
+          "id": "test21-p7-01",
+          "start": 299.46666666666664,
+          "end": 299.46666666666664,
+          "playback_timecode": "04:59.467",
+          "p7_score": 0.887523051756122,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test21/contact-review/test21-p7-01.jpg",
+          "evidence_sha256": "61fd48673b50f38e64aacc5405344015bf0ee7d9c27eaac885ac801dca775978",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The addressed ball is visible before the stroke and absent from its resting position after the club passes. Other ball(s) remain visible on the mat."
+        },
+        {
+          "id": "test21-p7-03",
+          "start": 662.1333333333333,
+          "end": 662.1333333333333,
+          "playback_timecode": "11:02.133",
+          "p7_score": 0.8957880702908023,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test21/contact-review/test21-p7-03.jpg",
+          "evidence_sha256": "4fa453fa04bd6eeda338c6645246f64cc4a9538d727d1e9bf86398bfcce34938",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The addressed ball is visible before the stroke and absent from its resting position after the club passes. Other ball(s) remain visible on the mat."
+        },
+        {
+          "id": "test21-p7-04",
+          "start": 1288.0,
+          "end": 1288.0,
+          "playback_timecode": "21:28.000",
+          "p7_score": 0.9043228275895273,
+          "review_status": "user_approved",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test21/contact-review/test21-p7-04.jpg",
+          "evidence_sha256": "3eccbaccf962878a4c755b9adcc451787dff87af855e234571c7ca5dc3b90d3a",
+          "agent_disposition": "ball_hit",
+          "visual_observation": "The addressed ball is visible before the stroke and absent from its resting position after the club passes."
+        }
+      ],
+      "excluded_motion_proposals": [
+        {
+          "id": "test21-p7-02",
+          "start": 534.9333333333333,
+          "end": 534.9333333333333,
+          "playback_timecode": "08:54.933",
+          "p7_score": 0.903361386137012,
+          "review_status": "needs_user_review",
+          "visual_review_by": "agent",
+          "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test21/contact-review/test21-p7-02.jpg",
+          "evidence_sha256": "b6f067403cc678f4616569dacd5536c3d398a4ff56fc06b0739ddf35734ccac9",
+          "agent_disposition": "practice_swing_no_ball_hit",
+          "visual_observation": "The club passes beside the balls; both visible balls remain in the same positions through follow-through."
+        }
+      ]
+    }
+  ],
+  "additional_low_score_reviews": [
+    {
+      "id": "test17-weak-01",
+      "video_id": "test17",
+      "time": 480.0,
+      "p7_score": 0.245463118581336,
+      "selected_by_tcn": false,
+      "agent_disposition": "not_a_ball_hit",
+      "visual_observation": "Short rehearsal motions beside the ball; the ball stays in place.",
+      "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test17/contact-review/test17-weak-01.jpg",
+      "evidence_sha256": "8edcea2a391fc5d82108bc02cd5f9cec34146d4f7e5043afa3cb56e5dd56853e"
+    },
+    {
+      "id": "test21-weak-01",
+      "video_id": "test21",
+      "time": 433.8666666666667,
+      "p7_score": 0.25038561811584104,
+      "selected_by_tcn": false,
+      "agent_disposition": "not_a_ball_hit",
+      "visual_observation": "The golfer bends and reaches toward the basket; no stroke or ball hit.",
+      "evidence": ".verification-artifacts/unseen-range-slow-only-tcn/test21/contact-review/test21-weak-01.jpg",
+      "evidence_sha256": "87a5fb4b1446e90758f0a3e6f18dba9dc58ae838a6a1944f43f1e88bee62352f"
+    }
+  ],
+  "approved_on": "2026-09-03",
+  "approval": {
+    "statement": "All labelled proposed ball hits are correct",
+    "source": "user message in this task before V3 evaluation",
+    "scope": "19 retained ball-hit labels accepted without timestamp or count edits. Excluded practice proposals remain agent visual assessments.",
+    "original_proposal": "detector_workbench/validation/labels/proposed/unseen_range_slow_only_labels.json",
+    "original_proposal_sha256": "826bcd13bee8a5fa1b5ce7fc03d4ed072fc3fe0c5004c9546db5f87ecd524ff8"
+  }
+}

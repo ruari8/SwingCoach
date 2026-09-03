@@ -650,12 +650,12 @@ Interpretation:
 
 - The object model is useful enough to build around.
 - Ball disappearance is currently the strongest visual confirmation signal.
-- The app now bundles the YOLO11n Core ML package and uses `SwingDetectorV2` for live capture-time Trim preselection, imported-video Trim preselection, and Replay Debug.
-- The shipped app path is V2-first for trim ranges. The older Vision-only detector, old model-backed contact/impact/hybrid modes, sparse Apple Vision pose gate, and audio gate are not production fallbacks.
-- During capture, the app samples camera frames at the configured V2 low real-time rate (`8 fps` by default), lets V2 raise its own burst rate during startup/swing evidence, and stores detected swing ranges. When recording stops, Trim opens with those already-collected ranges.
-- Replay Debug uses the same Core ML V2 detector as capture. Visible playback speed is only playback pacing; the separate source timing selector (`30/1x`, `120/4x`, `240/8x`) controls how source timestamps are divided before feeding the detector, then mapped back to the source timeline for display and Trim review.
-- Imported/library videos run `SwingDetectorV2AssetDetector` as a local post-pass when Trim opens. The post-pass feeds decoded asset frames through the same detector core instead of a separate legacy detector mode.
-- Audio confirmation and Apple Vision pose remain research/debug ideas documented here, not current app-wired detector inputs.
+- The app bundles the YOLO11n Core ML package. V2 originally supplied live capture-time Trim preselection, imported-video Trim preselection, and Replay Debug; [SwingDetectorV3](./SWING_DETECTOR_V3.md) now owns those paths.
+- The shipped app path is V3-first for trim ranges. The older Vision-only detector and model-backed contact/impact/hybrid modes are not production fallbacks.
+- During capture, the app samples camera frames at the configured V3 low real-time rate (`8 fps` by default), lets V3 raise its own burst rate during startup/swing evidence, and stores detected swing ranges. When recording stops, Trim opens with those already-collected ranges.
+- Replay Debug uses the same Core ML and Vision V3 detector as capture. Visible playback speed is only playback pacing; the separate source timing selector (`30/1x`, `120/4x`, `240/8x`) controls how source timestamps are divided before feeding the detector, then mapped back to the source timeline for display and Trim review.
+- Imported/library videos run `SwingDetectorV3AssetDetector` as a local post-pass when Trim opens. The post-pass feeds decoded asset frames through the same detector core instead of a separate legacy detector mode.
+- Apple Vision pose is an app-wired V3 input. Audio confirmation remains diagnostic.
 
 Historical detector structures from the pre-V2 app path:
 
@@ -767,7 +767,7 @@ Current interpretation:
 - `test1`, `test3`, and `test6` are siloed under `.detectorTestV3/.silo` and excluded from active V3 scoring. `test1` and `test3` are useful object-model coverage cases rather than detector-logic acceptance cases for now: MLX SAM3 can identify yellow ball candidates in those clips, while the deployed YOLO model often misses them. `test6` is a low-quality Instagram screen recording with weak framing and UI components covering or contaminating ball evidence.
 - Fixed-window impact detection is worth exposing in Debug Replay because it answers the user's proposed method directly: find likely impact, then use pre/post timing. It finds the V2 swings, but it needs stronger false-positive gates before it can be the production trim path.
 - Apple Vision pose helps as a gate. On V2 it cuts impact false positives from `12` to `1`, but it is not a standalone answer because it misses one rough long-session swing and still leaves duplicate windows in several clips.
-- At that point, the hybrid pose/cadence strategy was the best live-capture default candidate. It has since been superseded in the app by `SwingDetectorV2`, which does not expose contact/impact/hybrid mode selection or use Apple Vision pose as a production gate.
+- At that point, the hybrid pose/cadence strategy was the best live-capture default candidate. V2 later superseded it, and V3 now supersedes V2 with Apple Vision pose as explicit golfer geometry and full-stroke evidence.
 - The same hybrid stream was rescored on the original 18-swing fixture after that gate adjustment: `18/18` positives matched, `0` positive false positives, and `0/8` negative-gap false positives. Mean source-timeline label-end latency is `0.061s`; after dividing the slow-motion source by `8x`, mean real-time label-end latency is `0.008s`, with the worst positive case at `0.138s` real time. Report: `.videos/live_model_detector_fixture_eval_hybrid/results/live_model_detector_fixture_report.json`.
 - Audio is the best next confirmation signal for real camera recordings because impact transients are often sharper than visual ball evidence. It cannot be trusted alone, and it does not help screen recordings with weak or altered audio. Capture now adds a microphone input when available so new recordings can carry audio; live audio-fused capture trimming is still not the production path.
 - Apple Vision pose should remain a gate, not a replacement detector: require a primary golfer and plausible address-to-finish body/hand motion around model/audio candidates, then reject setup/waggle windows.

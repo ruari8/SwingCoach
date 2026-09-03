@@ -3,7 +3,7 @@
 //  SwingCoach
 //
 //  Shared live-detector interface so the app and offline evaluator can switch
-//  between the legacy `LiveModelSwingDetector` and the new `SwingDetectorV2`
+//  between the legacy `LiveModelSwingDetector`, `SwingDetectorV2`, and `SwingDetectorV3`
 //  without the call sites knowing which concrete detector is in use.
 //
 

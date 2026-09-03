@@ -14,19 +14,46 @@ struct SwingDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var library = SwingLibrary.shared
     @StateObject private var analysisLibrary = AnalysisLibrary.shared
+    @ObservedObject private var manualStore = ManualAnnotationStore.shared
 
-    @State private var playerItem: AVPlayerItem?
-    @State private var isLoadingPlayback = false
-    @State private var playbackError: String?
+    @State private var currentSwingID: UUID
+    @State private var playerItems: [UUID: AVPlayerItem] = [:]
+    @State private var loadingSwingIDs: Set<UUID> = []
+    @State private var playbackErrors: [UUID: String] = [:]
     @State private var analysisStatus: SwingAnalysis.AnalysisStatus = .pending
     @State private var analysisProgressText: String?
     @State private var analysisProgressValue: Float?
     @State private var showTechnicalDetails = false
     @State private var showMetadata = false
     @State private var selectedPage = 0
+    @State private var isDrawingLines = false
+    @State private var draftLine: ManualAnnotation?
+    @State private var pagerOffset: CGFloat = 0
+    @State private var isCompletingPageTurn = false
+
+    init(swing: SavedSwing) {
+        self.swing = swing
+        _currentSwingID = State(initialValue: swing.id)
+    }
 
     private var currentSwing: SavedSwing {
-        library.swings.first { $0.id == swing.id } ?? swing
+        library.swings.first { $0.id == currentSwingID } ?? swing
+    }
+
+    private var navigationSwings: [SavedSwing] {
+        let references = library.swings.filter { $0.isReference }
+        let personal = library.swings.filter { !$0.isReference }
+        return references + personal
+    }
+
+    private var swingPositionText: String? {
+        guard navigationSwings.count > 1,
+              let index = navigationSwings.firstIndex(where: { $0.id == currentSwing.id }) else { return nil }
+        return "\(index + 1) of \(navigationSwings.count)"
+    }
+
+    private func manualAnnotationID(for swing: SavedSwing) -> String {
+        "swing-\(swing.id.uuidString)"
     }
 
     private var savedAnalysis: SavedAnalysis? {
@@ -44,11 +71,7 @@ struct SwingDetailView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            if let savedAnalysis {
-                analyzedCarousel(savedAnalysis: savedAnalysis)
-            } else {
-                originalVideoPage()
-            }
+            reviewPager
 
             // Navigation chrome stays available on every page so you can always
             // get back / open metadata, even with the player controls hidden.
@@ -56,6 +79,10 @@ struct SwingDetailView: View {
 
             if shouldShowAnalysisAction {
                 analysisFloatingLayer
+            }
+
+            if selectedPage == 0, playerItems[currentSwingID] != nil {
+                drawingToolRail
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -66,30 +93,142 @@ struct SwingDetailView: View {
                 .presentationDetents([.medium])
         }
         .onAppear {
-            preparePlayback()
+            preparePlaybackWindow()
             Task {
                 await library.loadThumbnails()
             }
         }
-    }
-
-    private func analyzedCarousel(savedAnalysis: SavedAnalysis) -> some View {
-        TabView(selection: $selectedPage) {
-            originalVideoPage()
-                .tag(0)
-
-            annotatedVideoPage(savedAnalysis: savedAnalysis)
-                .tag(1)
-
-            coachNotesPage(savedAnalysis: savedAnalysis)
-                .tag(2)
+        .onChange(of: currentSwingID) { _, _ in
+            resetReviewState()
+            preparePlaybackWindow()
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
     }
 
-    private func originalVideoPage() -> some View {
-        originalPlayer
+    private var reviewPager: some View {
+        GeometryReader { geometry in
+            let pageWidth = max(geometry.size.width, 1)
+            let window = reviewWindow
+            let currentSlot = window.firstIndex { $0.id == currentSwingID } ?? 0
+
+            HStack(spacing: 0) {
+                ForEach(window) { pageSwing in
+                    reviewPage(for: pageSwing)
+                        .frame(width: pageWidth, height: geometry.size.height)
+                }
+            }
+            .frame(width: pageWidth * CGFloat(window.count), alignment: .leading)
+            .offset(x: -CGFloat(currentSlot) * pageWidth + pagerOffset)
+            .contentShape(Rectangle())
+            .highPriorityGesture(
+                pagerDragGesture(pageWidth: pageWidth, pageHeight: geometry.size.height)
+            )
+        }
+        .clipped()
+    }
+
+    private var reviewWindow: [SavedSwing] {
+        guard let currentIndex = navigationSwings.firstIndex(where: { $0.id == currentSwingID }) else { return [] }
+        let lowerBound = max(navigationSwings.startIndex, currentIndex - 1)
+        let upperBound = min(navigationSwings.index(before: navigationSwings.endIndex), currentIndex + 1)
+        return Array(navigationSwings[lowerBound...upperBound])
+    }
+
+    private func pagerDragGesture(pageWidth: CGFloat, pageHeight: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 8)
+            .onChanged { value in
+                guard !isCompletingPageTurn,
+                      shouldNavigateLibrary(with: value, pageHeight: pageHeight) else { return }
+                pagerOffset = resistedPagerTranslation(value.translation.width)
+            }
+            .onEnded { value in
+                guard !isCompletingPageTurn,
+                      shouldNavigateLibrary(with: value, pageHeight: pageHeight),
+                      let currentIndex = navigationSwings.firstIndex(where: { $0.id == currentSwingID }) else {
+                    settlePager()
+                    return
+                }
+
+                let threshold = min(pageWidth * 0.18, 72)
+                let projected = value.predictedEndTranslation.width
+                let direction: Int
+                if value.translation.width < -threshold || projected < -pageWidth * 0.34 {
+                    direction = 1
+                } else if value.translation.width > threshold || projected > pageWidth * 0.34 {
+                    direction = -1
+                } else {
+                    settlePager()
+                    return
+                }
+
+                let nextIndex = currentIndex + direction
+                guard navigationSwings.indices.contains(nextIndex) else {
+                    settlePager()
+                    return
+                }
+
+                let nextSwingID = navigationSwings[nextIndex].id
+                isCompletingPageTurn = true
+                withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.88)) {
+                    pagerOffset = -CGFloat(direction) * pageWidth
+                }
+
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(280))
+                    currentSwingID = nextSwingID
+                    pagerOffset = 0
+                    isCompletingPageTurn = false
+                }
+            }
+    }
+
+    private func settlePager() {
+        withAnimation(.interactiveSpring(response: 0.25, dampingFraction: 0.88)) {
+            pagerOffset = 0
+        }
+    }
+
+    private func shouldNavigateLibrary(with value: DragGesture.Value, pageHeight: CGFloat) -> Bool {
+        guard !isDrawingLines,
+              selectedPage == 0,
+              value.startLocation.y < pageHeight - 130 else { return false }
+        return abs(value.translation.width) > abs(value.translation.height) * 1.15
+    }
+
+    private func resistedPagerTranslation(_ translation: CGFloat) -> CGFloat {
+        guard let currentIndex = navigationSwings.firstIndex(where: { $0.id == currentSwingID }) else {
+            return translation
+        }
+        let isDraggingPastStart = currentIndex == navigationSwings.startIndex && translation > 0
+        let isDraggingPastEnd = currentIndex == navigationSwings.index(before: navigationSwings.endIndex) && translation < 0
+        return isDraggingPastStart || isDraggingPastEnd ? translation * 0.22 : translation
+    }
+
+    @ViewBuilder
+    private func reviewPage(for pageSwing: SavedSwing) -> some View {
+        if pageSwing.id == currentSwingID,
+           let savedAnalysis = analysisLibrary.analysis(for: pageSwing) {
+            analyzedCarousel(savedAnalysis: savedAnalysis, swing: pageSwing)
+        } else {
+            originalVideoPage(for: pageSwing)
+        }
+    }
+
+    private func analyzedCarousel(savedAnalysis: SavedAnalysis, swing: SavedSwing) -> some View {
+        Group {
+            if selectedPage == 0 {
+                originalVideoPage(for: swing)
+            } else if selectedPage == 1 {
+                annotatedVideoPage(savedAnalysis: savedAnalysis)
+            } else {
+                coachNotesPage(savedAnalysis: savedAnalysis)
+            }
+        }
+    }
+
+    private func originalVideoPage(for swing: SavedSwing) -> some View {
+        originalPlayer(for: swing)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .accessibilityIdentifier("swing-review-page")
     }
 
     private var topNavOverlay: some View {
@@ -98,17 +237,65 @@ struct SwingDetailView: View {
                 navCircleButton(systemName: "chevron.left") { dismiss() }
                     .accessibilityLabel("Back to library")
 
-                Spacer(minLength: 0)
+                Spacer()
+
+                if let swingPositionText {
+                    Text(swingPositionText)
+                        .accessibilityIdentifier("swing-position")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10)
+                        .frame(height: 32)
+                        .background(Capsule().fill(Color.black.opacity(0.45)))
+                }
+
+                Spacer()
+
+                Button {
+                    library.toggleFavorite(currentSwing)
+                } label: {
+                    Image(systemName: currentSwing.isFavorite ? "star.fill" : "star")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(currentSwing.isFavorite ? .yellow : .white)
+                        .frame(width: 38, height: 38)
+                        .background(Circle().fill(Color.black.opacity(0.45)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(currentSwing.isFavorite ? "Remove star" : "Star swing")
             }
             .padding(.horizontal, 14)
 
             if savedAnalysis != nil {
-                carouselDots(count: 3)
+                analysisPagePicker
             }
 
             Spacer(minLength: 0)
         }
         .padding(.top, 6)
+    }
+
+    private var analysisPagePicker: some View {
+        HStack(spacing: 5) {
+            analysisPageButton("play.fill", page: 0, label: "Original video")
+            analysisPageButton("scribble.variable", page: 1, label: "Annotated video")
+            analysisPageButton("text.alignleft", page: 2, label: "Coach notes")
+        }
+        .padding(5)
+        .background(Capsule().fill(Color.black.opacity(0.42)))
+    }
+
+    private func analysisPageButton(_ systemName: String, page: Int, label: String) -> some View {
+        Button {
+            selectedPage = page
+        } label: {
+            Image(systemName: systemName)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(selectedPage == page ? .black : .white)
+                .frame(width: 34, height: 28)
+                .background(Capsule().fill(selectedPage == page ? Color.white : Color.clear))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 
     private func navCircleButton(systemName: String, action: @escaping () -> Void) -> some View {
@@ -230,41 +417,67 @@ struct SwingDetailView: View {
         )
     }
 
-    private func carouselDots(count: Int) -> some View {
-        HStack(spacing: 7) {
-            ForEach(0..<count, id: \.self) { index in
-                Circle()
-                    .fill(index == selectedPage ? Color.white : Color.white.opacity(0.34))
-                    .frame(width: index == selectedPage ? 7 : 5, height: index == selectedPage ? 7 : 5)
-            }
-        }
-        .padding(.horizontal, 11)
-        .padding(.vertical, 7)
-        .background(Capsule().fill(Color.black.opacity(0.35)))
-        .accessibilityLabel("Carousel page \(selectedPage + 1) of \(count)")
-    }
+    private func originalPlayer(for swing: SavedSwing) -> some View {
+        let annotationID = manualAnnotationID(for: swing)
+        let drawingEnabled = isDrawingLines && swing.id == currentSwingID
 
-    @ViewBuilder
-    private var originalPlayer: some View {
-        if let playerItem {
+        return Group {
+        if let playerItem = playerItems[swing.id] {
             PlaybackChromeView(
                 playerItem: playerItem,
-                playbackEnabled: true,
+                playbackEnabled: swing.id == currentSwingID && !drawingEnabled,
                 showsSpeedControls: true,
                 startsPlaying: false,
                 allowsFullscreen: false,
-                allowsTransportGestures: true,
+                allowsTransportGestures: !drawingEnabled,
+                contentOverlayAllowsHitTesting: drawingEnabled,
                 edgeToEdge: true,
                 allowsLock: true,
-                infoAction: { showMetadata = true }
+                infoAction: { showMetadata = true },
+                contentOverlay: { currentTime, _ in
+                    AnyView(
+                        ManualAnnotationCanvasOverlay(
+                            tracks: nil,
+                            sourceAspectRatio: playerItem.presentationSize.height > 0
+                                ? Double(playerItem.presentationSize.width / playerItem.presentationSize.height)
+                                : nil,
+                            currentTime: currentTime,
+                            analysisID: annotationID,
+                            annotations: manualStore.annotations(for: annotationID),
+                            draftAnnotation: draftLine,
+                            enabled: true,
+                            editingEnabled: drawingEnabled,
+                            selectedTool: .line,
+                            selectedColorHex: "#FFD60A",
+                            labelText: "",
+                            appliesToFullSwing: true,
+                            onDraftChanged: { draftLine = $0 },
+                            onCommit: { annotation in
+                                manualStore.add(annotation)
+                                draftLine = nil
+                            },
+                            onErase: { _, _ in }
+                        )
+                    )
+                }
             ) {
+                EmptyView()
+            } overlayAccessory: {
                 EmptyView()
             }
         } else {
             ZStack {
                 Color.black
 
-                if let playbackError {
+                if let thumbnail = swing.thumbnail {
+                    Image(uiImage: thumbnail)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .overlay(Color.black.opacity(0.18))
+                }
+
+                if let playbackError = playbackErrors[swing.id] {
                     VStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(.yellow)
@@ -278,16 +491,71 @@ struct SwingDetailView: View {
                     VStack(spacing: 8) {
                         ProgressView()
                             .tint(.white)
-                        Text(isLoadingPlayback ? "Loading swing..." : "Preparing playback...")
+                        Text(loadingSwingIDs.contains(swing.id) ? "Loading swing..." : "Preparing playback...")
                             .font(.caption)
                             .foregroundColor(.white.opacity(0.75))
                     }
                 }
             }
-            .onAppear {
-                preparePlayback()
+        }
+        }
+    }
+
+    private var drawingToolRail: some View {
+        HStack {
+            manualLineControls
+            Spacer(minLength: 0)
+        }
+        .padding(.leading, 14)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    private var manualLineControls: some View {
+        let annotationID = manualAnnotationID(for: currentSwing)
+
+        return VStack(spacing: 8) {
+            Button {
+                isDrawingLines.toggle()
+                draftLine = nil
+            } label: {
+                Image(systemName: isDrawingLines ? "checkmark" : "pencil.and.outline")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(isDrawingLines ? .black : .white)
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(isDrawingLines ? Color.yellow : Color.black.opacity(0.54)))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isDrawingLines ? "Finish drawing lines" : "Draw straight lines")
+
+            if isDrawingLines, !manualStore.annotations(for: annotationID).isEmpty {
+                Button {
+                    manualStore.undoLast(for: annotationID)
+                } label: {
+                    Image(systemName: "arrow.uturn.backward")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 38, height: 38)
+                        .background(Circle().fill(Color.black.opacity(0.54)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Undo last line")
+
+                Button {
+                    manualStore.clear(for: annotationID)
+                    draftLine = nil
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 38, height: 38)
+                        .background(Circle().fill(Color.red.opacity(0.72)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear all lines")
             }
         }
+        .padding(6)
+        .background(Capsule().fill(Color.black.opacity(0.34)))
     }
 
     private var analysisOverlayButton: some View {
@@ -370,6 +638,9 @@ struct SwingDetailView: View {
     }
 
     private var shouldShowAnalysisAction: Bool {
+        if currentSwing.isReference {
+            return false
+        }
         if isAnalyzing || savedAnalysis == nil {
             return true
         }
@@ -431,24 +702,48 @@ struct SwingDetailView: View {
         }
     }
 
-    private func preparePlayback() {
-        guard playerItem == nil, !isLoadingPlayback else { return }
-        isLoadingPlayback = true
-        playbackError = nil
+    private func preparePlaybackWindow() {
+        guard let currentIndex = navigationSwings.firstIndex(where: { $0.id == currentSwingID }) else { return }
+        let lowerBound = max(navigationSwings.startIndex, currentIndex - 1)
+        let upperBound = min(navigationSwings.index(before: navigationSwings.endIndex), currentIndex + 1)
+        let window = navigationSwings[lowerBound...upperBound]
+        let retainedIDs = Set(window.map(\.id))
+
+        playerItems = playerItems.filter { retainedIDs.contains($0.key) }
+        playbackErrors = playbackErrors.filter { retainedIDs.contains($0.key) }
+
+        for swing in window {
+            preparePlayback(for: swing)
+        }
+    }
+
+    private func preparePlayback(for swing: SavedSwing) {
+        guard playerItems[swing.id] == nil, !loadingSwingIDs.contains(swing.id) else { return }
+        loadingSwingIDs.insert(swing.id)
+        playbackErrors[swing.id] = nil
 
         Task {
-            if let item = await library.getPlayerItem(for: currentSwing) {
-                await MainActor.run {
-                    playerItem = item
-                    isLoadingPlayback = false
-                }
+            let item = await library.getPlayerItem(for: swing)
+            loadingSwingIDs.remove(swing.id)
+
+            guard reviewWindow.contains(where: { $0.id == swing.id }) else { return }
+
+            if let item {
+                playerItems[swing.id] = item
             } else {
-                await MainActor.run {
-                    isLoadingPlayback = false
-                    playbackError = "The original video could not be loaded. It may have been deleted from Photos."
-                }
+                playbackErrors[swing.id] = "The original video could not be loaded. It may have been deleted from Photos."
             }
         }
+    }
+
+    private func resetReviewState() {
+        analysisStatus = .pending
+        analysisProgressText = nil
+        analysisProgressValue = nil
+        selectedPage = 0
+        isDrawingLines = false
+        draftLine = nil
+        showMetadata = false
     }
 
     private func startAnalysis() {

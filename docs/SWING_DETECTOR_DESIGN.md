@@ -1,17 +1,19 @@
 # Swing Detector Restart Design
 
-This document is the target design for a cleaner on-device swing detector restart. It is not a description of the current production detector. The current implementation should be treated as a legacy baseline while this design is built and A/B tested beside it.
+This document records the original V2 restart design and later implementation notes. V3 is now the app-wired detector; see [SwingDetectorV3](./SWING_DETECTOR_V3.md). Some intended V2 behavior below differs from its code; see the [V2 logic audit](./SWING_DETECTOR_LOGIC.md).
+
+The [2026-08-31 reconstruction proposal](./SWING_DETECTOR_RECONSTRUCTION.md) revisits this design after the boundary experiments. Its explicit identity, visibility, and contact outcomes are implemented in V3.
 
 For the fixture-gated execution plan and milestone order, see [Swing Detector V2 Implementation Plan](./SWING_DETECTOR_V2_IMPLEMENTATION_PLAN.md).
 
 ## Implementation Status
 
-`SwingDetectorV2` is now the app-wired detector and the offline evaluator target:
+`SwingDetectorV2` was the app-wired detector and offline evaluator target before V3:
 
 - M0 scaffold and fail-fast dev loop: shared detector protocol, v2 Swift evaluator, Python fixture harness, JSON candidate traces, and contact sheets.
 - M1 first pass: address lock, locked-patch watcher, graded club evidence, state-machine transitions, and evidence scoring.
 - M2-M4 fixture gates and exported single-swing clip baselines are passing for the current labelled acceptance set.
-- Capture, imported Trim detection, and Replay Debug now use V2 directly. The legacy detector source remains only as a reference/evaluator comparison path.
+- Capture, imported Trim detection, and Replay Debug used V2 directly. They now use V3; V2 remains a regression baseline.
 
 The central design choice is:
 

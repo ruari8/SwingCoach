@@ -703,7 +703,7 @@ final class DebugReplayViewModel: ObservableObject {
         guard let selectedVideoURL else { return }
 
         cancelReplay()
-        let configuration = SwingDetectorV2Configuration.live(
+        let configuration = SwingDetectorV3Configuration.live(
             sourceTimeScale: sourceTimeScale,
             lowSampleFPS: detectorSampleFPS,
             burstSampleFPS: max(16.0, detectorSampleFPS * 2.0)
@@ -766,9 +766,9 @@ final class DebugReplayViewModel: ObservableObject {
                     player?.pause()
                     snapshot = LiveSwingDetectionSnapshot(
                         status: result.detections.isEmpty ? .idle : .swingDetected,
-                        primaryMessage: result.detections.isEmpty ? "No V2 swings detected" : "\(result.detections.count) swing\(result.detections.count == 1 ? "" : "s") detected",
+                        primaryMessage: result.detections.isEmpty ? "No V3 swings detected" : "\(result.detections.count) swing\(result.detections.count == 1 ? "" : "s") detected",
                         detailMessage: result.detections.isEmpty
-                            ? "No V2 detections cleared the detector gates."
+                            ? "No V3 detections cleared the detector gates."
                             : "Open trim to inspect detected ranges.",
                         detectedSwingCount: result.detections.count,
                         hasBallLock: snapshot.hasBallLock,
@@ -970,7 +970,7 @@ private enum DebugLiveSwingReplayRunner {
         for url: URL,
         speedMultiplier: Double,
         startSourceTime: Double,
-        detectorConfiguration: SwingDetectorV2Configuration,
+        detectorConfiguration: SwingDetectorV3Configuration,
         control: DebugReplayControl
     ) -> AsyncStream<DebugReplayEvent> {
         AsyncStream { continuation in
@@ -1006,7 +1006,7 @@ private enum DebugLiveSwingReplayRunner {
         url: URL,
         speedMultiplier: Double,
         startSourceTime: Double,
-        detectorConfiguration: SwingDetectorV2Configuration,
+        detectorConfiguration: SwingDetectorV3Configuration,
         control: DebugReplayControl,
         onProgress: @escaping (Double, Double, LiveSwingDetectionSnapshot, [DetectedSwing]) -> Void
     ) async throws -> DebugReplayResult {
@@ -1049,7 +1049,7 @@ private enum DebugLiveSwingReplayRunner {
             throw reader.error ?? VideoTrimmer.TrimmerError.assetLoadFailed
         }
 
-        let detector = SwingDetectorV2(configuration: detectorConfiguration)
+        let detector = SwingDetectorV3(configuration: detectorConfiguration)
         detector.reset(enabled: true)
         var lastDetectorSourceTime = 0.0
         let replayStartedAt = Date()

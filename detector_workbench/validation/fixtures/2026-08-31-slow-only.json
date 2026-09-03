@@ -1,0 +1,112 @@
+{
+  "prepared_on": "2026-09-03",
+  "fixture_root": ".detectorTestV3/unseen-2026-08-31/slow-only",
+  "source_time_scale": 8,
+  "timing": "Every retained section is slow motion; apply one constant factor of 8.",
+  "notes": [
+    "The originals and historical mixed-speed fixtures are unchanged.",
+    "Fixed cuts lie at keyframes inside the user-confirmed audio boundaries, allowing a small safety margin.",
+    "IMG_4489 keeps its slow-motion ending.",
+    "Stream-copy packet reordering can extend a requested end by less than 0.25 seconds, still inside the safety margin.",
+    "Labels must use the new trimmed timeline. The withdrawn 31/33-label manifests are not reused."
+  ],
+  "videos": [
+    {
+      "id": "test16",
+      "filename": "test16.mp4",
+      "original_filename": "IMG_4484.mov",
+      "original_sha256": "62cc065e62fd02930c0fc54ebe88b7ffaf7f603511e726877f623659d26ed148",
+      "output_sha256": "2b76cb54aa612516b3d6e69a46ea3783982df1a216b0312629875032c8543d51",
+      "original_playback_offset_seconds": 36.4,
+      "requested_original_end_seconds": 1332.8,
+      "output_video_duration_seconds": 1296.56599,
+      "source_time_scale": 8,
+      "playback_fps": 30,
+      "method": "HEVC video and AAC audio stream copy; no re-encoding or speed change",
+      "label_status": "user_approved_2026-09-03",
+      "original_fixture": ".detectorTestV3/unseen-2026-08-31/test16.mov"
+    },
+    {
+      "id": "test17",
+      "filename": "test17.mp4",
+      "original_filename": "IMG_4485.mov",
+      "original_sha256": "f654367cefca6462b8150459a20872b25e5e025b9eb286586ee6039a482a8d18",
+      "output_sha256": "c1cef7c64ce2ecbe723bfa14bc43b6a624534826544e38666f2a4a31e7c2d964",
+      "original_playback_offset_seconds": 31.733333,
+      "requested_original_end_seconds": 1153.6,
+      "output_video_duration_seconds": 1122.033021,
+      "source_time_scale": 8,
+      "playback_fps": 30,
+      "method": "HEVC video and AAC audio stream copy; no re-encoding or speed change",
+      "label_status": "user_approved_2026-09-03",
+      "original_fixture": ".detectorTestV3/unseen-2026-08-31/test17.mov"
+    },
+    {
+      "id": "test18",
+      "filename": "test18.mp4",
+      "original_filename": "IMG_4486.mov",
+      "original_sha256": "501ffbec8dc7ccdba6032a3caadf12363528122e2008097f85986a04838be76f",
+      "output_sha256": "9c69adfc2a055a494cc42f4a04225c4b7eb1df4c83ce656b7f470666f56ab161",
+      "original_playback_offset_seconds": 25.2,
+      "requested_original_end_seconds": 905.333333,
+      "output_video_duration_seconds": 880.3,
+      "source_time_scale": 8,
+      "playback_fps": 30,
+      "method": "HEVC video and AAC audio stream copy; no re-encoding or speed change",
+      "label_status": "user_approved_2026-09-03",
+      "original_fixture": ".detectorTestV3/unseen-2026-08-31/test18.mov"
+    },
+    {
+      "id": "test19",
+      "filename": "test19.mp4",
+      "original_filename": "IMG_4487.mov",
+      "original_sha256": "0d8af97034a990a16ffe83e7baaba3b59d70121f19c2da0b9706b5ffae5c6134",
+      "output_sha256": "fa7581f6f6256bef8bc33a59415bee0e26bce5b2973412f5087b47353073c1b1",
+      "original_playback_offset_seconds": 92.4,
+      "requested_original_end_seconds": 3487.866667,
+      "output_video_duration_seconds": 3395.633021,
+      "source_time_scale": 8,
+      "playback_fps": 30,
+      "method": "HEVC video and AAC audio stream copy; no re-encoding or speed change",
+      "label_status": "user_approved_2026-09-03",
+      "original_fixture": ".detectorTestV3/unseen-2026-08-31/test19.mov"
+    },
+    {
+      "id": "test20",
+      "filename": "test20.mp4",
+      "original_filename": "IMG_4488.mov",
+      "original_sha256": "7a1519a8374f2e924901dca03ad2a5789a0ff6269abddb3d981ccaeb87aad16b",
+      "output_sha256": "f0a6281289e1e183d8e772f1e9a9bbc1d6ddf33337fdd4a7a49244cb723dfd83",
+      "original_playback_offset_seconds": 18.666667,
+      "requested_original_end_seconds": 657.066667,
+      "output_video_duration_seconds": 638.56599,
+      "source_time_scale": 8,
+      "playback_fps": 30,
+      "method": "HEVC video and AAC audio stream copy; no re-encoding or speed change",
+      "label_status": "user_approved_2026-09-03",
+      "original_fixture": ".detectorTestV3/unseen-2026-08-31/test20.mov"
+    },
+    {
+      "id": "test21",
+      "filename": "test21.mp4",
+      "original_filename": "IMG_4489.mov",
+      "original_sha256": "90b6888974685780e41ea22d3cbab964c5da33f8dbc825d6709673b9171f08fd",
+      "output_sha256": "921cf96bdada91181da5bbd647f1d348273895fea917271c2b885c6b7e9cb8ee",
+      "original_playback_offset_seconds": 31.733333,
+      "requested_original_end_seconds": 1423.0,
+      "output_video_duration_seconds": 1391.26599,
+      "source_time_scale": 8,
+      "playback_fps": 30,
+      "method": "HEVC video and AAC audio stream copy; no re-encoding or speed change",
+      "label_status": "user_approved_2026-09-03",
+      "original_fixture": ".detectorTestV3/unseen-2026-08-31/test21.mov"
+    }
+  ],
+  "verification": {
+    "status": "passed",
+    "checked": "30 fps, zero playback start, pixel-identical decoded samples at start/middle/end, slow-band audio at both edges",
+    "evidence": ".verification-artifacts/unseen-range-2026-08-31/slow-only-verification.json"
+  },
+  "proposed_labels": "detector_workbench/validation/labels/proposed/unseen_range_slow_only_labels.json",
+  "approved_labels": "detector_workbench/validation/labels/unseen_range_slow_only_labels.json"
+}

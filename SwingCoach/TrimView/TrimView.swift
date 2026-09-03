@@ -783,8 +783,8 @@ struct TrimView: View {
 
         swingDetectionTask = Task {
             do {
-                let detector = SwingDetectorV2AssetDetector(
-                    configuration: SwingDetectorV2Configuration.live(
+                let detector = SwingDetectorV3AssetDetector(
+                    configuration: SwingDetectorV3Configuration.live(
                         sourceTimeScale: detectorTimelineScale,
                         lowSampleFPS: liveModelDetectorSampleFPS,
                         burstSampleFPS: max(16.0, liveModelDetectorSampleFPS * 2.0)

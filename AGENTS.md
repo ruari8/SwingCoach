@@ -21,6 +21,20 @@ This file is the operator/LLM quick guide. Detailed docs are listed below.
 When behavior changes in code, update the canonical docs in the same change.
 Do not ship behavior changes without matching documentation updates.
 
+## Agent skills
+
+### Issue tracker
+
+Issues and specs are tracked in GitHub Issues for `ruari8/SwingCoach`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Triage uses the standard `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix` labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Domain documentation uses the single-context layout. See `docs/agents/domain.md`.
+
 ## Repository Map
 
 ```text

@@ -34,6 +34,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				ReferenceSwings/README.md,
 			);
 			target = 9B7EC8A52EB6312D00BE1B9C /* SwingCoach */;
 		};
@@ -46,6 +47,11 @@
 				9BDC9B832EC910BC00A0168B /* Exceptions for "SwingCoach" folder in "SwingCoach" target */,
 			);
 			path = SwingCoach;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F6000000000001 /* SwingCoachUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SwingCoachUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -79,6 +85,7 @@
 			isa = PBXGroup;
 			children = (
 				9B7EC8A82EB6312D00BE1B9C /* SwingCoach */,
+				A1B2C3D4E5F6000000000001 /* SwingCoachUITests */,
 				9B7EC8A72EB6312D00BE1B9C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -150,6 +157,9 @@
 			);
 			dependencies = (
 				9B7EC8BF2EB6312F00BE1B9C /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A1B2C3D4E5F6000000000001 /* SwingCoachUITests */,
 			);
 			name = SwingCoachUITests;
 			packageProductDependencies = (
@@ -467,6 +477,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YM9WKCY3CH;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
@@ -488,6 +499,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YM9WKCY3CH;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
@@ -508,6 +520,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YM9WKCY3CH;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Pear.ai.SwingCoachUITests;
@@ -527,6 +540,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YM9WKCY3CH;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Pear.ai.SwingCoachUITests;

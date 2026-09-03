@@ -53,10 +53,23 @@ struct LibraryView: View {
     @State private var exportErrorMessage: String? = nil
 
     private var filteredSwings: [SavedSwing] {
+        let personalSwings = library.swings.filter { !$0.isReference }
+        let filtered: [SavedSwing]
         if let vantage = filterVantage {
-            return library.swings.filter { $0.vantage == vantage }
+            filtered = personalSwings.filter { $0.vantage == vantage }
+        } else {
+            filtered = personalSwings
         }
-        return library.swings
+        return filtered.sorted {
+            if $0.isFavorite != $1.isFavorite {
+                return $0.isFavorite
+            }
+            return $0.createdAt > $1.createdAt
+        }
+    }
+
+    private var referenceSwings: [SavedSwing] {
+        library.swings.filter { $0.isReference }
     }
 
     private let columns = [
@@ -470,6 +483,22 @@ struct LibraryView: View {
                         .padding(.top, 8)
                 }
 
+                if !referenceSwings.isEmpty && !isSelecting {
+                    librarySectionTitle("Reference swings", systemImage: "figure.golf")
+
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        ForEach(referenceSwings) { swing in
+                            swingCard(swing)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 18)
+                }
+
+                if !filteredSwings.isEmpty {
+                    librarySectionTitle("Your swings", systemImage: "square.grid.2x2")
+                }
+
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(filteredSwings) { swing in
                         swingCard(swing)
@@ -484,6 +513,18 @@ struct LibraryView: View {
                 selectionBar
             }
         }
+    }
+
+    private func librarySectionTitle(_ title: String, systemImage: String) -> some View {
+        HStack(spacing: 7) {
+            Image(systemName: systemImage)
+            Text(title)
+                .font(.headline)
+            Spacer()
+        }
+        .foregroundColor(.primary)
+        .padding(.horizontal)
+        .padding(.bottom, 8)
     }
 
     private var selectionBar: some View {
@@ -611,10 +652,21 @@ struct LibraryView: View {
         }
         .contextMenu {
             if !isSelecting {
-                Button(role: .destructive) {
-                    library.removeSwing(swing)
+                Button {
+                    library.toggleFavorite(swing)
                 } label: {
-                    Label("Remove from Library", systemImage: "trash")
+                    Label(
+                        swing.isFavorite ? "Remove Star" : "Star Swing",
+                        systemImage: swing.isFavorite ? "star.slash" : "star"
+                    )
+                }
+
+                if !swing.isReference {
+                    Button(role: .destructive) {
+                        library.removeSwing(swing)
+                    } label: {
+                        Label("Remove from Library", systemImage: "trash")
+                    }
                 }
             }
         }
@@ -665,12 +717,18 @@ struct LibraryView: View {
                             .background(Color.black.opacity(0.6))
                             .cornerRadius(4)
                         Spacer()
-                        if swing.analyzed {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(.green)
-                                .shadow(radius: 2)
+                        HStack(spacing: 5) {
+                            if swing.isFavorite {
+                                Image(systemName: "star.fill")
+                                    .foregroundColor(.yellow)
+                            }
+                            if swing.analyzed {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                            }
                         }
+                        .font(.system(size: 18, weight: .semibold))
+                        .shadow(radius: 2)
                     }
                     Spacer()
                 }
@@ -683,15 +741,27 @@ struct LibraryView: View {
             )
 
             // Info
+            if let title = swing.title {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+            }
+
             HStack {
                 Text(formatDuration(swing.duration))
                     .font(.caption.weight(.medium))
 
                 Spacer()
 
-                Text(formatDate(swing.createdAt))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                if swing.isReference {
+                    Text("DTL reference")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                } else {
+                    Text(formatDate(swing.createdAt))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
             }
         }
         .padding(8)
@@ -1114,9 +1184,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     .allowsHitTesting(contentOverlayAllowsHitTesting)
 
                 // Touch handling: a single tap toggles the controls; press-and-hold
-                // the left/right edges to fast-scrub. Crucially the hold gesture is
-                // gated behind a long-press, so a horizontal swipe still falls
-                // through to the carousel pager instead of being eaten here.
+                // the left/right edges to fast-scrub. The middle zone can also own
+                // horizontal library navigation when a caller supplies that action.
                 if !contentOverlayAllowsHitTesting {
                     transportTouchLayer
                 }
@@ -1395,12 +1464,14 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         .padding(.bottom, 44)
     }
 
-    /// A tap toggles the controls. No drag gesture here, so horizontal swipes
-    /// pass straight through to the carousel pager.
+    /// A tap toggles the controls. Horizontal navigation belongs to the parent
+    /// pager so the full video surface can track the drag interactively.
     private var tapTouchZone: some View {
         Color.clear
             .contentShape(Rectangle())
-            .onTapGesture { toggleControls() }
+            .simultaneousGesture(
+                TapGesture().onEnded { toggleControls() }
+            )
     }
 
     /// Tap toggles controls; press-and-hold fast-scrubs in `direction`. The
@@ -1409,8 +1480,10 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     private func scrubTouchZone(direction: Int) -> some View {
         Color.clear
             .contentShape(Rectangle())
-            .onTapGesture { toggleControls() }
-            .gesture(
+            .simultaneousGesture(
+                TapGesture().onEnded { toggleControls() }
+            )
+            .simultaneousGesture(
                 LongPressGesture(minimumDuration: 0.2)
                     .sequenced(before: DragGesture(minimumDistance: 0))
                     .onChanged { value in

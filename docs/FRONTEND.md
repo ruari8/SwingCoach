@@ -52,6 +52,8 @@ Implemented feature set:
 - Persist swing metadata and thumbnails via `SwingLibrary`.
 - Grid browsing with vantage filtering.
 - Swing cards open a swing detail workspace instead of immediately presenting full-screen playback.
+- Development builds can install three local DTL reference videos from `SwingCoach/ReferenceSwings`, mark them as starred, and present them in a separate Reference swings section. The MP4 files are deliberately ignored and absent from a clean checkout; see the directory README for local setup. Reference entries use app-owned video files and do not count toward captured-swing statistics or Photos validation.
+- `SavedSwing.isFavorite` persists starred state. Starred personal swings sort before other personal swings, display a yellow star, and can be toggled from the card context menu or the swing detail header.
 - Swing detail is now video-first: opening an unanalyzed swing shows the original video across the usable area above the tab bar, with a bottom analyze action and an optional info sheet for metadata.
 - Analyzed swings show a status indicator on their library card.
 - Multi-select for batch analyze and batch delete (library-only delete, does not remove Photos asset).
@@ -72,17 +74,17 @@ Implemented feature set:
   - `120fps HD`
   - `240fps HD` (default)
 - Capture workflow support:
-  - `Manual`: existing record/stop flow. Stopping a recording opens Trim with any V2 ranges collected live during that recording.
-  - `Auto`: the Capture tab opens in Auto and arms immediately while visible. The app feeds the live camera stream to `SwingDetectorV2` continuously, keeps an overlapping rolling video buffer with `AVAssetWriter`, waits until the detector window's post-roll frames are buffered, and exports accepted detector swing windows directly to Photos and `SwingLibrary` without a separate start/stop button or Trim handoff. Auto pauses when leaving Capture or switching back to Manual. The FPS menu remains available in Auto; changing it safely resets the active rolling chunks and detector timeline.
+  - `Manual`: existing record/stop flow. Stopping a recording opens Trim with any V3 ranges collected live during that recording.
+  - `Auto`: the Capture tab opens in Auto and arms immediately while visible. The app feeds the live camera stream to `SwingDetectorV3` continuously, keeps an overlapping rolling video buffer with `AVAssetWriter`, waits until the detector window's post-roll frames are buffered, and exports accepted detector swing windows directly to Photos and `SwingLibrary` without a separate start/stop button or Trim handoff. Auto pauses when leaving Capture or switching back to Manual. The FPS menu remains available in Auto; changing it safely resets the active rolling chunks and detector timeline.
 - Auto presents one golfer-facing guide card instead of separate detector/status telemetry. It explains tripod/framing use, shows the current session's saved swing count, and opens a full-screen paged video carousel when the count is tapped. Opening review stops the capture session entirely (no camera indicator, no encode/inference load, no new detections mid-review); dismissing it restarts the session and resets the live detector/buffer timeline. The carousel supports playback and permanent deletion from both SwingCoach and Photos, with the delete control in the player's bottom-right accessory slot so it never overlaps the player's own corner controls.
 - Auto's rolling writer uses `AVCaptureDevice.RotationCoordinator` to preserve the actual device capture orientation per chunk: portrait stays portrait and either landscape orientation stays landscape. A cardinal-orientation change closes the current rolling chunk and starts a correctly transformed one. Manual recording applies the same capture angle through its movie-output track matrix. Buffer encoding and YOLO inference run on separate serial queues; inference coalesces backlog to the newest frame so model work cannot block the high-FPS capture delegate. Writer backpressure queues source frames until H.264 is ready instead of silently discarding them. Rolling chunks are 20 seconds with only a 2.6-second safety overlap, avoiding the previous design's near-continuous double encoding. Writer compression is configured with the selected 30/60/120/240 source rate.
-- Real/contact swings remain the default acceptance mode. Library > Experiments includes an off-by-default `Capture practice swings` toggle. Practice detection is the detectSwings pose pattern ported to Apple Vision (`FullSwingPattern`): wrist-above-hip height in torso units must trace backswing top (>0.6) → fast dip through impact (≤0.45 at ≥1.5 torso/s) → held finish (>0.95 within 2.5s), with YOLO club detections anchored near the wrists and no ball-departure swing within 3s. Confirmation lags impact by ~2.5s because the finish must be observed.
+- Real/contact swings remain the default acceptance mode. Library > Experiments includes an off-by-default `Capture practice swings` toggle. Practice detection uses the V3 Apple Vision pose pattern (`FullSwingPatternV3`): wrist-above-hip height in torso units must trace backswing top (>0.6) → fast dip through impact (≤0.45 at ≥1.5 torso/s) → held finish (>0.95 within 2.5s), with YOLO club detections anchored near the wrists and no ball-departure swing within 3s. Confirmation lags impact by ~2.5s because the finish must be observed.
 - Every accepted swing, including practice mode, now requires repeated confident human-pose frames from Apple Vision and repeated YOLO club detections. Ball/patch motion can create an internal candidate but cannot save a clip when the golfer or club is absent.
 - Runtime mode switching without full session teardown.
 - Tap-to-focus and exposure targeting.
-- Model swing detection is experimental and can be turned off from Library > Experiments. When enabled, capture samples camera frames during recording and runs `SwingDetectorV2` with the bundled YOLO11n/Core ML golf-object model on-device while the video is still being captured.
+- Model swing detection is experimental and can be turned off from Library > Experiments. When enabled, capture samples camera frames during recording and runs `SwingDetectorV3` with the bundled YOLO11n/Core ML golf-object model and Apple Vision pose on-device while the video is still being captured.
 - When model detection is off, capture still records normally and the trim editor opens without generated ranges so the user can mark clips manually.
-- During recording, the capture badge reflects the V2 state: address search/lock, swing evidence, detected swings, sampled-frame processing cost, effective sampled FPS, and camera-to-analysis lag. The final timing snapshot is passed into Trim for captured recordings so the golfer can inspect detector throughput after stopping. The older Vision/bright-blob and legacy hybrid detector paths are not used for production trim ranges.
+- During recording, the capture badge reflects the V3 state: address search/lock, swing evidence, detected swings, sampled-frame processing cost, effective sampled FPS, and camera-to-analysis lag. The final timing snapshot is passed into Trim for captured recordings so the golfer can inspect detector throughput after stopping. The older Vision/bright-blob and legacy hybrid detector paths are not used for production trim ranges.
 - Recording state handling with immediate post-stop playback of the captured high-fps asset.
 - Stopping a new recording opens the trim editor automatically instead of requiring the post-stop scissors action.
 - Active manual recording and armed Auto capture disable the iOS idle timer so solo range sessions do not Auto-Lock while the golfer walks into frame, then restore the prior idle-timer state after stop, error, switching to Manual, or leaving capture. Auto also requests add-only Photos access when it arms so the permission prompt is handled before the golfer walks away from the tripod.
@@ -106,12 +108,12 @@ Implemented feature set:
 - Library imports hand trim a lightweight Photos-backed source first, then load a fast preview asset in-editor and defer high-quality asset resolution until export.
 - High-fps capture timelines display slow-playback timing while keeping selection mapped to the original source frames.
 - Start/end range selection for clip creation.
-- Captured recordings pass the V2 detections collected during recording into Trim, so candidate swing windows are preselected as soon as the editor opens. Imported/library videos run a local `SwingDetectorV2AssetDetector` post-pass against the preview asset when Trim opens, using the same V2 core as capture. Neither path calls the backend.
+- Captured recordings pass the V3 detections collected during recording into Trim, so candidate swing windows are preselected as soon as the editor opens. Imported/library videos run a local `SwingDetectorV3AssetDetector` post-pass against the preview asset when Trim opens, using the same V3 core as capture. Neither path calls the backend.
 - Auto-detected clips can be reviewed one at a time by tapping their thumbnail, adjusted with the existing start/end trim handles, updated in place, or discarded with the clip delete control. Auto-detected clip thumbnails preserve detector impact/declaration timestamps and show `imp +Xs / end +Ys`, the delay from estimated impact and returned clip end to the moment the detector declared that swing. Captured recordings also show the final detector summary under the timeline, including detected count, effective sample FPS, model/pose processing cost, and final analysis lag.
-- Captured recordings use the configurable V2 low sample rate (`8 fps` by default, adjustable in Experiments). V2 raises to its burst rate during startup grace and active swing evidence, then drops back after confirmation, timeout, or rejection. The live badge performance line is `target/effective fps · model last/avg ms · lag ms`; sustained effective FPS far below target or lag above a few hundred milliseconds means the device is not keeping up in real time.
+- Captured recordings use the configurable V3 low sample rate (`8 fps` by default, adjustable in Experiments). V3 raises to its burst rate during startup grace and active swing evidence, then drops back after confirmation, timeout, or rejection. The live badge performance line is `target/effective fps · model last/avg ms · lag ms`; sustained effective FPS far below target or lag above a few hundred milliseconds means the device is not keeping up in real time.
 - The camera delegate retains source frames for the rolling writer and returns quickly. Model inference is separately serialized and coalesces pending work to the latest camera frame, preventing detector latency from reducing saved-video cadence.
 - The older Vision-only post-pass, live Vision/bright-blob detector, and legacy model-backed contact/impact/hybrid detector modes are not used as production fallbacks for trim ranges. If the model is missing or fails, captured recordings open Trim without generated ranges after the live badge reports the issue; imported/library videos report model detection unavailable in Trim and leave manual trim controls available.
-- Audio and Apple Vision pose remain research/debug inputs described in detector experiment notes; they are not part of the current V2 app-wired capture path.
+- Apple Vision pose is a V3 production input for golfer-relative geometry and full-stroke evidence. Audio remains diagnostic and is not part of the app-wired acceptance path.
 - When no clip ranges are marked, the footer offers an explicit full-video path so already-trimmed imports can be added as-is; Photos-backed imports reuse the existing asset instead of creating a duplicate.
 - Multi-clip extraction from a long source video.
 - MVP clip export defaults to down-the-line capture; face-on remains in the data model but is not exposed as an equal capture path in the trim header.
@@ -120,7 +122,7 @@ Implemented feature set:
 - A single primary export action in the footer.
 - Export to MP4 clips for downstream storage/analysis, with captured high-fps sessions rendered to true slow-motion during export.
 - Newly exported clips enter the library with an immediate frame thumbnail, then refresh from Photos in the background once the asset poster frame is available.
-- Library swing thumbnails stay visually clean, with only selection and analyzed-status overlays.
+- Library swing thumbnails show selection, analyzed state, and a yellow star for favourites.
 
 ## 4. Coach Tab (Analysis)
 
@@ -139,14 +141,15 @@ File: [SwingDetailView.swift](../SwingCoach/SwingDetailView.swift)
 Implemented feature set:
 - Treat a saved swing as the primary product object.
 - Show the original swing as a full-screen playback surface by default, with metadata moved behind a top-right info button and no persistent title/metadata caption over the video.
-- Once analysis exists, present the detail workspace as a TikTok/Instagram-style paged carousel: slide 1 is the original full-screen video, slide 2 is the analyzed video artifact, and slide 3 is coach notes.
-- Carousel page dots are rendered above the fixed bottom tab bar, and carousel video pages disable hold-to-step transport gestures so horizontal swipes remain reliable.
+- Once analysis exists, keep Original, Annotated, and Coach Notes behind explicit top buttons so changing the analysis view does not compete with library navigation.
 - Display original and analyzed swing playback using the shared playback chrome, including timeline, compact cycle-through playback speed control, and full-screen viewing.
 - Generated backend annotations are currently reset. When `annotated_video.layers` and track data are empty, the analyzed-video slide plays clean video and hides the annotation/manual rail.
 - Show swing metadata and local analysis status in the detail info sheet or video overlay instead of reserving persistent space beside the footage.
 - Run the current R2-backed analysis flow for a single swing, with retry controls reserved for failed analysis attempts.
 - Attach completed analysis to the swing through `AnalysisLibrary`.
 - Render analyzed video and coach notes with the shared [AnalysisResultView.swift](../SwingCoach/AnalysisResultView.swift).
+- Drag left or right across the original-video surface to move between library videos without returning to the grid. The adjacent video tracks the finger and the app keeps the previous/current/next playback items prepared to avoid a black loading handoff. The bottom transport area remains reserved for timeline and frame-step controls. The header shows the current library position.
+- The mid-left pencil rail pauses playback and enables a straight-line canvas over the visible video. In drawing mode the rail expands in place with Done, Undo, and Clear actions, away from the bottom-right player lock. Yellow guide lines persist per swing in `manual_annotations.json` and remain visible during playback. Drawing coordinates follow the displayed video rectangle rather than the surrounding letterbox.
 
 ## 6. Replay Debug Tab
 
@@ -155,12 +158,12 @@ File: [DebugReplayView.swift](../SwingCoach/DebugReplayView.swift)
 Implemented feature set:
 - DEBUG-only tab for home/range development of live swing detection, controlled from Library > Experiments.
 - Selects a video from Photos, copies it into temporary app storage, and displays the video as the primary replay surface using a custom player layer so iOS default playback controls do not overlap detector instrumentation.
-- Replays decoded frames through the same YOLO/Core ML `SwingDetectorV2` used by capture, on a paced clock so the selected video behaves like a substitute camera feed instead of an offline batch job.
+- Replays decoded frames through the same YOLO/Core ML and Vision `SwingDetectorV3` used by capture, on a paced clock so the selected video behaves like a substitute camera feed instead of an offline batch job.
 - Uses one in-screen footage selector for replay timing: `30/1x`, `120/4x`, or `240/8x`. This simultaneously sets the visible playback speed and the detector source-time scale, so a 240-fps slow-motion range session is replayed at `8x` and fed to the detector as real-time swing motion.
-- Keeps detector low sample-rate selection (`2`, `4`, `8`, or `16` YOLO samples per real-time second) under an Advanced disclosure. V2 owns burst sampling internally.
+- Keeps detector low sample-rate selection (`2`, `4`, `8`, or `16` YOLO samples per real-time second) under an Advanced disclosure. V3 owns burst sampling internally.
 - Shows visible replay source time as `elapsed/total` seconds and detected-swing count as an overlay on the video while replay runs. The timer/progress is tied to the visible `AVPlayer`, while detector events still use the same source-video timestamp range shown on detected chips. If visible playback gets more than a few source seconds ahead of the detector reader, Replay Debug pauses playback until the detector catches up, so detections do not appear minutes after the user watched the swing.
 - Replay Debug includes a source-time scrubber before replay starts. Moving it to a later timestamp starts both detector processing and visible playback from that source time, which makes late-session failures debuggable without waiting through the full recording.
-- Shows stable V2 evidence fields in the replay overlay: target/effective sample FPS, processed frames, average model processing time, current motion score, current club-motion score, current ball score, and lag/rejection only when those fields are available.
+- Shows stable V3 evidence fields in the replay overlay: target/effective sample FPS, processed frames, average model processing time, current motion score, current club-motion score, current ball score, and lag/rejection only when those fields are available.
 - The replay pause control pauses both visible video playback and detector pacing.
 - Detector overlay updates are throttled so fast state churn does not flicker continuously during long range videos.
 - Detected swing chips can be tapped to open a looping preview sheet for that exact timestamp range while the main replay/detector continues behind the sheet. Detected swing chips show confidence plus `imp +Xs / end +Ys` when the detector can report when that window was declared; slow-motion sources display these as real-time detector delays rather than stretched source-timeline delays.
@@ -170,12 +173,12 @@ Implemented feature set:
 Local detector fixture workflow:
 - Keep source fixture videos in ignored `.detectorTestV3/`; keep generated evaluator binaries and reports in ignored `.videos/`.
 - V3 test metadata lives in `detector_workbench/validation/labels/detector_test_v3_labels.json`. Impact labels are rough one-second source-timeline buckets from QuickTime review; slow-motion real-time equivalents are source seconds divided by each video's `source_time_scale`.
-- Run `python3 detector_workbench/validation/evaluate_swing_detector_v2.py --build --only test2` for a quick V2 compile/smoke test, or omit `--only` to run the fixture suite.
-- Add `--contact-sheets` when debugging a miss or false positive; the V2 workflow pairs candidate traces with annotated sampled-frame sheets.
+- Run `python3 detector_workbench/validation/evaluate_swing_detector_v3.py --build --only test2` for a quick V3 compile/smoke test, or omit `--only` to run the 54-impact fixture gate.
+- Add `--contact-sheets` when debugging a miss or false positive; the V3 workflow pairs candidate and decision traces with annotated sampled-frame sheets.
 - Run `python3 detector_workbench/validation/evaluate_detector_video_data.py --force` to evaluate every exported clip in `detector_model/video_data`. The harness reads `detector_model/video_data/metadata.json`, infers source timing from visible duration, and writes `.videos/detector_video_data_eval/results/detector_video_data_report.json`. Review overrides live in `detector_workbench/validation/labels/detector_video_data_labels.json`; `swingcoach_043_dtl_20260321_221006.mp4` is excluded because it ends at impact without enough post-impact ball-departure evidence for V2 acceptance.
-- Current V2 acceptance relies on addressed-ball lock, club-sweep evidence, target-patch departure, and low strike-area ball-inventory change. Startup grace handles clips or recordings that begin after address or during takeaway, but the normal address-lock path still runs from the first frame and remains authoritative when it succeeds.
+- Current V3 acceptance relies on persistent ball identity, repeated club association, golfer-relative target geometry, a frozen target during the swing, target-patch departure, club sweep/arc/sequence, and full-stroke pose travel when pose is readable. It does not use scene-wide ball counts or an absolute image-height line.
 - Run `python3 detector_workbench/validation/analyze_audio_impacts.py` to rescore audio transients on the current `test4` fixture. Audio remains diagnostic, not production capture behavior.
-- Historical old Vision/bright-blob and legacy model-backed detector harness findings remain in `docs/EXPERIMENT_SWING_DETECTOR.md`; current reruns should use the V2 commands above.
+- Historical V2, Vision/bright-blob, and legacy model-backed findings remain in `docs/EXPERIMENT_SWING_DETECTOR.md`; current reruns should use the V3 command above.
 
 ## 7. Experimental Settings
 
@@ -184,7 +187,7 @@ File: [ExperimentalSettingsView.swift](../SwingCoach/ExperimentalSettingsView.sw
 Implemented feature set:
 - Library toolbar gear opens Experiments.
 - Toggle model swing detection on/off for capture recordings and imported Trim sessions.
-- Configure the YOLO/Core ML V2 low sample rate used by capture, imported Trim detection, and Replay Debug.
+- Configure the YOLO/Core ML V3 low sample rate used by capture, imported Trim detection, and Replay Debug.
 - Toggle ball-independent practice-swing capture for explicit home/garden testing; real ball-departure capture remains the default.
 - Toggle the DEBUG Replay Debug tab on/off.
 - Replay Debug visible playback speed and source timing are configured inside the Replay Debug tab, not in the shared Experiments screen.
@@ -195,7 +198,7 @@ Implemented feature set:
 ### Swing metadata
 
 - `SavedSwing` model: [SwingLibrary.swift](../SwingCoach/Models/SwingLibrary.swift)
-- Fields include: `photoAssetID`, `vantage`, `duration`, timestamps, notes, analyzed flag.
+- Fields include: `photoAssetID`, `vantage`, `duration`, timestamps, notes, analyzed flag, favourite state, reference state, optional title, and local video filename.
 - Persisted to app Documents as `swing_library.json`.
 
 ### Vantage model
@@ -254,7 +257,7 @@ Current frontend `AnalysisResponse` expectation:
 
 5. Swing auto-detection validation
 - On-device detection is intentionally conservative and editable, but needs device/video validation with real range sessions before it should be treated as a high-confidence practice-swing filter.
-- The live prototype's ball detector is heuristic-only: pose-derived ROI + compact bright blob stability + disappearance/movement near predicted impact. It should be tested heavily on irons, mats, grass, range balls in the background, glare, and partial ball occlusion.
+- The live path uses `SwingDetectorV3`: YOLO object observations, Apple Vision pose, golfer/club/target relationships, and target-specific contact evidence. It should be tested heavily on irons, mats, grass, marker and downrange balls, glare, partial target occlusion, changed framing, and physical-device timing. The retired bright-blob path remains historical material only.
 
 ## Recommended Next Frontend Documentation Additions
 

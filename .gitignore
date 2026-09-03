@@ -21,8 +21,10 @@ build/
 detector_model/
 .detectorTestV2
 .detectorTestV3
+SwingCoach/ReferenceSwings/*.mp4
 
 # Xcode user state
 xcuserdata/
 *.xcuserstate
 DerivedData/
+.verification-artifacts/
