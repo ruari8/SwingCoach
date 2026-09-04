@@ -35,6 +35,17 @@ scoring both exclude covered samples, including when every post-event sample
 is covered. These states currently account for club occlusion only, not all
 possible people or objects crossing the target.
 
+The normal address lock remains authoritative when it arms. If the clubhead
+hides the ball for too much of address and no lock forms, a completed full-swing
+pose pattern can open a separate contact-recovery path. Recovery requires at
+least three consistent ball observations immediately before the pose impact,
+golfer-relative strike geometry, persistent clear absence afterward, and
+strong club sweep and arc evidence. The confirmed pose pattern supplies the
+temporal swing sequence when the object tracker could not build one. Recovery
+only runs while the target selector has no lock and the state machine is idle,
+so it cannot replace or race an armed normal candidate. If contact recovery
+fails, the motion is retained only when optional practice-swing capture is on.
+
 ## Why the relationships matter
 
 - A single low-confidence clubhead box cannot move the target. Retargeting needs repeated evidence for the same ball ID.
@@ -80,6 +91,6 @@ gate then matched **73/73**, with zero misses and zero extras: all 19 new-sessio
 hits plus the original 54. The other 70 accepted impact timestamps were exactly
 unchanged from their preceding V3 results.
 
-All ten original fixtures informed implementation or debugging, so their 54/54 is a regression result rather than held-out generalization evidence. test16 also informed this reconstruction, so the complete 73/73 is now a regression gate rather than held-out proof. Deliberate framing changes, people crossing the target, arbitrary occlusion, lighting changes, and practice swings still need broader independent evaluation.
+All ten original fixtures informed implementation or debugging, so their 54/54 is a regression result rather than held-out generalization evidence. test16 also informed this reconstruction, so the complete 73/73 is now a regression gate rather than held-out proof. A later unseen 30 fps portrait clip exposed a missed full swing when the addressed clubhead hid the ball too often for a quiet address lock. The detector now recovers that shot at 7.60 seconds from the combined full-swing pattern, local ball departure, and club evidence. That clip informed the recovery implementation and is now a local regression fixture, not held-out proof. Deliberate framing changes, people crossing the target, arbitrary occlusion, lighting changes, and practice swings still need broader independent evaluation. The recovery route also depends on a readable full-swing pose pattern, so it does not extend coverage to chips, putts, or abbreviated swings.
 
 The Mac result proves that this configuration can keep up with replayed live-order input on the development Mac. The Simulator build proves integration and navigation only. A physical iPhone run is still required for camera cadence, thermal behavior, frame drops, model latency across supported devices, rolling-buffer export, and real Auto Capture behavior.

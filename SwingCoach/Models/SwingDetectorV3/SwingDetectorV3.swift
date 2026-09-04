@@ -52,7 +52,7 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
     private var enabled = false
     private var startupInFlightResolved = false
     private var startupEvaluatedImpactTimes: [Double] = []
-    private var lastPracticeSwingRealTime = -Double.greatestFiniteMagnitude
+    private var lastFullSwingPatternRealTime = -Double.greatestFiniteMagnitude
 
     private let featureRetentionLimit = 4_000
     private let startupInFlightEndRealTime = 2.25
@@ -113,7 +113,7 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
         nextCandidateId = 1
         startupInFlightResolved = false
         startupEvaluatedImpactTimes.removeAll(keepingCapacity: true)
-        lastPracticeSwingRealTime = -Double.greatestFiniteMagnitude
+        lastFullSwingPatternRealTime = -Double.greatestFiniteMagnitude
         targetSelector.reset()
         clubTracker.reset()
         decisionEngine.reset()
@@ -288,7 +288,7 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
             evaluate(resolved: resolved, club: clubWindow)
         }
         evaluateStartupInFlightIfNeeded(frame: frame, lock: lock)
-        evaluatePracticeSwingIfNeeded(frame: frame)
+        evaluateFullSwingPatternIfNeeded(frame: frame)
 
         recordProcessing(startedAt: startedAt)
         lastSnapshot = makeSnapshot(frame: frame, lock: lock, targetFPS: targetFPSForFrame)
@@ -318,31 +318,43 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
     // MARK: - Candidate evaluation
 
     /// detectSwings design: the pose full-swing pattern (top → dip → finish)
-    /// carries the swing conviction on its own; ball logic then splits real
-    /// shots from practice swings. Ball-departure swings are handled by the
-    /// main candidate path, so any full-swing pattern left over — with a club
-    /// anchored near the wrists and no ball event nearby — is a practice
-    /// swing. A dip confirms ~2.5s after impact once its finish is observed.
-    private func evaluatePracticeSwingIfNeeded(frame: SwingObservationV3) {
-        guard configuration.allowsPracticeSwings else { return }
-
+    /// carries the swing conviction; target departure decides contact. The
+    /// normal locked-address path remains authoritative. If no lock formed,
+    /// the completed pattern can recover contact from local ball and club
+    /// evidence. A remaining full swing is retained only in practice mode.
+    private func evaluateFullSwingPatternIfNeeded(frame: SwingObservationV3) {
         let samples = featuresInWindow(
             start: max(0, frame.realTime - 10.0),
             end: frame.realTime
         )
         for dip in FullSwingPatternV3.confirmedDips(in: samples) {
-            guard dip - lastPracticeSwingRealTime >= max(3.0, configuration.minImpactGap) else { continue }
+            guard dip - lastFullSwingPatternRealTime >= max(3.0, configuration.minImpactGap) else { continue }
 
             let coveredByContactSwing = detections.contains { detection in
                 guard let impactTime = detection.impactTime else { return false }
                 return abs(configuration.realTime(fromSource: impactTime) - dip) <= 3.0
             }
             if coveredByContactSwing {
-                lastPracticeSwingRealTime = dip
+                lastFullSwingPatternRealTime = dip
                 continue
             }
 
             guard FullSwingPatternV3.swungClubVisible(around: dip, in: samples) else { continue }
+
+            // A ball hidden by the addressed clubhead may only become visible
+            // during takeaway. The normal path cannot build its quiet address
+            // lock that late, but a completed full-swing pattern lets us safely
+            // test the same local target-departure and club evidence after the
+            // fact without weakening address acquisition for every frame.
+            if targetSelector.currentLock == nil,
+               decisionEngine.state == .idle,
+               evaluateRecoveredContact(around: dip) {
+                lastFullSwingPatternRealTime = dip
+                continue
+            }
+
+            lastFullSwingPatternRealTime = dip
+            guard configuration.allowsPracticeSwings else { continue }
 
             let impactSource = configuration.sourceTime(fromReal: dip)
             let startSource = max(0, impactSource - configuration.sourceTime(fromReal: configuration.impactPreRoll))
@@ -356,11 +368,94 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
                     declaredAt: frame.sourceTime
                 )
             )
-            lastPracticeSwingRealTime = dip
         }
     }
 
-    private func evaluate(resolved: ResolvedSwingCandidateV3, club: ClubEvidenceV3) {
+    private func evaluateRecoveredContact(around impactRealTime: Double) -> Bool {
+        guard let candidate = recoveredContactCandidate(around: impactRealTime) else { return false }
+        let countBefore = detections.count
+        evaluate(
+            resolved: candidate.resolved,
+            club: candidate.club,
+            fullSwingPatternConfirmed: true,
+            suppressesLocksOnReject: false
+        )
+        return detections.count > countBefore
+    }
+
+    private func recoveredContactCandidate(
+        around impactRealTime: Double
+    ) -> (resolved: ResolvedSwingCandidateV3, club: ClubEvidenceV3)? {
+        let preImpactFrames = featuresInWindow(
+            start: max(0, impactRealTime - 1.05),
+            end: impactRealTime + 0.04
+        )
+        let clusters = ballClusters(in: preImpactFrames, minimumFrameCount: 3)
+
+        let scored = clusters.compactMap {
+            cluster -> (score: Double, resolved: ResolvedSwingCandidateV3, club: ClubEvidenceV3)? in
+            guard cluster.stabilityScore >= 0.34,
+                  isPlausibleStrikeTarget(cluster.center, in: preImpactFrames)
+            else { return nil }
+
+            var lock = startupLock(from: cluster)
+            lock.selectionReason = "full_swing_contact_recovery"
+            let candidateWindow = featuresInWindow(
+                start: max(0, impactRealTime - 1.45),
+                end: impactRealTime + 0.55
+            )
+            let club = clubTracker.evidence(in: candidateWindow[...], lock: lock)
+            let departure = departureEvidence(impactRealTime: impactRealTime, lock: lock)
+            guard departure.targetSlotDeparture >= 0.35,
+                  club.sweepScore >= 0.30,
+                  club.arcScore >= 0.24
+            else { return nil }
+
+            lock.clubAssociationScore = max(0.50, club.clubNearPatch)
+            let score = departure.targetSlotDeparture * 0.44
+                + club.sweepScore * 0.24
+                + club.arcScore * 0.16
+                + club.swingSequenceScore * 0.10
+                + cluster.stabilityScore * 0.06
+            return (
+                score,
+                ResolvedSwingCandidateV3(
+                    impactRealTime: impactRealTime,
+                    lock: lock,
+                    swingDuration: 0,
+                    bestSweep: club.sweepScore,
+                    bestArc: club.arcScore,
+                    bestSequence: club.swingSequenceScore
+                ),
+                club
+            )
+        }
+
+        return scored.max(by: { $0.score < $1.score }).map { ($0.resolved, $0.club) }
+    }
+
+    private func isPlausibleStrikeTarget(
+        _ point: CGPoint,
+        in frames: [SwingObservationV3]
+    ) -> Bool {
+        let offsets = frames.compactMap { frame -> Double? in
+            guard let wrist = frame.wristPoint,
+                  let torso = frame.torsoHeight,
+                  torso >= 0.035
+            else { return nil }
+            return Double(point.y - wrist.y) / torso
+        }.sorted()
+        guard offsets.count >= 2 else { return true }
+        let median = offsets[offsets.count / 2]
+        return median >= 0.85 && median <= 5.0
+    }
+
+    private func evaluate(
+        resolved: ResolvedSwingCandidateV3,
+        club: ClubEvidenceV3,
+        fullSwingPatternConfirmed: Bool = false,
+        suppressesLocksOnReject: Bool = true
+    ) {
         let candidateWindow = featuresInWindow(
             start: max(0, resolved.impactRealTime - 1.45),
             end: resolved.impactRealTime + 0.55
@@ -397,7 +492,7 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
         let accepted = hasGolfStrokeMotion
             && (score >= scorer.threshold || strongPhysicalContact)
             && evidence.disappearancePersistence >= 0.35
-            && (evidence.swingSequence ?? 1) > 0
+            && ((evidence.swingSequence ?? 1) > 0 || fullSwingPatternConfirmed)
             && presence.hasHuman
             && presence.hasClub
         let outcome: ContactOutcomeV3 = accepted
@@ -450,7 +545,9 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
         nextCandidateId += 1
 
         guard accepted else {
-            targetSelector.suppressLocks(until: resolved.impactRealTime + configuration.minImpactGap)
+            if suppressesLocksOnReject {
+                targetSelector.suppressLocks(until: resolved.impactRealTime + configuration.minImpactGap)
+            }
             return
         }
 
@@ -608,8 +705,18 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
     }
 
     private func startupBallClusters(in frames: [SwingObservationV3]) -> [StartupBallClusterV3] {
+        ballClusters(
+            in: frames.filter { $0.realTime <= startupInFlightEndRealTime },
+            minimumFrameCount: 2
+        )
+    }
+
+    private func ballClusters(
+        in frames: [SwingObservationV3],
+        minimumFrameCount: Int
+    ) -> [StartupBallClusterV3] {
         var clusters: [StartupBallClusterV3] = []
-        for frame in frames where frame.realTime <= startupInFlightEndRealTime {
+        for frame in frames {
             for ball in frame.balls where ball.confidence >= 0.30 && ball.center.y >= startupInFlightMinBallY {
                 if let index = clusters.firstIndex(where: { GeometryV3.distance($0.center, ball.center) <= 0.050 }) {
                     clusters[index].append(ball: ball, frame: frame)
@@ -618,7 +725,7 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
                 }
             }
         }
-        return clusters.filter { $0.frameCount >= 2 }
+        return clusters.filter { $0.frameCount >= minimumFrameCount }
     }
 
     private func startupLock(from cluster: StartupBallClusterV3) -> TargetLockV3 {
