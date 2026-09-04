@@ -46,6 +46,16 @@ only runs while the target selector has no lock and the state machine is idle,
 so it cannot replace or race an armed normal candidate. If contact recovery
 fails, the motion is retained only when optional practice-swing capture is on.
 
+With practice capture enabled, a confirmed pose dip remains pending while the
+contact state is `impactCandidate`. The contact decision gets its existing
+bounded confirmation window first. An accepted contact covers that dip; a
+rejected or expired contact still permits practice fallback. This fixes the
+case where practice confirmation arrived one frame before contact confirmation
+and both paths emitted a new detection ID for the same stroke. Cooldowns,
+contact thresholds, and clip padding are unchanged. Replay Debug now reads the
+same practice-capture preference as Capture. See the
+[September 4 reproduction and regression](../detector_workbench/validation/reports/2026-09-04-duplicate-auto-capture.md).
+
 ## Why the relationships matter
 
 - A single low-confidence clubhead box cannot move the target. Retargeting needs repeated evidence for the same ball ID.

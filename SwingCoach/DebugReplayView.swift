@@ -48,6 +48,7 @@ struct DebugReplayView: View {
     @StateObject private var model = DebugReplayViewModel()
     @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
     @AppStorage(ExperimentalSettingKey.debugReplaySourceTiming) private var debugReplaySourceTimingRaw = DebugReplaySourceTiming.realtime.rawValue
+    @AppStorage(ExperimentalSettingKey.capturePracticeSwings) private var capturePracticeSwings = false
     @State private var showsVideoPicker = false
     @State private var trimSource: TrimVideoSource?
     @State private var trimDetections: [DetectedSwing] = []
@@ -104,7 +105,8 @@ struct DebugReplayView: View {
                                     model.restartReplay(
                                         speedMultiplier: sourceTiming.playbackSpeedMultiplier,
                                         sourceTimeScale: sourceTiming.sourceTimeScale,
-                                        detectorSampleFPS: liveModelDetectorSampleFPS
+                                        detectorSampleFPS: liveModelDetectorSampleFPS,
+                                        allowsPracticeSwings: capturePracticeSwings
                                     )
                                 } label: {
                                     Image(systemName: "backward.end.circle.fill")
@@ -180,6 +182,9 @@ struct DebugReplayView: View {
                 .presentationDragIndicator(.visible)
             }
             .onAppear { ExperimentalDetectorDefaults.migrateIfNeeded() }
+            .onChange(of: capturePracticeSwings) { _, _ in
+                model.prepareForConfigurationChange()
+            }
         }
     }
 
@@ -191,7 +196,8 @@ struct DebugReplayView: View {
                 model.startReplay(
                     speedMultiplier: sourceTiming.playbackSpeedMultiplier,
                     sourceTimeScale: sourceTiming.sourceTimeScale,
-                    detectorSampleFPS: liveModelDetectorSampleFPS
+                    detectorSampleFPS: liveModelDetectorSampleFPS,
+                    allowsPracticeSwings: capturePracticeSwings
                 )
             }
         } label: {
@@ -709,7 +715,8 @@ final class DebugReplayViewModel: ObservableObject {
     func startReplay(
         speedMultiplier: Double,
         sourceTimeScale: Double,
-        detectorSampleFPS: Double
+        detectorSampleFPS: Double,
+        allowsPracticeSwings: Bool
     ) {
         guard let selectedVideoURL else { return }
 
@@ -723,7 +730,8 @@ final class DebugReplayViewModel: ObservableObject {
         let configuration = SwingDetectorV3Configuration.live(
             sourceTimeScale: sourceTimeScale,
             lowSampleFPS: detectorSampleFPS,
-            burstSampleFPS: max(16.0, detectorSampleFPS * 2.0)
+            burstSampleFPS: max(16.0, detectorSampleFPS * 2.0),
+            allowsPracticeSwings: allowsPracticeSwings
         )
         let control = DebugReplayControl()
         let sessionID = UUID()
@@ -832,13 +840,15 @@ final class DebugReplayViewModel: ObservableObject {
     func restartReplay(
         speedMultiplier: Double,
         sourceTimeScale: Double,
-        detectorSampleFPS: Double
+        detectorSampleFPS: Double,
+        allowsPracticeSwings: Bool
     ) {
         stopReplay(at: 0, clearsResults: true)
         startReplay(
             speedMultiplier: speedMultiplier,
             sourceTimeScale: sourceTimeScale,
-            detectorSampleFPS: detectorSampleFPS
+            detectorSampleFPS: detectorSampleFPS,
+            allowsPracticeSwings: allowsPracticeSwings
         )
     }
 

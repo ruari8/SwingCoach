@@ -178,11 +178,6 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
 
         let startedAt = Date()
         let realTime = configuration.realTime(fromSource: recordingTime)
-        let startupBurstActiveForFrame = wantsStartupBurst(atRealTime: realTime)
-        let stateBurstActiveForFrame = decisionEngine.wantsBurst(atRealTime: realTime)
-        let burstActiveForFrame = startupBurstActiveForFrame || stateBurstActiveForFrame
-        let targetFPSForFrame = burstActiveForFrame ? configuration.burstSampleFPS : configuration.lowSampleFPS
-        let stateBeforeFrame = decisionEngine.state.rawValue
 
         let gray = Self.downsampledLuma(from: sampleBuffer)
         let lumaMotion = Self.visualMotion(current: gray, previous: previousGray)
@@ -218,6 +213,23 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
             torsoHeight: pose.torsoHeight,
             lumaMotion: lumaMotion
         )
+        return processObservation(frame, processingStartedAt: startedAt)
+    }
+
+    /// Replays sampled model/pose evidence through the same decision path as live capture.
+    @discardableResult
+    func processObservation(
+        _ frame: SwingObservationV3,
+        processingStartedAt: Date = Date()
+    ) -> LiveSwingDetectionSnapshot {
+        let realTime = frame.realTime
+        let recordingTime = frame.sourceTime
+        let startupBurstActiveForFrame = wantsStartupBurst(atRealTime: realTime)
+        let stateBurstActiveForFrame = decisionEngine.wantsBurst(atRealTime: realTime)
+        let burstActiveForFrame = startupBurstActiveForFrame || stateBurstActiveForFrame
+        let targetFPSForFrame = burstActiveForFrame ? configuration.burstSampleFPS : configuration.lowSampleFPS
+        let stateBeforeFrame = decisionEngine.state.rawValue
+
         features.append(frame)
         if features.count > featureRetentionLimit {
             features.removeFirst(features.count - featureRetentionLimit)
@@ -239,7 +251,9 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
                     wristX: frame.wristPoint.map { Double($0.x) },
                     wristY: frame.wristPoint.map { Double($0.y) },
                     torsoHeight: frame.torsoHeight,
-                    objects: objects.map {
+                    handHeight: frame.handHeight,
+                    lumaMotion: frame.lumaMotion,
+                    objects: frame.detections.map {
                         ObjectObservationTraceV3(
                             kind: $0.objectClass.name,
                             confidence: $0.confidence,
@@ -290,7 +304,7 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
         evaluateStartupInFlightIfNeeded(frame: frame, lock: lock)
         evaluateFullSwingPatternIfNeeded(frame: frame)
 
-        recordProcessing(startedAt: startedAt)
+        recordProcessing(startedAt: processingStartedAt)
         lastSnapshot = makeSnapshot(frame: frame, lock: lock, targetFPS: targetFPSForFrame)
         return lastSnapshot
     }
@@ -336,6 +350,13 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
             }
             if coveredByContactSwing {
                 lastFullSwingPatternRealTime = dip
+                continue
+            }
+
+            // Pose can confirm a finish before target departure has enough
+            // samples. Let that bounded contact decision finish before using
+            // practice fallback, and leave the dip eligible for the next frame.
+            if configuration.allowsPracticeSwings, decisionEngine.state == .impactCandidate {
                 continue
             }
 

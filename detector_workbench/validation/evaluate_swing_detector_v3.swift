@@ -45,6 +45,7 @@ private struct V3Output: Encodable {
     let segmentStart: Double
     let segmentEnd: Double
     let sourceTimeScale: Double
+    let allowsPracticeSwings: Bool
     let lowSampleFPS: Double
     let burstSampleFPS: Double
     let decodedFrames: Int
@@ -70,9 +71,11 @@ private enum EvaluationErrorV3: Error {
 struct EvaluateSwingDetectorV3 {
     static func main() async {
         do {
-            let args = Array(CommandLine.arguments.dropFirst())
+            let arguments = Array(CommandLine.arguments.dropFirst())
+            let allowsPracticeSwings = arguments.contains("--practice-swings")
+            let args = arguments.filter { $0 != "--practice-swings" }
             guard let videoPath = args.first else {
-                fputs("usage: evaluate_swing_detector_v3 <video-path> [model-path] [low-fps] [source-time-scale] [max-frames] [burst-fps] [compute-units] [segment-start] [segment-end]\n", stderr)
+                fputs("usage: evaluate_swing_detector_v3 <video-path> [model-path] [low-fps] [source-time-scale] [max-frames] [burst-fps] [compute-units] [segment-start] [segment-end] [--practice-swings]\n", stderr)
                 exit(2)
             }
 
@@ -103,7 +106,8 @@ struct EvaluateSwingDetectorV3 {
                 burstFPS: burstFPS,
                 sourceTimeScale: sourceTimeScale,
                 maxFrames: maxFrames,
-                computeUnits: computeUnits
+                computeUnits: computeUnits,
+                allowsPracticeSwings: allowsPracticeSwings
             )
 
             let encoder = JSONEncoder()
@@ -126,7 +130,8 @@ struct EvaluateSwingDetectorV3 {
         burstFPS: Double,
         sourceTimeScale: Double,
         maxFrames: Int,
-        computeUnits: MLComputeUnits
+        computeUnits: MLComputeUnits,
+        allowsPracticeSwings: Bool
     ) async throws -> V3Output {
         guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
             throw EvaluationErrorV3.noVideoTrack
@@ -157,6 +162,7 @@ struct EvaluateSwingDetectorV3 {
             sourceTimeScale: sourceTimeScale,
             lowSampleFPS: lowFPS,
             burstSampleFPS: burstFPS,
+            allowsPracticeSwings: allowsPracticeSwings,
             recordsDebugTrace: true
         )
         let detector = SwingDetectorV3(
@@ -221,6 +227,7 @@ struct EvaluateSwingDetectorV3 {
             segmentStart: sourceOffset,
             segmentEnd: segmentEnd,
             sourceTimeScale: sourceTimeScale,
+            allowsPracticeSwings: allowsPracticeSwings,
             lowSampleFPS: lowFPS,
             burstSampleFPS: burstFPS,
             decodedFrames: decodedFrames,

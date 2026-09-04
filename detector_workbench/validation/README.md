@@ -15,6 +15,15 @@ backend/venv/bin/python -B detector_workbench/validation/test_swing_detector_v3_
 These checks use synthetic observations without model inference. They do not
 replace the labelled full-video replay gate below.
 
+The fast checks also replay 53 recorded observations through the production
+contact and practice paths together. They assert one incremental export event
+per swing, two events for successive swings, unchanged contact timing and
+confidence, ball-free practice capture, and practice fallback after contact
+expires. The [duplicate-capture report](reports/2026-09-04-duplicate-auto-capture.md)
+records the failing result before the fix and the full recording comparison.
+`processObservation` is the same decision entry point that live model inference
+calls; trace output includes wrist height and luma motion for repeatable replay.
+
 `SwingDetectorV3` is the app-wired detector for Capture, Trim/import, and Replay Debug. It removes the fixed image-height boundary, tracks ball identities, freezes the target during a swing episode, uses target-specific contact evidence, and separates full strokes from ball nudges through pose motion when visible.
 
 The 2026-09-03 evidence reconstruction replaced confidence-only club selection
@@ -38,6 +47,10 @@ python3 detector_workbench/validation/evaluate_swing_detector_v3.py \
   --fixtures-root .detectorTestV3/example \
   --out-root .detectorTestV3/example/results
 ```
+
+The evaluator defaults to contact-only detection. Pass `--practice-swings` to
+include full practice swings, and use a manifest that labels those swings too.
+The JSON records `allowsPracticeSwings`. Replay Debug uses the Capture preference.
 
 ## Current six-recording preparation: slow motion only
 

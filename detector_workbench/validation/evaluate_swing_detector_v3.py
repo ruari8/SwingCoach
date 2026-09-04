@@ -126,12 +126,14 @@ def configured_segments(meta: dict, duration: float) -> list[dict]:
 
 
 def run_segment(video: Path, scale: float, low_fps: float, burst_fps: float,
-                compute: str, start: float, end: float) -> dict:
+                compute: str, start: float, end: float, practice_swings: bool = False) -> dict:
     cmd = [
         str(V3_BIN), str(video), str(MODEL),
         str(low_fps), str(scale), "400000", str(burst_fps), compute,
         str(start), str(end),
     ]
+    if practice_swings:
+        cmd.append("--practice-swings")
     proc = subprocess.run(cmd, cwd=REPO, capture_output=True, text=True)
     if proc.returncode != 0:
         raise RuntimeError(f"v3 evaluator failed for {video.name}: {proc.stderr.strip()}")
@@ -139,7 +141,7 @@ def run_segment(video: Path, scale: float, low_fps: float, burst_fps: float,
 
 
 def run_detector(video: Path, segments: list[dict], low_fps: float,
-                 burst_fps: float, compute: str) -> dict:
+                 burst_fps: float, compute: str, practice_swings: bool = False) -> dict:
     """Run independently configured timeline segments and merge absolute outputs."""
     results = []
     for index, segment in enumerate(segments):
@@ -147,7 +149,7 @@ def run_detector(video: Path, segments: list[dict], low_fps: float,
         scale = float(segment["source_time_scale"])
         result = run_segment(
             video, scale, low_fps, burst_fps, compute,
-            float(segment["start"]), float(segment["end"]),
+            float(segment["start"]), float(segment["end"]), practice_swings,
         )
         source_offset = float(result.get("segmentStart", segment["start"]))
         for detection in result.get("detections", []):
@@ -181,6 +183,7 @@ def run_detector(video: Path, segments: list[dict], low_fps: float,
         "computeUnits": results[0][2].get("computeUnits"),
         "configuration": "mixed timeline segments" if len(results) > 1
         else results[0][2].get("configuration"),
+        "allowsPracticeSwings": practice_swings,
         "lowSampleFPS": low_fps,
         "burstSampleFPS": burst_fps,
         "duration": sum(result.get("duration", 0) for _, _, result in results),
@@ -356,6 +359,7 @@ def main() -> int:
     parser.add_argument("--only", nargs="*", help="fixture ids, e.g. test2 test11")
     parser.add_argument("--build", action="store_true", help="compile binaries first")
     parser.add_argument("--contact-sheets", action="store_true")
+    parser.add_argument("--practice-swings", action="store_true", help="include full practice swings, as configured in Capture")
     parser.add_argument("--low-fps", type=float, default=8.0)
     parser.add_argument("--burst-fps", type=float, default=16.0)
     parser.add_argument("--compute", default="cpuAndNeuralEngine")
@@ -378,7 +382,7 @@ def main() -> int:
 
     args.out_root.mkdir(parents=True, exist_ok=True)
     summary = {"params": {"lowFPS": args.low_fps, "burstFPS": args.burst_fps,
-                          "compute": args.compute, "labels": str(args.labels),
+                          "compute": args.compute, "practiceSwings": args.practice_swings, "labels": str(args.labels),
                           "fixturesRoot": str(args.fixtures_root)}, "cases": {}}
     aggregate_cases: list[tuple[dict, dict]] = []
     any_fail = False
@@ -396,7 +400,7 @@ def main() -> int:
         impacts = meta.get("impact_time_labels", [])
         segments = configured_segments(meta, video_duration(video))
 
-        result = run_detector(video, segments, args.low_fps, args.burst_fps, args.compute)
+        result = run_detector(video, segments, args.low_fps, args.burst_fps, args.compute, args.practice_swings)
         sc = score(result, impacts, scale)
         tr = trace_summary(result)
         aggregate_cases.append((result, sc))

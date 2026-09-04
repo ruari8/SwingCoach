@@ -91,6 +91,8 @@ nonisolated struct FrameObservationTraceV3: Encodable {
     let wristX: Double?
     let wristY: Double?
     let torsoHeight: Double?
+    let handHeight: Double?
+    let lumaMotion: Double
     let objects: [ObjectObservationTraceV3]
     let ballTracks: [BallTrackV3]
     let selectedTargetID: Int?

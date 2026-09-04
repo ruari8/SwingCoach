@@ -69,6 +69,41 @@ struct EvidenceRegression {
             index < 4 ? [box(.clubhead, target)] : []
         }.isEmpty)
 
+        do {
+            let url = URL(fileURLWithPath: "detector_workbench/validation/fixtures/2026-09-04-duplicate-swing-observations.json")
+            let frames = try JSONDecoder().decode([RecordedObservation].self, from: Data(contentsOf: url))
+            func replay(practice: Bool, ballVisible: Bool = true, repeats: Int = 1, occludesTarget: Bool = false) throws -> [DetectedSwing] {
+                let detector = SwingDetectorV3(configuration: .live(allowsPracticeSwings: practice))
+                var exportedIDs: Set<UUID> = []
+                var exports: [DetectedSwing] = []
+                for repetition in 0..<repeats {
+                    for frame in frames {
+                        detector.processObservation(try frame.observation(offset: Double(repetition) * 8, ballVisible: ballVisible, occludesTarget: occludesTarget))
+                        for detection in detector.currentDetections() where exportedIDs.insert(detection.id).inserted {
+                            exports.append(detection)
+                        }
+                    }
+                }
+                return exports
+            }
+            let both = try replay(practice: true)
+            let contact = try replay(practice: false)
+            check("one range swing offers exactly one Auto export with practice enabled (got \(both.count))", both.count == 1)
+            check("contact confirmation keeps its impact, declaration, and confidence",
+                  both.count == 1 && both.first?.impactTime == contact.first?.impactTime
+                  && both.first?.declaredAt == contact.first?.declaredAt
+                  && both.first?.confidence == contact.first?.confidence)
+            let occluded = try replay(practice: true, occludesTarget: true)
+            check("unresolved contact still falls back to practice after its deadline",
+                  occluded.count == 1 && (occluded.first?.declaredAt ?? 0) >= 32.28)
+            check("contact-only mode retains the same swing", contact.count == 1)
+            check("ball-free full swing remains capturable", try replay(practice: true, ballVisible: false).count == 1)
+            check("contact-only mode excludes the ball-free swing", try replay(practice: false, ballVisible: false).isEmpty)
+            check("two successive range swings offer two Auto exports", try replay(practice: true, repeats: 2).count == 2)
+        } catch {
+            check("load duplicate-swing observation fixture: \(error)", false)
+        }
+
         print("\(failures.count) failed checks")
         if !failures.isEmpty { exit(1) }
     }
@@ -99,4 +134,51 @@ struct EvidenceRegression {
                      currentClubheadAssociationScore: 1, endpointCouplingScore: 1,
                      ballConfidence: 1, addressBallCount: 1)
     }
+}
+
+// Model/pose observations from the user's 2026-09-04 continuous range recording.
+// Keep inference out of the regression, but exercise the production contact and
+// practice paths together and consume incremental detections as Auto does.
+private struct RecordedObservation: Decodable {
+    let realTime: Double
+    let sourceTime: Double
+    let poseConfidence: Double
+    let wristX: Double?
+    let wristY: Double?
+    let torsoHeight: Double?
+    let handHeight: Double?
+    let lumaMotion: Double
+    let objects: [RecordedObject]
+
+    func observation(offset: Double, ballVisible: Bool, occludesTarget: Bool) throws -> SwingObservationV3 {
+        let wrist = wristX.flatMap { x in wristY.map { CGPoint(x: x, y: $0) } }
+        var boxes = try objects.map { object -> GolfObjectDetection in
+            guard let kind = GolfObjectClass.allCases.first(where: { $0.name == object.kind }) else {
+                throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Unknown golf object: \(object.kind)"))
+            }
+            return GolfObjectDetection(
+                objectClass: kind,
+                confidence: object.confidence,
+                rect: CGRect(x: object.x, y: object.y, width: object.width, height: object.height)
+            )
+        }.filter { ballVisible || $0.objectClass != .golfBallCandidate }
+        if occludesTarget, realTime >= 31.93 {
+            // Cover the fixture's locked target before five absence samples can arrive.
+            boxes.append(GolfObjectDetection(objectClass: .clubhead, confidence: 0.9,
+                                             rect: CGRect(x: 0.5847, y: 0.7084, width: 0.02, height: 0.02)))
+        }
+        return SwingObservationV3(realTime: realTime + offset, sourceTime: sourceTime + offset,
+                                  detections: boxes, humanPoseConfidence: poseConfidence,
+                                  handHeight: handHeight, wristPoint: wrist,
+                                  torsoHeight: torsoHeight, lumaMotion: lumaMotion)
+    }
+}
+
+private struct RecordedObject: Decodable {
+    let kind: String
+    let confidence: Double
+    let x: Double
+    let y: Double
+    let width: Double
+    let height: Double
 }
