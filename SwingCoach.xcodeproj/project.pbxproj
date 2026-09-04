@@ -54,6 +54,11 @@
 			path = SwingCoachUITests;
 			sourceTree = "<group>";
 		};
+		A1B2C3D4E5F6000000000002 /* SwingCoachTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SwingCoachTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +91,7 @@
 			children = (
 				9B7EC8A82EB6312D00BE1B9C /* SwingCoach */,
 				A1B2C3D4E5F6000000000001 /* SwingCoachUITests */,
+				A1B2C3D4E5F6000000000002 /* SwingCoachTests */,
 				9B7EC8A72EB6312D00BE1B9C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -139,6 +145,9 @@
 				9B7EC8B52EB6312F00BE1B9C /* PBXTargetDependency */,
 			);
 			name = SwingCoachTests;
+			fileSystemSynchronizedGroups = (
+				A1B2C3D4E5F6000000000002 /* SwingCoachTests */,
+			);
 			packageProductDependencies = (
 			);
 			productName = SwingCoachTests;
