@@ -100,6 +100,21 @@ struct DebugReplayView: View {
                             Spacer()
 
                             if model.selectedVideoURL != nil {
+                                Button {
+                                    model.restartReplay(
+                                        speedMultiplier: sourceTiming.playbackSpeedMultiplier,
+                                        sourceTimeScale: sourceTiming.sourceTimeScale,
+                                        detectorSampleFPS: liveModelDetectorSampleFPS
+                                    )
+                                } label: {
+                                    Image(systemName: "backward.end.circle.fill")
+                                        .font(.system(size: 27, weight: .semibold))
+                                        .foregroundColor(.white.opacity(0.82))
+                                        .frame(width: 34, height: 38)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Restart replay")
+
                                 replayPlayPauseButton
                             }
                         }
@@ -204,6 +219,8 @@ struct DebugReplayView: View {
                         isSelected: sourceTiming == timing,
                         minWidth: 62
                     ) {
+                        guard sourceTiming != timing else { return }
+                        model.prepareForConfigurationChange()
                         sourceTiming = timing
                     }
                 }
@@ -222,7 +239,7 @@ struct DebugReplayView: View {
 
                 Spacer()
 
-                Text("\(Int(liveModelDetectorSampleFPS))fps · V2")
+                Text("\(Int(liveModelDetectorSampleFPS))fps · V3")
                     .font(.caption2.monospacedDigit().weight(.semibold))
                     .foregroundColor(.white.opacity(0.52))
                     .lineLimit(1)
@@ -233,6 +250,8 @@ struct DebugReplayView: View {
                     debugRowTitle("model")
                     ForEach(detectorSampleOptions, id: \.self) { sampleFPS in
                         debugChip("\(Int(sampleFPS))fps", isSelected: liveModelDetectorSampleFPS == sampleFPS, minWidth: 48) {
+                            guard liveModelDetectorSampleFPS != sampleFPS else { return }
+                            model.prepareForConfigurationChange()
                             liveModelDetectorSampleFPS = sampleFPS
                         }
                     }
@@ -270,7 +289,6 @@ struct DebugReplayView: View {
                 .background(Capsule().fill(isSelected ? Color.yellow : Color.white.opacity(0.14)))
         }
         .buttonStyle(.plain)
-        .disabled(model.isReplaying)
     }
 
     private var replayOverlay: some View {
@@ -284,9 +302,6 @@ struct DebugReplayView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundColor(.white.opacity(0.64))
             }
-
-            ProgressView(value: model.progress)
-                .tint(.yellow)
 
             replayScrubber
 
@@ -364,7 +379,7 @@ struct DebugReplayView: View {
 
     private var replayScrubber: some View {
         HStack(spacing: 8) {
-            Text(formatTime(model.replayStartSourceTime))
+            Text(formatTime(model.scrubberSourceTime))
                 .font(.caption2.monospacedDigit().weight(.semibold))
                 .foregroundColor(.white.opacity(0.58))
                 .frame(width: 54, alignment: .leading)
@@ -391,14 +406,13 @@ struct DebugReplayView: View {
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
-                            guard !model.isReplaying else { return }
                             let fraction = max(0, min(1, value.location.x / width))
                             model.setReplayStartFraction(Double(fraction))
                         }
                 )
             }
             .frame(height: 28)
-            .opacity(model.selectedVideoURL == nil || model.isReplaying ? 0.45 : 1)
+            .opacity(model.selectedVideoURL == nil ? 0.45 : 1)
 
             Text(model.replayDuration > 0 ? formatTime(model.replayDuration) : "--")
                 .font(.caption2.monospacedDigit().weight(.semibold))
@@ -607,6 +621,7 @@ final class DebugReplayViewModel: ObservableObject {
     private var replayTask: Task<Void, Never>?
     private var durationLoadTask: Task<Void, Never>?
     private var replayControl: DebugReplayControl?
+    private var activeReplaySessionID: UUID?
     private var playerTimeObserver: Any?
     private var lastProgressUpdateAt = Date.distantPast
     private var activePlaybackSpeedMultiplier = 1.0
@@ -637,17 +652,13 @@ final class DebugReplayViewModel: ObservableObject {
         return detections.isEmpty ? "Ready" : "Replay complete"
     }
 
+    var scrubberSourceTime: Double {
+        isReplaying ? replaySourceTime : replayStartSourceTime
+    }
+
     func setReplayStartSourceTime(_ sourceTime: Double) {
-        guard !isReplaying else { return }
         let clamped = max(0, replayDuration > 0 ? min(sourceTime, replayDuration) : sourceTime)
-        replayStartSourceTime = clamped
-        replaySourceTime = clamped
-        progress = replayDuration > 0 ? min(1, max(0, clamped / replayDuration)) : 0
-        player?.seek(
-            to: CMTime(seconds: clamped, preferredTimescale: 600),
-            toleranceBefore: .zero,
-            toleranceAfter: .zero
-        )
+        stopReplay(at: clamped, clearsResults: true)
     }
 
     func setReplayStartFraction(_ fraction: Double) {
@@ -657,7 +668,7 @@ final class DebugReplayViewModel: ObservableObject {
 
     func scrubberOffset(in width: CGFloat) -> CGFloat {
         guard replayDuration > 0 else { return 0 }
-        let fraction = max(0, min(1, replayStartSourceTime / replayDuration))
+        let fraction = max(0, min(1, scrubberSourceTime / replayDuration))
         return CGFloat(fraction) * width
     }
 
@@ -666,7 +677,7 @@ final class DebugReplayViewModel: ObservableObject {
     }
 
     func setSelectedVideo(_ url: URL) {
-        cancelReplay()
+        stopReplay(at: 0, clearsResults: true)
         durationLoadTask?.cancel()
         clearPlayerTimeObserver()
         let newPlayer = AVPlayer(url: url)
@@ -702,16 +713,24 @@ final class DebugReplayViewModel: ObservableObject {
     ) {
         guard let selectedVideoURL else { return }
 
-        cancelReplay()
+        let requestedStartSourceTime: Double
+        if replayDuration > 0, replayStartSourceTime >= replayDuration - 0.05 {
+            requestedStartSourceTime = 0
+        } else {
+            requestedStartSourceTime = max(0, replayStartSourceTime)
+        }
+        stopReplay(at: requestedStartSourceTime, clearsResults: true)
         let configuration = SwingDetectorV3Configuration.live(
             sourceTimeScale: sourceTimeScale,
             lowSampleFPS: detectorSampleFPS,
             burstSampleFPS: max(16.0, detectorSampleFPS * 2.0)
         )
         let control = DebugReplayControl()
+        let sessionID = UUID()
         replayControl = control
+        activeReplaySessionID = sessionID
         activePlaybackSpeedMultiplier = max(1, min(8, speedMultiplier))
-        let startSourceTime = max(0, replayStartSourceTime)
+        let startSourceTime = requestedStartSourceTime
         visibleReplayStarted = false
         playerHeldForDetectorCatchup = false
         isReplaying = true
@@ -746,6 +765,7 @@ final class DebugReplayViewModel: ObservableObject {
 
         replayTask = Task {
             for await event in stream {
+                guard activeReplaySessionID == sessionID else { break }
                 switch event {
                 case .progress(let sourceTime, let sourceDuration, let newSnapshot, let currentDetections):
                     applyProgress(
@@ -758,11 +778,14 @@ final class DebugReplayViewModel: ObservableObject {
                     detections = result.detections
                     replayDuration = result.sourceDuration
                     replaySourceTime = result.sourceDuration
+                    replayStartSourceTime = result.sourceDuration
                     detectorSourceTime = result.sourceDuration
                     playerHeldForDetectorCatchup = false
                     progress = 1
                     isReplaying = false
                     isPaused = false
+                    activeReplaySessionID = nil
+                    replayTask = nil
                     player?.pause()
                     snapshot = LiveSwingDetectionSnapshot(
                         status: result.detections.isEmpty ? .idle : .swingDetected,
@@ -783,6 +806,8 @@ final class DebugReplayViewModel: ObservableObject {
                 case .failed(let message):
                     isReplaying = false
                     isPaused = false
+                    activeReplaySessionID = nil
+                    replayTask = nil
                     player?.pause()
                     errorMessage = message
                     snapshot = LiveSwingDetectionSnapshot(
@@ -796,16 +821,50 @@ final class DebugReplayViewModel: ObservableObject {
     }
 
     func cancelReplay() {
+        stopReplay(at: replaySourceTime, clearsResults: false)
+    }
+
+    func prepareForConfigurationChange() {
+        let sourceTime = isReplaying ? replaySourceTime : replayStartSourceTime
+        stopReplay(at: sourceTime, clearsResults: true)
+    }
+
+    func restartReplay(
+        speedMultiplier: Double,
+        sourceTimeScale: Double,
+        detectorSampleFPS: Double
+    ) {
+        stopReplay(at: 0, clearsResults: true)
+        startReplay(
+            speedMultiplier: speedMultiplier,
+            sourceTimeScale: sourceTimeScale,
+            detectorSampleFPS: detectorSampleFPS
+        )
+    }
+
+    private func stopReplay(at sourceTime: Double, clearsResults: Bool) {
         replayTask?.cancel()
         replayTask = nil
         replayControl = nil
+        activeReplaySessionID = nil
         isReplaying = false
         isPaused = false
         visibleReplayStarted = false
         playerHeldForDetectorCatchup = false
+        let clamped = max(0, replayDuration > 0 ? min(sourceTime, replayDuration) : sourceTime)
+        replayStartSourceTime = clamped
+        replaySourceTime = clamped
+        detectorSourceTime = clamped
+        progress = replayDuration > 0 ? min(1, max(0, clamped / replayDuration)) : 0
+        if clearsResults {
+            snapshot = .idle
+            detections = []
+            errorMessage = nil
+            lastProgressUpdateAt = .distantPast
+        }
         player?.pause()
         player?.seek(
-            to: CMTime(seconds: replayStartSourceTime, preferredTimescale: 600),
+            to: CMTime(seconds: clamped, preferredTimescale: 600),
             toleranceBefore: .zero,
             toleranceAfter: .zero
         )
