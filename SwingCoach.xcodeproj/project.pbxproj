@@ -144,10 +144,10 @@
 			dependencies = (
 				9B7EC8B52EB6312F00BE1B9C /* PBXTargetDependency */,
 			);
-			name = SwingCoachTests;
 			fileSystemSynchronizedGroups = (
 				A1B2C3D4E5F6000000000002 /* SwingCoachTests */,
 			);
+			name = SwingCoachTests;
 			packageProductDependencies = (
 			);
 			productName = SwingCoachTests;

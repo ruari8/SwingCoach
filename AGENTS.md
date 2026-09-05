@@ -39,6 +39,8 @@ Domain documentation uses the single-context layout. See `docs/agents/domain.md`
 
 For UI design iterations or showing Simulator work, read [UI playground](./docs/UI_PLAYGROUND.md). Ruari prefers the native browser mirror; preserve and extend the repo's reusable playground.
 
+Default to one automated UI verification pass when the implementation is PR-ready, before committing. Reuse passing results. Run earlier or repeat only the affected checks when a specific bug, meaningful behavior change, or new evidence warrants it. Documentation edits, Git operations without behavior changes, and screenshot-capture adjustments do not justify rerunning the full suite.
+
 ## Repository Map
 
 ```text
