@@ -18,6 +18,7 @@ enum ExperimentalSettingKey {
     static let showDebugReplayTab = "experimental.showDebugReplayTab"
     static let debugReplaySpeedMultiplier = "experimental.debugReplaySpeedMultiplier"
     static let debugReplaySourceTiming = "experimental.debugReplaySourceTiming"
+    static let debugReplayPracticeSwings = "experimental.debugReplayPracticeSwings"
     static let detectorDefaultsRevision = "experimental.detectorDefaultsRevision"
 }
 
@@ -56,9 +57,9 @@ struct ExperimentalSettingsView: View {
             Section {
                 Toggle("Capture practice swings", isOn: $capturePracticeSwings)
             } header: {
-                Text("Auto Capture")
+                Text("Auto & Manual Capture")
             } footer: {
-                Text("Off by default: Auto saves real shots only. Turn this on to save strong club-motion swing sequences even when no ball is struck, such as garden testing.")
+                Text("Off by default: detect real shots only. Turn this on to include practice swings in Auto capture and Manual recording's detected trim ranges. Replay Debug has its own option under Advanced.")
             }
 
             Section {

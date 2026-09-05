@@ -48,7 +48,7 @@ struct DebugReplayView: View {
     @StateObject private var model = DebugReplayViewModel()
     @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
     @AppStorage(ExperimentalSettingKey.debugReplaySourceTiming) private var debugReplaySourceTimingRaw = DebugReplaySourceTiming.realtime.rawValue
-    @AppStorage(ExperimentalSettingKey.capturePracticeSwings) private var capturePracticeSwings = false
+    @AppStorage(ExperimentalSettingKey.debugReplayPracticeSwings) private var debugReplayPracticeSwings = false
     @State private var showsVideoPicker = false
     @State private var trimSource: TrimVideoSource?
     @State private var trimDetections: [DetectedSwing] = []
@@ -106,7 +106,7 @@ struct DebugReplayView: View {
                                         speedMultiplier: sourceTiming.playbackSpeedMultiplier,
                                         sourceTimeScale: sourceTiming.sourceTimeScale,
                                         detectorSampleFPS: liveModelDetectorSampleFPS,
-                                        allowsPracticeSwings: capturePracticeSwings
+                                        allowsPracticeSwings: debugReplayPracticeSwings
                                     )
                                 } label: {
                                     Image(systemName: "backward.end.circle.fill")
@@ -182,7 +182,7 @@ struct DebugReplayView: View {
                 .presentationDragIndicator(.visible)
             }
             .onAppear { ExperimentalDetectorDefaults.migrateIfNeeded() }
-            .onChange(of: capturePracticeSwings) { _, _ in
+            .onChange(of: debugReplayPracticeSwings) { _, _ in
                 model.prepareForConfigurationChange()
             }
         }
@@ -197,7 +197,7 @@ struct DebugReplayView: View {
                     speedMultiplier: sourceTiming.playbackSpeedMultiplier,
                     sourceTimeScale: sourceTiming.sourceTimeScale,
                     detectorSampleFPS: liveModelDetectorSampleFPS,
-                    allowsPracticeSwings: capturePracticeSwings
+                    allowsPracticeSwings: debugReplayPracticeSwings
                 )
             }
         } label: {
@@ -245,7 +245,7 @@ struct DebugReplayView: View {
 
                 Spacer()
 
-                Text("\(Int(liveModelDetectorSampleFPS))fps · V3")
+                Text("\(Int(liveModelDetectorSampleFPS))fps · V3 · \(debugReplayPracticeSwings ? "+ practice" : "impact only")")
                     .font(.caption2.monospacedDigit().weight(.semibold))
                     .foregroundColor(.white.opacity(0.52))
                     .lineLimit(1)
@@ -263,6 +263,15 @@ struct DebugReplayView: View {
                     }
                 }
 
+                Toggle("Detect practice swings", isOn: $debugReplayPracticeSwings)
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.white.opacity(0.84))
+                    .tint(.yellow)
+                    .accessibilityIdentifier("debug-replay-practice-swings")
+
+                Text("Applies only to Replay Debug. Off detects impacts only.")
+                    .font(.caption2)
+                    .foregroundColor(.white.opacity(0.64))
             }
         }
         .padding(.horizontal, 10)
