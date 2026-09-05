@@ -56,6 +56,7 @@ xcodebuild -project "$repo/SwingCoach.xcodeproj" -scheme SwingCoach -configurati
     -parallel-testing-enabled NO -resultBundlePath "$artifacts/playback.xcresult" \
     -only-testing:SwingCoachUITests/LibraryPagingUITests/testPagingSettlesOnOneWholeVideo \
     -only-testing:SwingCoachUITests/LibraryPagingUITests/testQuarterPageDragCommitsAndSmallDragReturns \
+    -only-testing:SwingCoachUITests/LibraryPagingUITests/testPlayerControlsStayOutsideMovingPages \
     -only-testing:SwingCoachUITests/LibraryPagingUITests/testOpeningMiddleSwingAndPlaybackGestures \
     -only-testing:SwingCoachUITests/LibraryPagingUITests/testPlaybackAdvancesAndReturnsToLibrary \
     CODE_SIGNING_ALLOWED=NO test > "$artifacts/test.log" 2>&1 || test_status=$?
@@ -71,7 +72,7 @@ python3 - "$artifacts" <<'PY'
 import json, pathlib, sys
 root = pathlib.Path(sys.argv[1])
 summary = json.loads((root / 'test-summary.json').read_text())
-assert summary['passedTests'] == 4 and summary['failedTests'] == 0 and summary['skippedTests'] == 0, summary
+assert summary['passedTests'] == 5 and summary['failedTests'] == 0 and summary['skippedTests'] == 0, summary
 log = (root / 'system.log').read_text()
 assert 'SwingCoach[' in log, 'No app log events captured; cannot assess framework diagnostics'
 markers = ['VKCImageAnalyzerRequest', 'Error processing request from MAD',

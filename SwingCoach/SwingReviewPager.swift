@@ -1,5 +1,50 @@
 import SwiftUI
 
+enum ReviewPlaybackControlsPlacement {
+    case inline
+    case selectedPage
+    case otherPage
+}
+
+private struct ReviewPlaybackControlsPlacementKey: EnvironmentKey {
+    static let defaultValue = ReviewPlaybackControlsPlacement.inline
+}
+
+private struct ReviewCornerControlsInNavigationKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    var reviewPlaybackControlsPlacement: ReviewPlaybackControlsPlacement {
+        get { self[ReviewPlaybackControlsPlacementKey.self] }
+        set { self[ReviewPlaybackControlsPlacementKey.self] = newValue }
+    }
+
+    var reviewCornerControlsInNavigation: Bool {
+        get { self[ReviewCornerControlsInNavigationKey.self] }
+        set { self[ReviewCornerControlsInNavigationKey.self] = newValue }
+    }
+}
+
+/// A page owns its playback state, but the pager renders its controls outside
+/// the moving strip. Type erasure lets different player headers/accessories
+/// use the same fixed overlay.
+struct ReviewPlaybackControlsKey: PreferenceKey {
+    static var defaultValue: AnyView? { nil }
+
+    static func reduce(value: inout AnyView?, nextValue: () -> AnyView?) {
+        value = nextValue() ?? value
+    }
+}
+
+struct ReviewPlaybackCornerControlsKey: PreferenceKey {
+    static var defaultValue: AnyView? { nil }
+
+    static func reduce(value: inout AnyView?, nextValue: () -> AnyView?) {
+        value = nextValue() ?? value
+    }
+}
+
 /// Stable, viewport-sized pages. ScrollView owns dragging, cancellation and
 /// deceleration; changing selection never rebuilds or rebases the page strip.
 struct SwingReviewPager<Page: View>: View {
@@ -15,6 +60,8 @@ struct SwingReviewPager<Page: View>: View {
                 LazyHStack(spacing: 0) {
                     ForEach(swings) { swing in
                         page(swing)
+                            .environment(\.reviewPlaybackControlsPlacement,
+                                         swing.id == selection ? .selectedPage : .otherPage)
                             .frame(width: geometry.size.width, height: geometry.size.height)
                             .contentShape(Rectangle())
                             // Video layers that ignore safe areas must never draw
@@ -39,6 +86,9 @@ struct SwingReviewPager<Page: View>: View {
             }
             .onChange(of: scrollID) { _, id in
                 if let id, selection != id { selection = id }
+            }
+            .overlayPreferenceValue(ReviewPlaybackControlsKey.self) { controls in
+                controls
             }
         }
     }

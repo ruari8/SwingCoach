@@ -1018,6 +1018,9 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     private let overlayAccessory: OverlayAccessory
     private let contentOverlay: (CMTime, CGSize) -> AnyView
 
+    @Environment(\.reviewPlaybackControlsPlacement) private var reviewControlsPlacement
+    @Environment(\.reviewCornerControlsInNavigation) private var cornerControlsInNavigation
+
     @State private var player: AVPlayer?
     @State private var isPlaying = false
     @State private var currentTime: CMTime = .zero
@@ -1078,6 +1081,15 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
             videoArea
         }
+        .preference(
+            key: ReviewPlaybackControlsKey.self,
+            value: reviewControlsPlacement == .selectedPage ? AnyView(playbackControls) : nil
+        )
+        .preference(
+            key: ReviewPlaybackCornerControlsKey.self,
+            value: cornerControlsInNavigation && reviewControlsPlacement != .otherPage
+                ? AnyView(playerCornerControls) : nil
+        )
         .onAppear {
             setupPlayer()
         }
@@ -1097,11 +1109,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
     private var videoArea: some View {
         GeometryReader { geometry in
-            let timelineWidth = max(geometry.size.width - 28, 1)
-            let topControlPadding = max(12, geometry.safeAreaInsets.top + 8)
-            let bottomControlPadding = max(12, geometry.safeAreaInsets.bottom + 12)
-            let accessoryBottomPadding = max(34, geometry.safeAreaInsets.bottom + 34)
-
             ZStack {
                 // Video fills its container; in edge-to-edge mode it extends behind
                 // the notch/home indicator while the chrome below keeps its insets.
@@ -1129,6 +1136,24 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     transportTouchLayer
                 }
 
+                if reviewControlsPlacement == .inline {
+                    playbackControls
+                }
+            }
+            .background(Color.black)
+        }
+    }
+
+    /// Layout is measured where the controls are displayed: the fixed pager
+    /// viewport in review, or the local player for standalone playback.
+    private var playbackControls: some View {
+        GeometryReader { geometry in
+            let timelineWidth = max(geometry.size.width - 28, 1)
+            let topControlPadding = max(12, geometry.safeAreaInsets.top + 8)
+            let bottomControlPadding = max(12, geometry.safeAreaInsets.bottom + 12)
+            let accessoryBottomPadding = max(34, geometry.safeAreaInsets.bottom + 34)
+
+            ZStack {
                 if controlsVisible {
                     chromeGradients
                         .transition(.opacity)
@@ -1139,7 +1164,9 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
                             Spacer(minLength: 0)
 
-                            playerCornerControls
+                            if !cornerControlsInNavigation {
+                                playerCornerControls
+                            }
                         }
                         .padding(.horizontal, 12)
                         .padding(.top, topControlPadding)
@@ -1181,7 +1208,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     }
                 }
             }
-            .background(Color.black)
         }
     }
 

@@ -22,6 +22,61 @@ final class LibraryPagingUITests: XCTestCase {
         assertSettledPage(app, position: "1 of 3")
     }
 
+    func testPlayerControlsStayOutsideMovingPages() throws {
+        for autoReview in [false, true] {
+            let app: XCUIApplication
+            if autoReview {
+                app = XCUIApplication()
+                app.launchArguments = ["-ui-testing-auto-review"]
+                app.launch()
+            } else {
+                app = try launchFirstReferenceSwing()
+            }
+            assertSettledPage(app, position: "1 of 3")
+            let speed = app.buttons["Change playback speed"]
+            let timeline = app.otherElements["playback-timeline"]
+            XCTAssertTrue(speed.waitForExistence(timeout: 5))
+            XCTAssertTrue(timeline.waitForExistence(timeout: 5))
+            let speedFrame = speed.frame
+            let timelineFrame = timeline.frame
+            if !autoReview {
+                let star = app.buttons["Remove star"].frame
+                let info = app.buttons["Show swing metadata"].frame
+                XCTAssertEqual(star.midX, info.midX, accuracy: 1)
+                XCTAssertEqual(info.midX, speedFrame.midX, accuracy: 1)
+                XCTAssertEqual(info.minY - star.maxY, speedFrame.minY - info.maxY, accuracy: 1)
+                XCTAssertGreaterThan(info.minY - star.maxY, 0)
+            }
+
+            for page in app.otherElements.matching(identifier: "swing-review-page").allElementsBoundByIndex {
+                XCTAssertFalse(page.buttons["Change playback speed"].exists)
+                XCTAssertFalse(page.buttons["Show swing metadata"].exists)
+                XCTAssertFalse(page.buttons["Play"].exists)
+                XCTAssertFalse(page.otherElements["playback-timeline"].exists)
+            }
+
+            drag(app, from: 0.65, to: 0.35, velocity: .slow)
+            assertSettledPage(app, position: "2 of 3")
+            XCTAssertEqual(app.buttons.matching(identifier: "Change playback speed").count, 1)
+            XCTAssertEqual(speed.frame, speedFrame)
+            XCTAssertEqual(timeline.frame, timelineFrame)
+            let initialSpeed = speed.value as? String
+            speed.tap()
+            XCTAssertNotEqual(speed.value as? String, initialSpeed)
+
+            let start = timeline.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5))
+            let end = timeline.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5))
+            start.press(forDuration: 0.05, thenDragTo: end)
+            XCTAssertGreaterThan(Double(timeline.value as? String ?? "") ?? 0, 0)
+            assertSettledPage(app, position: "2 of 3")
+            if !autoReview {
+                app.buttons["Show swing metadata"].tap()
+                XCTAssertTrue(app.navigationBars["Swing Info"].waitForExistence(timeout: 3))
+            }
+            app.terminate()
+        }
+    }
+
     func testPlaybackAdvancesAndReturnsToLibrary() throws {
         let app = try launchFirstReferenceSwing()
         XCTAssertTrue(app.staticTexts["swing-position"].waitForExistence(timeout: 5))

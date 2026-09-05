@@ -86,10 +86,6 @@ struct SwingDetailView: View {
 
             reviewPager
 
-            // Navigation chrome stays available on every page so you can always
-            // get back / open metadata, even with the player controls hidden.
-            topNavOverlay
-
             if shouldShowAnalysisAction {
                 analysisFloatingLayer
             }
@@ -97,6 +93,9 @@ struct SwingDetailView: View {
             if selectedPage == 0, videoAspectRatios[currentSwingID] != nil {
                 drawingToolRail
             }
+        }
+        .overlayPreferenceValue(ReviewPlaybackCornerControlsKey.self) { cornerControls in
+            topNavOverlay(cornerControls: cornerControls)
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
@@ -159,7 +158,7 @@ struct SwingDetailView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var topNavOverlay: some View {
+    private func topNavOverlay(cornerControls: AnyView?) -> some View {
         VStack(spacing: 10) {
             HStack {
                 navCircleButton(systemName: "chevron.left") { dismiss() }
@@ -180,17 +179,24 @@ struct SwingDetailView: View {
 
                 Spacer()
 
-                Button {
-                    library.toggleFavorite(currentSwing)
-                } label: {
-                    Image(systemName: currentSwing.isFavorite ? "star.fill" : "star")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(currentSwing.isFavorite ? .yellow : .white)
-                        .frame(width: 38, height: 38)
-                        .background(Circle().fill(Color.black.opacity(0.45)))
+                VStack(spacing: 10) {
+                    Button {
+                        library.toggleFavorite(currentSwing)
+                    } label: {
+                        Image(systemName: currentSwing.isFavorite ? "star.fill" : "star")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(currentSwing.isFavorite ? .yellow : .white)
+                            .frame(width: 38, height: 38)
+                            .background(Circle().fill(Color.black.opacity(0.45)))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(currentSwing.isFavorite ? "Remove star" : "Star swing")
+                    cornerControls
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(currentSwing.isFavorite ? "Remove star" : "Star swing")
+                .fixedSize(horizontal: false, vertical: true)
+                // The stack extends below the navigation row without moving
+                // the back button, count, or analysis page picker.
+                .frame(height: 38, alignment: .top)
             }
             .padding(.horizontal, 14)
 
@@ -392,6 +398,7 @@ struct SwingDetailView: View {
             } overlayAccessory: {
                 EmptyView()
             }
+            .environment(\.reviewCornerControlsInNavigation, true)
         } else {
             ZStack {
                 Color.black
