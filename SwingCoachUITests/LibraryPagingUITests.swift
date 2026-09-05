@@ -11,6 +11,38 @@ final class LibraryPagingUITests: XCTestCase {
         exercisePaging(app)
     }
 
+    func testQuarterPageDragCommitsAndSmallDragReturns() throws {
+        let app = try launchFirstReferenceSwing()
+        assertSettledPage(app, position: "1 of 3")
+        drag(app, from: 0.65, to: 0.35, velocity: .slow)
+        assertSettledPage(app, position: "2 of 3")
+        drag(app, from: 0.5, to: 0.55, velocity: .slow)
+        assertSettledPage(app, position: "2 of 3")
+        drag(app, from: 0.35, to: 0.65, velocity: .slow)
+        assertSettledPage(app, position: "1 of 3")
+    }
+
+    func testPlaybackAdvancesAndReturnsToLibrary() throws {
+        let app = try launchFirstReferenceSwing()
+        XCTAssertTrue(app.staticTexts["swing-position"].waitForExistence(timeout: 5))
+        let timeline = try XCTUnwrap(app.otherElements.matching(identifier: "playback-timeline")
+            .allElementsBoundByIndex.first { $0.isHittable })
+        let initialTime = Double(timeline.value as? String ?? "") ?? 0
+        let play = try XCTUnwrap(app.buttons.matching(identifier: "Play")
+            .allElementsBoundByIndex.first { $0.isHittable })
+        play.tap()
+        let advanced = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            (Double(timeline.value as? String ?? "") ?? 0) > initialTime + 0.1
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [advanced], timeout: 5), .completed)
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "Review video playing"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        app.buttons["Back to library"].tap()
+        XCTAssertTrue(app.staticTexts["My Swings"].waitForExistence(timeout: 5))
+    }
+
     func testAutoReviewPagingAndDeletion() throws {
         let app = XCUIApplication()
         app.launchArguments = ["-ui-testing-auto-review"]

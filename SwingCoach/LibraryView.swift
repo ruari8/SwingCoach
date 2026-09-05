@@ -1108,7 +1108,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 fillLayer(
                     Group {
                         if let player {
-                            VideoPlayer(player: player)
+                            SwingVideoPlayer(player: player)
                                 .allowsHitTesting(false)
                         } else {
                             ProgressView()

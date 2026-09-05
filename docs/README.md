@@ -31,6 +31,7 @@ This folder and `backend/docs` are the active documentation set.
 
 - [Frontend Documentation](./FRONTEND.md)
 - [Foundation app performance and verification](./FOUNDATION_PERFORMANCE.md)
+- [iOS console diagnostics and playback regression check](./IOS_CONSOLE_DIAGNOSTICS.md)
 
 ## Backend
 

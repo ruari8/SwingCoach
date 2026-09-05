@@ -158,7 +158,7 @@ struct TrimView: View {
     private var videoPreview: some View {
         Group {
             if let player = player {
-                VideoPlayer(player: player)
+                SwingVideoPlayer(player: player)
                     .disabled(true)  // Disable built-in controls
                     .overlay(
                         // Tap to play/pause
@@ -989,7 +989,7 @@ struct TrimView: View {
                     if let assetID = await PHPhotoLibrary.saveVideoAndGetID(url: url) {
                         let libraryThumbnail = await immediateLibraryThumbnail(for: clip, exportAsset: exportAsset)
                         await MainActor.run {
-                            SwingLibrary.shared.addSwing(
+                            _ = SwingLibrary.shared.addSwing(
                                 photoAssetID: assetID,
                                 vantage: clip.vantage,
                                 duration: clip.duration * displayTimeScale,

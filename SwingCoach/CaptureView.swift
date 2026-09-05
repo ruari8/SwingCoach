@@ -12,6 +12,7 @@ import Combine
 import AVFoundation
 import Photos
 import ImageIO
+import OSLog
 
 enum SloMoMode {
     case normal      // 30 fps @ 1080p
@@ -98,6 +99,7 @@ struct AutoCaptureStatus: Equatable {
 }
 
 final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecordingDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
+    private static let logger = Logger(subsystem: "Pear.ai.SwingCoach", category: "Capture")
     private enum AutoCaptureExportError: LocalizedError {
         case photosSaveFailed
 
@@ -160,9 +162,22 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
     override init() {
         super.init()
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(captureSessionRuntimeError(_:)),
+            name: AVCaptureSession.runtimeErrorNotification, object: session
+        )
         if AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
             configure()
         }
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func captureSessionRuntimeError(_ notification: Notification) {
+        guard let error = notification.userInfo?[AVCaptureSessionErrorKey] as? NSError else { return }
+        Self.logger.error("Capture session failed: \(error.domain, privacy: .public) (\(error.code)): \(error.localizedDescription, privacy: .public)")
     }
 
     private func configure() {
@@ -176,12 +191,20 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         // audible instead of routing to the earpiece.
         session.automaticallyConfiguresApplicationAudioSession = false
         let audioSession = AVAudioSession.sharedInstance()
-        try? audioSession.setCategory(
-            .playAndRecord,
-            mode: .videoRecording,
-            options: [.mixWithOthers, .allowBluetoothA2DP, .defaultToSpeaker]
-        )
-        try? audioSession.setActive(true)
+        do {
+            try audioSession.setCategory(
+                .playAndRecord,
+                mode: .videoRecording,
+                options: [.mixWithOthers, .allowBluetoothA2DP, .defaultToSpeaker]
+            )
+        } catch {
+            Self.logger.error("Audio configuration failed: \(String(describing: error), privacy: .public)")
+        }
+        do {
+            try audioSession.setActive(true)
+        } catch {
+            Self.logger.error("Audio activation failed: \(String(describing: error), privacy: .public)")
+        }
 
         session.beginConfiguration()
         // Note: We do NOT set sessionPreset — it would override our manual format selection
@@ -257,8 +280,6 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         }
 
         let dims = CMVideoFormatDescriptionGetDimensions(bestFormat.formatDescription)
-        print("✅ Selected format: \(dims.width)×\(dims.height) @ \(targetFPS) fps (\(mode.displayName))")
-
         // Apply the format and lock frame rate
         do {
             try device.lockForConfiguration()
@@ -267,8 +288,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             device.activeVideoMinFrameDuration = CMTime(value: 1, timescale: CMTimeScale(targetFPS))
             device.activeVideoMaxFrameDuration = CMTime(value: 1, timescale: CMTimeScale(targetFPS))
             device.unlockForConfiguration()
+            Self.logger.info("Configured camera: \(dims.width)×\(dims.height) @ \(targetFPS) fps (\(mode.displayName, privacy: .public))")
         } catch {
-            print("❌ Failed to configure \(mode.displayName): \(error)")
+            Self.logger.error("Camera format configuration failed: \(String(describing: error), privacy: .public)")
         }
     }
 

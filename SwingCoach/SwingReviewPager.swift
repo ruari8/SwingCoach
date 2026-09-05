@@ -29,7 +29,7 @@ struct SwingReviewPager<Page: View>: View {
                 }
                 .scrollTargetLayout()
             }
-            .scrollTargetBehavior(.viewAligned(limitBehavior: .alwaysByOne))
+            .scrollTargetBehavior(SingleVideoScrollTargetBehavior())
             .scrollPosition(id: $scrollID, anchor: .center)
             .scrollDisabled(!pagingEnabled)
             .onChange(of: selection, initial: true) { _, id in
@@ -41,5 +41,31 @@ struct SwingReviewPager<Page: View>: View {
                 if let id, selection != id { selection = id }
             }
         }
+    }
+}
+
+/// Bound the projected destination to the pages adjacent to the gesture's
+/// starting page. View-aligned limiting can still skip on high-velocity flicks.
+private struct SingleVideoScrollTargetBehavior: ScrollTargetBehavior {
+    func properties(context: PropertiesContext) -> Properties {
+        var properties = Properties()
+        // Use the shorter native settling motion appropriate for discrete pages.
+        properties.limitsScrolls = true
+        return properties
+    }
+
+    func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
+        let width = context.containerSize.width
+        guard width > 0 else { return }
+
+        let start = (context.originalTarget.rect.minX / width).rounded()
+        // Commit sooner than the halfway point. The projected position includes
+        // release velocity, so a short flick can also pull the next page in.
+        let progress = target.rect.minX / width - start
+        let step: CGFloat = abs(progress) >= 0.25 ? (progress > 0 ? 1 : -1) : 0
+        let destination = start + step
+        let maximumOffset = max(0, context.contentSize.width - width)
+        target.rect.origin.x = min(max(destination * width, 0), maximumOffset)
+        target.rect.size.width = width
     }
 }
