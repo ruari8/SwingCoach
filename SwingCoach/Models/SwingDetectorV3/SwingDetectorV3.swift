@@ -29,7 +29,6 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
 
     private var detector: GolfObjectDetector?
     private let targetSelector: TargetSelectorV3
-    private let clubTracker: ClubTrackerV3
     private let decisionEngine: SwingDecisionEngineV3
     private let scorer: SwingScorer
     private let bodyPoseRequest = VNDetectHumanBodyPoseRequest()
@@ -68,7 +67,6 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
         self.modelURL = modelURL
         self.computeUnits = computeUnits
         self.targetSelector = TargetSelectorV3()
-        self.clubTracker = ClubTrackerV3()
         self.decisionEngine = SwingDecisionEngineV3(configuration: configuration)
         self.scorer = configuration.scorer
     }
@@ -115,7 +113,6 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
         startupEvaluatedImpactTimes.removeAll(keepingCapacity: true)
         lastFullSwingPatternRealTime = -Double.greatestFiniteMagnitude
         targetSelector.reset()
-        clubTracker.reset()
         decisionEngine.reset()
 
         guard enabled else {
@@ -290,13 +287,12 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
                 addressBallCount: lock?.addressBallCount
             )
         )
-        clubTracker.update(frame: frame, lock: lock)
         let patch = lock.map { TargetRegionObserverV3.observe(frame: frame, lock: $0) }
         let clubWindowSamples = featuresInWindow(
             start: max(0, realTime - configuration.clubEvidenceWindowDuration),
             end: realTime
         )
-        let clubWindow = clubTracker.evidence(in: clubWindowSamples[...], lock: lock)
+        let clubWindow = ClubTrackerV3.evidence(in: clubWindowSamples[...], lock: lock)
 
         if let resolved = decisionEngine.update(frame: frame, lock: lock, patch: patch, club: clubWindow) {
             evaluate(resolved: resolved, club: clubWindow)
@@ -425,7 +421,7 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
                 start: max(0, impactRealTime - 1.45),
                 end: impactRealTime + 0.55
             )
-            let club = clubTracker.evidence(in: candidateWindow[...], lock: lock)
+            let club = ClubTrackerV3.evidence(in: candidateWindow[...], lock: lock)
             let departure = departureEvidence(impactRealTime: impactRealTime, lock: lock)
             guard departure.targetSlotDeparture >= 0.35,
                   club.sweepScore >= 0.30,
@@ -481,7 +477,7 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
             start: max(0, resolved.impactRealTime - 1.45),
             end: resolved.impactRealTime + 0.55
         )
-        let candidateClub = clubTracker.evidence(in: candidateWindow[...], lock: resolved.lock)
+        let candidateClub = ClubTrackerV3.evidence(in: candidateWindow[...], lock: resolved.lock)
         let presence = candidatePresence(in: candidateWindow)
         let departure = departureEvidence(
             impactRealTime: resolved.impactRealTime,
@@ -610,7 +606,7 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
             start: max(0, candidate.impactRealTime - 1.35),
             end: candidate.impactRealTime + 0.55
         )
-        let club = clubTracker.evidence(in: candidateWindow[...], lock: candidate.lock)
+        let club = ClubTrackerV3.evidence(in: candidateWindow[...], lock: candidate.lock)
         let presence = candidatePresence(in: candidateWindow)
         let departure = departureEvidence(
             impactRealTime: candidate.impactRealTime,
@@ -705,7 +701,7 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
                     start: max(0, frame.realTime - 1.15),
                     end: frame.realTime + 0.35
                 )
-                let club = clubTracker.evidence(in: window[...], lock: lock)
+                let club = ClubTrackerV3.evidence(in: window[...], lock: lock)
                 guard club.sweepScore >= 0.30, club.arcScore >= 0.24 else { continue }
 
                 let score = club.sweepScore * 0.34
@@ -921,7 +917,7 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
             start: max(0, (features.last?.realTime ?? 0) - configuration.clubEvidenceWindowDuration),
             end: features.last?.realTime ?? 0
         )
-        let club = clubTracker.evidence(in: recent[...], lock: lock)
+        let club = ClubTrackerV3.evidence(in: recent[...], lock: lock)
         let evidence = EvidenceVector(
             anchorStability: lock?.stabilityScore ?? 0,
             disappearancePersistence: 0,

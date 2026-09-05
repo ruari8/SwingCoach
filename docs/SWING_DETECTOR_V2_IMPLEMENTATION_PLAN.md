@@ -26,15 +26,14 @@ The shipping swing detector, `LiveModelSwingDetector` in [ModelBackedSwingDetect
 - Reuse `GolfObjectDetector` unchanged for per-frame YOLO objects.
 - Patch Watcher v1 is YOLO-only inside the locked patch, with a lower in-patch ball threshold than global detection.
 - Do not add classical luma/template patch fallback unless YOLO-only recall proves insufficient.
-- Keep the legacy detector source intact as a fallback reference until V2 has enough on-device mileage to delete it safely.
+- Keep the legacy `LiveModelSwingDetector` evaluator as a comparison reference. The September cleanup removed unused asset wrappers and bright-blob implementations after moving shared types.
 - Wire the app directly to V2 once the offline fixture gates are proven; do not keep a product-facing old/new detector flag.
 - Advance one fixture at a time. If a case fails, stop and debug the conflict between the trace and the visible frames before moving on.
 
 ## Reused Types And Tools
 
 - [GolfObjectDetector.swift](../SwingCoach/Models/GolfObjectDetector.swift): reused object detector.
-- [OnDeviceSwingDetector.swift](../SwingCoach/Models/OnDeviceSwingDetector.swift): `DetectedSwing` output type.
-- [LiveSwingDetector.swift](../SwingCoach/Models/LiveSwingDetector.swift): live status snapshot/status types.
+- [SwingDetectionTypes.swift](../SwingCoach/Models/SwingDetectionTypes.swift): `DetectedSwing` output and live status types.
 - [generate_model_detection_contact_sheet.swift](../detector_workbench/modeling/generate_model_detection_contact_sheet.swift): contact sheet renderer.
 - [detector_test_v3_labels.json](../detector_workbench/validation/labels/detector_test_v3_labels.json): fixture labels and `source_time_scale`.
 

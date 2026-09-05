@@ -35,8 +35,7 @@ SHEET_BIN = REPO / ".videos/bin/generate_model_detection_contact_sheet"
 OUT_ROOT = FIXTURES / "perf_v2"
 
 V2_SOURCES = [
-    "SwingCoach/Models/OnDeviceSwingDetector.swift",
-    "SwingCoach/Models/LiveSwingDetector.swift",
+    "SwingCoach/Models/SwingDetectionTypes.swift",
     "SwingCoach/Models/LiveSwingDetecting.swift",
     "SwingCoach/Models/GolfObjectDetector.swift",
     "SwingCoach/Models/SwingDetectorV2",  # expands to *.swift below

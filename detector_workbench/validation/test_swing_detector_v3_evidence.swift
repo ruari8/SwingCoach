@@ -30,10 +30,9 @@ struct EvidenceRegression {
                         return observation(Double(index) * 0.3, boxes, wrist: wrist)
                     }
                 }
-                let tracker = ClubTrackerV3()
-                let clean = tracker.evidence(in: frames(distractor: false)[...], lock: lock)
-                let distracted = tracker.evidence(in: frames(distractor: true)[...], lock: lock)
-                let hiddenHead = tracker.evidence(in: frames(distractor: true, missingReturnHead: true)[...], lock: lock)
+                let clean = ClubTrackerV3.evidence(in: frames(distractor: false)[...], lock: lock)
+                let distracted = ClubTrackerV3.evidence(in: frames(distractor: true)[...], lock: lock)
+                let hiddenHead = ClubTrackerV3.evidence(in: frames(distractor: true, missingReturnHead: true)[...], lock: lock)
                 check("clean club sequence mirror=\(mirrored) shift=\(shift)", clean.swingSequenceScore > 0)
                 check("unrelated clubhead cannot erase sequence mirror=\(mirrored) shift=\(shift)",
                       distracted.swingSequenceScore > 0)

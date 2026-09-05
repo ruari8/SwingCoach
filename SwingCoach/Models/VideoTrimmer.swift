@@ -148,11 +148,6 @@ actor VideoTrimmer {
     
     // MARK: - Video Info
     
-    /// Load video duration
-    func getDuration(for asset: AVAsset) async throws -> CMTime {
-        try await asset.load(.duration)
-    }
-    
     /// Load video properties
     func getVideoInfo(for asset: AVAsset) async throws -> (duration: CMTime, size: CGSize, frameRate: Float) {
         guard let track = try await asset.loadTracks(withMediaType: .video).first else {
@@ -254,20 +249,6 @@ actor VideoTrimmer {
         }
         
         return exportedURLs
-    }
-    
-    // MARK: - Utility
-    
-    /// Create the clips output directory if needed
-    static func clipsDirectory() throws -> URL {
-        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let clipsURL = documentsURL.appendingPathComponent("SwingClips", isDirectory: true)
-        
-        if !FileManager.default.fileExists(atPath: clipsURL.path) {
-            try FileManager.default.createDirectory(at: clipsURL, withIntermediateDirectories: true)
-        }
-        
-        return clipsURL
     }
     
     private func exportSlowMotionClip(

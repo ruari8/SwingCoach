@@ -98,7 +98,8 @@ Files:
 - [TrimView.swift](../SwingCoach/TrimView/TrimView.swift)
 - [ThumbnailTimeline.swift](../SwingCoach/TrimView/ThumbnailTimeline.swift)
 - [VideoTrimmer.swift](../SwingCoach/Models/VideoTrimmer.swift)
-- [ModelBackedSwingDetector.swift](../SwingCoach/Models/ModelBackedSwingDetector.swift)
+- [SwingDetectorV3AssetDetector.swift](../SwingCoach/Models/SwingDetectorV3AssetDetector.swift)
+- [SwingDetectionTypes.swift](../SwingCoach/Models/SwingDetectionTypes.swift)
 - [GolfObjectDetector.swift](../SwingCoach/Models/GolfObjectDetector.swift)
 - [SwingObjectsYOLO11n.mlpackage](../SwingCoach/MLModels/SwingObjectsYOLO11n.mlpackage)
 
@@ -272,3 +273,17 @@ Current frontend `AnalysisResponse` expectation:
 1. Add API migration checklist once async analysis-run persistence/cancellation is designed.
 2. Add screen-by-screen state diagrams for capture -> trim -> analyze.
 3. Add QA matrix (permissions, iCloud assets, missing assets, offline behavior).
+
+## Code cleanup, September 2026
+
+`SwingDetectionTypes.swift` owns the shared detection result and live status types.
+Capture and Replay Debug use `SwingDetectorV3`; Trim uses `SwingDetectorV3AssetDetector`.
+The unused on-device, bright-blob, model-backed asset, and V2 asset implementations
+have been removed. The V2 and legacy live-model evaluators remain available under
+`detector_workbench/validation` with updated build commands.
+
+Library cards continue to open swing detail. The abandoned direct-playback cover,
+old analysis card, unused transferable import wrapper, and template screen were
+removed. The active Photos picker and shared playback controls are unchanged.
+Saved analysis video URLs retain the 45-minute refresh rule, now owned by
+`SavedAnalysisVideo.needsArtifactRefresh`.

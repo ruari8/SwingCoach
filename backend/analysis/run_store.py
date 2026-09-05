@@ -49,12 +49,6 @@ class RunStore:
         output.write_text(json.dumps(_to_serializable(payload), indent=2))
         return output
 
-    def save_npz(self, name: str, **arrays: Any) -> Path:
-        output = self.path(name)
-        serializable = {k: np.array(_to_serializable(v), dtype=object) for k, v in arrays.items()}
-        np.savez_compressed(output, **serializable)
-        return output
-
     def save_bytes(self, name: str, payload: bytes) -> Path:
         output = self.path(name)
         output.write_bytes(payload)
