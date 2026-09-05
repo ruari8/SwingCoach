@@ -133,6 +133,7 @@ struct LibraryView: View {
                                 Image(systemName: "trash")
                                     .foregroundColor(.red)
                             }
+                            .accessibilityLabel("Delete selected swings")
                         }
                     } else {
                         Button {
@@ -626,7 +627,7 @@ struct LibraryView: View {
 
                 if !swing.isReference {
                     Button(role: .destructive) {
-                        library.removeSwing(swing)
+                        library.removeSwings(withIDs: [swing.id])
                     } label: {
                         Label("Remove from Library", systemImage: "trash")
                     }
@@ -806,11 +807,7 @@ struct LibraryView: View {
     }
 
     private func deleteSelectedSwings() {
-        for id in selectedSwings {
-            if let swing = library.swings.first(where: { $0.id == id }) {
-                library.removeSwing(swing)
-            }
-        }
+        library.removeSwings(withIDs: selectedSwings)
         exitSelectionMode()
     }
 

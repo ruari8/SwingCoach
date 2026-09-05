@@ -224,11 +224,16 @@ class SwingLibrary: ObservableObject {
         return swing
     }
 
-    /// Remove a swing (doesn't delete from Photos - user manages that)
-    func removeSwing(_ swing: SavedSwing) {
-        swings.removeAll { $0.id == swing.id }
-        if let name = swing.localVideoFilename {
-            try? FileManager.default.removeItem(at: videosDirectory.appendingPathComponent(name))
+    /// Remove library entries and their local copies, saving the collection once.
+    /// Photos originals remain untouched.
+    func removeSwings(withIDs ids: Set<UUID>) {
+        let removed = swings.filter { ids.contains($0.id) }
+        guard !removed.isEmpty else { return }
+        swings.removeAll { ids.contains($0.id) }
+        for swing in removed {
+            if let name = swing.localVideoFilename {
+                try? FileManager.default.removeItem(at: videosDirectory.appendingPathComponent(name))
+            }
         }
         saveToDisk()
     }
@@ -270,7 +275,7 @@ class SwingLibrary: ObservableObject {
             }
         }
 
-        removeSwing(swing)
+        removeSwings(withIDs: [swing.id])
     }
     
     /// Mark swing as analyzed

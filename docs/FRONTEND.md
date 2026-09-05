@@ -56,7 +56,7 @@ Implemented feature set:
 - `SavedSwing.isFavorite` persists starred state. Starred personal swings sort before other personal swings, display a yellow star, and can be toggled from the card context menu or the swing detail header.
 - Swing detail is now video-first: opening an unanalyzed swing shows the original video across the usable area above the tab bar, with a bottom analyze action and an optional info sheet for metadata.
 - Analyzed swings show a status indicator on their library card.
-- Multi-select for batch analyze and batch delete (library-only delete, does not remove Photos asset).
+- Multi-select for batch analyze and batch delete. Library-only deletion removes the selected entries and app-owned copies in one collection update/save; it does not remove Photos assets. Single-item removal uses the same batch API.
 - Multi-select can export selected swings by copying the underlying Photos video resources into a temporary SwingCoach export folder, adding one `metadata.json` manifest with app-level swing metadata, and presenting the iOS share sheet for AirDrop/Files transfer. The manifest is for dataset traceability and is shared alongside the selected videos, not embedded into each movie file.
 - Playback with loading/error states and a shared in-frame scrubber plus gesture-driven transport on the video surface.
 - Export/playback utilities integrated through app sheets.
@@ -156,7 +156,7 @@ Implemented feature set:
 - The drawing tool loads the video track's dimensions and orientation before becoming available. Lines follow the visible video when rotating or resizing the screen, and strokes beginning in the letterbox are ignored. Lines saved before this correction may need clearing and redrawing once because the old format did not record the viewport needed to repair their coordinates.
 
 Review regression checks:
-- Run `scripts/verify-review.sh` on macOS with Xcode and FFmpeg. It creates synthetic media and a disposable Simulator, tests per-video analysis ownership and retries, verifies oriented video dimensions, and drives Library filtering, starred order, reference navigation, and drawing across layouts. It preserves logs, XCTest results and screenshots in `.verification-artifacts/review-fixes/` and removes its Simulator afterward. No phone, Photos originals, private reference assets, backend or upload is needed.
+- Run `scripts/verify-review.sh` on macOS with Xcode and FFmpeg. It creates synthetic media and a disposable Simulator, tests per-video analysis ownership and retries, verifies oriented video dimensions, and drives Library filtering, starred order, reference navigation, and drawing across layouts. It preserves logs, XCTest results and screenshots in `.verification-artifacts/review-fixes/` and removes its Simulator afterward. It then verifies bulk deletion and relaunch persistence, including preserved reference entries and local-file cleanup. No phone, Photos originals, private reference assets, backend or upload is needed.
 
 ## 6. Replay Debug Tab
 
@@ -273,6 +273,10 @@ Current frontend `AnalysisResponse` expectation:
 1. Add API migration checklist once async analysis-run persistence/cancellation is designed.
 2. Add screen-by-screen state diagrams for capture -> trim -> analyze.
 3. Add QA matrix (permissions, iCloud assets, missing assets, offline behavior).
+
+## Local performance verification
+
+See [Foundation performance](./FOUNDATION_PERFORMANCE.md) for measured Library/decode improvements, repeatable isolated probes, generated-fixture limits, and outstanding phone measurements.
 
 ## Code cleanup, September 2026
 
