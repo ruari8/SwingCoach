@@ -24,6 +24,18 @@ struct AppRootView: View {
     }
     
     var body: some View {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-ui-testing-auto-review") {
+            AutoReviewFixture()
+        } else {
+            appTabs
+        }
+        #else
+        appTabs
+        #endif
+    }
+
+    private var appTabs: some View {
         TabView(selection: $selection) {
             LibraryView(
                 onNavigateToCapture: {
@@ -70,6 +82,19 @@ struct AppRootView: View {
         #endif
     }
 }
+
+#if DEBUG
+/// Exercises the real review UI with local clips, without camera or Photos writes.
+private struct AutoReviewFixture: View {
+    @State private var swings = SwingLibrary.shared.swings.filter(\.isReference)
+
+    var body: some View {
+        AutoSwingReviewView(swings: swings) { swing in
+            swings.removeAll { $0.id == swing.id }
+        }
+    }
+}
+#endif
 
 enum Tab: Hashable {
     case library
