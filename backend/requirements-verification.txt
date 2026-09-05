@@ -1,0 +1,2 @@
+# Offline reset-pipeline verification and benchmarks. FFmpeg is a system tool.
+numpy>=1.24.0

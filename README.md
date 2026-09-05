@@ -101,6 +101,14 @@ The optional 3D/SAM dependency stack is not used by the reset analysis pipeline.
 
 ## Useful Checks
 
+Offline backend verification, with generated video fixtures and retained evidence:
+
+```bash
+python3 scripts/verify_backend.py
+```
+
+See [verification setup](docs/VERIFICATION.md) for minimal dependencies and worktree commands, and [performance findings](docs/PERFORMANCE.md) for measured results and remaining targets.
+
 Backend smoke and regression checks:
 
 ```bash

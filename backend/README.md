@@ -153,8 +153,8 @@ Response shape:
 ## Pipeline Outline
 
 1. Read video metadata.
-2. Extract the full source timeline.
-3. Render `base.mp4` and clean compatibility `annotated.mp4`.
+2. Decode and encode the full source timeline directly in FFmpeg, without intermediate PNG files or a Python list of frame images.
+3. Write `base.mp4` and identical clean compatibility `annotated.mp4`, then read the output frame count and display dimensions.
 4. Write empty `annotation_metadata.json` and `annotation_tracks.json`.
 5. Write empty metrics plus reset coaching summary.
 6. Persist run artifacts and timings.
@@ -181,6 +181,16 @@ Typical files per successful run:
 
 ## Local Test Commands
 
+For offline verification without R2 credentials, model weights, or private videos, run from the repository root:
+
+```bash
+python3 scripts/verify_backend.py
+```
+
+The runner checks Python, NumPy, FFmpeg, and ffprobe, then runs the real video artifact tests and run-state lifecycle check. Logs and a machine-readable summary go under `.verification-artifacts/backend/`. See [verification setup and benchmarks](../docs/VERIFICATION.md) for the minimal dependencies, worktree usage, and before/after comparisons.
+
+The video artifacts remain silent H.264/yuv420p MP4s. Source rotation is applied once. Every decoded frame receives a timestamp at the requested FPS, or the detected source FPS when no override is supplied. Variable source timestamps are normalized, as in the previous PNG path. Audio and original variable timing are not preserved. Generated overlays remain disabled.
+
 ```bash
 cd backend
 source venv/bin/activate
@@ -191,7 +201,7 @@ python test_pipeline_3d.py
 # 2D pipeline test
 python test_pipeline.py
 
-# Annotation reset contract test
+# Real FFmpeg artifact, rotation, timing, and decoded-pixel checks
 python test_annotation_tracks.py
 
 # Async run lifecycle test

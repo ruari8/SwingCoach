@@ -4,6 +4,7 @@ Assembles annotated frames into MP4 video output.
 """
 
 import io
+import math
 import os
 import subprocess
 import tempfile
@@ -54,6 +55,34 @@ class VideoExporter:
             return result.returncode == 0
         except FileNotFoundError:
             return False
+
+    def export_clean_video(self, video_bytes: bytes, fps: float) -> bytes:
+        """Encode every source frame without materializing a PNG sequence.
+
+        Like export_video, the result is silent, square-pixel H.264 playback at
+        the requested FPS. FFmpeg applies the source display rotation on decode.
+        Frame-number timestamps retain the existing FPS-override semantics.
+        """
+        from .frame_extractor import detect_video_extension
+
+        if not math.isfinite(fps) or fps <= 0:
+            raise ValueError("Video FPS must be finite and positive")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = Path(temp_dir) / f"input{detect_video_extension(video_bytes)}"
+            output = Path(temp_dir) / "output.mp4"
+            source.write_bytes(video_bytes)
+            result = subprocess.run([
+                "ffmpeg", "-v", "error", "-nostdin", "-y", "-i", str(source),
+                "-map", "0:v:0", "-an", "-map_metadata", "-1",
+                "-vf", f"settb=expr=1/{fps},setpts=N,setsar=1",
+                "-r", str(fps), "-fps_mode", "cfr",
+                "-c:v", "libx264", "-crf", str(self.crf),
+                "-preset", self.preset, "-pix_fmt", self.pixel_format,
+                "-movflags", "+faststart", str(output),
+            ], capture_output=True, text=True)
+            if result.returncode != 0:
+                raise RuntimeError(f"Clean video encoding failed: {result.stderr}")
+            return output.read_bytes()
 
     def export_video(
         self,

@@ -27,6 +27,12 @@ For each completed analysis run, the renderer writes:
 
 `annotation_tracks.json` currently keeps per-frame timing records but each frame has an empty `layers` object. There are no phase markers, confidence badges, guide layers, ball/contact evidence, shaft planes, pose skeletons, or path overlays.
 
+The reset pipeline converts the uploaded video directly to H.264/yuv420p with FFmpeg. It no longer extracts, stores, and reloads a PNG for every frame. The renderer reads the encoded MP4's actual frame count and dimensions before writing the track envelope. Both video filenames contain the same encoded bytes.
+
+Playback remains silent and starts at time zero. The output contains every decoded frame at the requested FPS, or the source FPS by default. A requested FPS changes playback speed, not the number of source frames. Source display rotation is applied during decoding and removed from the output. MP4 metadata is placed before video data for progressive playback.
+
+The former `artifact_frames` progress/timing stage is removed. Conversion and output probing are recorded in `artifacts`. Pixel values can differ from the former RGB PNG round trip because the direct conversion avoids that intermediate color conversion. [Offline verification](../../../docs/VERIFICATION.md) checks actual decoded pixels, rotation, timing, and the artifact contract.
+
 ## Disabled Work
 
 The reset pipeline does not run:

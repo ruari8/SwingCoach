@@ -26,6 +26,11 @@ This folder and `backend/docs` are the active documentation set.
 
 - [Frontend Documentation](./FRONTEND.md)
 
+## Verification and performance
+
+- [Run offline checks and performance comparisons](./VERIFICATION.md)
+- [Performance findings and remaining targets](./PERFORMANCE.md)
+
 ## Backend
 
 - [Backend README](../backend/README.md)

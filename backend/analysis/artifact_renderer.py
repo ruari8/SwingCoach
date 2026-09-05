@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections.abc import Sequence
 from typing import Any, Dict, List, Optional
 
 from .video_exporter import VideoExporter
+from .frame_extractor import FrameExtractor
 
 
 @dataclass
@@ -24,7 +26,7 @@ class ArtifactRenderer:
     def _empty_annotation_tracks(
         self,
         *,
-        frame_indices: List[int],
+        frame_indices: Sequence[int],
         video_fps: float,
         frame_width: int,
         frame_height: int,
@@ -56,27 +58,17 @@ class ArtifactRenderer:
     def render(
         self,
         run_store: Any,
-        frames: List[bytes],
-        poses2d: List[Optional[Any]],
-        frame_indices: List[int],
+        video_bytes: bytes,
         video_fps: float,
-        frame_width: int,
-        frame_height: int,
-        club2d_frames: List[Any],
-        poses3d: List[Optional[Any]],
-        club3d_frames: List[Any],
-        swing_phases: Optional[Any] = None,
-        artifact_frames: Optional[List[bytes]] = None,
-        artifact_frame_indices: Optional[List[int]] = None,
-        export_baked_overlays: bool = False,
     ) -> ArtifactRenderResult:
-        render_frames = artifact_frames or frames
-        render_frame_indices = artifact_frame_indices or frame_indices
-        if len(render_frames) != len(render_frame_indices):
-            render_frame_indices = list(range(len(render_frames)))
-
         exporter = VideoExporter()
-        base_video_bytes = exporter.export_video(render_frames, fps=video_fps)
+        base_video_bytes = exporter.export_clean_video(video_bytes, fps=video_fps)
+        # The encoded MP4 supplies the actual count and display dimensions. Input
+        # container metadata can omit counts or describe an unrotated image.
+        output_info = FrameExtractor().get_video_info(base_video_bytes)
+        frame_count = output_info["frame_count"]
+        if frame_count <= 0:
+            raise ValueError("Could not encode frames from uploaded video.")
         run_store.save_bytes("base.mp4", base_video_bytes)
 
         # Keep the legacy annotated-video URL usable, but make it the same clean
@@ -88,17 +80,17 @@ class ArtifactRenderer:
             "club_plane_angle_degrees": None,
             "swing_path_point_count": 0,
             "video_fps": video_fps,
-            "frame_count": len(render_frames),
+            "frame_count": frame_count,
             "pipeline_mode": "annotation_reset",
             "annotations_enabled": False,
         }
         run_store.save_json("annotation_metadata.json", metadata)
 
         tracks = self._empty_annotation_tracks(
-            frame_indices=render_frame_indices,
+            frame_indices=range(frame_count),
             video_fps=video_fps,
-            frame_width=frame_width,
-            frame_height=frame_height,
+            frame_width=output_info["width"],
+            frame_height=output_info["height"],
         )
         run_store.save_json("annotation_tracks.json", tracks)
 

@@ -75,13 +75,6 @@ class SwingCoachPipeline3D:
                 },
             )
 
-        emit("artifact_frames", 0.35, "Preparing clean video artifact")
-        with run_store.stage("artifact_frames"):
-            artifact_frames = self.frame_extractor.extract_frames(video_bytes, sample_rate=1)
-            artifact_indices = list(range(len(artifact_frames)))
-            if not artifact_frames:
-                raise ValueError("Could not extract frames from uploaded video.")
-
         run_store.save_json(
             "events.json",
             {
@@ -101,19 +94,8 @@ class SwingCoachPipeline3D:
         with run_store.stage("artifacts"):
             rendered = self.artifact_renderer.render(
                 run_store=run_store,
-                frames=artifact_frames,
-                poses2d=[],
-                frame_indices=artifact_indices,
+                video_bytes=video_bytes,
                 video_fps=fps,
-                frame_width=frame_width,
-                frame_height=frame_height,
-                club2d_frames=[],
-                poses3d=[],
-                club3d_frames=[],
-                swing_phases=None,
-                artifact_frames=artifact_frames,
-                artifact_frame_indices=artifact_indices,
-                export_baked_overlays=False,
             )
 
         emit("coaching", 0.9, "Building reset summary")
