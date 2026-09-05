@@ -167,10 +167,6 @@ Output location:
 Typical files per successful run:
 - `input_meta.json`
 - `events.json`
-- `poses_2d.npz`
-- `poses_3d.npz`
-- `club_2d.npz`
-- `club_3d.npz`
 - `metrics.json`
 - `coach_summary.json`
 - `base.mp4`
@@ -185,7 +181,7 @@ Typical files per successful run:
 cd backend
 source venv/bin/activate
 
-# Unified pipeline integration test
+# Synthetic pipeline video, pixel, and output-contract checks
 python test_pipeline_3d.py
 
 # 2D pipeline test
@@ -197,8 +193,11 @@ python test_annotation_tracks.py
 # Async run lifecycle test
 python test_analysis_runs.py
 
-# Temporal smoothing tests
+# Seeded smoothing accuracy and jitter checks
 python test_temporal_smoothing.py
+
+# Decode exported animation timing and joint motion
+python test_animation_export.py
 ```
 
 ## Annotation Reset Notes
@@ -210,3 +209,21 @@ The previous experimental annotation implementation is preserved in git commit `
 1. Generated annotations and metrics are currently absent by design.
 2. The overlay-track artifact is present for API compatibility but has no generated layers.
 3. Async run state is currently in-memory; production deployment should persist run state if jobs need to survive process restarts.
+
+The default `test_pipeline_3d.py` check generates a one-second local fixture with
+FFmpeg and verifies the decoded output, source timeline, and empty annotation
+contract. It requires no uploaded video, R2 credentials, or model weights. Passing
+a video path additionally runs that clip for manual inspection. The unused
+`--max-dense` option was removed because the reset pipeline has no dense scan.
+
+Synthetic smoothing and animation checks use the optional temporal-smoothing
+requirements, but do not run SAM inference. Identity smoothing, frozen movement,
+failed exports, and incorrect exported joint data fail their assertions. Optional
+real-video runs report failure through a nonzero process exit status.
+
+The reset renderer takes video frames, frame indices, frame rate, and dimensions.
+It no longer accepts ignored pose, club, phase, or overlay-toggle inputs. Empty
+pose/club NPZ placeholders and their unused writer were removed. Video, track,
+metrics, coaching, and progress contracts remain available. Disconnected body-3D,
+club-fusion, and dense-window orchestration is preserved in git history rather
+than exposed as current pipeline modules.

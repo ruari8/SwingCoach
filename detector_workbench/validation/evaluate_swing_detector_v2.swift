@@ -12,8 +12,7 @@
 //    xcrun swiftc -parse-as-library \
 //      -framework AVFoundation -framework CoreML -framework Vision \
 //      -framework CoreGraphics -framework CoreVideo -framework ImageIO \
-//      SwingCoach/Models/OnDeviceSwingDetector.swift \
-//      SwingCoach/Models/LiveSwingDetector.swift \
+//      SwingCoach/Models/SwingDetectionTypes.swift \
 //      SwingCoach/Models/LiveSwingDetecting.swift \
 //      SwingCoach/Models/GolfObjectDetector.swift \
 //      SwingCoach/Models/SwingDetectorV2/*.swift \

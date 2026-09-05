@@ -273,14 +273,6 @@ class SwingLibrary: ObservableObject {
         removeSwing(swing)
     }
     
-    /// Update swing metadata
-    func updateSwing(_ swing: SavedSwing) {
-        if let index = swings.firstIndex(where: { $0.id == swing.id }) {
-            swings[index] = swing
-            saveToDisk()
-        }
-    }
-    
     /// Mark swing as analyzed
     func markAnalyzed(_ swing: SavedSwing) {
         if let index = swings.firstIndex(where: { $0.id == swing.id }) {
@@ -421,34 +413,6 @@ class SwingLibrary: ObservableObject {
         }
 
         return AVPlayerItem(asset: avAsset)
-    }
-    
-    /// Get the video URL for a swing (for export/upload - may not work for slow-mo)
-    func getVideoURL(for swing: SavedSwing) async -> URL? {
-        if let localURL = localVideoURL(for: swing) {
-            return localURL
-        }
-
-        return await withCheckedContinuation { continuation in
-            let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [swing.photoAssetID], options: nil)
-            
-            guard let asset = fetchResult.firstObject else {
-                continuation.resume(returning: nil)
-                return
-            }
-            
-            let options = PHVideoRequestOptions()
-            options.version = .current
-            options.deliveryMode = .highQualityFormat
-            
-            PHImageManager.default().requestAVAsset(forVideo: asset, options: options) { avAsset, _, _ in
-                if let urlAsset = avAsset as? AVURLAsset {
-                    continuation.resume(returning: urlAsset.url)
-                } else {
-                    continuation.resume(returning: nil)
-                }
-            }
-        }
     }
     
     /// Check if Photos contains the assets we expect (user may have deleted some)

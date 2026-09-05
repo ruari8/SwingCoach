@@ -790,8 +790,7 @@ Swift/Core ML live evaluator:
 xcrun swiftc -parse-as-library \
   -framework AVFoundation -framework CoreML -framework Vision \
   -framework CoreGraphics -framework CoreVideo -framework ImageIO \
-  SwingCoach/Models/OnDeviceSwingDetector.swift \
-  SwingCoach/Models/LiveSwingDetector.swift \
+  SwingCoach/Models/SwingDetectionTypes.swift \
   SwingCoach/Models/GolfObjectDetector.swift \
   SwingCoach/Models/ModelBackedSwingDetector.swift \
   detector_workbench/validation/evaluate_live_model_detector.swift \

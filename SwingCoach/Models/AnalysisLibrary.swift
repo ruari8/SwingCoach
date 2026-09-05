@@ -36,6 +36,10 @@ struct SavedAnalysisVideo: Codable, Equatable {
     let layers: [SavedVisualizationLayer]
     var refreshedAt: Date
 
+    var needsArtifactRefresh: Bool {
+        Date().timeIntervalSince(refreshedAt) > 45 * 60
+    }
+
     init(
         key: String,
         url: String,
@@ -98,7 +102,6 @@ final class AnalysisLibrary: ObservableObject {
     static let shared = AnalysisLibrary()
 
     private let storageURL: URL
-    private let signedURLRefreshInterval: TimeInterval = 45 * 60
 
     private init() {
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
@@ -173,15 +176,6 @@ final class AnalysisLibrary: ObservableObject {
         video.refreshedAt = Date()
         analyses[index].annotatedVideo = video
         saveToDisk()
-    }
-
-    func updateAnnotatedVideoURL(for analysisID: String, url: String) {
-        updateAnnotatedVideoURLs(for: analysisID, url: url)
-    }
-
-    func needsArtifactRefresh(_ analysis: SavedAnalysis) -> Bool {
-        guard let video = analysis.annotatedVideo else { return false }
-        return Date().timeIntervalSince(video.refreshedAt) > signedURLRefreshInterval
     }
 
     private func saveToDisk() {

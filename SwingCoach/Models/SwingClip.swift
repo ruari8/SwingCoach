@@ -83,20 +83,3 @@ struct SwingClip: Identifiable, Codable {
         case id, startTime, endTime, vantage, notes, detectionImpactTime, detectionDeclaredAt, createdAt
     }
 }
-
-/// Represents a trimming session - the source video and clips extracted from it
-struct TrimSession {
-    let sourceURL: URL
-    let asset: AVAsset
-    var clips: [SwingClip]
-    var defaultVantage: Vantage
-    
-    init(sourceURL: URL, defaultVantage: Vantage = .dtl) {
-        self.sourceURL = sourceURL
-        self.asset = AVURLAsset(url: sourceURL)
-        self.clips = []
-        self.defaultVantage = defaultVantage
-    }
-}
-
-

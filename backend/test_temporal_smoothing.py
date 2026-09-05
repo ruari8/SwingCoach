@@ -127,8 +127,8 @@ def test_temporal_smoother_on_video(video_path: str, fps: int = 30, sample_rate:
 
         # Run 3D detection
         logger.info("Running 3D body detection (this will take a while)...")
-        detector = Body3DDetector()
-        poses = detector.detect_batch(frames, clear_cache=False)
+        with Body3DDetector() as detector:
+            poses = detector.detect_batch(frames, clear_cache=False)
         poses = [p for p in poses if p is not None]
         logger.info(f"Detected poses in {len(poses)} frames")
 
@@ -201,6 +201,8 @@ def test_synthetic_noisy_sequence():
 
     # Create synthetic poses with known trajectory
     n_frames = 60
+    rng = np.random.default_rng(7)
+    truth = []
     poses = []
 
     for i in range(n_frames):
@@ -211,10 +213,11 @@ def test_synthetic_noisy_sequence():
         true_z = -0.5 + t * 1.0  # Move from -0.5 to 0.5
 
         # Add Gaussian noise
+        truth.append([true_x, true_y, true_z])
         noise_scale = 0.02  # 2cm noise
-        x = true_x + np.random.normal(0, noise_scale)
-        y = true_y + np.random.normal(0, noise_scale)
-        z = true_z + np.random.normal(0, noise_scale)
+        x = true_x + rng.normal(0, noise_scale)
+        y = true_y + rng.normal(0, noise_scale)
+        z = true_z + rng.normal(0, noise_scale)
 
         # Create minimal Pose3DResult with proper Keypoint3D dataclasses
         pose = Pose3DResult(
@@ -245,7 +248,19 @@ def test_synthetic_noisy_sequence():
 
     reduction = (1 - jitter_after[0] / jitter_before[0]) * 100
     logger.info(f"Jitter reduction: {reduction:.1f}%")
-    logger.info("✓ Synthetic test passed\n")
+    raw = np.array([[p.keypoints_3d["right_wrist"].x,
+                     p.keypoints_3d["right_wrist"].y,
+                     p.keypoints_3d["right_wrist"].z] for p in poses])
+    smoothed = np.array([[p.keypoints_3d["right_wrist"].x,
+                          p.keypoints_3d["right_wrist"].y,
+                          p.keypoints_3d["right_wrist"].z] for p in poses_smooth])
+    assert len(poses_smooth) == n_frames
+    raw_error = np.sqrt(np.mean((raw - truth) ** 2))
+    smooth_error = np.sqrt(np.mean((smoothed - truth) ** 2))
+    assert smooth_error < raw_error * 0.85, (raw_error, smooth_error)
+    assert jitter_after[1] < jitter_before[1] * 0.75
+    assert smoothed[-1, 2] - smoothed[0, 2] > 0.85
+    logger.info("Synthetic smoothing accuracy and jitter checks passed")
 
     return True
 
@@ -264,7 +279,8 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         video_path = sys.argv[1]
         fps = int(sys.argv[2]) if len(sys.argv) > 2 else 30
-        test_temporal_smoother_on_video(video_path, fps=fps)
+        if not test_temporal_smoother_on_video(video_path, fps=fps):
+            raise SystemExit(1)
     else:
         logger.info("To test on real video, run:")
         logger.info("  python test_temporal_smoothing.py <video_path> [fps]")

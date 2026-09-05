@@ -695,7 +695,7 @@ struct AnnotatedAnalysisVideo: View {
         guard playerItem == nil else { return }
         let existingPlaybackURL = video.baseUrl ?? video.url
 
-        if Date().timeIntervalSince(video.refreshedAt) > 45 * 60 {
+        if video.needsArtifactRefresh {
             Task {
                 do {
                     let refreshed = try await SwingCoachAPI.shared.refreshArtifactURL(key: video.key)
