@@ -22,10 +22,10 @@ No tracked source instantiates these types:
 
 | Candidate | Location | Approximate removable lines |
 | --- | --- | ---: |
-| `OnDeviceSwingDetector` and its private helpers | [OnDeviceSwingDetector.swift](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/SwingCoach/Models/OnDeviceSwingDetector.swift), from line 36 | 581 |
-| `LiveSwingDetector` and its private helpers | [LiveSwingDetector.swift](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/SwingCoach/Models/LiveSwingDetector.swift), from line 52 | 939 |
-| `ModelBackedSwingDetector` actor | [ModelBackedSwingDetector.swift](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/SwingCoach/Models/ModelBackedSwingDetector.swift), lines 486 through 1149 | 664 |
-| `SwingDetectorV2AssetDetector` | [SwingDetectorV2AssetDetector.swift](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/SwingCoach/Models/SwingDetectorV2AssetDetector.swift) | 119 |
+| `OnDeviceSwingDetector` and its private helpers | [OnDeviceSwingDetector.swift](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/SwingCoach/Models/OnDeviceSwingDetector.swift), from line 36 | 581 |
+| `LiveSwingDetector` and its private helpers | [LiveSwingDetector.swift](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/SwingCoach/Models/LiveSwingDetector.swift), from line 52 | 939 |
+| `ModelBackedSwingDetector` actor | [ModelBackedSwingDetector.swift](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/SwingCoach/Models/ModelBackedSwingDetector.swift), lines 486 through 1149 | 664 |
+| `SwingDetectorV2AssetDetector` | [SwingDetectorV2AssetDetector.swift](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/SwingCoach/Models/SwingDetectorV2AssetDetector.swift) | 119 |
 
 Capture and Replay Debug construct `SwingDetectorV3`; Trim constructs `SwingDetectorV3AssetDetector`. The older source filenames still occur in evaluator build lists because they contain shared declarations. `DetectedSwing` lives above the unused on-device actor. `LiveSwingDetectionStatus` and `LiveSwingDetectionSnapshot` live above the unused live detector.
 
@@ -37,9 +37,9 @@ Extract the shared declarations to a clearly named file, update evaluator source
 
 **High value; demonstrated with controlled failure probes.**
 
-- [test_temporal_smoothing.py](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/backend/test_temporal_smoothing.py), `test_synthetic_noisy_sequence`, line 194, prints a jitter reduction and returns `True` without asserting an improvement. Replacing `smooth_poses` with an identity function produced **0% improvement and “Synthetic test passed.”** Use a seeded trajectory and check error against the known motion, plus a meaningful jitter bound. Checking jitter alone would also reward flattening the entire swing.
-- [test_animation_export.py](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/backend/test_animation_export.py), line 85 and the script entry point, catches failures and returns booleans. The entry point logs them without a failing exit status. Forcing `export_animation` to return `False` produced a logged failure and normal script termination. Fail the command when an expected export fails, and inspect the generated animation before treating it as a regression test. Preserve a manual demo separately if that is the intended purpose.
-- [test_pipeline_3d.py](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/backend/test_pipeline_3d.py), line 16, checks the absence of three attribute names. It passes without calling `analyze_video` at all, even when that method is replaced with a function that would fail immediately. Replace this with an output-contract check. The separate `main()` does process video, but primarily logs results; it does not make the attribute test behavioral.
+- [test_temporal_smoothing.py](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/backend/test_temporal_smoothing.py), `test_synthetic_noisy_sequence`, line 194, prints a jitter reduction and returns `True` without asserting an improvement. Replacing `smooth_poses` with an identity function produced **0% improvement and “Synthetic test passed.”** Use a seeded trajectory and check error against the known motion, plus a meaningful jitter bound. Checking jitter alone would also reward flattening the entire swing.
+- [test_animation_export.py](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/backend/test_animation_export.py), line 85 and the script entry point, catches failures and returns booleans. The entry point logs them without a failing exit status. Forcing `export_animation` to return `False` produced a logged failure and normal script termination. Fail the command when an expected export fails, and inspect the generated animation before treating it as a regression test. Preserve a manual demo separately if that is the intended purpose.
+- [test_pipeline_3d.py](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/backend/test_pipeline_3d.py), line 16, checks the absence of three attribute names. It passes without calling `analyze_video` at all, even when that method is replaced with a function that would fail immediately. Replace this with an output-contract check. The separate `main()` does process video, but primarily logs results; it does not make the attribute test behavioral.
 
 These findings do not justify deleting the test suite. The annotation-track contract test and run-state test both passed during this audit and assert observable results. The visual tests check pixels, and the V3 evidence tests exercise useful adversarial cases. Keep those.
 
@@ -47,9 +47,9 @@ These findings do not justify deleting the test suite. The annotation-track cont
 
 **High value; high confidence in source evidence.**
 
-[AnalyseView.swift](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/SwingCoach/AnalyseView.swift) still defines the roughly 128-line `AnalysisCard` at line 480. It has no caller. The dashboard uses `AnalysisQueueRow` and `RecentAnalysisRow`.
+[AnalyseView.swift](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/SwingCoach/AnalyseView.swift) still defines the roughly 128-line `AnalysisCard` at line 480. It has no caller. The dashboard uses `AnalysisQueueRow` and `RecentAnalysisRow`.
 
-[LibraryView.swift](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/SwingCoach/LibraryView.swift) still has an uncalled `loadAndPlay` function. It is the only path that sets the old full-screen playback and loading state to true. The associated state, cover, loading overlay, and error alert therefore remain after card navigation moved to swing detail. Remove that branch together. **Keep `SwingPlaybackView` and the shared playback controls**, which have other callers.
+[LibraryView.swift](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/SwingCoach/LibraryView.swift) still has an uncalled `loadAndPlay` function. It is the only path that sets the old full-screen playback and loading state to true. The associated state, cover, loading overlay, and error alert therefore remain after card navigation moved to swing detail. Remove that branch together. **Keep `SwingPlaybackView` and the shared playback controls**, which have other callers.
 
 `VideoFileTransferable` only refers to itself in its transfer representation; the import flow uses `VideoPickerWithProgress`. `ContentView` is the template “Hello, Golf!” screen, referenced only by its own preview. `TrimSession` in `SwingClip.swift` has no caller. These are small, straightforward deletion candidates.
 
@@ -61,9 +61,9 @@ Verify library-card navigation, import-to-trim, and the remaining playback entry
 
 These modules have no imports or callers in the tracked Python or Swift source:
 
-- [body3d_runner.py](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/backend/analysis/body3d_runner.py), 83 lines.
-- [club3d_fuser.py](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/backend/analysis/club3d_fuser.py), 222 lines.
-- [event_window_selector.py](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/backend/analysis/event_window_selector.py), 66 lines.
+- [body3d_runner.py](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/backend/analysis/body3d_runner.py), 83 lines.
+- [club3d_fuser.py](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/backend/analysis/club3d_fuser.py), 222 lines.
+- [event_window_selector.py](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/backend/analysis/event_window_selector.py), 66 lines.
 
 That is 371 lines of disconnected pipeline code. The reset pipeline no longer uses their orchestration. Delete them if the historical implementation in git is sufficient, or retain them under an explicit experiment with a real entry point. Do not leave them looking like components of the current pipeline.
 
@@ -73,9 +73,9 @@ This finding is deliberately narrower than “delete all old ML code.” Several
 
 **Medium value; confirmed by AST inspection and callers.**
 
-[ArtifactRenderer.render](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/backend/analysis/artifact_renderer.py), line 56, accepts six parameters it never reads: `poses2d`, `club2d_frames`, `poses3d`, `club3d_frames`, `swing_phases`, and `export_baked_overlays`. The pipeline supplies empty values to satisfy this obsolete signature. Even passing `export_baked_overlays=True` cannot enable overlays.
+[ArtifactRenderer.render](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/backend/analysis/artifact_renderer.py), line 56, accepts six parameters it never reads: `poses2d`, `club2d_frames`, `poses3d`, `club3d_frames`, `swing_phases`, and `export_baked_overlays`. The pipeline supplies empty values to satisfy this obsolete signature. Even passing `export_baked_overlays=True` cannot enable overlays.
 
-[pipeline_3d.py](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/backend/analysis/pipeline_3d.py) also accepts `max_dense_frames`, but only records it as metadata. The test CLI still claims `--max-dense` caps frames for faster runs. Remove the inert parameter and option rather than implying they work.
+[pipeline_3d.py](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/backend/analysis/pipeline_3d.py) also accepts `max_dense_frames`, but only records it as metadata. The test CLI still claims `--max-dense` caps frames for faster runs. Remove the inert parameter and option rather than implying they work.
 
 The pipeline writes four empty pose/club NPZ files. No tracked consumer reads those filenames. They are documented artifacts, so removing them requires updating the backend docs and checking for any local consumers. Keep the current public video and track response fields while compatibility requires them. Empty overlay output itself is an explicit product decision, not a defect identified by this audit.
 
@@ -83,7 +83,7 @@ The pipeline writes four empty pose/club NPZ files. No tracked consumer reads th
 
 **Small, clear simplification; high confidence.**
 
-[ClubTrackerV3.swift](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/SwingCoach/Models/SwingDetectorV3/ClubTrackerV3.swift), lines 29 through 34, defines a state-free class with an empty `reset()` and an `update(frame:lock:)` that does nothing. `SwingDetectorV3` owns it, resets it, and calls its update method before computing evidence from the supplied frame window.
+[ClubTrackerV3.swift](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/SwingCoach/Models/SwingDetectorV3/ClubTrackerV3.swift), lines 29 through 34, defines a state-free class with an empty `reset()` and an `update(frame:lock:)` that does nothing. `SwingDetectorV3` owns it, resets it, and calls its update method before computing evidence from the supplied frame window.
 
 Expose the evidence calculation as a static function or equivalent value operation, then delete the object ownership and lifecycle calls. This removes a misleading dependency on previous updates. The same pattern exists in V2, but changing the retained baseline is a separate choice. Preserve the evidence calculation and verify its existing behavior tests; the calculation itself is useful.
 
@@ -91,7 +91,7 @@ Expose the evidence calculation as a static function or equivalent value operati
 
 **Small cleanup; high confidence in caller evidence.**
 
-[AnalysisLibrary.swift](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/SwingCoach/Models/AnalysisLibrary.swift), line 178, has an unused `updateAnnotatedVideoURL` wrapper around `updateAnnotatedVideoURLs`. Its `needsArtifactRefresh` method is also unused, while `AnnotatedAnalysisVideo.prepareArtifacts` separately hardcodes the same 45-minute rule in [AnalysisResultView.swift](https://github.com/ruari8/SwingCoach/blob/843fd0553a5ddd627eb4fdf55465b715da4774ea/SwingCoach/AnalysisResultView.swift), line 698.
+[AnalysisLibrary.swift](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/SwingCoach/Models/AnalysisLibrary.swift), line 178, has an unused `updateAnnotatedVideoURL` wrapper around `updateAnnotatedVideoURLs`. Its `needsArtifactRefresh` method is also unused, while `AnnotatedAnalysisVideo.prepareArtifacts` separately hardcodes the same 45-minute rule in [AnalysisResultView.swift](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/SwingCoach/AnalysisResultView.swift), line 698.
 
 Delete the unused wrapper. Put the expiry rule where the actual caller can use it, or remove the unused alternative. Leaving two implementations suggests a shared policy that does not exist.
 
@@ -117,7 +117,7 @@ backend/venv/bin/python backend/test_analysis_runs.py
 backend/venv/bin/python backend/test_annotation_tracks.py
 ```
 
-All four commands completed successfully during the audit. The probe command succeeds when it reproduces the documented weaknesses; it is **not** a product acceptance test. Replacements exist only in that Python process. No production methods were edited.
+All four commands completed successfully during the original audit. At that revision, the probe command reproduced the weaknesses. After cleanup, the same command first requires healthy output checks, then succeeds only if the repaired tests reject injected faults. Replacements exist only in the probe processes. It remains a focused test-quality check rather than full product acceptance.
 
 The source scan includes declarations and comments and cannot establish safe deletion by itself. Findings above add caller and behavior inspection. The script intentionally stays small and specific to this audit.
 
