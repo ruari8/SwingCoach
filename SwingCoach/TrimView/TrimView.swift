@@ -988,7 +988,7 @@ struct TrimView: View {
                 for (clip, url) in zip(clipsToExport, exportedURLs) {
                     if let assetID = await PHPhotoLibrary.saveVideoAndGetID(url: url) {
                         let libraryThumbnail = await immediateLibraryThumbnail(for: clip, exportAsset: exportAsset)
-                        await MainActor.run {
+                        await MainActor.run { () -> Void in
                             _ = SwingLibrary.shared.addSwing(
                                 photoAssetID: assetID,
                                 vantage: clip.vantage,

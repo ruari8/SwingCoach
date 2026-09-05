@@ -83,6 +83,8 @@ See [backend/README.md](backend/README.md) and [backend/docs/README.md](backend/
 3. For local backend work, run the backend on `http://127.0.0.1:8000`.
 4. In DEBUG builds, use `Library > Experiments` to switch between local, deployed, custom LAN, real analysis, and mock analysis modes.
 
+The project uses Xcode 26.2 recommended settings. App and test targets inherit the development team from the project; change signing teams at the project level. String-catalog symbol generation is enabled for the project, with test targets opting out.
+
 The simulator can reach the local backend directly at `127.0.0.1`. A physical iPhone needs a custom backend URL using the Mac's LAN IP, for example `http://192.168.1.23:8000`.
 
 ### Backend
