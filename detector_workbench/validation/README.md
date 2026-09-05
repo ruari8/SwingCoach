@@ -2,6 +2,10 @@
 
 These scripts validate the app's model-backed live detector against local fixture videos and exported SwingCoach clips.
 
+## Performance profiling
+
+Use `python3 scripts/profile_detector.py --video /absolute/path/to/clip.mp4 --output .verification-artifacts/profile/run-1` from the repository root for an isolated optimized V3 build with repeated timing runs and input/source/model hashes. Add `--compare /path/to/baseline/report.json` to require identical settings, detections, and frame counts. The evaluator now emits model setup, synchronous sample-read wait, and detector processing durations. See [Foundation performance](../../docs/FOUNDATION_PERFORMANCE.md) for interpretation, the tensor equivalence probe, and device limits.
+
 ## V3 Swing Detector
 
 Fast production-module regression checks cover club ownership under unrelated

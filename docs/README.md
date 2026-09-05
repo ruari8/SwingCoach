@@ -25,6 +25,7 @@ This folder and `backend/docs` are the active documentation set.
 ## Frontend
 
 - [Frontend Documentation](./FRONTEND.md)
+- [Foundation app performance and verification](./FOUNDATION_PERFORMANCE.md)
 
 ## Backend
 

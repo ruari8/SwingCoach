@@ -2,6 +2,10 @@
 
 Implemented and app-wired on 2026-09-02. V3 is the detector used by live Capture, Replay Debug, and Trim/import detection. V2 remains in source as the historical comparison baseline.
 
+## Local performance measurement
+
+`GolfObjectDetector` resolves model-output strides and storage type once per tensor before reading predictions. [Foundation performance](./FOUNDATION_PERFORMANCE.md) records before/after output-equivalence checks and replay timings, plus the isolated profiling commands. Model inference, thresholds, and sampling are unchanged by this optimization; Mac measurements do not establish physical-iPhone performance.
+
 ## Runtime flow
 
 V3 records every delivered camera frame to the rolling video buffer while the analysis scheduler samples the same timestamped stream at 8 fps when scanning and up to 16 fps during a swing episode.

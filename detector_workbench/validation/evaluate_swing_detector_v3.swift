@@ -52,6 +52,9 @@ private struct V3Output: Encodable {
     let processedFrames: Int
     let averageProcessingTimeMS: Double
     let wallClockElapsedSeconds: Double
+    let sampleReadSeconds: Double
+    let sampleProcessingSeconds: Double
+    let modelSetupSeconds: Double
     let detections: [V3DetectionOut]
     let traces: [SwingCandidateTrace]
     let sampling: [SwingSamplingTrace]
@@ -158,6 +161,7 @@ struct EvaluateSwingDetectorV3 {
         )
         guard reader.startReading() else { throw reader.error ?? EvaluationErrorV3.readerSetupFailed }
 
+        let modelStartedAt = Date()
         let configuration = SwingDetectorV3Configuration.live(
             sourceTimeScale: sourceTimeScale,
             lowSampleFPS: lowFPS,
@@ -176,13 +180,20 @@ struct EvaluateSwingDetectorV3 {
             throw EvaluationErrorV3.modelUnavailable(startupSnapshot.detailMessage)
         }
 
+        let modelSetupSeconds = Date().timeIntervalSince(modelStartedAt)
+        var sampleReadSeconds = 0.0
+        var sampleProcessingSeconds = 0.0
         var firstSampleTime: CMTime?
         var lastSubmittedSourceTime = -Double.greatestFiniteMagnitude
         var lastSourceTime = 0.0
         var decodedFrames = 0
         let startedAt = Date()
 
-        while reader.status == .reading, let sampleBuffer = output.copyNextSampleBuffer() {
+        while reader.status == .reading {
+            let readStartedAt = Date()
+            let nextSample = output.copyNextSampleBuffer()
+            sampleReadSeconds += Date().timeIntervalSince(readStartedAt)
+            guard let sampleBuffer = nextSample else { break }
             decodedFrames += 1
             if decodedFrames > maxFrames { break }
 
@@ -197,12 +208,14 @@ struct EvaluateSwingDetectorV3 {
             lastSubmittedSourceTime = sourceTime
             lastSourceTime = sourceTime
 
+            let processingStartedAt = Date()
             _ = detector.process(
                 sampleBuffer: sampleBuffer,
                 recordingTime: sourceTime,
                 orientation: orientation,
                 orientedImageSize: orientedSize
             )
+            sampleProcessingSeconds += Date().timeIntervalSince(processingStartedAt)
         }
 
         if reader.status == .failed { throw reader.error ?? EvaluationErrorV3.readerSetupFailed }
@@ -234,6 +247,9 @@ struct EvaluateSwingDetectorV3 {
             processedFrames: detector.processedFrames,
             averageProcessingTimeMS: detector.averageProcessingMS,
             wallClockElapsedSeconds: elapsed,
+            sampleReadSeconds: sampleReadSeconds,
+            sampleProcessingSeconds: sampleProcessingSeconds,
+            modelSetupSeconds: modelSetupSeconds,
             detections: detections.map { detection in
                 V3DetectionOut(
                     start: CMTimeGetSeconds(detection.startTime) + sourceOffset,

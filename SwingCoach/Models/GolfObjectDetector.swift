@@ -105,6 +105,25 @@ nonisolated final class GolfObjectDetector {
             return []
         }
 
+        // Tensor layout and storage type are constant for this output. Resolve
+        // them once instead of bridging strides and binding storage per scalar.
+        let channelStride = output.strides[1].intValue
+        let predictionStride = output.strides[2].intValue
+        let value: (Int, Int) -> Double
+        switch output.dataType {
+        case .float16:
+            let pointer = output.dataPointer.assumingMemoryBound(to: UInt16.self)
+            value = { Double(Float16(bitPattern: pointer[$0 * channelStride + $1 * predictionStride])) }
+        case .float32:
+            let pointer = output.dataPointer.assumingMemoryBound(to: Float.self)
+            value = { Double(pointer[$0 * channelStride + $1 * predictionStride]) }
+        case .double:
+            let pointer = output.dataPointer.assumingMemoryBound(to: Double.self)
+            value = { pointer[$0 * channelStride + $1 * predictionStride] }
+        default:
+            value = { output[[0, NSNumber(value: $0), NSNumber(value: $1)]].doubleValue }
+        }
+
         let predictionCount = output.shape[2].intValue
         var candidatesByClass: [GolfObjectClass: [GolfObjectDetection]] = [:]
 
@@ -113,7 +132,7 @@ nonisolated final class GolfObjectDetector {
             var bestConfidence = 0.0
 
             for objectClass in GolfObjectClass.allCases {
-                let confidence = value(output, channel: 4 + objectClass.rawValue, index: index)
+                let confidence = value(4 + objectClass.rawValue, index)
                 if confidence > bestConfidence {
                     bestConfidence = confidence
                     bestClass = objectClass
@@ -124,10 +143,10 @@ nonisolated final class GolfObjectDetector {
                 continue
             }
 
-            let centerX = value(output, channel: 0, index: index)
-            let centerY = value(output, channel: 1, index: index)
-            let width = value(output, channel: 2, index: index)
-            let height = value(output, channel: 3, index: index)
+            let centerX = value(0, index)
+            let centerY = value(1, index)
+            let width = value(2, index)
+            let height = value(3, index)
             let modelRect = CGRect(
                 x: centerX - width / 2,
                 y: centerY - height / 2,
@@ -150,25 +169,6 @@ nonisolated final class GolfObjectDetector {
             .flatMap { objectClass, detections in
                 nonMaximumSuppression(detections, limit: objectClass == .golfBallCandidate ? 12 : 8)
             }
-    }
-
-    private func value(_ output: MLMultiArray, channel: Int, index: Int) -> Double {
-        let strides = output.strides.map(\.intValue)
-        let offset = channel * strides[1] + index * strides[2]
-
-        switch output.dataType {
-        case .float16:
-            let pointer = output.dataPointer.bindMemory(to: UInt16.self, capacity: output.count)
-            return Double(Float16(bitPattern: pointer[offset]))
-        case .float32:
-            let pointer = output.dataPointer.bindMemory(to: Float.self, capacity: output.count)
-            return Double(pointer[offset])
-        case .double:
-            let pointer = output.dataPointer.bindMemory(to: Double.self, capacity: output.count)
-            return pointer[offset]
-        default:
-            return output[[NSNumber(value: 0), NSNumber(value: channel), NSNumber(value: index)]].doubleValue
-        }
     }
 
     private func sourceRect(fromModelRect modelRect: CGRect, orientedImageSize: CGSize) -> CGRect {
