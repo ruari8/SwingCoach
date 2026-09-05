@@ -8,6 +8,12 @@ SwingCoach is an AI golf coaching system combining:
 
 This file is the operator/LLM quick guide. Detailed docs are listed below.
 
+## Starting work
+
+Before starting implementation, use your judgment to find or create a relevant ticket and either continue existing work or use a separate branch and worktree, keeping unrelated tasks isolated when needed. Small, low-risk changes can stay with existing work.
+
+Ask me for clarification when the scope, relationship to existing work, or where to work is unclear.
+
 ## Canonical Documentation
 
 - [Root README](./README.md)
