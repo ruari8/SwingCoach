@@ -35,6 +35,10 @@ Triage uses the standard `needs-triage`, `needs-info`, `ready-for-agent`, `ready
 
 Domain documentation uses the single-context layout. See `docs/agents/domain.md`.
 
+### UI playground and Simulator demos
+
+For UI design iterations or showing Simulator work, read [UI playground](./docs/UI_PLAYGROUND.md). Ruari prefers the native browser mirror; preserve and extend the repo's reusable playground.
+
 ## Repository Map
 
 ```text
