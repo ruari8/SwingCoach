@@ -30,13 +30,6 @@ struct LibraryView: View {
     @State private var photoLibraryAccessStatus: PHAuthorizationStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
     @State private var showLimitedPhotoAccessOptions = false
 
-    // Playback
-    @State private var selectedSwing: SavedSwing? = nil
-    @State private var playbackItem: AVPlayerItem? = nil
-    @State private var showPlayback = false
-    @State private var isLoadingPlayback = false
-    @State private var showPlaybackError = false
-
     // Filter
     @State private var filterVantage: Vantage? = nil
 
@@ -249,34 +242,6 @@ struct LibraryView: View {
                     }
                 )
             }
-            .fullScreenCover(isPresented: $showPlayback) {
-                if let playerItem = playbackItem {
-                    SwingPlaybackView(playerItem: playerItem, swing: selectedSwing) {
-                        showPlayback = false
-                        playbackItem = nil
-                        selectedSwing = nil
-                    }
-                }
-            }
-            .overlay {
-                if isLoadingPlayback {
-                    ZStack {
-                        Color.black.opacity(0.4)
-                            .ignoresSafeArea()
-                        VStack(spacing: 12) {
-                            ProgressView()
-                                .scaleEffect(1.5)
-                                .tint(.white)
-                            Text("Loading video...")
-                                .foregroundColor(.white)
-                                .font(.subheadline)
-                        }
-                        .padding(24)
-                        .background(Color.black.opacity(0.7))
-                        .cornerRadius(12)
-                    }
-                }
-            }
             .overlay {
                 if isImporting {
                     ZStack {
@@ -331,11 +296,6 @@ struct LibraryView: View {
                 if isExportingSelectedSwings {
                     batchExportOverlay
                 }
-            }
-            .alert("Unable to Load Video", isPresented: $showPlaybackError) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text("The video could not be loaded. It may have been deleted from your Photos library.")
             }
             .alert("Export Failed", isPresented: exportErrorBinding) {
                 Button("OK", role: .cancel) {
@@ -1025,27 +985,6 @@ struct LibraryView: View {
         importProgress = nil
     }
 
-    private func loadAndPlay(_ swing: SavedSwing) {
-        selectedSwing = swing
-        isLoadingPlayback = true
-
-        Task {
-            if let playerItem = await library.getPlayerItem(for: swing) {
-                await MainActor.run {
-                    playbackItem = playerItem
-                    isLoadingPlayback = false
-                    showPlayback = true
-                }
-            } else {
-                await MainActor.run {
-                    isLoadingPlayback = false
-                    showPlaybackError = true
-                    selectedSwing = nil
-                }
-            }
-        }
-    }
-
     // MARK: - Formatting
 
     private func formatDuration(_ seconds: Double) -> String {
@@ -1170,7 +1109,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     Group {
                         if let player {
                             VideoPlayer(player: player)
-                                .disabled(true)
+                                .allowsHitTesting(false)
                         } else {
                             ProgressView()
                                 .scaleEffect(1.5)
@@ -1184,9 +1123,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .allowsHitTesting(contentOverlayAllowsHitTesting)
 
-                // Touch handling: a single tap toggles the controls; press-and-hold
-                // the left/right edges to fast-scrub. The middle zone can also own
-                // horizontal library navigation when a caller supplies that action.
+                // A tap toggles controls; holding either edge fast-scrubs.
+                // Horizontal dragging belongs to the enclosing review pager.
                 if !contentOverlayAllowsHitTesting {
                     transportTouchLayer
                 }
@@ -1475,27 +1413,16 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             )
     }
 
-    /// Tap toggles controls; press-and-hold fast-scrubs in `direction`. The
-    /// long-press requirement means a horizontal swipe (which moves before the
-    /// press registers) cancels this gesture and reaches the carousel pager.
+    /// One recognizer distinguishes a tap from a hold, and leaves moving
+    /// touches available to the enclosing pager.
     private func scrubTouchZone(direction: Int) -> some View {
         Color.clear
             .contentShape(Rectangle())
-            .simultaneousGesture(
-                TapGesture().onEnded { toggleControls() }
-            )
-            .simultaneousGesture(
-                LongPressGesture(minimumDuration: 0.2)
-                    .sequenced(before: DragGesture(minimumDistance: 0))
-                    .onChanged { value in
-                        if case .second(true, _) = value {
-                            startContinuousStep(direction: direction, showsFeedback: true)
-                        }
-                    }
-                    .onEnded { _ in
-                        stopContinuousStep()
-                    }
-            )
+            .gesture(PlaybackTransportGesture(
+                onTap: { toggleControls() },
+                onHold: { startContinuousStep(direction: direction, showsFeedback: true) },
+                onHoldEnd: { stopContinuousStep() }
+            ))
     }
 
     private var transportFeedback: some View {
@@ -1555,7 +1482,11 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         }
         .frame(height: 28)
         .contentShape(Rectangle())
-        .gesture(
+        .accessibilityElement(children: .ignore)
+        .accessibilityIdentifier("playback-timeline")
+        .accessibilityLabel("Video timeline")
+        .accessibilityValue(String(format: "%.3f", CMTimeGetSeconds(currentTime)))
+        .highPriorityGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { value in
                     beginScrubbing()
@@ -2385,27 +2316,6 @@ enum ImportError: Error, LocalizedError {
             return "No video data received"
         case .copyFailed:
             return "Failed to copy video file"
-        }
-    }
-}
-
-/// Transferable wrapper for video files that copies to a temp location
-struct VideoFileTransferable: Transferable {
-    let url: URL
-
-    static var transferRepresentation: some TransferRepresentation {
-        FileRepresentation(contentType: .movie) { video in
-            SentTransferredFile(video.url)
-        } importing: { received in
-            // Copy the received file to our own temp location
-            // This is important because the system may delete the original
-            let tempDir = FileManager.default.temporaryDirectory
-            let filename = "\(UUID().uuidString).mov"
-            let destURL = tempDir.appendingPathComponent(filename)
-
-            try FileManager.default.copyItem(at: received.file, to: destURL)
-
-            return VideoFileTransferable(url: destURL)
         }
     }
 }

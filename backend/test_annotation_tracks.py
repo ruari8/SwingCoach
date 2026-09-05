@@ -40,14 +40,10 @@ def test_render_writes_clean_reset_contract() -> None:
         result = renderer.render(
             run_store=run_store,
             frames=frames,
-            poses2d=[],
             frame_indices=frame_indices,
             video_fps=30.0,
             frame_width=320,
             frame_height=180,
-            club2d_frames=[],
-            poses3d=[],
-            club3d_frames=[],
         )
 
         metadata = json.loads(run_store.path("annotation_metadata.json").read_text())

@@ -7,7 +7,8 @@ struct AutoSwingReviewPresentation: Identifiable {
 
 struct AutoSwingReviewView: View {
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var camera: CameraSession
+    let swings: [SavedSwing]
+    let onDelete: (SavedSwing) async throws -> Void
 
     @State private var selectedSwingID: UUID?
     @State private var swingPendingDeletion: SavedSwing?
@@ -18,7 +19,7 @@ struct AutoSwingReviewView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            if camera.autoSessionSwings.isEmpty {
+            if swings.isEmpty {
                 ContentUnavailableView(
                     "No Session Swings",
                     systemImage: "figure.golf",
@@ -26,18 +27,14 @@ struct AutoSwingReviewView: View {
                 )
                 .foregroundStyle(.white)
             } else {
-                TabView(selection: $selectedSwingID) {
-                    ForEach(camera.autoSessionSwings) { swing in
-                        AutoSwingReviewPage(
-                            swing: swing,
-                            deleteDisabled: isDeleting,
-                            onDelete: { swingPendingDeletion = swing }
-                        )
-                        .tag(swing.id as UUID?)
-                    }
+                SwingReviewPager(swings: swings, selection: $selectedSwingID, pagingEnabled: !isDeleting) { swing in
+                    AutoSwingReviewPage(
+                        swing: swing,
+                        isSelected: selectedSwingID == swing.id,
+                        deleteDisabled: isDeleting,
+                        onDelete: { swingPendingDeletion = swing }
+                    )
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .ignoresSafeArea()
             }
 
             // Only the close button and page label live up top; the player's
@@ -46,9 +43,9 @@ struct AutoSwingReviewView: View {
             reviewToolbar
         }
         .onAppear {
-            selectedSwingID = selectedSwingID ?? camera.autoSessionSwings.first?.id
+            selectedSwingID = selectedSwingID ?? swings.first?.id
         }
-        .onChange(of: camera.autoSessionSwings.map(\.id)) { _, ids in
+        .onChange(of: swings.map(\.id)) { _, ids in
             if let selectedSwingID, ids.contains(selectedSwingID) { return }
             self.selectedSwingID = ids.first
         }
@@ -85,6 +82,7 @@ struct AutoSwingReviewView: View {
                 Spacer()
 
                 Text(pageLabel)
+                    .accessibilityIdentifier("swing-position")
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12)
@@ -106,11 +104,11 @@ struct AutoSwingReviewView: View {
 
     private var pageLabel: String {
         guard let selectedSwingID,
-              let index = camera.autoSessionSwings.firstIndex(where: { $0.id == selectedSwingID })
+              let index = swings.firstIndex(where: { $0.id == selectedSwingID })
         else {
-            return "0 of \(camera.autoSessionSwings.count)"
+            return "0 of \(swings.count)"
         }
-        return "\(index + 1) of \(camera.autoSessionSwings.count)"
+        return "\(index + 1) of \(swings.count)"
     }
 
     private func circleButton(systemName: String, action: @escaping () -> Void) -> some View {
@@ -126,9 +124,13 @@ struct AutoSwingReviewView: View {
 
     private func delete(_ swing: SavedSwing) {
         isDeleting = true
+        let index = swings.firstIndex { $0.id == swing.id } ?? 0
+        let remaining = swings.filter { $0.id != swing.id }
+        let nextID = remaining.isEmpty ? nil : remaining[min(index, remaining.count - 1)].id
         Task { @MainActor in
             do {
-                try await camera.deleteAutoCapturedSwing(swing)
+                try await onDelete(swing)
+                if selectedSwingID == swing.id { selectedSwingID = nextID }
             } catch {
                 deletionError = ReviewDeletionError(message: error.localizedDescription)
             }
@@ -140,6 +142,7 @@ struct AutoSwingReviewView: View {
 
 private struct AutoSwingReviewPage: View {
     let swing: SavedSwing
+    let isSelected: Bool
     let deleteDisabled: Bool
     let onDelete: () -> Void
 
@@ -150,7 +153,7 @@ private struct AutoSwingReviewPage: View {
             if let playerItem {
                 PlaybackChromeView(
                     playerItem: playerItem,
-                    playbackEnabled: true,
+                    playbackEnabled: isSelected,
                     showsSpeedControls: true,
                     startsPlaying: false,
                     allowsFullscreen: false,
@@ -178,7 +181,9 @@ private struct AutoSwingReviewPage: View {
             }
         }
         .task(id: swing.id) {
-            playerItem = await SwingLibrary.shared.getPlayerItem(for: swing)
+            let item = await SwingLibrary.shared.getPlayerItem(for: swing)
+            guard !Task.isCancelled else { return }
+            playerItem = item
         }
     }
 }

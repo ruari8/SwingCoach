@@ -5,6 +5,9 @@ Exports smoothed 3D poses to animated GLTF/GLB files.
 """
 
 import sys
+import base64
+import json
+import tempfile
 import logging
 import numpy as np
 from pathlib import Path
@@ -29,6 +32,7 @@ def create_synthetic_swing_poses(num_frames: int = 60) -> list:
     Simulates a swing motion with varying club speed.
     """
     poses = []
+    rng = np.random.default_rng(7)
 
     for i in range(num_frames):
         t = i / num_frames  # 0 to 1
@@ -40,9 +44,9 @@ def create_synthetic_swing_poses(num_frames: int = 60) -> list:
         wrist_z = -0.5 + t * 1.0  # Forward motion
 
         # Add small amount of noise for realism
-        wrist_x += np.random.normal(0, 0.01)
-        wrist_y += np.random.normal(0, 0.01)
-        wrist_z += np.random.normal(0, 0.01)
+        wrist_x += rng.normal(0, 0.01)
+        wrist_y += rng.normal(0, 0.01)
+        wrist_z += rng.normal(0, 0.01)
 
         # Simple body pose
         pose = Pose3DResult(
@@ -83,51 +87,43 @@ def create_synthetic_swing_poses(num_frames: int = 60) -> list:
 
 
 def test_animation_export_synthetic():
-    """Test animation export with synthetic poses."""
-    logger.info("=" * 60)
-    logger.info("TEST 1: Animation Export (Synthetic Poses)")
-    logger.info("=" * 60)
-
-    try:
-        # Create synthetic poses
-        poses = create_synthetic_swing_poses(60)
-
-        # Smooth them
-        logger.info("Smoothing poses...")
-        smoother = TemporalSmoother(fps=30)
-        poses_smooth = smoother.smooth_poses(poses)
-
-        # Export to animation
-        logger.info("Exporting to animated GLTF...")
-        filename = "swing_animation_synthetic.gltf"
+    """Decode actual exported joint motion and timing from the embedded buffer."""
+    poses = create_synthetic_swing_poses(60)
+    with tempfile.TemporaryDirectory() as directory:
         exporter = AnimationExporter()
-        success = exporter.export_animation(
-            poses_smooth,
-            filename,
-            fps=30,
-            joint_subset=[
-                "right_wrist",
-                "left_wrist",
-                "right_elbow",
-                "right_shoulder",
-                "left_shoulder",
-            ],
-        )
+        assert exporter.export_animation(
+            poses, "swing.gltf", fps=30, joint_subset=["right_wrist", "left_wrist"],
+            output_dir=directory,
+        ), "Animation export failed"
+        payload = json.loads((Path(directory) / "swing.gltf").read_text())
+        assert payload["asset"]["version"] == "2.0"
+        buffer = base64.b64decode(payload["buffers"][0]["uri"].split(",", 1)[1])
+        assert len(buffer) == payload["buffers"][0]["byteLength"]
 
-        if success:
-            output_path = Path(__file__).parent / "output" / filename
-            if output_path.exists():
-                file_size = output_path.stat().st_size
-                logger.info(f"✓ Animation exported: {output_path} ({file_size / 1024:.1f} KB)")
-            logger.info(f"✓ File can be viewed in: https://gltf-viewer.donmccurdy.com/")
-            return True
-        else:
-            logger.error("Export failed or file not created")
-            return False
+        def values(index, width):
+            accessor = payload["accessors"][index]
+            view = payload["bufferViews"][accessor["bufferView"]]
+            assert accessor["componentType"] == 5126
+            offset = view.get("byteOffset", 0) + accessor.get("byteOffset", 0)
+            return np.frombuffer(buffer, dtype="<f4", count=accessor["count"] * width,
+                                 offset=offset).reshape(accessor["count"], width)
 
-    except Exception as e:
-        logger.error(f"Test failed: {e}", exc_info=True)
-        return False
+        animation = payload["animations"][0]
+        verified = set()
+        for channel in animation["channels"]:
+            name = payload["nodes"][channel["target"]["node"]]["name"]
+            if name not in {"right_wrist", "left_wrist"}:
+                continue
+            assert channel["target"]["path"] == "translation"
+            sampler = animation["samplers"][channel["sampler"]]
+            np.testing.assert_allclose(values(sampler["input"], 1).ravel(),
+                                       np.arange(60) / 30, atol=1e-6)
+            expected = [[pose.keypoints_3d[name].x, -pose.keypoints_3d[name].y,
+                         pose.keypoints_3d[name].z] for pose in poses]
+            np.testing.assert_allclose(values(sampler["output"], 3), expected, atol=1e-6)
+            verified.add(name)
+        assert verified == {"right_wrist", "left_wrist"}
+    return True
 
 
 def test_animation_export_real_video(sample_rate: int = 8):
@@ -164,8 +160,8 @@ def test_animation_export_real_video(sample_rate: int = 8):
 
         # Run 3D detection
         logger.info("Running 3D body detection...")
-        detector = Body3DDetector()
-        poses = detector.detect_batch(frames, clear_cache=False)
+        with Body3DDetector() as detector:
+            poses = detector.detect_batch(frames, clear_cache=False)
         poses = [p for p in poses if p is not None]
         logger.info(f"Detected poses in {len(poses)} frames")
 
@@ -191,6 +187,8 @@ def test_animation_export_real_video(sample_rate: int = 8):
 
         if success:
             output_path = Path(__file__).parent / "output" / filename
+            if not output_path.is_file():
+                return False
             if output_path.exists():
                 file_size = output_path.stat().st_size
                 logger.info(f"✓ Animation exported: {output_path} ({file_size / 1024:.1f} KB)")
@@ -207,33 +205,15 @@ def test_animation_export_real_video(sample_rate: int = 8):
 
 
 if __name__ == "__main__":
-    logger.info("\n🎬 ANIMATION EXPORT TEST SUITE\n")
+    import argparse
 
-    # Test 1: Synthetic (always runs, fast)
-    test1_pass = test_animation_export_synthetic()
-
-    # Test 2: Real video (slow, optional)
-    test2_pass = False
-    sample_rate = 8  # Default: quick test
-    if len(sys.argv) > 1:
-        if sys.argv[1] == "--with-video":
-            test2_pass = test_animation_export_real_video(sample_rate=sample_rate)
-        elif sys.argv[1] == "--full":
-            sample_rate = 1
-            test2_pass = test_animation_export_real_video(sample_rate=sample_rate)
-
-    # Summary
-    logger.info("\n" + "=" * 60)
-    logger.info("SUMMARY")
-    logger.info("=" * 60)
-    logger.info(f"Synthetic test: {'✓ PASS' if test1_pass else '✗ FAIL'}")
-    if test2_pass or (len(sys.argv) > 1 and sys.argv[1] == "--with-video"):
-        logger.info(f"Real video test: {'✓ PASS' if test2_pass else '✗ FAIL'}")
-    else:
-        logger.info("Real video test: Skipped")
-        logger.info("  To test: python test_animation_export.py --with-video  (quick, sample_rate=8)")
-        logger.info("  Or:      python test_animation_export.py --full        (full quality, sample_rate=1)")
-
-    logger.info("\nNext: Review exported animation files in 3D viewer")
-    logger.info("Files saved to: backend/output/")
-    logger.info("View in: https://gltf-viewer.donmccurdy.com/")
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--with-video", action="store_true")
+    mode.add_argument("--full", action="store_true")
+    args = parser.parse_args()
+    test_animation_export_synthetic()
+    print("Synthetic animation motion and timing checks passed")
+    if args.with_video or args.full:
+        if not test_animation_export_real_video(sample_rate=1 if args.full else 8):
+            raise SystemExit(1)

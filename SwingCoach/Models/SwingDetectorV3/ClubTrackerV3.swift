@@ -26,15 +26,9 @@ nonisolated struct ClubEvidenceV3: Equatable {
     var swingSequenceScore: Double = 0
 }
 
-nonisolated final class ClubTrackerV3 {
-    func reset() {}
-
-    func update(frame: SwingObservationV3, lock: TargetLockV3?) {
-        // Stateless in v1. Evidence is computed from the supplied frame window.
-    }
-
+nonisolated enum ClubTrackerV3 {
     /// Evidence over a real-time window [start, end] of the recent buffer.
-    func evidence(
+    static func evidence(
         in window: ArraySlice<SwingObservationV3>,
         lock: TargetLockV3?
     ) -> ClubEvidenceV3 {

@@ -22,6 +22,11 @@ This folder and `backend/docs` are the active documentation set.
 - [Swing Annotation Research Notes](../annotations.md)
 - [Dom Caminiti Video Annotation Reference](./DOMCAMINITI_VIDEO_ANNOTATION_REFERENCE.md)
 
+## Code quality
+
+- [September slop audit](./audits/2026-09-04-slop-audit.md)
+- [Cleanup and verification results](./audits/2026-09-05-slop-cleanup.md)
+
 ## Frontend
 
 - [Frontend Documentation](./FRONTEND.md)

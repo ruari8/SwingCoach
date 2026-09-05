@@ -137,7 +137,7 @@ These are proposals, not implemented behavior or proven fixes.
 | Select a local strike region using the golfer, resting club, and ball history | Uses physical relationships; can handle changed framing and distinguish neighboring balls | Needs reliable person/club attribution, confidence handling, and stable selection through occlusion. | Preferred direction if simpler removal is insufficient. |
 | Let the user mark the hitting area before recording | Clear fallback with limited inference complexity | Additional setup; region needs resetting when the camera moves. | Optional fallback, not a required alignment ritual. |
 
-There is an older precedent in [LiveSwingDetector.ballSearchArea](../SwingCoach/Models/LiveSwingDetector.swift): it uses hands, ankles, and body height to construct a search region. That detector is not the active V2 path, and its bright-blob ball logic is not a reason to restore it wholesale. Its geometry is a useful reference. It also uses Vision's bottom-left coordinates, whereas V2's object features use top-left coordinates, so the formulas cannot be copied without conversion.
+There is an older precedent in [historical LiveSwingDetector.ballSearchArea](https://github.com/ruari8/SwingCoach/blob/73cd63bd2d25c30d62f43e8aae86afc07865dd06/SwingCoach/Models/LiveSwingDetector.swift): it uses hands, ankles, and body height to construct a search region. That detector is not the active V2 path, and its bright-blob ball logic is not a reason to restore it wholesale. Its geometry is a useful reference. It also uses Vision's bottom-left coordinates, whereas V2's object features use top-left coordinates, so the formulas cannot be copied without conversion.
 
 ## Recommended direction and evaluation order
 

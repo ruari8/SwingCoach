@@ -43,7 +43,6 @@ class SwingCoachPipeline3D:
         vantage: str = "DTL",
         requested_fps: Optional[float] = None,
         student_goal: Optional[str] = None,
-        max_dense_frames: Optional[int] = None,
         progress_callback: Optional[Callable[[str, float, str], None]] = None,
     ) -> Pipeline3DResult:
         run_store = RunStore(self.output_root)
@@ -70,7 +69,6 @@ class SwingCoachPipeline3D:
                     "frame_height": frame_height,
                     "requested_fps": requested_fps,
                     "student_goal": student_goal,
-                    "max_dense_frames": max_dense_frames,
                     "pipeline_mode": "annotation_reset",
                 },
             )
@@ -91,10 +89,6 @@ class SwingCoachPipeline3D:
                 "pipeline_mode": "annotation_reset",
             },
         )
-        run_store.save_npz("poses_2d.npz", sparse=[], dense=[])
-        run_store.save_npz("poses_3d.npz", dense=[])
-        run_store.save_npz("club_2d.npz", frames=[])
-        run_store.save_npz("club_3d.npz", frames=[])
         run_store.save_json("metrics.json", {"cards": [], "raw": {"metrics_enabled": False}})
 
         emit("artifacts", 0.75, "Writing clean artifact contract")
@@ -102,18 +96,10 @@ class SwingCoachPipeline3D:
             rendered = self.artifact_renderer.render(
                 run_store=run_store,
                 frames=artifact_frames,
-                poses2d=[],
                 frame_indices=artifact_indices,
                 video_fps=fps,
                 frame_width=frame_width,
                 frame_height=frame_height,
-                club2d_frames=[],
-                poses3d=[],
-                club3d_frames=[],
-                swing_phases=None,
-                artifact_frames=artifact_frames,
-                artifact_frame_indices=artifact_indices,
-                export_baked_overlays=False,
             )
 
         emit("coaching", 0.9, "Building reset summary")
