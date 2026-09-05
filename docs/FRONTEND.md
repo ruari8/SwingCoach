@@ -147,9 +147,15 @@ Implemented feature set:
 - Show swing metadata and local analysis status in the detail info sheet or video overlay instead of reserving persistent space beside the footage.
 - Run the current R2-backed analysis flow for a single swing, with retry controls reserved for failed analysis attempts.
 - Attach completed analysis to the swing through `AnalysisLibrary`.
+- Analysis requests and progress belong to the submitted swing. Moving to another video keeps the first request running without moving its result or progress to the new video. Swiping back to a video with a pending request shows that request and prevents duplicate submission; failed requests remain retryable.
 - Render analyzed video and coach notes with the shared [AnalysisResultView.swift](../SwingCoach/AnalysisResultView.swift).
 - Drag left or right across the original-video surface to move between library videos without returning to the grid. The adjacent video tracks the finger and the app keeps the previous/current/next playback items prepared to avoid a black loading handoff. The bottom transport area remains reserved for timeline and frame-step controls. The header shows the current library position.
+- Swiping follows the collection opened from Library: personal videos retain the selected vantage filter and starred-first order; reference videos stay in their own collection. The order stays fixed until returning to Library, so changing a star during review does not move the current video. Opening a result from Coach reviews that one swing.
 - The mid-left pencil rail pauses playback and enables a straight-line canvas over the visible video. In drawing mode the rail expands in place with Done, Undo, and Clear actions, away from the bottom-right player lock. Yellow guide lines persist per swing in `manual_annotations.json` and remain visible during playback. Drawing coordinates follow the displayed video rectangle rather than the surrounding letterbox.
+- The drawing tool loads the video track's dimensions and orientation before becoming available. Lines follow the visible video when rotating or resizing the screen, and strokes beginning in the letterbox are ignored. Lines saved before this correction may need clearing and redrawing once because the old format did not record the viewport needed to repair their coordinates.
+
+Review regression checks:
+- Run `scripts/verify-review.sh` on macOS with Xcode and FFmpeg. It creates synthetic media and a disposable Simulator, tests per-video analysis ownership and retries, verifies oriented video dimensions, and drives Library filtering, starred order, reference navigation, and drawing across layouts. It preserves logs, XCTest results and screenshots in `.verification-artifacts/review-fixes/` and removes its Simulator afterward. No phone, Photos originals, private reference assets, backend or upload is needed.
 
 ## 6. Replay Debug Tab
 
