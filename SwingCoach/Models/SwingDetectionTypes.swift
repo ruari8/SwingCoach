@@ -64,4 +64,3 @@ nonisolated struct LiveSwingDetectionSnapshot: Equatable {
 
     static let idle = LiveSwingDetectionSnapshot()
 }
-
