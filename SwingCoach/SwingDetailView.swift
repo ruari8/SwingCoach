@@ -28,8 +28,6 @@ struct SwingDetailView: View {
     @State private var selectedPage = 0
     @State private var isDrawingLines = false
     @State private var draftLine: ManualAnnotation?
-    @State private var pagerOffset: CGFloat = 0
-    @State private var isCompletingPageTurn = false
 
     init(swing: SavedSwing) {
         self.swing = swing
@@ -104,26 +102,22 @@ struct SwingDetailView: View {
         }
     }
 
+    @ViewBuilder
     private var reviewPager: some View {
-        GeometryReader { geometry in
-            let pageWidth = max(geometry.size.width, 1)
-            let window = reviewWindow
-            let currentSlot = window.firstIndex { $0.id == currentSwingID } ?? 0
-
-            HStack(spacing: 0) {
-                ForEach(window) { pageSwing in
-                    reviewPage(for: pageSwing)
-                        .frame(width: pageWidth, height: geometry.size.height)
-                }
+        if selectedPage != 0, let savedAnalysis {
+            analyzedCarousel(savedAnalysis: savedAnalysis, swing: currentSwing)
+        } else {
+            SwingReviewPager(
+                swings: navigationSwings,
+                selection: Binding(
+                    get: { currentSwingID },
+                    set: { if let id = $0 { currentSwingID = id } }
+                ),
+                pagingEnabled: !isDrawingLines
+            ) { pageSwing in
+                originalVideoPage(for: pageSwing)
             }
-            .frame(width: pageWidth * CGFloat(window.count), alignment: .leading)
-            .offset(x: -CGFloat(currentSlot) * pageWidth + pagerOffset)
-            .contentShape(Rectangle())
-            .highPriorityGesture(
-                pagerDragGesture(pageWidth: pageWidth, pageHeight: geometry.size.height)
-            )
         }
-        .clipped()
     }
 
     private var reviewWindow: [SavedSwing] {
@@ -131,86 +125,6 @@ struct SwingDetailView: View {
         let lowerBound = max(navigationSwings.startIndex, currentIndex - 1)
         let upperBound = min(navigationSwings.index(before: navigationSwings.endIndex), currentIndex + 1)
         return Array(navigationSwings[lowerBound...upperBound])
-    }
-
-    private func pagerDragGesture(pageWidth: CGFloat, pageHeight: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 8)
-            .onChanged { value in
-                guard !isCompletingPageTurn,
-                      shouldNavigateLibrary(with: value, pageHeight: pageHeight) else { return }
-                pagerOffset = resistedPagerTranslation(value.translation.width)
-            }
-            .onEnded { value in
-                guard !isCompletingPageTurn,
-                      shouldNavigateLibrary(with: value, pageHeight: pageHeight),
-                      let currentIndex = navigationSwings.firstIndex(where: { $0.id == currentSwingID }) else {
-                    settlePager()
-                    return
-                }
-
-                let threshold = min(pageWidth * 0.18, 72)
-                let projected = value.predictedEndTranslation.width
-                let direction: Int
-                if value.translation.width < -threshold || projected < -pageWidth * 0.34 {
-                    direction = 1
-                } else if value.translation.width > threshold || projected > pageWidth * 0.34 {
-                    direction = -1
-                } else {
-                    settlePager()
-                    return
-                }
-
-                let nextIndex = currentIndex + direction
-                guard navigationSwings.indices.contains(nextIndex) else {
-                    settlePager()
-                    return
-                }
-
-                let nextSwingID = navigationSwings[nextIndex].id
-                isCompletingPageTurn = true
-                withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.88)) {
-                    pagerOffset = -CGFloat(direction) * pageWidth
-                }
-
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(280))
-                    currentSwingID = nextSwingID
-                    pagerOffset = 0
-                    isCompletingPageTurn = false
-                }
-            }
-    }
-
-    private func settlePager() {
-        withAnimation(.interactiveSpring(response: 0.25, dampingFraction: 0.88)) {
-            pagerOffset = 0
-        }
-    }
-
-    private func shouldNavigateLibrary(with value: DragGesture.Value, pageHeight: CGFloat) -> Bool {
-        guard !isDrawingLines,
-              selectedPage == 0,
-              value.startLocation.y < pageHeight - 130 else { return false }
-        return abs(value.translation.width) > abs(value.translation.height) * 1.15
-    }
-
-    private func resistedPagerTranslation(_ translation: CGFloat) -> CGFloat {
-        guard let currentIndex = navigationSwings.firstIndex(where: { $0.id == currentSwingID }) else {
-            return translation
-        }
-        let isDraggingPastStart = currentIndex == navigationSwings.startIndex && translation > 0
-        let isDraggingPastEnd = currentIndex == navigationSwings.index(before: navigationSwings.endIndex) && translation < 0
-        return isDraggingPastStart || isDraggingPastEnd ? translation * 0.22 : translation
-    }
-
-    @ViewBuilder
-    private func reviewPage(for pageSwing: SavedSwing) -> some View {
-        if pageSwing.id == currentSwingID,
-           let savedAnalysis = analysisLibrary.analysis(for: pageSwing) {
-            analyzedCarousel(savedAnalysis: savedAnalysis, swing: pageSwing)
-        } else {
-            originalVideoPage(for: pageSwing)
-        }
     }
 
     private func analyzedCarousel(savedAnalysis: SavedAnalysis, swing: SavedSwing) -> some View {
@@ -228,7 +142,6 @@ struct SwingDetailView: View {
     private func originalVideoPage(for swing: SavedSwing) -> some View {
         originalPlayer(for: swing)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .accessibilityIdentifier("swing-review-page")
     }
 
     private var topNavOverlay: some View {
