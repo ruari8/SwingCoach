@@ -12,6 +12,7 @@ enum ExperimentalSettingKey {
     static let liveAutoSwingDetectionEnabled = "experimental.liveAutoSwingDetectionEnabled"
     static let liveModelDetectorSampleFPS = "experimental.liveModelDetectorSampleFPS"
     static let capturePracticeSwings = "capture.capturePracticeSwings"
+    static let showCaptureModelStats = "experimental.showCaptureModelStats"
     static let backendTarget = "experimental.backendTarget"
     static let customBackendURL = "experimental.customBackendURL"
     static let useMockAnalysis = "experimental.useMockAnalysis"
@@ -45,6 +46,7 @@ struct ExperimentalSettingsView: View {
     @AppStorage(ExperimentalSettingKey.liveAutoSwingDetectionEnabled) private var liveAutoSwingDetectionEnabled = true
     @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
     @AppStorage(ExperimentalSettingKey.capturePracticeSwings) private var capturePracticeSwings = false
+    @AppStorage(ExperimentalSettingKey.showCaptureModelStats) private var showCaptureModelStats = false
     @AppStorage(ExperimentalSettingKey.backendTarget) private var backendTargetRaw = BackendTarget.local.rawValue
     @AppStorage(ExperimentalSettingKey.customBackendURL) private var customBackendURL = ""
     @AppStorage(ExperimentalSettingKey.useMockAnalysis) private var useMockAnalysis = false
@@ -73,6 +75,15 @@ struct ExperimentalSettingsView: View {
 
             } footer: {
                 Text("Capture, Trim, and Replay Debug use SwingDetectorV3. The sample rate controls idle/address sampling; V3 raises its rate during an active swing episode.")
+            }
+
+            Section {
+                Toggle("Show model stats", isOn: $showCaptureModelStats)
+                    .accessibilityIdentifier("show-capture-model-stats")
+            } header: {
+                Text("Capture diagnostics")
+            } footer: {
+                Text("Shows measured detector FPS and average model processing time beneath the capture status in Auto and Manual. Off by default; this does not change detection or recording.")
             }
 
             #if DEBUG

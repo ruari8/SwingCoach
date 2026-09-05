@@ -76,14 +76,15 @@ struct AutoSwingReviewView: View {
     private var reviewToolbar: some View {
         VStack {
             HStack {
-                circleButton(systemName: "xmark") { dismiss() }
+                closeButton
+                    .frame(width: 70)
                     .accessibilityLabel("Close swing review")
 
                 Spacer()
 
                 Text(pageLabel)
                     .accessibilityIdentifier("swing-position")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
@@ -93,7 +94,7 @@ struct AutoSwingReviewView: View {
 
                 // Balances the close button so the page label stays centered.
                 Color.clear
-                    .frame(width: 42, height: 42)
+                    .frame(width: 70, height: 36)
             }
             .padding(.horizontal, 14)
             .padding(.top, 8)
@@ -111,15 +112,16 @@ struct AutoSwingReviewView: View {
         return "\(index + 1) of \(swings.count)"
     }
 
-    private func circleButton(systemName: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 42, height: 42)
-                .background(Circle().fill(.black.opacity(0.48)))
+    @ViewBuilder
+    private var closeButton: some View {
+        let button = Button("Done") { dismiss() }
+            .font(.subheadline.weight(.semibold))
+            .tint(.white)
+        if #available(iOS 26, *) {
+            button.buttonStyle(.glass)
+        } else {
+            button.buttonStyle(.bordered).buttonBorderShape(.capsule)
         }
-        .buttonStyle(.plain)
     }
 
     private func delete(_ swing: SavedSwing) {

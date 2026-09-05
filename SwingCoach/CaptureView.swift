@@ -68,8 +68,8 @@ enum SloMoMode {
 }
 
 enum CaptureWorkflowMode: String, CaseIterable, Identifiable {
-    case manual
     case auto
+    case manual
 
     var id: String { rawValue }
 
@@ -1410,6 +1410,7 @@ struct CaptureView: View {
     @AppStorage(ExperimentalSettingKey.liveAutoSwingDetectionEnabled) private var liveAutoSwingDetectionEnabled = true
     @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
     @AppStorage(ExperimentalSettingKey.capturePracticeSwings) private var capturePracticeSwings = false
+    @AppStorage(ExperimentalSettingKey.showCaptureModelStats) private var showCaptureModelStats = false
     @State private var workflowMode: CaptureWorkflowMode = .auto
     @State private var isRecording = false
     @State private var currentRecordingURL: URL?
@@ -1433,146 +1434,42 @@ struct CaptureView: View {
     @State private var autoReviewPresentation: AutoSwingReviewPresentation?
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Camera preview area (majority of screen, not full screen)
-            ZStack {
-                // Camera preview with tap-to-focus
-                CameraPreview(session: camera.session) { viewPoint, cameraPoint in
-                    handleFocusTap(viewPoint: viewPoint, cameraPoint: cameraPoint)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.black)
-
-                // Focus indicator (yellow square)
+        ZStack {
+            CameraPreview(session: camera.session) { viewPoint, cameraPoint in
+                handleFocusTap(viewPoint: viewPoint, cameraPoint: cameraPoint)
+            }
+            .overlay {
                 if showFocusIndicator, let point = focusPoint {
                     FocusIndicatorView()
                         .position(point)
-                }
-
-                // Processing overlay
-                if isProcessing {
-                    Color.black.opacity(0.7)
-                    VStack(spacing: 16) {
-                        ProgressView()
-                            .scaleEffect(1.5)
-                            .tint(.white)
-                        Text("Finalizing recording...")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white)
-                    }
-                }
-
-                // Camera controls are available between recordings and Trim sessions.
-                if currentRecordingURL == nil && !isProcessing {
-                    VStack {
-                        // Top controls: FPS toggle and recording timer
-                        HStack {
-                            // FPS mode picker (left)
-                            Menu {
-                                Button("30fps HD") {
-                                    camera.switchMode(to: .normal)
-                                }
-                                Button("60fps HD") {
-                                    camera.switchMode(to: .smooth)
-                                }
-                                Button("120fps HD") {
-                                    camera.switchMode(to: .standard)
-                                }
-                                Button("240fps HD") {
-                                    camera.switchMode(to: .ultra)
-                                }
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Text(camera.captureMode.shortName)
-                                        .font(.system(size: 14, weight: .bold, design: .monospaced))
-                                    Image(systemName: "chevron.down")
-                                        .font(.system(size: 9, weight: .bold))
-                                }
-                                .foregroundColor(.yellow)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .fill(Color.black.opacity(0.5))
-                                )
-                            }
-                            .disabled(isRecording)
-                            .opacity(isRecording ? 0.5 : 1.0)
-
-                            Spacer()
-
-                            // Recording indicator (center)
-                            if isRecording {
-                                HStack(spacing: 6) {
-                                    Circle()
-                                        .fill(Color.red)
-                                        .frame(width: 8, height: 8)
-                                    Text(formatDuration(recordingDuration))
-                                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                                        .foregroundColor(.white)
-                                }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .fill(Color.black.opacity(0.5))
-                                    )
-                            }
-
-                            Spacer()
-
-                            Picker("Capture", selection: $workflowMode) {
-                                ForEach(CaptureWorkflowMode.allCases) { mode in
-                                    Text(mode.displayName).tag(mode)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                            .frame(width: 144)
-                            .disabled(isRecording)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-
-                        if isRecording {
-                            LiveSwingDetectionBadge(snapshot: camera.liveSwingDetection)
-                                .padding(.top, 10)
-                                .padding(.horizontal, 16)
-                        }
-
-                        if workflowMode == .auto {
-                            AutoCaptureGuideCard(
-                                status: camera.autoCaptureStatus,
-                                swingCount: camera.autoSessionSwings.count,
-                                capturesPracticeSwings: capturePracticeSwings,
-                                onReview: {
-                                    guard !camera.autoSessionSwings.isEmpty else { return }
-                                    camera.pauseAutoCaptureForReview()
-                                    // Fully stop the session while reviewing: no green
-                                    // camera indicator, no encode/inference load behind
-                                    // the carousel, no new detections mid-review.
-                                    camera.stop()
-                                    autoReviewPresentation = AutoSwingReviewPresentation()
-                                }
-                            )
-                                .padding(.top, 10)
-                                .padding(.horizontal, 16)
-                        }
-
-                        Spacer()
-
-                        // Bottom: Record button
-                        if workflowMode == .manual {
-                            RecordButton(isRecording: isRecording) {
-                                toggleRecording()
-                            }
-                            .padding(.bottom, 8)
-                        }
-                    }
+                        .allowsHitTesting(false)
                 }
             }
-            .frame(maxWidth: .infinity)
-            .frame(maxHeight: .infinity)
+            .ignoresSafeArea()
+            .background(.black)
+
+            LinearGradient(stops: [
+                .init(color: .black.opacity(0.52), location: 0),
+                .init(color: .clear, location: 0.27),
+                .init(color: .clear, location: 0.64),
+                .init(color: .black.opacity(0.70), location: 1)
+            ], startPoint: .top, endPoint: .bottom)
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+
+            if isProcessing {
+                Color.black.opacity(0.7)
+                VStack(spacing: 16) {
+                    ProgressView().scaleEffect(1.5).tint(.white)
+                    Text("Finalizing recording...")
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(.white)
+                }
+            } else if currentRecordingURL == nil {
+                captureControls
+            }
         }
+        .preferredColorScheme(.dark)
         .onAppear {
             ExperimentalDetectorDefaults.migrateIfNeeded()
             camera.isLiveSwingDetectionEnabled = liveAutoSwingDetectionEnabled
@@ -1663,6 +1560,175 @@ struct CaptureView: View {
                     camera.start()
                 }
         }
+    }
+
+    private var captureControls: some View {
+        VStack(spacing: 0) {
+            Group {
+                if isRecording {
+                    HStack(spacing: 7) {
+                        Circle().fill(.red).frame(width: 7, height: 7)
+                        Text(formatDuration(recordingDuration))
+                            .font(.subheadline.weight(.semibold))
+                            .monospacedDigit()
+                            .accessibilityIdentifier("capture-recording-timer")
+                    }
+                    .frame(maxWidth: .infinity)
+                } else {
+                    HStack {
+                        frameRateMenu
+                        Spacer()
+                        Picker("Capture", selection: $workflowMode) {
+                            ForEach(CaptureWorkflowMode.allCases) { mode in
+                                Text(mode.displayName).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 172)
+                        .accessibilityIdentifier("capture-mode")
+                    }
+                }
+            }
+            .frame(height: 44)
+            .padding(.top, 8)
+            .animation(.easeInOut(duration: 0.2), value: isRecording)
+
+            Spacer(minLength: 16)
+
+            if workflowMode == .auto {
+                HStack(alignment: .center, spacing: 12) {
+                    CaptureStatusLabel(
+                        title: autoStatusTitle,
+                        detail: autoStatusDetail,
+                        indicator: autoStatusIndicator,
+                        modelSnapshot: showCaptureModelStats && camera.autoCaptureStatus.isActive
+                            ? camera.liveSwingDetection : nil
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    savedSwingsButton
+                }
+                .padding(.bottom, 22)
+            } else {
+                HStack(spacing: 8) {
+                    Group {
+                        if isRecording {
+                            CaptureStatusLabel(
+                                title: manualStatusTitle,
+                                detail: manualStatusDetail,
+                                modelSnapshot: showCaptureModelStats ? camera.liveSwingDetection : nil
+                            )
+                        } else {
+                            Color.clear.frame(height: 1)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    RecordButton(isRecording: isRecording, action: toggleRecording)
+                    Color.clear.frame(maxWidth: .infinity).frame(height: 1)
+                }
+                .padding(.bottom, 20)
+            }
+        }
+        .padding(.horizontal, 22)
+        .foregroundStyle(.white)
+    }
+
+    private var frameRateMenu: some View {
+        Menu {
+            Button("30fps HD") { camera.switchMode(to: .normal) }
+            Button("60fps HD") { camera.switchMode(to: .smooth) }
+            Button("120fps HD") { camera.switchMode(to: .standard) }
+            Button("240fps HD") { camera.switchMode(to: .ultra) }
+        } label: {
+            HStack(spacing: 5) {
+                Text("\(camera.captureMode.shortName) fps")
+                    .font(.subheadline.weight(.semibold))
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.semibold))
+            }
+            .frame(minHeight: 44)
+        }
+        .accessibilityIdentifier("capture-frame-rate")
+        .accessibilityLabel("Frame rate, \(camera.captureMode.shortName) frames per second")
+    }
+
+    private var savedSwingsButton: some View {
+        let count = camera.autoSessionSwings.count
+        return Button(action: openAutoReview) {
+            HStack(spacing: 9) {
+                Group {
+                    if let thumbnail = camera.autoSessionSwings.last?.thumbnail {
+                        Image(uiImage: thumbnail).resizable().scaledToFill()
+                    } else {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(.white.opacity(0.12))
+                    }
+                }
+                .frame(width: 32, height: 42)
+                .clipShape(.rect(cornerRadius: 6))
+                .overlay(RoundedRectangle(cornerRadius: 6)
+                    .strokeBorder(.white.opacity(0.5), lineWidth: 0.5))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("\(count) saved").font(.subheadline.weight(.medium))
+                    Text("This session").font(.caption2).foregroundStyle(.white.opacity(0.7))
+                }
+                Image(systemName: "chevron.right").font(.caption2.weight(.semibold))
+            }
+            .frame(minHeight: 44)
+        }
+        .buttonStyle(.plain)
+        .disabled(count == 0)
+        .opacity(count == 0 ? 0.55 : 1)
+        .accessibilityLabel("Review \(count) saved swings")
+        .accessibilityIdentifier("capture-saved-swings")
+    }
+
+    private var autoStatusTitle: String {
+        if camera.autoCaptureStatus.lastErrorMessage != nil { return "Auto needs attention" }
+        if camera.liveSwingDetection.status == .unavailable { return "Detection unavailable" }
+        return camera.autoCaptureStatus.isActive ? "Auto is on" : "Auto is off"
+    }
+
+    private var autoStatusDetail: String {
+        if let error = camera.autoCaptureStatus.lastErrorMessage { return error }
+        if camera.liveSwingDetection.status == .unavailable {
+            return camera.liveSwingDetection.primaryMessage
+        }
+        let pending = camera.autoCaptureStatus.pendingSwingCount
+        if pending > 0 { return "Saving \(pending) swing\(pending == 1 ? "" : "s")…" }
+        return camera.autoCaptureStatus.isActive ? "Swings save automatically" : "Capture is paused"
+    }
+
+    private var autoStatusIndicator: Color {
+        if camera.autoCaptureStatus.lastErrorMessage != nil || camera.liveSwingDetection.status == .unavailable {
+            return .orange
+        }
+        return camera.autoCaptureStatus.isActive ? .red : .gray
+    }
+
+    private var manualStatusTitle: String {
+        switch camera.liveSwingDetection.status {
+        case .disabled: return "Detection off"
+        case .unavailable: return "Detection unavailable"
+        default: return "Detecting swings"
+        }
+    }
+
+    private var manualStatusDetail: String {
+        switch camera.liveSwingDetection.status {
+        case .disabled, .unavailable: return "Recording video"
+        default:
+            let count = camera.liveSwingDetection.detectedSwingCount
+            return count == 0 ? "No swings yet" : "\(count) detected"
+        }
+    }
+
+    private func openAutoReview() {
+        guard !camera.autoSessionSwings.isEmpty else { return }
+        camera.pauseAutoCaptureForReview()
+        // Reviewing fully stops the camera, encoder and inference work.
+        camera.stop()
+        autoReviewPresentation = AutoSwingReviewPresentation()
     }
 
     // MARK: - Actions
@@ -1775,18 +1841,18 @@ struct RecordButton: View {
             ZStack {
                 // Outer ring
                 Circle()
-                    .stroke(Color.white, lineWidth: 4)
-                    .frame(width: 80, height: 80)
+                    .strokeBorder(Color.white, lineWidth: 3)
+                    .frame(width: 76, height: 76)
 
                 // Inner shape (circle when idle, rounded square when recording)
                 if isRecording {
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: 7)
                         .fill(Color.red)
-                        .frame(width: 32, height: 32)
+                        .frame(width: 29, height: 29)
                 } else {
                     Circle()
                         .fill(Color.red)
-                        .frame(width: 64, height: 64)
+                        .frame(width: 62, height: 62)
                 }
             }
         }
@@ -1816,188 +1882,39 @@ struct FocusIndicatorView: View {
     }
 }
 
-struct AutoCaptureGuideCard: View {
-    let status: AutoCaptureStatus
-    let swingCount: Int
-    let capturesPracticeSwings: Bool
-    let onReview: () -> Void
+private struct CaptureStatusLabel: View {
+    let title: String
+    let detail: String
+    var indicator: Color? = nil
+    var modelSnapshot: LiveSwingDetectionSnapshot? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: status.lastErrorMessage == nil ? "dot.radiowaves.left.and.right" : "exclamationmark.triangle.fill")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(status.lastErrorMessage == nil ? .yellow : .orange)
-                    .frame(width: 22)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(primaryText)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    if status.pendingSwingCount > 0 {
-                        Text("Saving \(status.pendingSwingCount) swing\(status.pendingSwingCount == 1 ? "" : "s")…")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.70))
-                    }
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 7) {
+                if let indicator {
+                    Circle().fill(indicator).frame(width: 6, height: 6)
+                        .accessibilityHidden(true)
                 }
-
-                Spacer(minLength: 0)
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                    .accessibilityIdentifier("capture-status-title")
             }
+            Text(detail)
+                .font(.caption2)
+                .foregroundStyle(.white.opacity(0.75))
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("capture-status-detail")
 
-            Button(action: onReview) {
-                HStack {
-                    Text("\(swingCount) swing\(swingCount == 1 ? "" : "s") captured")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                    Spacer()
-                    if swingCount > 0 {
-                        Text("Review")
-                            .font(.system(size: 12, weight: .semibold))
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .bold))
-                    }
-                }
-                .foregroundStyle(swingCount > 0 ? Color.black : Color.white.opacity(0.74))
-                .padding(.horizontal, 12)
-                .frame(height: 38)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(swingCount > 0 ? Color.yellow : Color.white.opacity(0.10))
-                )
+            if let snapshot = modelSnapshot,
+               snapshot.status != .disabled, snapshot.status != .unavailable {
+                Text(snapshot.processedFrameCount > 0
+                     ? String(format: "%.1f fps / %.0f ms", snapshot.effectiveSampleFPS, snapshot.averageProcessingTimeMS)
+                     : "Waiting for model…")
+                    .font(.caption2)
+                    .monospacedDigit()
+                    .foregroundStyle(.white.opacity(0.65))
+                    .accessibilityIdentifier("capture-model-stats")
             }
-            .buttonStyle(.plain)
-            .disabled(swingCount == 0)
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.black.opacity(0.54))
-        )
-    }
-
-    private var primaryText: String {
-        if let error = status.lastErrorMessage {
-            return error
-        }
-        let practiceText = capturesPracticeSwings ? " Ball-free practice swings are enabled." : ""
-        return "Set up your phone, point it at your swing, then start swinging. Videos save automatically.\(practiceText)"
-    }
-}
-
-struct LiveSwingDetectionBadge: View {
-    let snapshot: LiveSwingDetectionSnapshot
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: iconName)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundColor(iconColor)
-                .frame(width: 22)
-
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(snapshot.primaryMessage)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
-
-                    if snapshot.detectedSwingCount > 0 {
-                        Text("\(snapshot.detectedSwingCount)")
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
-                            .foregroundColor(.black)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Capsule().fill(Color.yellow))
-                    }
-                }
-
-                Text(snapshot.detailMessage)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.78))
-                    .lineLimit(2)
-
-                if let performanceLine {
-                    Text(performanceLine)
-                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                        .foregroundColor(performanceColor)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                }
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.black.opacity(0.58))
-        )
-    }
-
-    private var iconName: String {
-        switch snapshot.status {
-        case .idle:
-            return "scope"
-        case .disabled:
-            return "scope.slash"
-        case .searchingBall:
-            return "magnifyingglass"
-        case .ballLocked:
-            return "smallcircle.filled.circle"
-        case .swingInProgress:
-            return "figure.golf"
-        case .hitDetected, .swingDetected:
-            return "checkmark.circle.fill"
-        case .unavailable:
-            return "exclamationmark.triangle.fill"
-        }
-    }
-
-    private var performanceLine: String? {
-        guard snapshot.targetSampleFPS > 0, snapshot.processedFrameCount > 0 else { return nil }
-
-        var parts = [
-            String(format: "%.0f/%.1ffps", snapshot.targetSampleFPS, snapshot.effectiveSampleFPS),
-            String(format: "model %.0f/%.0fms", snapshot.lastProcessingTimeMS, snapshot.averageProcessingTimeMS)
-        ]
-
-        if snapshot.averagePoseProcessingTimeMS > 0 {
-            parts.append(String(format: "pose %.0f/%.0fms", snapshot.lastPoseProcessingTimeMS, snapshot.averagePoseProcessingTimeMS))
-        }
-
-        if snapshot.analysisLagMS >= 50 {
-            parts.append(String(format: "lag %.0fms", snapshot.analysisLagMS))
-        }
-
-        return parts.joined(separator: " · ")
-    }
-
-    private var performanceColor: Color {
-        let sampleRateRatio = snapshot.targetSampleFPS > 0
-            ? snapshot.effectiveSampleFPS / snapshot.targetSampleFPS
-            : 1
-        if snapshot.analysisLagMS > 500 || sampleRateRatio < 0.70 {
-            return .red.opacity(0.86)
-        }
-        if snapshot.analysisLagMS > 180 || sampleRateRatio < 0.88 {
-            return .yellow.opacity(0.90)
-        }
-        return .white.opacity(0.58)
-    }
-
-    private var iconColor: Color {
-        switch snapshot.status {
-        case .disabled:
-            return .white.opacity(0.68)
-        case .idle, .searchingBall:
-            return .white.opacity(0.84)
-        case .ballLocked, .swingInProgress:
-            return .yellow
-        case .hitDetected, .swingDetected:
-            return .green
-        case .unavailable:
-            return .yellow
         }
     }
 }
