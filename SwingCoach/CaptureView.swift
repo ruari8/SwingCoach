@@ -7,7 +7,6 @@
 
 import SwiftUI
 import UIKit
-import AVKit
 import Combine
 import AVFoundation
 import Photos
@@ -1413,7 +1412,6 @@ struct CaptureView: View {
     @AppStorage(ExperimentalSettingKey.capturePracticeSwings) private var capturePracticeSwings = false
     @State private var workflowMode: CaptureWorkflowMode = .auto
     @State private var isRecording = false
-    @State private var previewPlayerItem: AVPlayerItem?
     @State private var currentRecordingURL: URL?
     @State private var currentRecordingMode: SloMoMode?
     @State private var previousIdleTimerDisabled: Bool?
@@ -1451,57 +1449,6 @@ struct CaptureView: View {
                         .position(point)
                 }
 
-                // Video playback overlay
-                if let previewPlayerItem {
-                    PlaybackChromeView(
-                        playerItem: previewPlayerItem,
-                        initialPlaybackRate: currentRecordingMode?.slowMotionRate ?? 1.0,
-                        playbackEnabled: !showTrimView,
-                        showsSpeedControls: false
-                    ) {
-                        HStack {
-                            Button {
-                                saveToPhotoLibrary()
-                            } label: {
-                                Image(systemName: "square.and.arrow.down.fill")
-                                    .font(.system(size: 17, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .frame(width: 40, height: 40)
-                                    .background(Circle().fill(Color.black.opacity(0.54)))
-                                    .shadow(radius: 4)
-                            }
-                            .padding(.leading, -6)
-
-                            Spacer()
-
-                            Button {
-                                clearCurrentRecording()
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .frame(width: 40, height: 40)
-                                    .background(Circle().fill(Color.black.opacity(0.54)))
-                                    .shadow(radius: 4)
-                            }
-                            .padding(.trailing, -6)
-                        }
-                        .padding(.top, -2)
-                        .padding(.horizontal, 6)
-                    } overlayAccessory: {
-                        Button {
-                            showTrimView = true
-                        } label: {
-                            Image(systemName: "scissors")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(.black)
-                                .frame(width: 50, height: 50)
-                                .background(Circle().fill(Color.yellow))
-                            .shadow(radius: 4)
-                        }
-                    }
-                }
-
                 // Processing overlay
                 if isProcessing {
                     Color.black.opacity(0.7)
@@ -1515,8 +1462,8 @@ struct CaptureView: View {
                     }
                 }
 
-                // Camera controls overlay (when not playing back)
-                if previewPlayerItem == nil && !isProcessing {
+                // Camera controls are available between recordings and Trim sessions.
+                if currentRecordingURL == nil && !isProcessing {
                     VStack {
                         // Top controls: FPS toggle and recording timer
                         HStack {
@@ -1674,7 +1621,6 @@ struct CaptureView: View {
             restoreIdleTimer()
 
             let recordedMode = camera.recordedMode
-            previewPlayerItem = AVPlayerItem(url: url)
             currentRecordingURL = url
             currentRecordingMode = recordedMode
             isProcessing = false
@@ -1687,7 +1633,7 @@ struct CaptureView: View {
             restoreIdleTimer()
             isProcessing = false
         }
-        .fullScreenCover(isPresented: $showTrimView) {
+        .fullScreenCover(isPresented: $showTrimView, onDismiss: clearCurrentRecording) {
             if let url = currentRecordingURL {
                 TrimView(
                     source: .capturedFile(url: url),
@@ -1702,7 +1648,6 @@ struct CaptureView: View {
                             print("   - \(clip.vantage.shortName) \(clip.durationFormatted): \(url.lastPathComponent)")
                         }
                         showTrimView = false
-                        clearCurrentRecording()
                     },
                     onCancel: {
                         showTrimView = false
@@ -1780,35 +1725,14 @@ struct CaptureView: View {
     }
 
     private func clearCurrentRecording() {
-        previewPlayerItem = nil
         if let url = currentRecordingURL {
             try? FileManager.default.removeItem(at: url)
         }
         currentRecordingURL = nil
         currentRecordingMode = nil
         camera.lastRecordingURL = nil
+        camera.lastRecordingSwingDetections = []
         camera.lastRecordingSwingDetectionSummary = nil
-    }
-
-    private func saveToPhotoLibrary() {
-        guard let url = currentRecordingURL else { return }
-
-        PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
-            guard status == .authorized else {
-                print("❌ Photo library access denied")
-                return
-            }
-
-            PHPhotoLibrary.shared().performChanges {
-                PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
-            } completionHandler: { success, error in
-                if success {
-                    print("✅ Video saved to Photos")
-                } else {
-                    print("❌ Failed to save video: \(error?.localizedDescription ?? "unknown")")
-                }
-            }
-        }
     }
 
     // MARK: - Timer
@@ -1867,6 +1791,7 @@ struct RecordButton: View {
             }
         }
         .animation(.easeInOut(duration: 0.15), value: isRecording)
+        .accessibilityLabel(isRecording ? "Stop recording" : "Start recording")
     }
 }
 
