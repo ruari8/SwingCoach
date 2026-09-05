@@ -1690,7 +1690,7 @@ struct CaptureView: View {
             }
         }
         .fullScreenCover(item: $autoReviewPresentation) { _ in
-            AutoSwingReviewView(camera: camera)
+            AutoSwingReviewView(swings: camera.autoSessionSwings, onDelete: camera.deleteAutoCapturedSwing)
                 .onDisappear {
                     camera.resumeAutoCaptureAfterReview()
                     camera.start()

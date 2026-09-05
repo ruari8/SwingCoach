@@ -1173,7 +1173,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     Group {
                         if let player {
                             VideoPlayer(player: player)
-                                .disabled(true)
+                                .allowsHitTesting(false)
                         } else {
                             ProgressView()
                                 .scaleEffect(1.5)
@@ -1187,9 +1187,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .allowsHitTesting(contentOverlayAllowsHitTesting)
 
-                // Touch handling: a single tap toggles the controls; press-and-hold
-                // the left/right edges to fast-scrub. The middle zone can also own
-                // horizontal library navigation when a caller supplies that action.
+                // A tap toggles controls; holding either edge fast-scrubs.
+                // Horizontal dragging belongs to the enclosing review pager.
                 if !contentOverlayAllowsHitTesting {
                     transportTouchLayer
                 }
@@ -1478,27 +1477,16 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             )
     }
 
-    /// Tap toggles controls; press-and-hold fast-scrubs in `direction`. The
-    /// long-press requirement means a horizontal swipe (which moves before the
-    /// press registers) cancels this gesture and reaches the carousel pager.
+    /// One recognizer distinguishes a tap from a hold, and leaves moving
+    /// touches available to the enclosing pager.
     private func scrubTouchZone(direction: Int) -> some View {
         Color.clear
             .contentShape(Rectangle())
-            .simultaneousGesture(
-                TapGesture().onEnded { toggleControls() }
-            )
-            .simultaneousGesture(
-                LongPressGesture(minimumDuration: 0.2)
-                    .sequenced(before: DragGesture(minimumDistance: 0))
-                    .onChanged { value in
-                        if case .second(true, _) = value {
-                            startContinuousStep(direction: direction, showsFeedback: true)
-                        }
-                    }
-                    .onEnded { _ in
-                        stopContinuousStep()
-                    }
-            )
+            .gesture(PlaybackTransportGesture(
+                onTap: { toggleControls() },
+                onHold: { startContinuousStep(direction: direction, showsFeedback: true) },
+                onHoldEnd: { stopContinuousStep() }
+            ))
     }
 
     private var transportFeedback: some View {
@@ -1558,7 +1546,11 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         }
         .frame(height: 28)
         .contentShape(Rectangle())
-        .gesture(
+        .accessibilityElement(children: .ignore)
+        .accessibilityIdentifier("playback-timeline")
+        .accessibilityLabel("Video timeline")
+        .accessibilityValue(String(format: "%.3f", CMTimeGetSeconds(currentTime)))
+        .highPriorityGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { value in
                     beginScrubbing()
