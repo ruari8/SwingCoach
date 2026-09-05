@@ -643,7 +643,10 @@ struct LibraryView: View {
                 .buttonStyle(.plain)
             } else {
                 NavigationLink {
-                    SwingDetailView(swing: swing)
+                    SwingDetailView(
+                        swing: swing,
+                        reviewSwings: swing.isReference ? referenceSwings : filteredSwings
+                    )
                 } label: {
                     swingCardContent(swing, isSelected: isSelected)
                 }
@@ -802,6 +805,7 @@ struct LibraryView: View {
         } label: {
             Image(systemName: filterVantage == nil ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
         }
+        .accessibilityLabel("Filter swings")
     }
 
     private var selectButton: some View {

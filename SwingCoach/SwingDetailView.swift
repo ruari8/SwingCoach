@@ -15,23 +15,26 @@ struct SwingDetailView: View {
     @StateObject private var library = SwingLibrary.shared
     @StateObject private var analysisLibrary = AnalysisLibrary.shared
     @ObservedObject private var manualStore = ManualAnnotationStore.shared
+    @StateObject private var reviewAnalysis = SwingReviewAnalysis()
 
     @State private var currentSwingID: UUID
+    @State private var reviewSwingIDs: [UUID]
     @State private var playerItems: [UUID: AVPlayerItem] = [:]
+    @State private var videoAspectRatios: [UUID: Double] = [:]
     @State private var loadingSwingIDs: Set<UUID> = []
     @State private var playbackErrors: [UUID: String] = [:]
-    @State private var analysisStatus: SwingAnalysis.AnalysisStatus = .pending
-    @State private var analysisProgressText: String?
-    @State private var analysisProgressValue: Float?
     @State private var showTechnicalDetails = false
     @State private var showMetadata = false
     @State private var selectedPage = 0
     @State private var isDrawingLines = false
     @State private var draftLine: ManualAnnotation?
 
-    init(swing: SavedSwing) {
+    init(swing: SavedSwing, reviewSwings: [SavedSwing]? = nil) {
         self.swing = swing
         _currentSwingID = State(initialValue: swing.id)
+        // Freeze the visible collection on entry: starring a video while
+        // reviewing it updates the grid without moving the page mid-gesture.
+        _reviewSwingIDs = State(initialValue: (reviewSwings ?? [swing]).map(\.id))
     }
 
     private var currentSwing: SavedSwing {
@@ -39,9 +42,21 @@ struct SwingDetailView: View {
     }
 
     private var navigationSwings: [SavedSwing] {
-        let references = library.swings.filter { $0.isReference }
-        let personal = library.swings.filter { !$0.isReference }
-        return references + personal
+        reviewSwingIDs.compactMap { id in
+            library.swings.first { $0.id == id }
+        }
+    }
+
+    private var analysisStatus: SwingAnalysis.AnalysisStatus {
+        reviewAnalysis.requests[currentSwingID]?.status ?? .pending
+    }
+
+    private var analysisProgressText: String? {
+        reviewAnalysis.requests[currentSwingID]?.progressText
+    }
+
+    private var analysisProgressValue: Float? {
+        reviewAnalysis.requests[currentSwingID]?.progress
     }
 
     private var swingPositionText: String? {
@@ -79,7 +94,7 @@ struct SwingDetailView: View {
                 analysisFloatingLayer
             }
 
-            if selectedPage == 0, playerItems[currentSwingID] != nil {
+            if selectedPage == 0, videoAspectRatios[currentSwingID] != nil {
                 drawingToolRail
             }
         }
@@ -155,6 +170,7 @@ struct SwingDetailView: View {
                 if let swingPositionText {
                     Text(swingPositionText)
                         .accessibilityIdentifier("swing-position")
+                        .accessibilityValue(currentSwing.title ?? "")
                         .font(.caption.weight(.semibold))
                         .foregroundColor(.white)
                         .padding(.horizontal, 10)
@@ -351,14 +367,12 @@ struct SwingDetailView: View {
                     AnyView(
                         ManualAnnotationCanvasOverlay(
                             tracks: nil,
-                            sourceAspectRatio: playerItem.presentationSize.height > 0
-                                ? Double(playerItem.presentationSize.width / playerItem.presentationSize.height)
-                                : nil,
+                            sourceAspectRatio: videoAspectRatios[swing.id],
                             currentTime: currentTime,
                             analysisID: annotationID,
                             annotations: manualStore.annotations(for: annotationID),
                             draftAnnotation: draftLine,
-                            enabled: true,
+                            enabled: videoAspectRatios[swing.id] != nil,
                             editingEnabled: drawingEnabled,
                             selectedTool: .line,
                             selectedColorHex: "#FFD60A",
@@ -623,6 +637,7 @@ struct SwingDetailView: View {
         let retainedIDs = Set(window.map(\.id))
 
         playerItems = playerItems.filter { retainedIDs.contains($0.key) }
+        videoAspectRatios = videoAspectRatios.filter { retainedIDs.contains($0.key) }
         playbackErrors = playbackErrors.filter { retainedIDs.contains($0.key) }
 
         for swing in window {
@@ -637,11 +652,18 @@ struct SwingDetailView: View {
 
         Task {
             let item = await library.getPlayerItem(for: swing)
+            let aspectRatio: Double?
+            if let item {
+                aspectRatio = try? await VideoDisplayGeometry.aspectRatio(for: item.asset)
+            } else {
+                aspectRatio = nil
+            }
             loadingSwingIDs.remove(swing.id)
 
             guard reviewWindow.contains(where: { $0.id == swing.id }) else { return }
 
             if let item {
+                videoAspectRatios[swing.id] = aspectRatio
                 playerItems[swing.id] = item
             } else {
                 playbackErrors[swing.id] = "The original video could not be loaded. It may have been deleted from Photos."
@@ -650,9 +672,6 @@ struct SwingDetailView: View {
     }
 
     private func resetReviewState() {
-        analysisStatus = .pending
-        analysisProgressText = nil
-        analysisProgressValue = nil
         selectedPage = 0
         isDrawingLines = false
         draftLine = nil
@@ -660,39 +679,10 @@ struct SwingDetailView: View {
     }
 
     private func startAnalysis() {
-        analysisStatus = .analyzing
-        analysisProgressText = "Preparing video..."
-        analysisProgressValue = nil
+        let submittedSwing = currentSwing
         showTechnicalDetails = false
-
         Task {
-            do {
-                let response = try await SwingCoachAPI.shared.analyzeSwing(currentSwing) { stage, progress in
-                    Task { @MainActor in
-                        if let progress {
-                            analysisProgressText = stage
-                            analysisProgressValue = progress
-                        } else {
-                            analysisProgressText = stage
-                            analysisProgressValue = nil
-                        }
-                    }
-                }
-
-                await MainActor.run {
-                    _ = analysisLibrary.save(response, for: currentSwing)
-                    library.markAnalyzed(currentSwing)
-                    analysisProgressText = nil
-                    analysisProgressValue = nil
-                    analysisStatus = .complete
-                }
-            } catch {
-                await MainActor.run {
-                    analysisProgressText = nil
-                    analysisProgressValue = nil
-                    analysisStatus = .failed(SwingCoachAPI.displayMessage(for: error))
-                }
-            }
+            await reviewAnalysis.run(for: submittedSwing)
         }
     }
 

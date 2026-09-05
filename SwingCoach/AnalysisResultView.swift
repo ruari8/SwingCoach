@@ -1099,17 +1099,7 @@ private struct AnnotationVideoOverlay: View {
 
     private func contentRect(for tracks: AnnotationTrackPayload, in size: CGSize) -> CGRect {
         let sourceAspect = CGFloat(max(tracks.frameWidth, 1) / max(tracks.frameHeight, 1))
-        let containerAspect = size.width / max(size.height, 1)
-
-        if containerAspect > sourceAspect {
-            let height = size.height
-            let width = height * sourceAspect
-            return CGRect(x: (size.width - width) / 2, y: 0, width: width, height: height)
-        } else {
-            let width = size.width
-            let height = width / sourceAspect
-            return CGRect(x: 0, y: (size.height - height) / 2, width: width, height: height)
-        }
+        return VideoDisplayGeometry.contentRect(in: size, aspectRatio: Double(sourceAspect))
     }
 
     private func point(_ normalized: AnnotationTrackPayload.NormalizedPoint, in rect: CGRect) -> CGPoint {
@@ -1536,11 +1526,11 @@ struct ManualAnnotationCanvasOverlay: View {
             .gesture(
                 DragGesture(minimumDistance: selectedTool == .label || selectedTool == .eraser ? 0 : 4)
                     .onChanged { value in
-                        guard editingEnabled else { return }
+                        guard editingEnabled, videoRect.contains(value.startLocation) else { return }
                         updateDraft(with: value, rect: videoRect)
                     }
                     .onEnded { value in
-                        guard editingEnabled else { return }
+                        guard editingEnabled, videoRect.contains(value.startLocation) else { return }
                         finishDraft(with: value, rect: videoRect)
                     }
             )
@@ -1562,17 +1552,7 @@ struct ManualAnnotationCanvasOverlay: View {
         } else {
             sourceAspect = size.width / max(size.height, 1)
         }
-        let containerAspect = size.width / max(size.height, 1)
-
-        if containerAspect > sourceAspect {
-            let height = size.height
-            let width = height * sourceAspect
-            return CGRect(x: (size.width - width) / 2, y: 0, width: width, height: height)
-        } else {
-            let width = size.width
-            let height = width / sourceAspect
-            return CGRect(x: 0, y: (size.height - height) / 2, width: width, height: height)
-        }
+        return VideoDisplayGeometry.contentRect(in: size, aspectRatio: Double(sourceAspect))
     }
 
     private func normalizedPoint(_ point: CGPoint, in rect: CGRect) -> ManualAnnotationPoint {
