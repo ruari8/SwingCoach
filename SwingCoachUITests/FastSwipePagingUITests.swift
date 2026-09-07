@@ -20,16 +20,53 @@ final class FastSwipePagingUITests: XCTestCase {
         exerciseFlicks(app, startingAt: 7)
     }
 
-    func testFastFlicksInAutoReviewAndAtFirstVideo() {
+    func testFastFlicksInAutoReviewAndAtLatestVideo() {
         let app = XCUIApplication()
         app.launchArguments = ["-ui-testing-auto-review"]
         app.launch()
-        assertPage(app, 1)
-        app.swipeRight(velocity: XCUIGestureVelocity(rawValue: 6000))
-        assertPage(app, 1)
-        exerciseFlicks(app, startingAt: 1)
-        app.swipeRight(velocity: XCUIGestureVelocity(rawValue: 6000))
-        assertPage(app, 1)
+        assertPage(app, 171)
+        app.swipeLeft(velocity: XCUIGestureVelocity(rawValue: 6000))
+        assertPage(app, 171)
+        var position = 171
+        for speed in [1500.0, 3000.0, 6000.0] {
+            app.swipeRight(velocity: XCUIGestureVelocity(rawValue: speed))
+            position -= 1
+            assertPage(app, position)
+        }
+        exerciseFlicks(app, startingAt: 168)
+    }
+
+    func testAutoReviewReopensLatestAfterBrowsingDeletionAndNewClip() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing-auto-review"]
+        app.launch()
+        assertPage(app, 171)
+        app.swipeRight()
+        assertPage(app, 170)
+        app.buttons["Close swing review"].tap()
+        app.buttons["Review fixture swings"].tap()
+        assertPage(app, 171)
+
+        deleteSelectedSwing(app)
+        assertPage(app, 170, count: 170)
+        app.swipeRight()
+        assertPage(app, 169, count: 170)
+        deleteSelectedSwing(app)
+        assertPage(app, 169, count: 169, title: "Reference swing 170")
+
+        app.buttons["Close swing review"].tap()
+        app.buttons["Append fixture swing"].tap()
+        app.buttons["Review fixture swings"].tap()
+        assertPage(app, 170, count: 170, title: "New fixture swing")
+        app.swipeRight()
+        assertPage(app, 169, count: 170, title: "Reference swing 170")
+    }
+
+    private func deleteSelectedSwing(_ app: XCUIApplication) {
+        let delete = app.buttons["Delete this swing"]
+        XCTAssertTrue(delete.waitForExistence(timeout: 5))
+        delete.tap()
+        app.buttons["Delete from SwingCoach and Photos"].tap()
     }
 
     private func exerciseFlicks(_ app: XCUIApplication, startingAt initialPosition: Int) {
@@ -47,11 +84,11 @@ final class FastSwipePagingUITests: XCTestCase {
         }
     }
 
-    private func assertPage(_ app: XCUIApplication, _ number: Int,
+    private func assertPage(_ app: XCUIApplication, _ number: Int, count: Int = 171, title: String? = nil,
                             file: StaticString = #filePath, line: UInt = #line) {
         let position = app.staticTexts["swing-position"]
         XCTAssertTrue(position.waitForExistence(timeout: 5), file: file, line: line)
-        let expected = "\(number) of 171"
+        let expected = "\(number) of \(count)"
         let settled = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "label == %@", expected), object: position)
         XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 3), .completed,
@@ -60,7 +97,7 @@ final class FastSwipePagingUITests: XCTestCase {
         let visible = app.otherElements.matching(identifier: "swing-review-page")
             .allElementsBoundByIndex.filter { $0.frame.intersection(app.frame).width > 2 }
         XCTAssertEqual(visible.count, 1, "Pager must finish on a whole video", file: file, line: line)
-        XCTAssertEqual(visible.first?.label, "Reference swing \(number)", file: file, line: line)
+        XCTAssertEqual(visible.first?.label, title ?? "Reference swing \(number)", file: file, line: line)
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Settled \(expected)"
         attachment.lifetime = .keepAlways

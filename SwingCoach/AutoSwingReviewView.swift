@@ -15,6 +15,14 @@ struct AutoSwingReviewView: View {
     @State private var deletionError: ReviewDeletionError?
     @State private var isDeleting = false
 
+    init(swings: [SavedSwing], onDelete: @escaping (SavedSwing) async throws -> Void) {
+        self.swings = swings
+        self.onDelete = onDelete
+        // Capture appends clips chronologically. Every presentation starts at
+        // the newest clip while earlier swings remain a swipe to the right away.
+        _selectedSwingID = State(initialValue: swings.last?.id)
+    }
+
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -41,9 +49,6 @@ struct AutoSwingReviewView: View {
             // own corner controls occupy the top-right, and delete sits in the
             // player's bottom-right accessory slot.
             reviewToolbar
-        }
-        .onAppear {
-            selectedSwingID = selectedSwingID ?? swings.first?.id
         }
         .onChange(of: swings.map(\.id)) { _, ids in
             if let selectedSwingID, ids.contains(selectedSwingID) { return }
