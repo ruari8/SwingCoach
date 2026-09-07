@@ -25,6 +25,8 @@ cleanup() {
     exit "$status"
 }
 trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 mkdir -p "$scratch/repo/SwingCoachUITests"
 ditto "$repo/SwingCoach" "$scratch/repo/SwingCoach"
@@ -101,6 +103,24 @@ xcodebuild -project "$scratch/repo/SwingCoach.xcodeproj" -scheme SwingCoach -con
     CODE_SIGNING_ALLOWED=NO build-for-testing > "$artifacts/build.log" 2>&1
 app="$scratch/DerivedData/Build/Products/Debug-iphonesimulator/SwingCoach.app"
 xcrun simctl install "$device" "$app"
+# A single formerly crashing test gates every later app launch. Omit all retry
+# and repetition flags, with no other selected test for Xcode to restart.
+smoke_status=0
+xcodebuild -project "$scratch/repo/SwingCoach.xcodeproj" -scheme SwingCoach -configuration Debug \
+    -destination "platform=iOS Simulator,id=$device" -derivedDataPath "$scratch/DerivedData" \
+    -parallel-testing-enabled NO \
+    -resultBundlePath "$artifacts/audio-smoke.xcresult" \
+    -only-testing:SwingCoachTests/CaptureRecordingAudioSessionTests/testConstructionAndIdleReleaseDoNotTouchAudio \
+    CODE_SIGNING_ALLOWED=NO test-without-building > "$artifacts/audio-smoke.log" 2>&1 || smoke_status=$?
+xcrun xcresulttool get test-results summary --path "$artifacts/audio-smoke.xcresult" > "$artifacts/audio-smoke-summary.json"
+[[ "$smoke_status" -eq 0 ]] || exit "$smoke_status"
+python3 - "$artifacts/audio-smoke-summary.json" <<'PYSMOKE'
+import json, sys
+from pathlib import Path
+summary = json.loads(Path(sys.argv[1]).read_text())
+assert summary['passedTests'] == 1 and summary['failedTests'] == 0 and summary['skippedTests'] == 0, summary
+print('PASS: isolated audio helper construction and release; continuing remaining tests')
+PYSMOKE
 {
     echo "simulator=$device configuration=Debug"
     /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist"
@@ -116,10 +136,12 @@ xcrun simctl io "$device" screenshot "$artifacts/launch.png"
 test_status=0
 xcodebuild -project "$scratch/repo/SwingCoach.xcodeproj" -scheme SwingCoach -configuration Debug \
     -destination "platform=iOS Simulator,id=$device" -derivedDataPath "$scratch/DerivedData" \
-    -parallel-testing-enabled NO -resultBundlePath "$artifacts/capture-audio.xcresult" \
+    -parallel-testing-enabled NO \
+    -resultBundlePath "$artifacts/capture-audio.xcresult" \
     -only-testing:SwingCoachUITests/ManualTrimCancelUITests \
     -only-testing:SwingCoachUITests/CaptureAudioUITests \
     -only-testing:SwingCoachTests/CaptureRecordingAudioSessionTests \
+    -skip-testing:SwingCoachTests/CaptureRecordingAudioSessionTests/testConstructionAndIdleReleaseDoNotTouchAudio \
     CODE_SIGNING_ALLOWED=NO test-without-building > "$artifacts/test.log" 2>&1 || test_status=$?
 xcrun xcresulttool get test-results summary --path "$artifacts/capture-audio.xcresult" > "$artifacts/test-summary.json"
 xcrun xcresulttool export attachments --path "$artifacts/capture-audio.xcresult" --output-path "$artifacts/screenshots" > /dev/null
@@ -131,7 +153,7 @@ from pathlib import Path
 import json, sys
 root = Path(sys.argv[1])
 summary = json.loads(Path(sys.argv[2]).read_text())
-assert summary['passedTests'] == 7 and summary['failedTests'] == 0 and summary['skippedTests'] == 0, summary
+assert summary['passedTests'] == 6 and summary['failedTests'] == 0 and summary['skippedTests'] == 0, summary
 assert not list((root / 'tmp').glob('manual-cancel-*.mp4')), 'Cancelled recording was not removed'
 print('PASS: preview audio policy, scoped recording audio, Manual/Trim/Cancel and file cleanup')
 PY
