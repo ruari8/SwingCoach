@@ -8,14 +8,14 @@ struct AutoSwingReviewPresentation: Identifiable {
 struct AutoSwingReviewView: View {
     @Environment(\.dismiss) private var dismiss
     let swings: [SavedSwing]
-    let onDelete: (SavedSwing) async throws -> Void
+    let onDelete: @MainActor (SavedSwing) async throws -> Void
 
     @State private var selectedSwingID: UUID?
     @State private var swingPendingDeletion: SavedSwing?
     @State private var deletionError: ReviewDeletionError?
     @State private var isDeleting = false
 
-    init(swings: [SavedSwing], onDelete: @escaping (SavedSwing) async throws -> Void) {
+    init(swings: [SavedSwing], onDelete: @escaping @MainActor (SavedSwing) async throws -> Void) {
         self.swings = swings
         self.onDelete = onDelete
         // Capture appends clips chronologically. Every presentation starts at

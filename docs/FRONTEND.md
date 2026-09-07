@@ -310,6 +310,8 @@ For high-velocity flicks, run `./scripts/verify-fast-swipes.sh`. It seeds 171 sy
 
 This regression reproduced a 6,000-point/second flick from video 9 landing on video 11 with the previous `.viewAligned(limitBehavior: .alwaysByOne)` behavior. The older three-video tests could not expose that case: their fast forward swipes began next to the last video, and their drag helper paused before releasing, reducing momentum. The explicit destination clamp fixes the failing long-list test while retaining native gesture handling.
 
+Auto review initializes its selected ID from the final session clip before the pager appears. Its asynchronous delete callback explicitly requires `@MainActor`, matching the camera controller and preserving the selected swing identity through the initializer and callback.
+
 The DEBUG launch argument `-ui-testing-auto-review` opens the production Auto review view with an in-memory session of local reference clips. The fixture presents review with the production full-screen presentation pattern. After Done, its host offers reopen and append buttons to simulate a new session clip using an existing local video. Deletion removes a fixture from that session only. It does not delete files or Photos assets, and it does not exercise capture or detection.
 
 Run the suite on an owned simulator with the local fixtures installed:
