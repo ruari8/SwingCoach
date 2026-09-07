@@ -26,7 +26,7 @@ struct TrimView: View {
     var runsPostRecordDetection = true
     let onComplete: ([SwingClip], [URL]) -> Void
     let onCancel: () -> Void
-    var onExportAndAnalyze: (([SwingClip]) -> Void)? = nil
+    var onAnalyzeSwings: (([SavedSwing]) -> Void)? = nil
 
     @State private var player: AVPlayer?
     @State private var duration: CMTime = .zero
@@ -46,6 +46,11 @@ struct TrimView: View {
     @State private var clips: [SwingClip] = []
     @State private var autoDetectedClipIDs: Set<UUID> = []
     @State private var editingClipID: UUID?
+    @State private var timelineSelectionRequest = UUID()
+    @State private var analysisClipIDs: Set<UUID> = []
+    @State private var reviewPresentation: TrimReviewPresentation?
+    @State private var reviewSelection: UUID?
+    @State private var exportError: String?
     @State private var selectedVantage: Vantage = .dtl
     @State private var autoDetectionState: SwingAutoDetectionState = .idle
 
@@ -115,10 +120,27 @@ struct TrimView: View {
             }
         }
         .onAppear {
-            prepareSource()
+            if player == nil { prepareSource() }
         }
         .onDisappear {
-            cleanup()
+            if reviewPresentation == nil { cleanup() }
+        }
+        .fullScreenCover(item: $reviewPresentation, onDismiss: {
+            if let clip = clips.first(where: { $0.id == reviewSelection }) {
+                selectClipForEditing(clip)
+            }
+        }) { presentation in
+            TrimReviewView(asset: presentation.asset, clips: presentation.clips,
+                           selection: $reviewSelection, analysisClipIDs: $analysisClipIDs,
+                           allowsAnalysis: onAnalyzeSwings != nil,
+                           playbackRate: preferredPlaybackRate)
+        }
+        .alert("Couldn’t Export Swings", isPresented: Binding(
+            get: { exportError != nil }, set: { if !$0 { exportError = nil } }
+        )) {
+            Button("OK", role: .cancel) { exportError = nil }
+        } message: {
+            Text(exportError ?? "")
         }
     }
 
@@ -257,6 +279,8 @@ struct TrimView: View {
                 displayTimeScale: displayTimeScale,
                 duration: duration,
                 clips: clips,
+                selectedClipID: editingClipID,
+                selectionRequest: timelineSelectionRequest,
                 currentTime: $currentTime,
                 rangeStart: $rangeStart,
                 rangeEnd: $rangeEnd,
@@ -434,10 +458,30 @@ struct TrimView: View {
     private var clipsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             if !clips.isEmpty {
-                Text("\(clipsTitle) (\(clips.count))")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal)
+                HStack {
+                    Text("\(clipsTitle) (\(clips.count))")
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Button("Review Full Screen", systemImage: "arrow.up.left.and.arrow.down.right") {
+                        commitEditingClipIfNeeded()
+                        player?.pause()
+                        isPlaying = false
+                        reviewSelection = editingClipID ?? clips.first?.id
+                        if let previewAsset {
+                            reviewPresentation = TrimReviewPresentation(asset: previewAsset, clips: clips)
+                        }
+                    }
+                    .font(.caption)
+                    .accessibilityIdentifier("trim-review")
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal)
+                if !autoDetectedClipIDs.isEmpty {
+                    Text("Detected ranges include 1s extra before and after, within video bounds.")
+                        .font(.caption2)
+                        .foregroundStyle(.white.opacity(0.6))
+                        .padding(.horizontal)
+                }
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
@@ -463,27 +507,34 @@ struct TrimView: View {
     private func clipThumbnail(_ clip: SwingClip) -> some View {
         VStack(spacing: 4) {
             ZStack(alignment: .topTrailing) {
-                if let thumbnail = clip.thumbnail {
-                    Image(uiImage: thumbnail)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 80, height: 50)
-                        .clipped()
-                        .cornerRadius(6)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(editingClipID == clip.id ? Color.yellow : Color.clear, lineWidth: 2)
-                        )
-                } else {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 80, height: 50)
-                        .cornerRadius(6)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(editingClipID == clip.id ? Color.yellow : Color.clear, lineWidth: 2)
-                        )
+                Button {
+                    selectClipForEditing(clip)
+                } label: {
+                    if let thumbnail = clip.thumbnail {
+                        Image(uiImage: thumbnail)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 80, height: 50)
+                            .clipped()
+                            .cornerRadius(6)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(editingClipID == clip.id ? Color.yellow : Color.clear, lineWidth: 2)
+                            )
+                    } else {
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 80, height: 50)
+                            .cornerRadius(6)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(editingClipID == clip.id ? Color.yellow : Color.clear, lineWidth: 2)
+                            )
+                    }
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Edit swing \(clipNumber(clip))")
+                .accessibilityIdentifier("trim-clip-\(clipNumber(clip))")
 
                 if autoDetectedClipIDs.contains(clip.id) {
                     Image(systemName: "sparkles")
@@ -505,6 +556,19 @@ struct TrimView: View {
                         .shadow(radius: 2)
                 }
                 .offset(x: 6, y: -6)
+                .accessibilityLabel("Remove swing \(clipNumber(clip))")
+            }
+
+            if onAnalyzeSwings != nil {
+                Button {
+                    if !analysisClipIDs.insert(clip.id).inserted { analysisClipIDs.remove(clip.id) }
+                } label: {
+                    Label("Analyze", systemImage: analysisClipIDs.contains(clip.id) ? "checkmark.circle.fill" : "circle")
+                        .font(.caption)
+                        .foregroundStyle(analysisClipIDs.contains(clip.id) ? .yellow : .white)
+                }
+                .accessibilityLabel("Analyze swing \(clipNumber(clip))")
+                .accessibilityValue(analysisClipIDs.contains(clip.id) ? "Selected" : "Not selected")
             }
 
             Text(clipDurationText(clip))
@@ -518,9 +582,10 @@ struct TrimView: View {
                     .lineLimit(1)
             }
         }
-        .onTapGesture {
-            selectClipForEditing(clip)
-        }
+    }
+
+    private func clipNumber(_ clip: SwingClip) -> Int {
+        (clips.firstIndex(where: { $0.id == clip.id }) ?? 0) + 1
     }
 
     private func clipDurationText(_ clip: SwingClip) -> String {
@@ -587,31 +652,30 @@ struct TrimView: View {
     }
 
     private var bottomBar: some View {
-        HStack {
+        VStack(spacing: 8) {
             Text(statusText)
-                .font(.subheadline)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .foregroundColor(.white.opacity(0.6))
-
-            Spacer()
-
-            Button {
-                handlePrimaryExportAction()
-            } label: {
-                Text(primaryExportButtonTitle)
-                    .font(.system(size: 16, weight: .semibold))
-                    .lineLimit(1)
-                    .foregroundColor((clips.isEmpty && !canUseFullVideo) ? .gray : .black)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background((clips.isEmpty && !canUseFullVideo) ? Color.gray.opacity(0.3) : Color.yellow)
-                    .cornerRadius(10)
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.6))
+            HStack {
+                Button(primaryExportButtonTitle) { handlePrimaryExportAction() }
+                    .accessibilityIdentifier("trim-export-only")
+                    .disabled(clips.isEmpty && !canUseFullVideo)
+                if onAnalyzeSwings != nil && !clips.isEmpty {
+                    Button("Export & Analyze \(analysisClipIDs.count)") {
+                        commitEditingClipIfNeeded()
+                        exportClips(clips, analyzing: analysisClipIDs)
+                    }
+                    .accessibilityIdentifier("trim-export-analyze")
+                    .disabled(analysisClipIDs.isEmpty)
+                }
             }
-            .fixedSize(horizontal: true, vertical: false)
-            .disabled(clips.isEmpty && !canUseFullVideo)
+            .buttonStyle(.borderedProminent)
+            .tint(.yellow)
+            .foregroundStyle(.black)
+            .font(.subheadline.weight(.semibold))
         }
         .padding()
+        .frame(maxWidth: .infinity)
         .background(Color.black.opacity(0.5))
     }
 
@@ -818,13 +882,9 @@ struct TrimView: View {
         }
 
         let detectedClips = detections.map {
-            SwingClip(
-                startTime: $0.startTime,
-                endTime: $0.endTime,
-                vantage: selectedVantage,
-                detectionImpactTime: $0.impactTime,
-                detectionDeclaredAt: $0.declaredAt
-            )
+            TrimClipPreparation.detectedClip($0, duration: duration,
+                                             sourceTimeScale: detectorTimelineScale,
+                                             vantage: selectedVantage)
         }
 
         clips = detectedClips
@@ -911,6 +971,7 @@ struct TrimView: View {
     private func removeClip(_ clip: SwingClip) {
         clips.removeAll { $0.id == clip.id }
         autoDetectedClipIDs.remove(clip.id)
+        analysisClipIDs.remove(clip.id)
 
         if editingClipID == clip.id {
             clearSelection()
@@ -918,10 +979,13 @@ struct TrimView: View {
     }
 
     private func selectClipForEditing(_ clip: SwingClip) {
+        player?.pause()
+        isPlaying = false
         seek(to: clip.startCMTime)
         rangeStart = clip.startCMTime
         rangeEnd = clip.endCMTime
         editingClipID = clip.id
+        timelineSelectionRequest = UUID()
     }
 
     private func updateEditingClip(start: CMTime, end: CMTime) -> Bool {
@@ -959,7 +1023,7 @@ struct TrimView: View {
         }
     }
 
-    private func exportClips(_ clipsToExport: [SwingClip]) {
+    private func exportClips(_ clipsToExport: [SwingClip], analyzing analysisIDs: Set<UUID> = []) {
         guard !clipsToExport.isEmpty else { return }
 
         isExporting = true
@@ -984,12 +1048,13 @@ struct TrimView: View {
                 }
 
                 // Save each clip to Photos library and add to SwingLibrary
-                var savedCount = 0
+                var savedSwings: [UUID: SavedSwing] = [:]
+                var savedClips: [SwingClip] = []
                 for (clip, url) in zip(clipsToExport, exportedURLs) {
                     if let assetID = await PHPhotoLibrary.saveVideoAndGetID(url: url) {
                         let libraryThumbnail = await immediateLibraryThumbnail(for: clip, exportAsset: exportAsset)
-                        await MainActor.run { () -> Void in
-                            _ = SwingLibrary.shared.addSwing(
+                        let saved = await MainActor.run {
+                            SwingLibrary.shared.addSwing(
                                 photoAssetID: assetID,
                                 vantage: clip.vantage,
                                 duration: clip.duration * displayTimeScale,
@@ -997,23 +1062,37 @@ struct TrimView: View {
                                 localSourceURL: url
                             )
                         }
-                        savedCount += 1
+                        savedSwings[clip.id] = saved
+                        savedClips.append(clip)
                     }
                     // Clean up temp file
                     try? FileManager.default.removeItem(at: url)
                 }
 
-                print("✅ Saved \(savedCount)/\(exportedURLs.count) clips to Photos & Library")
+                print("Saved \(savedClips.count)/\(exportedURLs.count) clips to Photos & Library")
 
                 await MainActor.run {
                     isExporting = false
-                    onComplete(clipsToExport, exportedURLs)
+                    let analysisSwings = TrimClipPreparation.analysisSwings(
+                        clips: clipsToExport, selectedIDs: analysisIDs, savedSwings: savedSwings)
+                    if savedClips.count == clipsToExport.count {
+                        onComplete(savedClips, exportedURLs)
+                    } else {
+                        let savedIDs = Set(savedClips.map(\.id))
+                        clips.removeAll { savedIDs.contains($0.id) }
+                        autoDetectedClipIDs.subtract(savedIDs)
+                        analysisClipIDs.subtract(savedIDs)
+                        clearSelection()
+                        exportError = "Saved \(savedClips.count) of \(clipsToExport.count) swings. Check Photos access and retry the remaining swings."
+                    }
+                    if !analysisSwings.isEmpty { onAnalyzeSwings?(analysisSwings) }
                 }
             } catch {
                 print("❌ Export failed: \(error)")
                 await MainActor.run {
                     isExporting = false
                     exportProgress = nil
+                    exportError = error.localizedDescription
                 }
             }
         }
@@ -1035,10 +1114,6 @@ struct TrimView: View {
             return "Use Full Video"
         }
 
-        if onExportAndAnalyze != nil {
-            return "Export & Analyze"
-        }
-
         return "Export \(clips.count) Clip\(clips.count == 1 ? "" : "s")"
     }
 
@@ -1050,7 +1125,6 @@ struct TrimView: View {
             return
         }
 
-        // TODO: Re-enable automatic analyze handoff once the exported-clip coach flow is ready.
         exportClips(clips)
     }
 

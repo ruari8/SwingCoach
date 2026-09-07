@@ -127,7 +127,8 @@ struct SwingDetailView: View {
                     get: { currentSwingID },
                     set: { if let id = $0 { currentSwingID = id } }
                 ),
-                pagingEnabled: !isDrawingLines
+                pagingEnabled: !isDrawingLines,
+                title: { $0.title ?? "Swing video" }
             ) { pageSwing in
                 originalVideoPage(for: pageSwing)
             }

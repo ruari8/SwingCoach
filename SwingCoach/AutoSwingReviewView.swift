@@ -27,7 +27,8 @@ struct AutoSwingReviewView: View {
                 )
                 .foregroundStyle(.white)
             } else {
-                SwingReviewPager(swings: swings, selection: $selectedSwingID, pagingEnabled: !isDeleting) { swing in
+                SwingReviewPager(swings: swings, selection: $selectedSwingID, pagingEnabled: !isDeleting,
+                                 title: { $0.title ?? "Swing video" }) { swing in
                     AutoSwingReviewPage(
                         swing: swing,
                         isSelected: selectedSwingID == swing.id,
