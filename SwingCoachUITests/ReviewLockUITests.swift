@@ -110,7 +110,11 @@ final class ReviewLockUITests: XCTestCase {
         let label = enabled ? "Unlock controls" : "Keep controls on screen"
         XCTAssertTrue(app.buttons[label].waitForExistence(timeout: 5), "Expected \(label) on \(app.staticTexts["swing-position"].label)", file: file, line: line)
         XCTAssertTrue(app.buttons[label].isHittable, file: file, line: line)
-        let attachment = XCTAttachment(screenshot: app.screenshot())
+        if enabled {
+            XCTAssertTrue(app.otherElements["playback-timeline"].isHittable, file: file, line: line)
+            XCTAssertTrue(app.buttons["Play"].isHittable || app.buttons["Pause"].isHittable, file: file, line: line)
+        }
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = "\(app.staticTexts["swing-position"].label) \(label)"
         attachment.lifetime = .keepAlways
         add(attachment)
