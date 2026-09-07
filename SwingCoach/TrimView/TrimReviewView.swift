@@ -50,6 +50,8 @@ struct TrimReviewView: View {
             .tint(.white)
             .foregroundStyle(.white)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("trim-full-review")
     }
 }
 

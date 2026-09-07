@@ -56,6 +56,7 @@ xcodebuild -project "$scratch/repo/SwingCoach.xcodeproj" -scheme SwingCoach -con
 app="$scratch/DerivedData/Build/Products/Debug-iphonesimulator/SwingCoach.app"
 xcrun simctl install "$device" "$app"
 xcrun simctl privacy "$device" grant photos-add Pear.ai.SwingCoach
+xcrun simctl privacy "$device" grant photos Pear.ai.SwingCoach
 {
     echo "simulator=$device configuration=Debug"
     /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist"
@@ -85,7 +86,7 @@ xcrun simctl io "$device" screenshot "$artifacts/final-simulator.png"
 container=$(xcrun simctl get_app_container "$device" Pear.ai.SwingCoach data)
 python3 - "$container" "$artifacts/test-summary.json" <<'PYTEST'
 from pathlib import Path
-import json, os, plistlib, sys
+import json, os, plistlib, subprocess, sys
 root = Path(sys.argv[1])
 summary = json.loads(Path(sys.argv[2]).read_text())
 assert summary['passedTests'] == (1 if os.environ.get('SWINGCOACH_TRIM_VERIFY_UI_ONLY') == '1' else 5) and summary['failedTests'] == 0 and summary['skippedTests'] == 0, summary
@@ -94,8 +95,15 @@ ids = prefs.get('trim-verification-analysis-ids', [])
 assert len(ids) == 1, ids
 library_files = list((root / 'Documents').rglob('*.json'))
 records = next(json.loads(p.read_text()) for p in library_files if p.name == 'swing_library.json')
+records = [record for record in records if not record.get('isReference', False)]
 assert len(records) == 6, records
 assert any(record['id'] == ids[0] and record['localVideoFilename'] for record in records)
+for record in records:
+    video = root / 'Library/Application Support/SwingVideos' / record['localVideoFilename']
+    assert video.is_file(), video
+    probe = json.loads(subprocess.check_output(['ffprobe', '-v', 'error', '-show_streams', '-show_format', '-of', 'json', str(video)]))
+    assert {stream['codec_type'] for stream in probe['streams']} == {'video', 'audio'}, probe
+    assert abs(float(probe['format']['duration']) - 3.0) < 0.15, probe
 assert not list((root / 'tmp').glob('trim-review-*.mp4')), 'Completed recording was not removed'
 print('PASS: timeline seek, full review, paging, export-only, subset handoff and 6 persisted local clips')
 PYTEST

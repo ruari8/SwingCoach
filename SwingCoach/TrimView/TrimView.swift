@@ -477,7 +477,7 @@ struct TrimView: View {
                 .foregroundColor(.white)
                 .padding(.horizontal)
                 if !autoDetectedClipIDs.isEmpty {
-                    Text("Detected ranges include 1s extra before and after, within video bounds.")
+                    Text("Added padding: 1s before and after")
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.6))
                         .padding(.horizontal)
