@@ -122,6 +122,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private var rotationCoordinator: AVCaptureDevice.RotationCoordinator?
     private var isConfigured = false
     private var captureOutputIsPaused = false
+    // These counters are owned by qualityQueue, independent of detector UI stats.
+    private var captureCadence = CaptureCadenceWindow()
+    private var nextCadenceReport = 0.0
+    private var droppedFrameReasons: [String: Int] = [:]
+    private var coalescedAnalysisFrames = 0
+    private var diagnosticDevice: AVCaptureDevice?
 
     private struct PendingAnalysisFrame {
         let sampleBuffer: CMSampleBuffer
@@ -219,6 +225,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
         // Add input and output FIRST
         session.addInput(input)
+        diagnosticDevice = device
         rotationCoordinator = AVCaptureDevice.RotationCoordinator(device: device, previewLayer: nil)
         configureAudioInput()
         if session.canAddOutput(movieOutput) {
@@ -512,6 +519,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private func resetLiveSwingDetection() {
         let detectorEnabled = isLiveSwingDetectionEnabled || autoCaptureIsActive
         qualityQueue.async {
+            CaptureCadenceDiagnostics.shared.emit("camera-reset", cadence: self.captureCadence.takeSummary())
+            self.captureCadence = CaptureCadenceWindow()
+            self.droppedFrameReasons = [:]
+            self.coalescedAnalysisFrames = 0
+            self.nextCadenceReport = 0
             self.recordingStartSampleTime = nil
             self.recordingStartWallTime = nil
             self.lastLiveSwingSampleTime = -Double.greatestFiniteMagnitude
@@ -647,6 +659,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         else { return }
 
         let sampleTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+        if shouldProcessAuto {
+            captureCadence.record(pts: sampleTime.seconds, expectedFPS: captureMode.targetFPS)
+            reportCaptureCadence(connection: connection)
+        }
         if recordingStartSampleTime == nil {
             recordingStartSampleTime = sampleTime
             recordingStartWallTime = Date()
@@ -660,12 +676,14 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         let rotationAngle = currentCardinalCaptureRotationAngle()
         if shouldProcessAuto {
             let sourceFPS = captureMode.targetFPS
+            let enqueuedAt = ProcessInfo.processInfo.systemUptime
             bufferQueue.async {
                 self.autoRollingBuffer.append(
                     sampleBuffer: sampleBuffer,
                     relativeTime: relativeTime,
                     videoRotationAngle: rotationAngle,
-                    sourceFPS: sourceFPS
+                    sourceFPS: sourceFPS,
+                    queueDelay: ProcessInfo.processInfo.systemUptime - enqueuedAt
                 )
             }
         }
@@ -674,6 +692,55 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             relativeTime: relativeTime,
             rotationAngle: rotationAngle
         )
+    }
+
+    func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        guard autoCaptureIsActive, !autoCaptureIsPausedForReview, !captureOutputIsPaused else { return }
+        let reason = CMGetAttachment(sampleBuffer, key: kCMSampleBufferAttachmentKey_DroppedFrameReason, attachmentModeOut: nil)
+        let name: String
+        let rawReason = reason as? String
+        if rawReason == (kCMSampleBufferDroppedFrameReason_FrameWasLate as String) {
+            name = "late"
+        } else if rawReason == (kCMSampleBufferDroppedFrameReason_OutOfBuffers as String) {
+            name = "outOfBuffers"
+        } else if rawReason == (kCMSampleBufferDroppedFrameReason_Discontinuity as String) {
+            name = "discontinuity"
+        } else {
+            name = "unknown"
+        }
+        droppedFrameReasons[name, default: 0] += 1
+        reportCaptureCadence(connection: connection)
+    }
+
+    private func reportCaptureCadence(connection: AVCaptureConnection) {
+        let now = ProcessInfo.processInfo.systemUptime
+        guard now >= nextCadenceReport else { return }
+        nextCadenceReport = now + 1
+        var values: [String: Double] = [
+            "requestedFPS": captureMode.targetFPS,
+            "coalescedAnalysisFrames": Double(coalescedAnalysisFrames),
+            "thermalState": Double(ProcessInfo.processInfo.thermalState.rawValue),
+            "stabilizationMode": Double(connection.activeVideoStabilizationMode.rawValue)
+        ]
+        for (reason, count) in droppedFrameReasons { values["dropped_" + reason] = Double(count) }
+        var state: [String: String] = [:]
+        if let device = diagnosticDevice {
+            let dimensions = CMVideoFormatDescriptionGetDimensions(device.activeFormat.formatDescription)
+            values["width"] = Double(dimensions.width)
+            values["height"] = Double(dimensions.height)
+            values["minFrameSeconds"] = device.activeVideoMinFrameDuration.seconds
+            values["maxFrameSeconds"] = device.activeVideoMaxFrameDuration.seconds
+            values["exposureSeconds"] = device.exposureDuration.seconds
+            values["iso"] = Double(device.iso)
+            values["lensPosition"] = Double(device.lensPosition)
+            values["adjustingFocus"] = device.isAdjustingFocus ? 1 : 0
+            values["adjustingExposure"] = device.isAdjustingExposure ? 1 : 0
+            state["pressure"] = device.systemPressureState.level.rawValue
+            state["camera"] = device.deviceType.rawValue
+        }
+        CaptureCadenceDiagnostics.shared.emit("camera", cadence: captureCadence.takeSummary(), values: values, state: state)
+        droppedFrameReasons = [:]
+        coalescedAnalysisFrames = 0
     }
 
     private func currentCardinalCaptureRotationAngle() -> CGFloat {
@@ -689,6 +756,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         preparedClip: AutoRollingVideoBuffer.PreparedClip,
         recordedMode: SloMoMode
     ) async {
+        let diagnosticID = preparedClip.chunkID.uuidString
+        CaptureCadenceDiagnostics.shared.emit("export-start", id: diagnosticID, values: [
+            "chunkStart": preparedClip.sourceStartTime,
+            "start": preparedClip.startTime.seconds, "end": preparedClip.endTime.seconds,
+            "slowMotionFactor": recordedMode.sourceTimeScale
+        ], state: ["detection": detection.id.uuidString])
         let asset = AVURLAsset(url: preparedClip.sourceURL)
         var savedCount = 0
         var lastErrorMessage: String?
@@ -713,6 +786,8 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 slowMotionFactor: recordedMode.exportSlowMotionFactor
             )
 
+            CaptureCadenceDiagnostics.shared.emit("export-written", id: diagnosticID,
+                state: ["file": outputURL.lastPathComponent])
             guard let assetID = await PHPhotoLibrary.saveVideoAndGetID(url: outputURL) else {
                 throw AutoCaptureExportError.photosSaveFailed
             }
@@ -748,6 +823,8 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             )
         }
 
+        CaptureCadenceDiagnostics.shared.emit("export-end", id: diagnosticID,
+            values: ["saved": Double(savedCount)], state: ["error": lastErrorMessage ?? "none"])
         bufferQueue.async {
             self.autoRollingBuffer.release(preparedClip)
         }
@@ -766,6 +843,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         guard !analysisIsInFlight else {
             // Coalesce backlog to the newest frame. The detector samples by
             // timestamp, so stale queued frames only create lag and heat.
+            coalescedAnalysisFrames += 1
             pendingAnalysisFrame = frame
             return
         }
@@ -965,6 +1043,9 @@ private final class AutoRollingVideoBuffer {
         var pendingSamples: [BufferedSample] = []
         var pendingReadIndex = 0
         var completionHandlers: [() -> Void] = []
+        var cadence = CaptureCadenceWindow()
+        var nextCadenceReport = 0.0
+        let sourceFPS: Double
 
         init(
             url: URL,
@@ -972,8 +1053,10 @@ private final class AutoRollingVideoBuffer {
             input: AVAssetWriterInput,
             startRelativeTime: Double,
             startSampleTime: CMTime,
-            videoRotationAngle: CGFloat
+            videoRotationAngle: CGFloat,
+            sourceFPS: Double
         ) {
+            self.sourceFPS = sourceFPS
             self.url = url
             self.writer = writer
             self.input = input
@@ -991,12 +1074,17 @@ private final class AutoRollingVideoBuffer {
     private let chunkStartInterval = 17.4
     private let retentionDuration = 45.0
     private var nextChunkStartTime: Double?
+    private var inputCadence = CaptureCadenceWindow()
+    private var nextInputCadenceReport = 0.0
 
     init(writerQueue: DispatchQueue) {
         self.writerQueue = writerQueue
     }
 
     func reset(preservingPendingExports: Bool = false) {
+        CaptureCadenceDiagnostics.shared.emit("buffer-reset", cadence: inputCadence.takeSummary())
+        inputCadence = CaptureCadenceWindow()
+        nextInputCadenceReport = 0
         var preservedChunks: [Chunk] = []
         for chunk in chunks {
             if preservingPendingExports, chunk.pendingExports > 0 {
@@ -1020,12 +1108,22 @@ private final class AutoRollingVideoBuffer {
         sampleBuffer: CMSampleBuffer,
         relativeTime: Double,
         videoRotationAngle: CGFloat,
-        sourceFPS: Double
+        sourceFPS: Double,
+        queueDelay: Double
     ) {
         guard relativeTime.isFinite else { return }
         latestRelativeTime = relativeTime
         let sampleTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
         guard sampleTime.isValid else { return }
+        inputCadence.record(pts: sampleTime.seconds, expectedFPS: sourceFPS, queueDelay: queueDelay)
+        let now = ProcessInfo.processInfo.systemUptime
+        if now >= nextInputCadenceReport {
+            nextInputCadenceReport = now + 1
+            CaptureCadenceDiagnostics.shared.emit("buffer-input", cadence: inputCadence.takeSummary(), values: [
+                "relativeTime": relativeTime, "sourceFPS": sourceFPS,
+                "activeChunks": Double(chunks.filter { !$0.isFinished }.count)
+            ])
+        }
 
         let activeChunks = chunks.filter { !$0.isFinishing && !$0.isFinished }
         if activeChunks.contains(where: { $0.videoRotationAngle != videoRotationAngle }) {
@@ -1183,17 +1281,28 @@ private final class AutoRollingVideoBuffer {
                 input: input,
                 startRelativeTime: relativeTime,
                 startSampleTime: sampleTime,
-                videoRotationAngle: videoRotationAngle
+                videoRotationAngle: videoRotationAngle,
+                sourceFPS: sourceFPS
             )
+            CaptureCadenceDiagnostics.shared.emit("writer-start", id: chunk.id.uuidString, values: [
+                "sourcePTS": sampleTime.seconds, "relativeTime": relativeTime,
+                "sourceFPS": sourceFPS, "bitRate": Double(averageBitRate),
+                "width": Double(dimensions.width), "height": Double(dimensions.height),
+                "rotation": Double(videoRotationAngle)
+            ], state: ["codec": "h264"])
             chunks.append(chunk)
             nextChunkStartTime = relativeTime + chunkStartInterval
         } catch {
+            CaptureCadenceDiagnostics.shared.emit("writer-start-failed", state: ["error": error.localizedDescription])
             print("❌ Auto rolling buffer failed to start: \(error.localizedDescription)")
         }
     }
 
     private func append(_ sampleBuffer: CMSampleBuffer, to chunk: Chunk, relativeTime: Double) {
-        guard let retimedBuffer = Self.copy(sampleBuffer, relativeTo: chunk.startSampleTime) else { return }
+        guard let retimedBuffer = Self.copy(sampleBuffer, relativeTo: chunk.startSampleTime) else {
+            CaptureCadenceDiagnostics.shared.emit("writer-retime-failed", id: chunk.id.uuidString)
+            return
+        }
         chunk.pendingSamples.append(
             BufferedSample(sampleBuffer: retimedBuffer, relativeTime: relativeTime)
         )
@@ -1213,16 +1322,33 @@ private final class AutoRollingVideoBuffer {
               chunk.pendingReadIndex < chunk.pendingSamples.count {
             let sample = chunk.pendingSamples[chunk.pendingReadIndex]
             if chunk.input.append(sample.sampleBuffer) {
+                chunk.cadence.record(pts: CMSampleBufferGetPresentationTimeStamp(sample.sampleBuffer).seconds,
+                                     expectedFPS: chunk.sourceFPS,
+                                     pendingFrames: chunk.pendingSamples.count - chunk.pendingReadIndex)
                 chunk.endRelativeTime = sample.relativeTime
                 chunk.pendingReadIndex += 1
             } else {
                 let message = chunk.writer.error?.localizedDescription ?? "unknown writer error"
+                CaptureCadenceDiagnostics.shared.emit("writer-append-failed", id: chunk.id.uuidString,
+                    values: ["pendingFrames": Double(chunk.pendingSamples.count - chunk.pendingReadIndex)],
+                    state: ["error": message])
                 print("❌ Auto rolling buffer append failed: \(message)")
                 chunk.pendingSamples.removeAll(keepingCapacity: false)
                 chunk.pendingReadIndex = 0
                 chunk.isFinishing = true
                 break
             }
+        }
+
+        let now = ProcessInfo.processInfo.systemUptime
+        if now >= chunk.nextCadenceReport {
+            chunk.nextCadenceReport = now + 1
+            CaptureCadenceDiagnostics.shared.emit("writer", id: chunk.id.uuidString,
+                cadence: chunk.cadence.takeSummary(), values: [
+                    "pendingFrames": Double(chunk.pendingSamples.count - chunk.pendingReadIndex),
+                    "ready": chunk.input.isReadyForMoreMediaData ? 1 : 0,
+                    "status": Double(chunk.writer.status.rawValue)
+                ])
         }
 
         // Every buffered sample pins one pixel buffer from the camera's small
@@ -1252,6 +1378,9 @@ private final class AutoRollingVideoBuffer {
         chunk.writer.finishWriting { [weak self, weak chunk] in
             guard let self, let chunk else { return }
             self.writerQueue.async {
+                CaptureCadenceDiagnostics.shared.emit("writer-end", id: chunk.id.uuidString,
+                    cadence: chunk.cadence.takeSummary(), values: ["status": Double(chunk.writer.status.rawValue)],
+                    state: ["error": chunk.writer.error?.localizedDescription ?? "none"])
                 chunk.isFinished = true
                 chunk.isFinishing = false
                 let handlers = chunk.completionHandlers

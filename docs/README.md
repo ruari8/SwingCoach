@@ -30,6 +30,7 @@ This folder and `backend/docs` are the active documentation set.
 ## Frontend
 
 - [Frontend Documentation](./FRONTEND.md)
+- [Auto capture cadence evidence and diagnostic collection](./AUTO_CAPTURE_CADENCE.md)
 - [Persistent UI playground and browser Simulator workflow](./UI_PLAYGROUND.md)
 - [Foundation app performance and verification](./FOUNDATION_PERFORMANCE.md)
 - [iOS console diagnostics and playback regression check](./IOS_CONSOLE_DIAGNOSTICS.md)
