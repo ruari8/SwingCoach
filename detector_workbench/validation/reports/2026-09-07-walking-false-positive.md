@@ -113,18 +113,37 @@ the per-video baseline JSON files, `final-replay/report.json`, and
 `scripts/verify-capture-controls.sh` and stores its result in `capture-ui`.
 
 The Debug test build succeeded on an owned iPhone 17 Simulator, iOS 26.3.1.
-XCTest finished with **4 passed and 1 failed**, so the UI gate is not green.
+The initial XCTest run finished with **4 passed and 1 failed**.
 Review playback/paging/deletion, stats persistence across capture modes,
 waiting/error states, and Manual recording/Trim cancellation passed.
 `testDisabledDetectionDoesNotClaimToBeRunning` failed before its status
 assertions: the settings-to-Capture tap had hit point `{-1, -1}`, then XCTest
 could not find the Manual segmented control. That test uses injected detector
-snapshots rather than the model replay. The failure remains unresolved.
+snapshots rather than the model replay. Its failure hierarchy showed Library
+still selected after the tab tap.
 
 The user stopped further app launches after reporting macOS crash dialogs
 during concurrent verification. This run's tests finished without a logged
-app-crash failure, and no retry ran. `cleanup.txt` confirms the owned Simulator
+app-crash failure, and no retry ran during the pause. `cleanup.txt` confirms the owned Simulator
 `C655FC48-4EEC-4C9A-8CBE-857F6DAD19F2` is absent and its scratch build removed.
+
+After the coordinator released a sole verification slot, the focused check
+passed in 24.183 seconds on iPhone 17, iOS 26.3.1. The test driver now waits for
+the Experiments navigation bar to disappear, the Capture tab to be hittable,
+Capture to be selected with its mode control present, and Manual to be hittable.
+It preserves the original assertions: recording with detection disabled shows
+`Detection off`, `Recording video`, and no model stats.
+
+The focused run selected only
+`SwingCoachUITests/CaptureControlsUITests/testDisabledDetectionDoesNotClaimToBeRunning`.
+It produced **1 passed, 0 failed, 0 skipped**, with no crash or restart.
+The four previous passing UI tests and all offline checks were reused.
+All five UI checks therefore have passing evidence across the two runs.
+Artifacts are in `.verification-artifacts/issue-29/disabled-ui-focused/`.
+The focused runner at `.verification-artifacts/issue-29/verify-disabled-detection.sh`
+copies the standard scratch-build workflow and selects just that test.
+Its cleanup confirms Simulator `8ACE08C0-F63B-46BE-A4E2-184799E34CFF` is absent
+and its scratch build removed.
 
 ## Limits and follow-up
 
