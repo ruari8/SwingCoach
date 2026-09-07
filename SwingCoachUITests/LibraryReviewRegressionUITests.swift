@@ -38,7 +38,7 @@ final class LibraryReviewRegressionUITests: XCTestCase {
         assertPosition("2 of 3", title: "Reference swing 2", in: app)
     }
 
-    func testDrawingRemainsAvailableAfterLayoutChange() throws {
+    func testDrawingRemainsAvailableWhenDeviceRotates() throws {
         let app = launchLibrary()
         try open("Review A starred DTL", in: app)
         let draw = app.buttons["Draw straight lines"]
@@ -53,16 +53,16 @@ final class LibraryReviewRegressionUITests: XCTestCase {
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
         let rotated = XCTNSPredicateExpectation(
-            predicate: NSPredicate { _, _ in app.frame.width > app.frame.height }, object: nil
+            predicate: NSPredicate { _, _ in app.frame.width >= app.frame.height }, object: nil
         )
-        XCTAssertEqual(XCTWaiter.wait(for: [rotated], timeout: 5), .completed)
+        rotated.isInverted = true
+        XCTAssertEqual(XCTWaiter.wait(for: [rotated], timeout: 1.5), .completed)
         XCTAssertTrue(app.buttons["Draw straight lines"].waitForExistence(timeout: 5))
-        // Interact in the new orientation before capturing: the application's
-        // frame can update before UIKit's rotation animation has finished.
+        // Drawing remains usable while the interface stays in portrait.
         draw.tap()
         XCTAssertTrue(app.buttons["Undo last line"].waitForExistence(timeout: 2))
         app.buttons["Finish drawing lines"].tap()
-        attachScreenshot(app, name: "Drawn line landscape")
+        attachScreenshot(app, name: "Drawn line portrait with device held landscape")
         draw.tap()
         app.buttons["Clear all lines"].tap()
         XCTAssertFalse(app.buttons["Undo last line"].exists)

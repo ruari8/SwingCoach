@@ -52,16 +52,8 @@ final class CaptureControlsUITests: XCTestCase {
                                  app.buttons["Stop recording"].frame.minX)
         attach(app, "manual-recording-with-stats")
 
-        XCUIDevice.shared.orientation = .landscapeLeft
-        let rotated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            app.frame.width > app.frame.height
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [rotated], timeout: 5), .completed)
-        XCTAssertTrue(app.buttons["Stop recording"].isHittable)
-        XCTAssertTrue(app.frame.contains(app.buttons["Stop recording"].frame))
+        assertPortraitAfterRotation(in: app, anchor: app.buttons["Stop recording"], screen: "manual-recording")
         assertStats("12.5 fps / 42 ms", in: app)
-        attach(app, "manual-landscape")
-        XCUIDevice.shared.orientation = .portrait
 
         app.buttons["Stop recording"].tap()
         XCTAssertTrue(app.staticTexts["Trim Swings"].waitForExistence(timeout: 10))
@@ -152,6 +144,60 @@ final class CaptureControlsUITests: XCTestCase {
         XCTAssertTrue(saved.waitForExistence(timeout: 5))
         XCTAssertEqual(saved.label, "Review 2 saved swings")
         attach(app, "auto-count-after-delete")
+    }
+
+    func testPortraitPolicyAcrossTabsTrimAndReview() {
+        let app = launch()
+        let saved = app.buttons["capture-saved-swings"]
+        XCTAssertTrue(saved.waitForExistence(timeout: 5))
+        assertPortraitAfterRotation(in: app, anchor: saved, screen: "auto-capture")
+        saved.tap()
+        let close = app.buttons["Close swing review"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5))
+        assertPortraitAfterRotation(in: app, anchor: close, screen: "auto-review")
+        close.tap()
+
+        app.segmentedControls.buttons["Manual"].tap()
+        let record = app.buttons["Start recording"]
+        assertPortraitAfterRotation(in: app, anchor: record, screen: "manual-idle")
+        record.tap()
+        app.buttons["Stop recording"].tap()
+        XCTAssertTrue(app.staticTexts["Trim Swings"].waitForExistence(timeout: 10))
+        assertPortraitAfterRotation(in: app, anchor: app.buttons["Cancel"], screen: "trim")
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(record.waitForExistence(timeout: 5))
+
+        app.tabBars.buttons["Library"].tap()
+        let reference = app.staticTexts["Reference swing 1"]
+        XCTAssertTrue(reference.waitForExistence(timeout: 5))
+        assertPortraitAfterRotation(in: app, anchor: reference, screen: "library")
+        reference.tap()
+        let back = app.buttons["Back to library"]
+        XCTAssertTrue(back.waitForExistence(timeout: 5))
+        assertPortraitAfterRotation(in: app, anchor: back, screen: "library-player")
+        back.tap()
+        for tab in ["Coach", "Debug"] {
+            let button = app.tabBars.buttons[tab]
+            button.tap()
+            assertPortraitAfterRotation(in: app, anchor: button, screen: tab.lowercased())
+        }
+    }
+
+    private func assertPortraitAfterRotation(in app: XCUIApplication, anchor: XCUIElement, screen: String) {
+        defer { XCUIDevice.shared.orientation = .portrait }
+        for orientation: UIDeviceOrientation in [.landscapeLeft, .landscapeRight, .portraitUpsideDown] {
+            XCUIDevice.shared.orientation = orientation
+            // Observe the whole transition. An immediate portrait read could
+            // pass before an unwanted rotation animation has started.
+            let rotated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                app.frame.width >= app.frame.height
+            }, object: nil)
+            rotated.isInverted = true
+            XCTAssertEqual(XCTWaiter.wait(for: [rotated], timeout: 1.5), .completed, screen)
+            XCTAssertTrue(anchor.isHittable, screen)
+            XCTAssertTrue(app.frame.contains(anchor.frame), screen)
+            attach(app, "\(screen)-device-\(orientation.rawValue)-ui-portrait")
+        }
     }
 
     private func launch(extra: [String] = []) -> XCUIApplication {
