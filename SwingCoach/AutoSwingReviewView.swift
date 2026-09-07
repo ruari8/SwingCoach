@@ -14,6 +14,7 @@ struct AutoSwingReviewView: View {
     @State private var swingPendingDeletion: SavedSwing?
     @State private var deletionError: ReviewDeletionError?
     @State private var isDeleting = false
+    @State private var isDrawingLines = false
 
     var body: some View {
         ZStack {
@@ -27,10 +28,11 @@ struct AutoSwingReviewView: View {
                 )
                 .foregroundStyle(.white)
             } else {
-                SwingReviewPager(swings: swings, selection: $selectedSwingID, pagingEnabled: !isDeleting) { swing in
+                SwingReviewPager(swings: swings, selection: $selectedSwingID, pagingEnabled: !isDeleting && !isDrawingLines) { swing in
                     AutoSwingReviewPage(
                         swing: swing,
                         isSelected: selectedSwingID == swing.id,
+                        isDrawingLines: $isDrawingLines,
                         deleteDisabled: isDeleting,
                         onDelete: { swingPendingDeletion = swing }
                     )
@@ -48,6 +50,9 @@ struct AutoSwingReviewView: View {
         .onChange(of: swings.map(\.id)) { _, ids in
             if let selectedSwingID, ids.contains(selectedSwingID) { return }
             self.selectedSwingID = ids.first
+        }
+        .onChange(of: selectedSwingID) { _, _ in
+            isDrawingLines = false
         }
         .confirmationDialog(
             "Delete this swing?",
@@ -145,23 +150,38 @@ struct AutoSwingReviewView: View {
 private struct AutoSwingReviewPage: View {
     let swing: SavedSwing
     let isSelected: Bool
+    @Binding var isDrawingLines: Bool
     let deleteDisabled: Bool
     let onDelete: () -> Void
 
     @State private var playerItem: AVPlayerItem?
+    @State private var videoAspectRatio: Double?
+    @State private var draftLine: ManualAnnotation?
+
+    private var drawingEnabled: Bool { isSelected && isDrawingLines }
 
     var body: some View {
         Group {
             if let playerItem {
                 PlaybackChromeView(
                     playerItem: playerItem,
-                    playbackEnabled: isSelected,
+                    playbackEnabled: isSelected && !drawingEnabled,
                     showsSpeedControls: true,
                     startsPlaying: false,
                     allowsFullscreen: false,
-                    allowsTransportGestures: true,
+                    allowsTransportGestures: !drawingEnabled,
+                    contentOverlayAllowsHitTesting: drawingEnabled,
                     edgeToEdge: true,
-                    allowsLock: false
+                    allowsLock: false,
+                    contentOverlay: { currentTime, _ in
+                        AnyView(SwingLineOverlay(
+                            swing: swing,
+                            aspectRatio: videoAspectRatio,
+                            currentTime: currentTime,
+                            isDrawing: drawingEnabled,
+                            draft: $draftLine
+                        ))
+                    }
                 ) {
                     EmptyView()
                 } overlayAccessory: {
@@ -176,6 +196,16 @@ private struct AutoSwingReviewPage: View {
                     .disabled(deleteDisabled)
                     .accessibilityLabel("Delete this swing")
                 }
+                .overlay(alignment: .leading) {
+                    if isSelected, videoAspectRatio != nil {
+                        SwingLineControls(
+                            annotationID: swing.manualAnnotationID,
+                            isDrawing: $isDrawingLines,
+                            draft: $draftLine
+                        )
+                        .padding(.leading, 14)
+                    }
+                }
             } else {
                 ProgressView()
                     .scaleEffect(1.35)
@@ -186,6 +216,14 @@ private struct AutoSwingReviewPage: View {
             let item = await SwingLibrary.shared.getPlayerItem(for: swing)
             guard !Task.isCancelled else { return }
             playerItem = item
+            if let item {
+                let aspectRatio = try? await VideoDisplayGeometry.aspectRatio(for: item.asset)
+                guard !Task.isCancelled else { return }
+                videoAspectRatio = aspectRatio
+            }
+        }
+        .onChange(of: isSelected) { _, _ in
+            draftLine = nil
         }
     }
 }
