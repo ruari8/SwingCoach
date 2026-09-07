@@ -53,8 +53,10 @@ final class SavePhotosUITests: XCTestCase {
         app.launch()
         openSettings(app)
         let toggle = app.switches["save-to-photos"]
-        XCTAssertEqual(toggle.value as? String, "0")
-        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        // This check also runs independently on a fresh ON-by-default install.
+        if toggle.value as? String == "0" {
+            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        }
         XCTAssertEqual(toggle.value as? String, "1")
         app.buttons["Done"].tap()
         saveManual(app, range: false)

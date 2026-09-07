@@ -4,6 +4,13 @@ set -euo pipefail
 # Verify Save to Photos with real exports and PhotoKit on an owned Simulator.
 # Only camera input and detector windows are substituted in a scratch copy.
 repo=$(cd "$(dirname "$0")/.." && pwd)
+phases=(off on)
+expected_local_count=2
+case "${2:-all}" in
+    all) ;;
+    --on-only) phases=(on); expected_local_count=0 ;;
+    *) echo "Usage: $0 [artifact-directory] [--on-only]" >&2; exit 2 ;;
+esac
 artifacts="${1:-$repo/.verification-artifacts/save-photos/$(date -u +%Y%m%dT%H%M%SZ)-$$}"
 mkdir -p "$artifacts"
 artifacts=$(cd "$artifacts" && pwd)
@@ -42,6 +49,7 @@ xcrun simctl bootstatus "$device" -b
     echo "route=disposable Simulator; driver=XCUITest; device_readiness=not-needed"
     echo "simulator=$device; fixture=synthetic video and deterministic detector windows; real export, library, and PhotoKit"
     echo "hardware_recording=unverified; human_actions=none"
+    echo "phases=${phases[*]}"
     echo "actions=OFF/ON persistence,Manual full and ranged Trim exports,Auto export/review,local playback after relaunch,local deletion,Photos row counts"
     xcrun simctl list devices | grep -F "$device"
     git -C "$repo" rev-parse HEAD
@@ -67,7 +75,8 @@ xcrun simctl privacy "$device" revoke photos-add Pear.ai.SwingCoach
 } > "$artifacts/doctor.txt"
 xcrun simctl io "$device" screenshot "$artifacts/launch.png"
 photos_db="${HOME}/Library/Developer/CoreSimulator/Devices/$device/data/Media/PhotoData/Photos.sqlite"
-for phase in off on; do
+python3 "$repo/scripts/verification/check-save-photos.py" --baseline "$photos_db" "$artifacts/photos-baseline.json"
+for phase in "${phases[@]}"; do
     if [[ "$phase" == on ]]; then
         xcrun simctl terminate "$device" Pear.ai.SwingCoach >/dev/null 2>&1 || true
         xcrun simctl privacy "$device" grant photos Pear.ai.SwingCoach
@@ -86,6 +95,6 @@ for phase in off on; do
     xcrun simctl io "$device" screenshot "$artifacts/$phase-final-simulator.png"
     [[ "$test_status" -eq 0 ]] || exit "$test_status"
     container=$(xcrun simctl get_app_container "$device" Pear.ai.SwingCoach data)
-    python3 "$repo/scripts/verification/check-save-photos.py" "$phase" "$container" "$photos_db" "$artifacts/$phase-test-summary.json" > "$artifacts/$phase-storage-proof.txt"
+    python3 "$repo/scripts/verification/check-save-photos.py" "$phase" "$container" "$photos_db" "$artifacts/$phase-test-summary.json" "$artifacts/photos-baseline.json" "$expected_local_count" > "$artifacts/$phase-storage-proof.txt"
 done
-printf 'PASS: OFF and ON Manual/Trim/Auto exports, persistence, local review/deletion, and Photos counts\n'
+echo "PASS: ${phases[*]} verification and Photos asset changes match saved clips"
