@@ -120,6 +120,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private let movieOutput = AVCaptureMovieFileOutput()
     private let videoDataOutput = AVCaptureVideoDataOutput()
     private var rotationCoordinator: AVCaptureDevice.RotationCoordinator?
+    private var recordingAudioInput: AVCaptureDeviceInput?
+    private let recordingAudioSession = CaptureRecordingAudioSession()
+    // Remains true until the file delegate finishes, even after stopRecording().
+    private var manualRecordingIsPending = false
     private var isConfigured = false
     private var captureOutputIsPaused = false
 
@@ -165,9 +169,6 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             self, selector: #selector(captureSessionRuntimeError(_:)),
             name: AVCaptureSession.runtimeErrorNotification, object: session
         )
-        if AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
-            configure()
-        }
     }
 
     deinit {
@@ -182,28 +183,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private func configure() {
         guard !isConfigured else { return }
 
-        // With a mic input attached, AVCaptureSession would otherwise activate
-        // a NON-mixable record audio session on start, stopping the golfer's
-        // music (Spotify). Configure a mixable session ourselves instead.
-        // allowBluetoothA2DP keeps AirPods playback in high quality (recording
-        // uses the phone's own mic); defaultToSpeaker keeps speaker playback
-        // audible instead of routing to the earpiece.
+        // Preview and Auto's video-only rolling writer never need the microphone.
+        // Keep AVFoundation from changing the shared audio policy on tab entry.
         session.automaticallyConfiguresApplicationAudioSession = false
-        let audioSession = AVAudioSession.sharedInstance()
-        do {
-            try audioSession.setCategory(
-                .playAndRecord,
-                mode: .videoRecording,
-                options: [.mixWithOthers, .allowBluetoothA2DP, .defaultToSpeaker]
-            )
-        } catch {
-            Self.logger.error("Audio configuration failed: \(String(describing: error), privacy: .public)")
-        }
-        do {
-            try audioSession.setActive(true)
-        } catch {
-            Self.logger.error("Audio activation failed: \(String(describing: error), privacy: .public)")
-        }
 
         session.beginConfiguration()
         // Note: We do NOT set sessionPreset — it would override our manual format selection
@@ -220,7 +202,6 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         // Add input and output FIRST
         session.addInput(input)
         rotationCoordinator = AVCaptureDevice.RotationCoordinator(device: device, previewLayer: nil)
-        configureAudioInput()
         if session.canAddOutput(movieOutput) {
             session.addOutput(movieOutput)
         }
@@ -234,15 +215,45 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         isConfigured = true
     }
 
-    private func configureAudioInput() {
+    private func beginRecordingAudio() {
         guard let audioDevice = AVCaptureDevice.default(for: .audio),
               let audioInput = try? AVCaptureDeviceInput(device: audioDevice),
               session.canAddInput(audioInput)
-        else {
+        else { return }
+
+        do {
+            try recordingAudioSession.begin()
+        } catch {
+            Self.logger.error("Recording audio activation failed: \(String(describing: error), privacy: .public)")
+            endRecordingAudio()
             return
         }
 
+        session.beginConfiguration()
         session.addInput(audioInput)
+        recordingAudioInput = audioInput
+        // Input changes can reset the manually selected camera format/cadence.
+        if let device = rotationCoordinator?.device {
+            configureHighFPS(device: device, mode: recordedMode)
+        }
+        session.commitConfiguration()
+    }
+
+    private func endRecordingAudio() {
+        if let input = recordingAudioInput {
+            session.beginConfiguration()
+            session.removeInput(input)
+            recordingAudioInput = nil
+            if let device = rotationCoordinator?.device {
+                configureHighFPS(device: device, mode: captureMode)
+            }
+            session.commitConfiguration()
+        }
+        do {
+            try recordingAudioSession.end()
+        } catch {
+            Self.logger.error("Recording audio release failed: \(String(describing: error), privacy: .public)")
+        }
     }
 
     private func configureQualityOutput() {
@@ -416,27 +427,41 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
     func stop() {
         queue.async {
-            guard self.session.isRunning else { return }
-            self.session.stopRunning()
+            if self.session.isRunning {
+                self.session.stopRunning()
+            }
+            // An in-flight movie owns audio until its delegate has finalized it.
+            if !self.manualRecordingIsPending {
+                self.endRecordingAudio()
+            }
         }
     }
 
     func startRecording() {
-        guard !movieOutput.isRecording else { return }
+        queue.async {
+            guard !self.manualRecordingIsPending, !self.movieOutput.isRecording else { return }
+            guard self.session.isRunning else {
+                DispatchQueue.main.async {
+                    self.recordingError = NSError(
+                        domain: AVFoundationErrorDomain, code: AVError.deviceNotConnected.rawValue,
+                        userInfo: [NSLocalizedDescriptionKey: "Camera is not ready to record."]
+                    )
+                }
+                return
+            }
+            self.manualRecordingIsPending = true
+            self.recordedMode = self.captureMode
+            self.beginRecordingAudio()
+            self.resetLiveSwingDetection()
+            let rotationAngle = self.currentCardinalCaptureRotationAngle()
+            if let connection = self.movieOutput.connection(with: .video),
+               connection.isVideoRotationAngleSupported(rotationAngle) {
+                connection.videoRotationAngle = rotationAngle
+            }
 
-        // Capture the mode at recording start for correct playback rate
-        recordedMode = captureMode
-        resetLiveSwingDetection()
-        let rotationAngle = currentCardinalCaptureRotationAngle()
-        if let connection = movieOutput.connection(with: .video),
-           connection.isVideoRotationAngleSupported(rotationAngle) {
-            // MovieFileOutput records this as a track matrix; it does not
-            // physically rotate every source pixel buffer.
-            connection.videoRotationAngle = rotationAngle
+            let url = Self.tempURL()
+            self.movieOutput.startRecording(to: url, recordingDelegate: self)
         }
-
-        let url = Self.tempURL()
-        movieOutput.startRecording(to: url, recordingDelegate: self)
     }
 
     func stopRecording() {
@@ -449,7 +474,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     func startAutoCapture() {
         queue.async {
             guard !self.autoCaptureIsActive else { return }
-            guard !self.movieOutput.isRecording else {
+            guard !self.manualRecordingIsPending, !self.movieOutput.isRecording else {
                 DispatchQueue.main.async {
                     self.autoCaptureStatus = AutoCaptureStatus(
                         isActive: false,
@@ -583,6 +608,14 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
+        queue.async {
+            self.endRecordingAudio()
+            self.manualRecordingIsPending = false
+            self.finishRecording(outputFileURL: outputFileURL, error: error)
+        }
+    }
+
+    private func finishRecording(outputFileURL: URL, error: Error?) {
         analysisQueue.async {
             let detectionResult: (items: [DetectedSwing], summary: LiveSwingDetectionSnapshot?)
             if self.isLiveSwingDetectionEnabled {

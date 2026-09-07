@@ -70,7 +70,9 @@ Implemented feature set:
 File: [CaptureView.swift](../SwingCoach/CaptureView.swift)
 
 Implemented feature set:
-- AVFoundation recording session with video input and microphone input when available, so newly captured clips can carry audio for export and detector experiments.
+- AVFoundation preview and Auto capture use video input only. Opening Capture, returning from Library/review, or restarting preview does not configure or activate `AVAudioSession` or attach a microphone. Auto rolling clips remain video-only, as before.
+- Manual recording attaches the microphone when available and retains the existing `.playAndRecord` / `.videoRecording` policy with mixing, A2DP, and speaker output. The recording delegate removes the microphone, deactivates with `notifyOthersOnDeactivation`, and restores the previous audio category/mode/options before handing the movie to Trim, including on recording failure. Audio setup failures are logged and leave video recording available.
+- Run `./scripts/verify-capture-audio.sh` for instrumented startup/tab navigation, recording audio ownership regression tests, and the existing Manual → Trim → Cancel UI check. Simulator evidence checks policy and control flow; uninterrupted music, Bluetooth routing, recorded microphone audio, and audible playback still require a physical iPhone. Issue #22 device acceptance remains pending until the phone model, iOS version, and results are recorded.
 - Camera access is requested before first use; after permission is granted, the session configures and starts without requiring an app relaunch.
 - Audio configuration/activation failures and capture-session runtime errors are logged under subsystem `Pear.ai.SwingCoach`, category `Capture`. The configured-format message is emitted only after the format and frame durations have been applied. These diagnostics do not alter capture settings or recovery behavior.
 - Capture mode support:
