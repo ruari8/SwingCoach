@@ -43,6 +43,7 @@ enum ExperimentalDetectorDefaults {
 }
 
 struct ExperimentalSettingsView: View {
+    @AppStorage(ClipStoragePreference.saveToPhotosKey) private var saveToPhotos = true
     @AppStorage(ExperimentalSettingKey.liveAutoSwingDetectionEnabled) private var liveAutoSwingDetectionEnabled = true
     @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
     @AppStorage(ExperimentalSettingKey.capturePracticeSwings) private var capturePracticeSwings = false
@@ -56,6 +57,15 @@ struct ExperimentalSettingsView: View {
 
     var body: some View {
         List {
+            Section {
+                Toggle("Save to Photos", isOn: $saveToPhotos)
+                    .accessibilityIdentifier("save-to-photos")
+            } header: {
+                Text("Video storage")
+            } footer: {
+                Text("Also saves new Auto, Manual, and trimmed clips to Photos. When off, clips stay in SwingCoach's library and review. Existing videos are unchanged.")
+            }
+
             Section {
                 Toggle("Capture practice swings", isOn: $capturePracticeSwings)
             } header: {

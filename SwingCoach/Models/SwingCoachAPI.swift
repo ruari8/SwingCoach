@@ -577,9 +577,9 @@ actor SwingCoachAPI {
         onProgress: @escaping (String, Float?) -> Void
     ) async throws -> AnalysisResponse {
 
-        // 1. Export video from Photos to temp MP4
+        // 1. Export the saved clip to MP4 for upload.
         onProgress("Preparing video...", nil)
-        let videoData = try await exportVideoToMP4(photoAssetID: swing.photoAssetID)
+        let videoData = try await exportVideoToMP4(swing: swing)
 
         // 2. Get upload URL
         onProgress("Connecting to server...", nil)
@@ -609,17 +609,16 @@ actor SwingCoachAPI {
 
     // MARK: - Video Export
 
-    /// Export a video from Photos library to MP4 data
-    private func exportVideoToMP4(photoAssetID: String) async throws -> Data {
-        // Fetch the PHAsset
-        let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [photoAssetID], options: nil)
-
-        guard let asset = fetchResult.firstObject else {
-            throw APIError.noVideoAsset
+    /// Prepare either a local-only clip or a Photos video for upload.
+    func exportVideoToMP4(swing: SavedSwing) async throws -> Data {
+        let avAsset: AVAsset
+        if swing.photoAssetID.isEmpty, let localURL = await SwingLibrary.shared.localVideoURL(for: swing) {
+            avAsset = AVURLAsset(url: localURL)
+        } else {
+            let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [swing.photoAssetID], options: nil)
+            guard let asset = fetchResult.firstObject else { throw APIError.noVideoAsset }
+            avAsset = try await getAVAsset(from: asset)
         }
-
-        // Get AVAsset from PHAsset
-        let avAsset = try await getAVAsset(from: asset)
 
         // Export to temp file as MP4
         let tempURL = FileManager.default.temporaryDirectory

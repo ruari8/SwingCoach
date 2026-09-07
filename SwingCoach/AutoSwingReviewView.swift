@@ -57,12 +57,14 @@ struct AutoSwingReviewView: View {
             ),
             presenting: swingPendingDeletion
         ) { swing in
-            Button("Delete from SwingCoach and Photos", role: .destructive) {
+            Button(swing.photoAssetID.isEmpty ? "Delete from SwingCoach" : "Delete from SwingCoach and Photos", role: .destructive) {
                 delete(swing)
             }
             Button("Cancel", role: .cancel) {}
-        } message: { _ in
-            Text("This permanently removes the video from this phone's Photos library.")
+        } message: { swing in
+            Text(swing.photoAssetID.isEmpty
+                 ? "This permanently removes the video from SwingCoach."
+                 : "This permanently removes the video from SwingCoach and this phone's Photos library.")
         }
         .alert(item: $deletionError) { error in
             Alert(

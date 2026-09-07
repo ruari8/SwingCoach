@@ -52,6 +52,7 @@ struct TrimView: View {
     // Export state
     @State private var isExporting = false
     @State private var exportProgress: (current: Int, total: Int)?
+    @State private var exportError: String?
 
     // Source loading state
     @State private var previewAsset: AVAsset?
@@ -113,6 +114,14 @@ struct TrimView: View {
             if isExporting {
                 exportOverlay
             }
+        }
+        .alert("Couldn’t Save Clips", isPresented: Binding(
+            get: { exportError != nil },
+            set: { if !$0 { exportError = nil } }
+        )) {
+            Button("OK") { exportError = nil }
+        } message: {
+            Text(exportError ?? "")
         }
         .onAppear {
             prepareSource()
@@ -983,27 +992,18 @@ struct TrimView: View {
                     }
                 }
 
-                // Save each clip to Photos library and add to SwingLibrary
-                var savedCount = 0
-                for (clip, url) in zip(clipsToExport, exportedURLs) {
-                    if let assetID = await PHPhotoLibrary.saveVideoAndGetID(url: url) {
-                        let libraryThumbnail = await immediateLibraryThumbnail(for: clip, exportAsset: exportAsset)
-                        await MainActor.run { () -> Void in
-                            _ = SwingLibrary.shared.addSwing(
-                                photoAssetID: assetID,
-                                vantage: clip.vantage,
-                                duration: clip.duration * displayTimeScale,
-                                initialThumbnail: libraryThumbnail,
-                                localSourceURL: url
-                            )
-                        }
-                        savedCount += 1
-                    }
-                    // Clean up temp file
-                    try? FileManager.default.removeItem(at: url)
+                defer {
+                    for url in exportedURLs { try? FileManager.default.removeItem(at: url) }
                 }
-
-                print("✅ Saved \(savedCount)/\(exportedURLs.count) clips to Photos & Library")
+                for (clip, url) in zip(clipsToExport, exportedURLs) {
+                    let libraryThumbnail = await immediateLibraryThumbnail(for: clip, exportAsset: exportAsset)
+                    try await SwingLibrary.shared.saveExportedSwing(
+                        from: url,
+                        vantage: clip.vantage,
+                        duration: clip.duration * displayTimeScale,
+                        initialThumbnail: libraryThumbnail
+                    )
+                }
 
                 await MainActor.run {
                     isExporting = false
@@ -1012,6 +1012,7 @@ struct TrimView: View {
             } catch {
                 print("❌ Export failed: \(error)")
                 await MainActor.run {
+                    exportError = error.localizedDescription
                     isExporting = false
                     exportProgress = nil
                 }
@@ -1072,7 +1073,7 @@ struct TrimView: View {
                 )
                 let thumbnail = await immediateLibraryThumbnail(for: fullClip, exportAsset: exportAsset)
 
-                if let existingPhotoAssetID = source.existingPhotoAssetID {
+                if ClipStoragePreference.savesToPhotos, let existingPhotoAssetID = source.existingPhotoAssetID {
                     await MainActor.run {
                         SwingLibrary.shared.addSwing(
                             photoAssetID: existingPhotoAssetID,
@@ -1088,6 +1089,7 @@ struct TrimView: View {
 
                 let tempDir = FileManager.default.temporaryDirectory
                 let outputURL = tempDir.appendingPathComponent("swing_\(fullClip.id.uuidString.prefix(8)).mp4")
+                defer { try? FileManager.default.removeItem(at: outputURL) }
 
                 try await trimmer.exportClip(
                     from: exportAsset,
@@ -1097,26 +1099,22 @@ struct TrimView: View {
                     slowMotionFactor: sourceCaptureMode?.exportSlowMotionFactor
                 )
 
-                guard let assetID = await PHPhotoLibrary.saveVideoAndGetID(url: outputURL) else {
-                    throw VideoTrimmer.TrimmerError.exportFailed("Failed to save video to Photos")
-                }
+                try await SwingLibrary.shared.saveExportedSwing(
+                    from: outputURL,
+                    vantage: fullClip.vantage,
+                    duration: fullClip.duration * displayTimeScale,
+                    initialThumbnail: thumbnail
+                )
 
                 await MainActor.run {
-                    SwingLibrary.shared.addSwing(
-                        photoAssetID: assetID,
-                        vantage: fullClip.vantage,
-                        duration: fullClip.duration * displayTimeScale,
-                        initialThumbnail: thumbnail,
-                        localSourceURL: outputURL
-                    )
                     isExporting = false
                     onComplete([fullClip], [outputURL])
                 }
 
-                try? FileManager.default.removeItem(at: outputURL)
             } catch {
                 print("❌ Full video export failed: \(error)")
                 await MainActor.run {
+                    exportError = error.localizedDescription
                     isExporting = false
                     exportProgress = nil
                 }

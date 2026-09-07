@@ -153,7 +153,7 @@ struct LibraryView: View {
                     deleteSelectedSwings()
                 }
             } message: {
-                Text("This will remove the selected swings from your library. The videos will remain in your Photos library.")
+                Text("This removes the selected swings and their local videos from SwingCoach. Any copies in Photos remain there.")
             }
             .sheet(item: $exportSharePayload, onDismiss: cleanupExportPayload) { payload in
                 ActivityView(activityItems: payload.itemURLs) {
@@ -2192,16 +2192,19 @@ private enum SwingLibraryBatchExporter {
                 let displayName = exportDisplayName(for: swing, index: index + 1)
                 onProgress(index, swings.count, displayName)
 
-                let asset = try photoAsset(for: swing, displayName: displayName)
-                let resource = try videoResource(for: asset, displayName: displayName)
-                let filename = exportFilename(
-                    for: swing,
-                    index: index + 1,
-                    originalFilename: resource.originalFilename
-                )
-                let outputURL = exportFolder.appendingPathComponent(filename)
-
-                try await write(resource: resource, to: outputURL)
+                let filename: String
+                let outputURL: URL
+                if swing.photoAssetID.isEmpty, let localURL = SwingLibrary.shared.localVideoURL(for: swing) {
+                    filename = exportFilename(for: swing, index: index + 1, originalFilename: localURL.lastPathComponent)
+                    outputURL = exportFolder.appendingPathComponent(filename)
+                    try FileManager.default.copyItem(at: localURL, to: outputURL)
+                } else {
+                    let asset = try photoAsset(for: swing, displayName: displayName)
+                    let resource = try videoResource(for: asset, displayName: displayName)
+                    filename = exportFilename(for: swing, index: index + 1, originalFilename: resource.originalFilename)
+                    outputURL = exportFolder.appendingPathComponent(filename)
+                    try await write(resource: resource, to: outputURL)
+                }
                 itemURLs.append(outputURL)
                 manifestItems.append(
                     SwingLibraryExportManifestItem(

@@ -99,17 +99,6 @@ struct AutoCaptureStatus: Equatable {
 
 final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecordingDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
     private static let logger = Logger(subsystem: "Pear.ai.SwingCoach", category: "Capture")
-    private enum AutoCaptureExportError: LocalizedError {
-        case photosSaveFailed
-
-        var errorDescription: String? {
-            switch self {
-            case .photosSaveFailed:
-                return "Swing clip could not be saved. Check Photos access and available storage."
-            }
-        }
-    }
-
     let session = AVCaptureSession()
     private let queue = DispatchQueue(label: "camera.session.queue")
     /// The AVCapture delegate must return immediately or the camera drops source
@@ -713,20 +702,13 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 slowMotionFactor: recordedMode.exportSlowMotionFactor
             )
 
-            guard let assetID = await PHPhotoLibrary.saveVideoAndGetID(url: outputURL) else {
-                throw AutoCaptureExportError.photosSaveFailed
-            }
-
             let thumbnail = try? await autoTrimmer.generateThumbnail(for: asset, at: clip.startCMTime)
-            let savedSwing = await MainActor.run {
-                SwingLibrary.shared.addSwing(
-                    photoAssetID: assetID,
-                    vantage: clip.vantage,
-                    duration: clip.duration * recordedMode.sourceTimeScale,
-                    initialThumbnail: thumbnail,
-                    localSourceURL: outputURL
-                )
-            }
+            let savedSwing = try await SwingLibrary.shared.saveExportedSwing(
+                from: outputURL,
+                vantage: clip.vantage,
+                duration: clip.duration * recordedMode.sourceTimeScale,
+                initialThumbnail: thumbnail
+            )
             savedCount = 1
 
             await MainActor.run {
@@ -1776,6 +1758,7 @@ struct CaptureView: View {
     }
 
     private func requestAutoCapturePhotosAccess() {
+        guard ClipStoragePreference.savesToPhotos else { return }
         PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
             guard status == .authorized else {
                 camera.reportPhotosAccessUnavailable()
