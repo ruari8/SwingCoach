@@ -360,17 +360,16 @@ class SwingLibrary: ObservableObject {
     
     // MARK: - Photos Integration
     
-    /// Load thumbnails for all swings from Photos library
+    /// Load app-owned previews first; PhotoKit reads require separate permission.
     func loadThumbnails() async {
         isLoading = true
-
+        defer { isLoading = false }
         await loadLocalThumbnails()
-        
+
+        let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        guard status == .authorized || status == .limited else { return }
         let assetIDs = swings.filter { !$0.photoAssetID.isEmpty }.map { $0.photoAssetID }
-        guard !assetIDs.isEmpty else {
-            isLoading = false
-            return
-        }
+        guard !assetIDs.isEmpty else { return }
         
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: assetIDs, options: nil)
         let imageManager = PHImageManager.default()
@@ -393,8 +392,6 @@ class SwingLibrary: ObservableObject {
                 }
             }
         }
-        
-        isLoading = false
     }
 
     private func refreshThumbnail(forPhotoAssetID photoAssetID: String, retryDelays: [TimeInterval]) async {

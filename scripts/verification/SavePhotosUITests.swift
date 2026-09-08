@@ -43,6 +43,12 @@ final class SavePhotosUITests: XCTestCase {
         app.tabBars.buttons["Library"].tap()
         let card = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "DTL")).firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 10))
+        let previewLoaded = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            card.progressIndicators.count == 0
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [previewLoaded], timeout: 10), .completed,
+                       "Local preview must load at Library entry without opening the clip or granting Photos")
+        attach("local-thumbnails-after-relaunch")
         card.tap()
         assertPlayback(app)
         attach("local-library-playback-after-relaunch")
@@ -88,7 +94,7 @@ final class SavePhotosUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Stop recording"].waitForExistence(timeout: 5))
         app.buttons["Stop recording"].tap()
         XCTAssertTrue(app.staticTexts["Trim Swings"].waitForExistence(timeout: 10))
-        let export = app.buttons[range ? "Export & Analyze" : "Use Full Video"]
+        let export = app.buttons[range ? "trim-export-only" : "Use Full Video"]
         XCTAssertTrue(export.waitForExistence(timeout: 10))
         let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: export)
         XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 10), .completed)

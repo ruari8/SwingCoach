@@ -32,7 +32,7 @@ final class LibraryPagingUITests: XCTestCase {
             } else {
                 app = try launchFirstReferenceSwing()
             }
-            assertSettledPage(app, position: "1 of 3")
+            assertSettledPage(app, position: autoReview ? "3 of 3" : "1 of 3")
             let speed = app.buttons["Change playback speed"]
             let timeline = app.otherElements["playback-timeline"]
             XCTAssertTrue(speed.waitForExistence(timeout: 5))
@@ -55,7 +55,7 @@ final class LibraryPagingUITests: XCTestCase {
                 XCTAssertFalse(page.otherElements["playback-timeline"].exists)
             }
 
-            drag(app, from: 0.65, to: 0.35, velocity: .slow)
+            drag(app, from: autoReview ? 0.35 : 0.65, to: autoReview ? 0.65 : 0.35, velocity: .slow)
             assertSettledPage(app, position: "2 of 3")
             XCTAssertEqual(app.buttons.matching(identifier: "Change playback speed").count, 1)
             XCTAssertEqual(speed.frame, speedFrame)
@@ -109,6 +109,10 @@ final class LibraryPagingUITests: XCTestCase {
         let speedButton = app.buttons.matching(NSPredicate(format: "label == %@", "Change playback speed")).firstMatch
         XCTAssertTrue(speedButton.waitForExistence(timeout: 5))
         XCTAssertGreaterThanOrEqual(speedButton.frame.minY, app.buttons["Close swing review"].frame.minY - 8)
+        assertSettledPage(app, position: "3 of 3")
+        drag(app, from: 0.18, to: 0.82, velocity: .fast)
+        assertSettledPage(app, position: "2 of 3")
+        drag(app, from: 0.18, to: 0.82, velocity: .fast)
         exercisePaging(app)
         drag(app, from: 0.82, to: 0.18, velocity: .fast)
         assertSettledPage(app, position: "2 of 3")
@@ -116,7 +120,7 @@ final class LibraryPagingUITests: XCTestCase {
             $0.frame.intersects(app.frame) && $0.isHittable
         })
         deleteButton.tap()
-        app.buttons["Delete from SwingCoach and Photos"].tap()
+        app.buttons["Delete from SwingCoach"].tap()
         assertSettledPage(app, position: "2 of 2", reference: 3)
         drag(app, from: 0.18, to: 0.82, velocity: .fast)
         assertSettledPage(app, position: "1 of 2")
