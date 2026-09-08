@@ -14,7 +14,6 @@ struct SwingDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var library = SwingLibrary.shared
     @StateObject private var analysisLibrary = AnalysisLibrary.shared
-    @ObservedObject private var manualStore = ManualAnnotationStore.shared
     @StateObject private var reviewAnalysis = SwingReviewAnalysis()
 
     @State private var currentSwingID: UUID
@@ -64,10 +63,6 @@ struct SwingDetailView: View {
         guard navigationSwings.count > 1,
               let index = navigationSwings.firstIndex(where: { $0.id == currentSwing.id }) else { return nil }
         return "\(index + 1) of \(navigationSwings.count)"
-    }
-
-    private func manualAnnotationID(for swing: SavedSwing) -> String {
-        "swing-\(swing.id.uuidString)"
     }
 
     private var savedAnalysis: SavedAnalysis? {
@@ -355,7 +350,6 @@ struct SwingDetailView: View {
     }
 
     private func originalPlayer(for swing: SavedSwing) -> some View {
-        let annotationID = manualAnnotationID(for: swing)
         let drawingEnabled = isDrawingLines && swing.id == currentSwingID
 
         return Group {
@@ -373,25 +367,12 @@ struct SwingDetailView: View {
                 infoAction: { showMetadata = true },
                 contentOverlay: { currentTime, _ in
                     AnyView(
-                        ManualAnnotationCanvasOverlay(
-                            tracks: nil,
-                            sourceAspectRatio: videoAspectRatios[swing.id],
+                        SwingLineOverlay(
+                            swing: swing,
+                            aspectRatio: videoAspectRatios[swing.id],
                             currentTime: currentTime,
-                            analysisID: annotationID,
-                            annotations: manualStore.annotations(for: annotationID),
-                            draftAnnotation: draftLine,
-                            enabled: videoAspectRatios[swing.id] != nil,
-                            editingEnabled: drawingEnabled,
-                            selectedTool: .line,
-                            selectedColorHex: "#FFD60A",
-                            labelText: "",
-                            appliesToFullSwing: true,
-                            onDraftChanged: { draftLine = $0 },
-                            onCommit: { annotation in
-                                manualStore.add(annotation)
-                                draftLine = nil
-                            },
-                            onErase: { _, _ in }
+                            isDrawing: drawingEnabled,
+                            draft: $draftLine
                         )
                     )
                 }
@@ -439,59 +420,15 @@ struct SwingDetailView: View {
 
     private var drawingToolRail: some View {
         HStack {
-            manualLineControls
+            SwingLineControls(
+                annotationID: currentSwing.manualAnnotationID,
+                isDrawing: $isDrawingLines,
+                draft: $draftLine
+            )
             Spacer(minLength: 0)
         }
         .padding(.leading, 14)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-    }
-
-    private var manualLineControls: some View {
-        let annotationID = manualAnnotationID(for: currentSwing)
-
-        return VStack(spacing: 8) {
-            Button {
-                isDrawingLines.toggle()
-                draftLine = nil
-            } label: {
-                Image(systemName: isDrawingLines ? "checkmark" : "pencil.and.outline")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(isDrawingLines ? .black : .white)
-                    .frame(width: 44, height: 44)
-                    .background(Circle().fill(isDrawingLines ? Color.yellow : Color.black.opacity(0.54)))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(isDrawingLines ? "Finish drawing lines" : "Draw straight lines")
-
-            if isDrawingLines, !manualStore.annotations(for: annotationID).isEmpty {
-                Button {
-                    manualStore.undoLast(for: annotationID)
-                } label: {
-                    Image(systemName: "arrow.uturn.backward")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 38, height: 38)
-                        .background(Circle().fill(Color.black.opacity(0.54)))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Undo last line")
-
-                Button {
-                    manualStore.clear(for: annotationID)
-                    draftLine = nil
-                } label: {
-                    Image(systemName: "trash")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 38, height: 38)
-                        .background(Circle().fill(Color.red.opacity(0.72)))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Clear all lines")
-            }
-        }
-        .padding(6)
-        .background(Capsule().fill(Color.black.opacity(0.34)))
     }
 
     private var analysisOverlayButton: some View {
