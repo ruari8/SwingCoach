@@ -14,6 +14,7 @@ struct AutoSwingReviewView: View {
     @State private var swingPendingDeletion: SavedSwing?
     @State private var deletionError: ReviewDeletionError?
     @State private var isDeleting = false
+    @State private var isDrawingLines = false
     @State private var controlsLocked = false
 
     init(swings: [SavedSwing], onDelete: @escaping @MainActor (SavedSwing) async throws -> Void) {
@@ -36,11 +37,12 @@ struct AutoSwingReviewView: View {
                 )
                 .foregroundStyle(.white)
             } else {
-                SwingReviewPager(swings: swings, selection: $selectedSwingID, pagingEnabled: !isDeleting,
+                SwingReviewPager(swings: swings, selection: $selectedSwingID, pagingEnabled: !isDeleting && !isDrawingLines,
                                  title: { $0.title ?? "Swing video" }) { swing in
                     AutoSwingReviewPage(
                         swing: swing,
                         isSelected: selectedSwingID == swing.id,
+                        isDrawingLines: $isDrawingLines,
                         deleteDisabled: isDeleting,
                         controlsLocked: $controlsLocked,
                         onDelete: { swingPendingDeletion = swing }
@@ -53,9 +55,19 @@ struct AutoSwingReviewView: View {
             // player's bottom-right accessory slot.
             reviewToolbar
         }
+        .overlayPreferenceValue(SwingLineControlsKey.self) { controls in
+            HStack {
+                controls
+                Spacer(minLength: 0)
+            }
+            .padding(.leading, 14)
+        }
         .onChange(of: swings.map(\.id)) { _, ids in
             if let selectedSwingID, ids.contains(selectedSwingID) { return }
             self.selectedSwingID = ids.first
+        }
+        .onChange(of: selectedSwingID) { _, _ in
+            isDrawingLines = false
         }
         .confirmationDialog(
             "Delete this swing?",
@@ -155,24 +167,39 @@ struct AutoSwingReviewView: View {
 private struct AutoSwingReviewPage: View {
     let swing: SavedSwing
     let isSelected: Bool
+    @Binding var isDrawingLines: Bool
     let deleteDisabled: Bool
     @Binding var controlsLocked: Bool
     let onDelete: () -> Void
 
     @State private var playerItem: AVPlayerItem?
+    @State private var videoAspectRatio: Double?
+    @State private var draftLine: ManualAnnotation?
+
+    private var drawingEnabled: Bool { isSelected && isDrawingLines }
 
     var body: some View {
         Group {
             if let playerItem {
                 PlaybackChromeView(
                     playerItem: playerItem,
-                    playbackEnabled: isSelected,
+                    playbackEnabled: isSelected && !drawingEnabled,
                     showsSpeedControls: true,
                     startsPlaying: false,
                     allowsFullscreen: false,
-                    allowsTransportGestures: true,
+                    allowsTransportGestures: !drawingEnabled,
+                    contentOverlayAllowsHitTesting: drawingEnabled,
                     edgeToEdge: true,
-                    controlsLocked: $controlsLocked
+                    controlsLocked: $controlsLocked,
+                    contentOverlay: { currentTime, _ in
+                        AnyView(SwingLineOverlay(
+                            swing: swing,
+                            aspectRatio: videoAspectRatio,
+                            currentTime: currentTime,
+                            isDrawing: drawingEnabled,
+                            draft: $draftLine
+                        ))
+                    }
                 ) {
                     EmptyView()
                 } overlayAccessory: {
@@ -187,6 +214,14 @@ private struct AutoSwingReviewPage: View {
                     .disabled(deleteDisabled)
                     .accessibilityLabel("Delete this swing")
                 }
+                .preference(
+                    key: SwingLineControlsKey.self,
+                    value: isSelected && videoAspectRatio != nil ? AnyView(SwingLineControls(
+                        annotationID: swing.manualAnnotationID,
+                        isDrawing: $isDrawingLines,
+                        draft: $draftLine
+                    )) : nil
+                )
             } else {
                 ProgressView()
                     .scaleEffect(1.35)
@@ -197,6 +232,14 @@ private struct AutoSwingReviewPage: View {
             let item = await SwingLibrary.shared.getPlayerItem(for: swing)
             guard !Task.isCancelled else { return }
             playerItem = item
+            if let item {
+                let aspectRatio = try? await VideoDisplayGeometry.aspectRatio(for: item.asset)
+                guard !Task.isCancelled else { return }
+                videoAspectRatio = aspectRatio
+            }
+        }
+        .onChange(of: isSelected) { _, _ in
+            draftLine = nil
         }
     }
 }
