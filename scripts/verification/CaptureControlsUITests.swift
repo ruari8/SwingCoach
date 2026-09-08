@@ -52,16 +52,8 @@ final class CaptureControlsUITests: XCTestCase {
                                  app.buttons["Stop recording"].frame.minX)
         attach(app, "manual-recording-with-stats")
 
-        XCUIDevice.shared.orientation = .landscapeLeft
-        let rotated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            app.frame.width > app.frame.height
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [rotated], timeout: 5), .completed)
-        XCTAssertTrue(app.buttons["Stop recording"].isHittable)
-        XCTAssertTrue(app.frame.contains(app.buttons["Stop recording"].frame))
+        assertPortraitAfterRotation(in: app, anchor: app.buttons["Stop recording"], screen: "manual-recording")
         assertStats("12.5 fps / 42 ms", in: app)
-        attach(app, "manual-landscape")
-        XCUIDevice.shared.orientation = .portrait
 
         app.buttons["Stop recording"].tap()
         XCTAssertTrue(app.staticTexts["Trim Swings"].waitForExistence(timeout: 10))
@@ -89,7 +81,10 @@ final class CaptureControlsUITests: XCTestCase {
         tapSwitch(app.switches["Model swing detection"])
         XCTAssertEqual(app.switches["Model swing detection"].value as? String, "0")
         returnToCapture(app)
-        app.segmentedControls.buttons["Manual"].tap()
+        let manual = app.segmentedControls.buttons["Manual"]
+        waitUntilHittable(manual)
+        manual.tap()
+        XCTAssertTrue(manual.isSelected)
         app.buttons["Start recording"].tap()
         XCTAssertTrue(app.buttons["Stop recording"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["capture-status-title"].label, "Detection off")
@@ -122,7 +117,7 @@ final class CaptureControlsUITests: XCTestCase {
         saved.tap()
         let position = app.staticTexts["swing-position"]
         XCTAssertTrue(position.waitForExistence(timeout: 5))
-        XCTAssertEqual(position.label, "1 of 3")
+        XCTAssertEqual(position.label, "3 of 3")
         let close = app.buttons["Close swing review"]
         XCTAssertTrue(close.exists)
         XCTAssertTrue(app.buttons["Delete this swing"].exists)
@@ -134,8 +129,8 @@ final class CaptureControlsUITests: XCTestCase {
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [advanced], timeout: 5), .completed)
         app.buttons["Pause"].tap()
-        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.43))
-        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.43))
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.43))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.43))
         start.press(forDuration: 0.05, thenDragTo: end)
         let paged = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             position.label == "2 of 3"
@@ -154,6 +149,60 @@ final class CaptureControlsUITests: XCTestCase {
         attach(app, "auto-count-after-delete")
     }
 
+    func testPortraitPolicyAcrossTabsTrimAndReview() {
+        let app = launch()
+        let saved = app.buttons["capture-saved-swings"]
+        XCTAssertTrue(saved.waitForExistence(timeout: 5))
+        assertPortraitAfterRotation(in: app, anchor: saved, screen: "auto-capture")
+        saved.tap()
+        let close = app.buttons["Close swing review"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5))
+        assertPortraitAfterRotation(in: app, anchor: close, screen: "auto-review")
+        close.tap()
+
+        app.segmentedControls.buttons["Manual"].tap()
+        let record = app.buttons["Start recording"]
+        assertPortraitAfterRotation(in: app, anchor: record, screen: "manual-idle")
+        record.tap()
+        app.buttons["Stop recording"].tap()
+        XCTAssertTrue(app.staticTexts["Trim Swings"].waitForExistence(timeout: 10))
+        assertPortraitAfterRotation(in: app, anchor: app.buttons["Cancel"], screen: "trim")
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(record.waitForExistence(timeout: 5))
+
+        app.tabBars.buttons["Library"].tap()
+        let reference = app.staticTexts["Reference swing 1"]
+        XCTAssertTrue(reference.waitForExistence(timeout: 5))
+        assertPortraitAfterRotation(in: app, anchor: reference, screen: "library")
+        reference.tap()
+        let back = app.buttons["Back to library"]
+        XCTAssertTrue(back.waitForExistence(timeout: 5))
+        assertPortraitAfterRotation(in: app, anchor: back, screen: "library-player")
+        back.tap()
+        for tab in ["Coach", "Debug"] {
+            let button = app.tabBars.buttons[tab]
+            button.tap()
+            assertPortraitAfterRotation(in: app, anchor: button, screen: tab.lowercased())
+        }
+    }
+
+    private func assertPortraitAfterRotation(in app: XCUIApplication, anchor: XCUIElement, screen: String) {
+        defer { XCUIDevice.shared.orientation = .portrait }
+        for orientation: UIDeviceOrientation in [.landscapeLeft, .landscapeRight, .portraitUpsideDown] {
+            XCUIDevice.shared.orientation = orientation
+            // Observe the whole transition. An immediate portrait read could
+            // pass before an unwanted rotation animation has started.
+            let rotated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                app.frame.width >= app.frame.height
+            }, object: nil)
+            rotated.isInverted = true
+            XCTAssertEqual(XCTWaiter.wait(for: [rotated], timeout: 1.5), .completed, screen)
+            XCTAssertTrue(anchor.isHittable, screen)
+            XCTAssertTrue(app.frame.contains(anchor.frame), screen)
+            attach(app, "\(screen)-device-\(orientation.rawValue)-ui-portrait")
+        }
+    }
+
     private func launch(extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["-capture-controls-reset"] + extra
@@ -169,7 +218,25 @@ final class CaptureControlsUITests: XCTestCase {
 
     private func returnToCapture(_ app: XCUIApplication) {
         app.buttons["Done"].tap()
-        app.tabBars.buttons["Capture"].tap()
+        let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            !app.navigationBars["Experiments"].exists
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 10), .completed)
+
+        let capture = app.tabBars.buttons["Capture"]
+        waitUntilHittable(capture)
+        capture.tap()
+        let selected = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            capture.isSelected && app.segmentedControls["capture-mode"].exists
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [selected], timeout: 10), .completed)
+    }
+
+    private func waitUntilHittable(_ element: XCUIElement) {
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            element.exists && element.isHittable
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 10), .completed)
     }
 
     private func tapSwitch(_ toggle: XCUIElement) {
