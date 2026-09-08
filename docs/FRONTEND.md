@@ -145,7 +145,7 @@ Implemented feature set:
 - `SWINGCOACH_TRIM_VERIFY_PARTIAL=1 ./scripts/verify-trim-review.sh` injects a failure on the second Photos save in an isolated test build. It checks that the other two clips save, only the failed clip remains available for retry, and retry leaves exactly three persisted clips with video and audio.
 - Export to MP4 clips for downstream storage/analysis, with captured high-fps sessions rendered to true slow-motion during export.
 - Newly exported clips enter the library with an immediate frame thumbnail, then refresh from Photos in the background once the asset poster frame is available.
-- Library swing thumbnails show selection, analyzed state, and a yellow star for favourites.
+- Library swing thumbnails show selection, analyzed state, and a yellow star for favourites. Their tap region stays inside the displayed thumbnail, including when a portrait image is cropped to fill, so it cannot cover a neighbouring card’s title.
 
 ## 4. Coach Tab (Analysis)
 

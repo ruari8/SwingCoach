@@ -647,6 +647,7 @@ struct LibraryView: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(height: 100)
                         .clipped()
+                        .contentShape(Rectangle())
                 } else {
                     Rectangle()
                         .fill(Color.gray.opacity(0.2))
