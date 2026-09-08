@@ -54,12 +54,13 @@ final class AutoReviewAnnotationUITests: XCTestCase {
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
         let rotated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            app.frame.width > app.frame.height
+            app.frame.width >= app.frame.height
         }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [rotated], timeout: 5), .completed)
+        rotated.isInverted = true
+        XCTAssertEqual(XCTWaiter.wait(for: [rotated], timeout: 1.5), .completed)
         beginDrawing(app)
         XCTAssertTrue(app.buttons["Undo last line"].exists)
-        attach("library-line-landscape")
+        attach("library-line-portrait-after-rotation")
         app.buttons["Clear all lines"].tap()
         XCTAssertFalse(app.buttons["Undo last line"].exists)
         app.buttons["Finish drawing lines"].tap()

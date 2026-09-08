@@ -13,7 +13,7 @@ suite="${2:-controls}"
 case "$suite" in
     controls)
         test_selectors=(-only-testing:SwingCoachUITests/ManualTrimCancelUITests -only-testing:SwingCoachUITests/CaptureControlsUITests)
-        expected_tests=5
+        expected_tests=6
         ;;
     annotations)
         test_selectors=(-only-testing:SwingCoachUITests/AutoReviewAnnotationUITests -only-testing:SwingCoachUITests/CaptureControlsUITests/testSavedReviewStillPlaysPagesAndDeletes)
@@ -61,6 +61,7 @@ xcrun simctl bootstatus "$device" -b
     echo "simulator=$device; fixture=synthetic file output, bundled reference review, deterministic detector snapshots"
     echo "hardware_recording=unverified; human_actions=none; suite=$suite"
     echo "test_selectors=${test_selectors[*]}"
+    echo "actions=portrait lock across tabs/Trim/review,Auto/Manual layout,settings persistence,stats on/off,record/stop/Trim/Cancel,disabled/unavailable/waiting/error states,review playback/paging/deletion"
     xcrun simctl list devices | grep -F "$device"
     git -C "$repo" rev-parse HEAD
     git -C "$repo" status --short
@@ -69,6 +70,16 @@ xcodebuild -project "$scratch/repo/SwingCoach.xcodeproj" -scheme SwingCoach -con
     -destination "platform=iOS Simulator,id=$device" -derivedDataPath "$scratch/DerivedData" \
     CODE_SIGNING_ALLOWED=NO build-for-testing > "$artifacts/build.log" 2>&1
 app="$scratch/DerivedData/Build/Products/Debug-iphonesimulator/SwingCoach.app"
+python3 - "$app/Info.plist" > "$artifacts/orientation-policy.txt" <<'PY_POLICY'
+import plistlib, sys
+with open(sys.argv[1], 'rb') as source:
+    info = plistlib.load(source)
+for key in ['UISupportedInterfaceOrientations~iphone', 'UISupportedInterfaceOrientations~ipad']:
+    assert info[key] == ['UIInterfaceOrientationPortrait'], (key, info.get(key))
+    print(f'{key}={info[key]}')
+assert info['UIRequiresFullScreen'] is True
+print('PASS: built app permits upright portrait only on iPhone and iPad')
+PY_POLICY
 xcrun simctl install "$device" "$app"
 xcrun simctl privacy "$device" grant photos Pear.ai.SwingCoach
 xcrun simctl privacy "$device" grant photos-add Pear.ai.SwingCoach
