@@ -103,6 +103,27 @@ struct EvidenceRegression {
             check("load duplicate-swing observation fixture: \(error)", false)
         }
 
+        do {
+            // Exact Mac model/pose observations from the September 6 Auto exports.
+            // Source playback is 8x real movement time. Exercise both acceptance modes.
+            for name in ["fp_auto_swing_C066ED04", "auto_swing_07BCC95D",
+                         "auto_swing_129C3634", "auto_swing_1F843DE5"] {
+                let url = URL(fileURLWithPath: "detector_workbench/validation/fixtures/\(name)-observations.json")
+                let frames = try JSONDecoder().decode([RecordedObservation].self, from: Data(contentsOf: url))
+                for practice in [false, true] {
+                    let detector = SwingDetectorV3(configuration: .live(sourceTimeScale: 8, allowsPracticeSwings: practice))
+                    for frame in frames {
+                        detector.processObservation(try frame.observation(offset: 0, ballVisible: true, occludesTarget: false))
+                    }
+                    let expected = name.hasPrefix("fp_") ? 0 : 1
+                    check("range export \(name), practice=\(practice), expected=\(expected), got=\(detector.currentDetections().count)",
+                          detector.currentDetections().count == expected)
+                }
+            }
+        } catch {
+            check("load September 6 observation fixtures: \(error)", false)
+        }
+
         print("\(failures.count) failed checks")
         if !failures.isEmpty { exit(1) }
     }

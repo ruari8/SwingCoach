@@ -626,13 +626,28 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
         let strongStartupSwing = evidence.clubSweptThrough >= 0.62
             && evidence.swingArc >= 0.52
         let startupThreshold = strongStartupSwing ? scorer.threshold - 0.05 : scorer.threshold
+        let poseStrokeMotion = poseStrokeMotionScore(in: candidateWindow)
+        let hasGolfStrokeMotion = (poseStrokeMotion ?? 1) >= 0.50
         let accepted = score >= startupThreshold
+            && hasGolfStrokeMotion
             && evidence.disappearancePersistence >= 0.35
             && ((evidence.swingSequence ?? 0) > 0 || strongStartupSwing)
             && presence.hasHuman
             && presence.hasClub
         let failure = primaryFailure(evidence: evidence, accepted: accepted)
 
+        decisionTraces.append(
+            SwingDecisionTraceV3(
+                candidateID: nextCandidateId,
+                targetID: candidate.lock.targetID,
+                impactSourceTime: configuration.sourceTime(fromReal: candidate.impactRealTime),
+                declaredSourceTime: frame.sourceTime,
+                outcome: accepted ? .strikeSupported
+                    : (poseStrokeMotion != nil && !hasGolfStrokeMotion ? .nonContactSupported : .unresolved),
+                poseStrokeMotionScore: poseStrokeMotion,
+                score: score
+            )
+        )
         traces.append(
             SwingCandidateTrace(
                 candidateId: nextCandidateId,
@@ -994,8 +1009,9 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
     }
 
     /// Full swings move the wrists through a large path relative to the
-    /// golfer's torso. This rejects ball nudges and setup motions that can still
-    /// make a target disappear. Nil means pose was too sparse to judge.
+    /// golfer's torso. When hip-relative height is readable, require that motion
+    /// too: walking toward the camera moves image-space wrists without a stroke.
+    /// Nil means pose was too sparse to judge.
     private func poseStrokeMotionScore(in window: [SwingObservationV3]) -> Double? {
         let samples = window.compactMap { frame -> (CGPoint, Double)? in
             guard let wrist = frame.wristPoint, let torso = frame.torsoHeight, torso >= 0.035 else { return nil }
@@ -1009,7 +1025,13 @@ nonisolated final class SwingDetectorV3: LiveSwingDetecting {
         let width = Double((xs.max() ?? 0) - (xs.min() ?? 0))
         let height = Double((ys.max() ?? 0) - (ys.min() ?? 0))
         let pathSpanInTorsoUnits = hypot(width, height) / torso
-        return GeometryV3.ramp(pathSpanInTorsoUnits, low: 0.75, high: 1.65)
+        let imageMotion = GeometryV3.ramp(pathSpanInTorsoUnits, low: 0.75, high: 1.65)
+        let handHeights = window.compactMap(\.handHeight)
+        guard handHeights.count >= 4 else { return imageMotion }
+        // handHeight is already wrist-above-hip height in torso units. Body
+        // translation and changing apparent size must not count as wrist travel.
+        let relativeSpan = (handHeights.max() ?? 0) - (handHeights.min() ?? 0)
+        return min(imageMotion, GeometryV3.ramp(relativeSpan, low: 0.75, high: 1.65))
     }
 
     private func departureEvidence(impactRealTime: Double, lock: TargetLockV3?) -> DepartureEvidence {

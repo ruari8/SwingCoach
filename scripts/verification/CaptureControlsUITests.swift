@@ -81,7 +81,10 @@ final class CaptureControlsUITests: XCTestCase {
         tapSwitch(app.switches["Model swing detection"])
         XCTAssertEqual(app.switches["Model swing detection"].value as? String, "0")
         returnToCapture(app)
-        app.segmentedControls.buttons["Manual"].tap()
+        let manual = app.segmentedControls.buttons["Manual"]
+        waitUntilHittable(manual)
+        manual.tap()
+        XCTAssertTrue(manual.isSelected)
         app.buttons["Start recording"].tap()
         XCTAssertTrue(app.buttons["Stop recording"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["capture-status-title"].label, "Detection off")
@@ -215,7 +218,25 @@ final class CaptureControlsUITests: XCTestCase {
 
     private func returnToCapture(_ app: XCUIApplication) {
         app.buttons["Done"].tap()
-        app.tabBars.buttons["Capture"].tap()
+        let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            !app.navigationBars["Experiments"].exists
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 10), .completed)
+
+        let capture = app.tabBars.buttons["Capture"]
+        waitUntilHittable(capture)
+        capture.tap()
+        let selected = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            capture.isSelected && app.segmentedControls["capture-mode"].exists
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [selected], timeout: 10), .completed)
+    }
+
+    private func waitUntilHittable(_ element: XCUIElement) {
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            element.exists && element.isHittable
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 10), .completed)
     }
 
     private func tapSwitch(_ toggle: XCUIElement) {
