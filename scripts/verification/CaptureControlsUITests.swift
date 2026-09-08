@@ -117,7 +117,7 @@ final class CaptureControlsUITests: XCTestCase {
         saved.tap()
         let position = app.staticTexts["swing-position"]
         XCTAssertTrue(position.waitForExistence(timeout: 5))
-        XCTAssertEqual(position.label, "1 of 3")
+        XCTAssertEqual(position.label, "3 of 3")
         let close = app.buttons["Close swing review"]
         XCTAssertTrue(close.exists)
         XCTAssertTrue(app.buttons["Delete this swing"].exists)
@@ -129,8 +129,8 @@ final class CaptureControlsUITests: XCTestCase {
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [advanced], timeout: 5), .completed)
         app.buttons["Pause"].tap()
-        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.43))
-        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.43))
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.43))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.43))
         start.press(forDuration: 0.05, thenDragTo: end)
         let paged = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             position.label == "2 of 3"
