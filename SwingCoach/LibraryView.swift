@@ -239,7 +239,8 @@ struct LibraryView: View {
                     },
                     onCancel: {
                         cleanupImport()
-                    }
+                    },
+                    onAnalyzeSwings: onAnalyzeSwings
                 )
             }
             .overlay {

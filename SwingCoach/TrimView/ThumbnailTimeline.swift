@@ -16,6 +16,8 @@ struct ThumbnailTimeline: View {
     let displayTimeScale: Double
     let duration: CMTime
     let clips: [SwingClip]  // Show markers for existing clips
+    let selectedClipID: UUID?
+    let selectionRequest: UUID
     
     @Binding var currentTime: CMTime
     @Binding var rangeStart: CMTime?
@@ -23,6 +25,8 @@ struct ThumbnailTimeline: View {
     
     let onSeek: (CMTime) -> Void
     
+    @State private var scrollPosition = ScrollPosition(x: 0)
+
     // Layout
     private let thumbnailHeight: CGFloat = 50
     
@@ -49,32 +53,40 @@ struct ThumbnailTimeline: View {
     
     var body: some View {
         VStack(spacing: 4) {
-            ScrollView(.horizontal, showsIndicators: true) {
-                ZStack(alignment: .topLeading) {
-                    timeLabels
-                    
-                    thumbnailStrip
-                        .padding(.top, 18)
-                    
-                    clipMarkers
-                        .padding(.top, 18)
-                    
-                    if let start = rangeStart, rangeEnd == nil {
-                        startMarkerLine(at: start)
+            GeometryReader { geometry in
+                ScrollView(.horizontal, showsIndicators: true) {
+                    ZStack(alignment: .topLeading) {
+                        timeLabels
+
+                        thumbnailStrip
+                            .padding(.top, 18)
+
+                        clipMarkers
+                            .padding(.top, 18)
+
+                        if let start = rangeStart, rangeEnd == nil {
+                            startMarkerLine(at: start)
+                        }
+
+                        if let start = rangeStart, let end = rangeEnd {
+                            rangeOverlay(start: start, end: end)
+                        }
+
+                        playhead
                     }
-                    
-                    if let start = rangeStart, let end = rangeEnd {
-                        rangeOverlay(start: start, end: end)
+                    .frame(width: totalWidth, height: thumbnailHeight + 28)
+                    .coordinateSpace(name: "timeline")
+                    .contentShape(Rectangle())
+                    .onTapGesture { location in
+                        let time = timeFromPosition(location.x)
+                        onSeek(time)
                     }
-                    
-                    playhead
                 }
-                .frame(width: totalWidth, height: thumbnailHeight + 28)
-                .coordinateSpace(name: "timeline")
-                .contentShape(Rectangle())
-                .onTapGesture { location in
-                    let time = timeFromPosition(location.x)
-                    onSeek(time)
+                .frame(height: thumbnailHeight + 28)
+                .scrollPosition($scrollPosition)
+                .onChange(of: selectionRequest) { _, _ in
+                    guard let clip = clips.first(where: { $0.id == selectedClipID }) else { return }
+                    scrollPosition.scrollTo(x: max(0, positionFromTime(clip.startCMTime) - geometry.size.width / 2))
                 }
             }
             .frame(height: thumbnailHeight + 28)
@@ -316,6 +328,10 @@ struct ThumbnailTimeline: View {
             }
             .shadow(color: .black.opacity(0.5), radius: 2)
         }
+        .accessibilityElement()
+        .accessibilityLabel("Timeline playhead")
+        .accessibilityValue(String(format: "%.2f", CMTimeGetSeconds(currentTime)))
+        .accessibilityIdentifier("trim-playhead")
         .offset(x: position - 22)
         .highPriorityGesture(
             DragGesture(coordinateSpace: .named("timeline"))

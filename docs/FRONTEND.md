@@ -129,7 +129,12 @@ Implemented feature set:
 - MVP clip export defaults to down-the-line capture; face-on remains in the data model but is not exposed as an equal capture path in the trim header.
 - Press-and-hold frame stepping with acceleration for faster long scrubs.
 - Overview-only timeline for long-session trimming, with no separate precision toggle UI.
-- A single primary export action in the footer.
+- `Export N Clips` saves all collected clips without opening Coach, even when analysis checkboxes are selected. `Export & Analyze N` saves all clips and queues only the checked, successfully saved library records. Checkboxes are available beneath each clip and in full-screen review. Selection starts empty, and deleting a clip removes it from the analysis selection. Capture and Library use the same `onAnalyzeSwings([SavedSwing])` handoff.
+- Tapping a clip pauses and seeks the preview to its start, updates the trim handles, and scrolls the timeline to reveal the playhead. Selecting another clip keeps the explicit `Update Swing` edit workflow.
+- Trim adds 1.0 real second before and after each detected window. Default V3 windows therefore increase from 1.6s before / 0.8s after impact to 2.6s / 1.8s, clamped at the source boundaries. Imported slow-motion timelines scale the added padding by the existing detector timeline factor. Manual ranges and Auto capture windows keep their existing behavior.
+- `Review Full Screen` opens the selected collected clip in the shared `PlaybackChromeView` and `SwingReviewPager`. Swipe to adjacent clips, play, scrub, change speed, or check a clip for analysis. Review uses bounded in-memory compositions with the source audio and orientation. Done returns the reviewed clip to the editor and reveals its start on the timeline.
+- Failed Photos saves leave the unsaved clips in Trim with a visible error and remove successfully saved ranges from the retry set. The analysis handoff excludes failed saves.
+- `./scripts/verify-trim-review.sh` verifies a long Manual → Trim session, late-clip seeking, full-screen paging/playback, export-only with analysis selected, and chosen-subset handoff after relaunch. It creates an isolated Simulator, synthetic camera/detector inputs and real Simulator Photos exports with full access, and records the Coach boundary without contacting the backend. The driver accepts the runtime Photos upgrade prompt when it appears. Unit checks cover padding/clamping, source-time scaling, saved-ID mapping and review duration/orientation. On 2026-09-07, all four unit checks and the complete focused UI case passed; the saved-file check found six 3-second clips with video and audio and exactly one selected library ID at the Coach boundary. Real range camera input, device Photos behavior and live analysis remain device/service checks.
 - Export to MP4 clips for downstream storage/analysis, with captured high-fps sessions rendered to true slow-motion during export.
 - Newly exported clips enter the library with an immediate frame thumbnail, then refresh from Photos in the background once the asset poster frame is available.
 - Library swing thumbnails show selection, analyzed state, and a yellow star for favourites.
@@ -271,8 +276,9 @@ Current frontend `AnalysisResponse` expectation:
 - Generated overlays are disabled until the next annotation contract is agreed.
 
 3. Trim-to-analyze handoff
-- The capture trim footer currently shows a single primary action.
-- Automatic analyze handoff after clip export is intentionally left as future work.
+- Trim offers export-only and optional analysis of selected successfully saved clips.
+- Partial saves keep failed clips available for retry while analysis receives only selected successful saves. A Simulator failure-injection check verified the error and retry controls remain reachable and retry creates only the remaining clip.
+- Live backend processing still needs end-to-end verification.
 
 4. Environment setup
 - DEBUG backend target and mock/real analysis mode are configurable from Experiments. Release remains fixed to the deployed backend until a production environment selector or build configuration is needed.
