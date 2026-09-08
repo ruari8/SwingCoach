@@ -85,6 +85,8 @@ A gap between summaries remains counted. Timeline resets start a fresh counter a
 4. Join each exported video's `metadata.json` entry to the `swing-saved` event using `swingID`, then use the event's chunk ID and source range to select camera/writer evidence. An original `auto_swing_` filename can still match `export-written`, but Library export changes filenames, so prefer the permanent ID. Missing log records must be reported as missing, not matched by guesswork.
 5. Analyze the affected videos' presentation gaps and compare the corresponding source-time intervals with the logs. No debug data is embedded in the MP4: video-to-ID mapping is in `metadata.json`, and diagnostic readings are in the separate JSONL logs.
 
+For renamed Library exports, run `python3 scripts/diagnostics/analyze_auto_cadence.py <export-directory> --pattern 'swingcoach_*' --output <evidence-directory>/cadence.json`. The default patterns remain restricted to the original range-session evidence.
+
 Operator command, only after phone readiness is confirmed; substitute the resolved device ID and an owned output path:
 
 ```bash

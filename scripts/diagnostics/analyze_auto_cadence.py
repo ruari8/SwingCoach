@@ -49,12 +49,14 @@ def main():
     parser.add_argument("--gap-seconds", type=float, default=0.075,
                         help="Report decoded PTS intervals above this duration; default 75ms for 30fps slow-motion exports")
     parser.add_argument("--assert-no-gaps", action="store_true")
+    parser.add_argument("--pattern", action="append", help="Filename glob, repeatable; use swingcoach_* for Library exports")
     args = parser.parse_args()
     if args.gap_seconds <= 0:
         parser.error("--gap-seconds must be positive")
-    paths = sorted(args.directory.glob("jit_*.MP4")) + sorted(args.directory.glob("auto_swing_*.MP4"))
+    patterns = args.pattern or ["jit_*.MP4", "auto_swing_*.MP4"]
+    paths = list(dict.fromkeys(path for pattern in patterns for path in sorted(args.directory.glob(pattern))))
     if not paths:
-        parser.error("No jit_*.MP4 or auto_swing_*.MP4 inputs")
+        parser.error("No inputs match the selected filename patterns")
     reports = []
     for path in paths:
         report = analyze(path, args.gap_seconds)
