@@ -1011,7 +1011,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     let allowsTransportGestures: Bool
     let contentOverlayAllowsHitTesting: Bool
     let edgeToEdge: Bool
-    let allowsLock: Bool
+    // The review presentation owns Lock; nil omits the control for standalone players.
+    let controlsLocked: Binding<Bool>?
     let infoAction: (() -> Void)?
 
     private let header: Header
@@ -1032,7 +1033,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     @State private var showsFullscreen = false
     @State private var controlsVisible = true
     @State private var autoHideTask: Task<Void, Never>?
-    @State private var isLocked = false
+    private var isLocked: Bool { controlsLocked?.wrappedValue ?? false }
     @State private var frameStep = CMTime(value: 1, timescale: 30)
     @State private var stepRepeatTask: Task<Void, Never>?
     @State private var activeStepDirection: Int?
@@ -1052,7 +1053,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         allowsTransportGestures: Bool = true,
         contentOverlayAllowsHitTesting: Bool = false,
         edgeToEdge: Bool = false,
-        allowsLock: Bool = false,
+        controlsLocked: Binding<Bool>? = nil,
         infoAction: (() -> Void)? = nil,
         contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
         @ViewBuilder header: () -> Header,
@@ -1067,7 +1068,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         self.allowsTransportGestures = allowsTransportGestures
         self.contentOverlayAllowsHitTesting = contentOverlayAllowsHitTesting
         self.edgeToEdge = edgeToEdge
-        self.allowsLock = allowsLock
+        self.controlsLocked = controlsLocked
         self.infoAction = infoAction
         self.header = header()
         self.overlayAccessory = overlayAccessory()
@@ -1101,6 +1102,11 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             player?.pause()
             isPlaying = false
             stopContinuousStep()
+        }
+        .onChange(of: isLocked) { _, _ in
+            // Other pages can change the shared preference while this player
+            // remains alive with hidden controls or a pending auto-hide task.
+            showControls()
         }
         .fullScreenCover(isPresented: $showsFullscreen) {
             fullscreenPlayback
@@ -1151,7 +1157,10 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             let timelineWidth = max(geometry.size.width - 28, 1)
             let topControlPadding = max(12, geometry.safeAreaInsets.top + 8)
             let bottomControlPadding = max(12, geometry.safeAreaInsets.bottom + 12)
+            // Auto's delete accessory sits above the timeline when Lock uses
+            // the bottom-right transport slot.
             let accessoryBottomPadding = max(34, geometry.safeAreaInsets.bottom + 34)
+                + (controlsLocked == nil ? 0 : 80)
 
             ZStack {
                 if controlsVisible {
@@ -1283,9 +1292,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
             Spacer(minLength: 0)
 
-            // Right: lock toggle (also the tap target to unlock). The swipe-down
-            // gesture is the primary way to lock; this keeps it discoverable.
-            if allowsLock {
+            // Right: pin the controls for this review, or explicitly unlock.
+            if controlsLocked != nil {
                 Button {
                     setLocked(!isLocked)
                 } label: {
@@ -1385,7 +1393,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 allowsTransportGestures: allowsTransportGestures,
                 contentOverlayAllowsHitTesting: contentOverlayAllowsHitTesting,
                 edgeToEdge: true,
-                allowsLock: allowsLock,
+                controlsLocked: controlsLocked,
                 contentOverlay: contentOverlay
             ) {
                 EmptyView()
@@ -1663,8 +1671,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     }
 
     private func setLocked(_ locked: Bool) {
-        guard allowsLock else { return }
-        isLocked = locked
+        guard let controlsLocked else { return }
+        controlsLocked.wrappedValue = locked
         if locked {
             successHaptic()
             autoHideTask?.cancel()
@@ -1826,7 +1834,7 @@ extension PlaybackChromeView where OverlayAccessory == EmptyView {
         allowsFullscreen: Bool = true,
         allowsTransportGestures: Bool = true,
         edgeToEdge: Bool = false,
-        allowsLock: Bool = false,
+        controlsLocked: Binding<Bool>? = nil,
         infoAction: (() -> Void)? = nil,
         contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
         @ViewBuilder header: () -> Header
@@ -1840,7 +1848,7 @@ extension PlaybackChromeView where OverlayAccessory == EmptyView {
             allowsFullscreen: allowsFullscreen,
             allowsTransportGestures: allowsTransportGestures,
             edgeToEdge: edgeToEdge,
-            allowsLock: allowsLock,
+            controlsLocked: controlsLocked,
             infoAction: infoAction,
             contentOverlay: contentOverlay,
             header: header,

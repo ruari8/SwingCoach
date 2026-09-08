@@ -14,6 +14,7 @@ struct AutoSwingReviewView: View {
     @State private var swingPendingDeletion: SavedSwing?
     @State private var deletionError: ReviewDeletionError?
     @State private var isDeleting = false
+    @State private var controlsLocked = false
 
     init(swings: [SavedSwing], onDelete: @escaping @MainActor (SavedSwing) async throws -> Void) {
         self.swings = swings
@@ -40,6 +41,7 @@ struct AutoSwingReviewView: View {
                         swing: swing,
                         isSelected: selectedSwingID == swing.id,
                         deleteDisabled: isDeleting,
+                        controlsLocked: $controlsLocked,
                         onDelete: { swingPendingDeletion = swing }
                     )
                 }
@@ -151,6 +153,7 @@ private struct AutoSwingReviewPage: View {
     let swing: SavedSwing
     let isSelected: Bool
     let deleteDisabled: Bool
+    @Binding var controlsLocked: Bool
     let onDelete: () -> Void
 
     @State private var playerItem: AVPlayerItem?
@@ -166,7 +169,7 @@ private struct AutoSwingReviewPage: View {
                     allowsFullscreen: false,
                     allowsTransportGestures: true,
                     edgeToEdge: true,
-                    allowsLock: false
+                    controlsLocked: $controlsLocked
                 ) {
                     EmptyView()
                 } overlayAccessory: {

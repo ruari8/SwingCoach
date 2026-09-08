@@ -93,8 +93,7 @@ private struct StudyReviewPage: View {
                     startsPlaying: false,
                     allowsFullscreen: false,
                     allowsTransportGestures: true,
-                    edgeToEdge: true,
-                    allowsLock: false
+                    edgeToEdge: true
                 ) {
                     EmptyView()
                 } overlayAccessory: {
