@@ -9,7 +9,7 @@ final class TrimClipPreparationTests: XCTestCase {
     func testPaddingAddsContextAndPreservesDetectionTiming() {
         let detection = DetectedSwing(startTime: time(8.4), endTime: time(10.8), confidence: 1,
                                       impactTime: 10, declaredAt: 11)
-        let clip = TrimClipPreparation.detectedClip(detection, duration: time(20), sourceTimeScale: 1, vantage: .dtl)
+        let clip = TrimClipPreparation.detectedClip(detection, duration: time(20), sourceTimeScale: 1, vantage: .dtl, context: SwingClipContext(before: 1, after: 1))
         XCTAssertEqual(clip.startTime, 7.4, accuracy: 0.001)
         XCTAssertEqual(clip.endTime, 11.8, accuracy: 0.001)
         XCTAssertEqual(clip.detectionImpactTime, 10)
@@ -18,11 +18,11 @@ final class TrimClipPreparationTests: XCTestCase {
 
     func testPaddingClampsAtVideoEdgesAndScalesImportedSlowMotion() {
         let detection = DetectedSwing(startTime: time(4), endTime: time(80), confidence: 1)
-        let clip = TrimClipPreparation.detectedClip(detection, duration: time(84), sourceTimeScale: 8, vantage: .dtl)
+        let clip = TrimClipPreparation.detectedClip(detection, duration: time(84), sourceTimeScale: 8, vantage: .dtl, context: SwingClipContext(before: 1, after: 1))
         XCTAssertEqual(clip.startTime, 0)
         XCTAssertEqual(clip.endTime, 84)
         let middle = DetectedSwing(startTime: time(20), endTime: time(40), confidence: 1)
-        let padded = TrimClipPreparation.detectedClip(middle, duration: time(84), sourceTimeScale: 8, vantage: .dtl)
+        let padded = TrimClipPreparation.detectedClip(middle, duration: time(84), sourceTimeScale: 8, vantage: .dtl, context: SwingClipContext(before: 1, after: 1))
         XCTAssertEqual(padded.startTime, 12)
         XCTAssertEqual(padded.endTime, 48)
     }

@@ -67,6 +67,8 @@ Library/Application Support/CaptureDiagnostics/capture.previous.jsonl
 
 Collection is always on for Auto and does not depend on `Show model stats`, DEBUG UI, a live console, or a person reading the rear-camera screen. Each file is capped at 8 MiB, for 16 MiB total. The oldest file rotates away. Writes run on a separate utility queue with at most 32 queued events; a blocked disk drops diagnostic events instead of blocking capture. Files survive leaving Capture and app relaunch. Copy them soon after the session, before later sessions overwrite them.
 
+For Auto clips with extra footage, `chunkStart + start` and `chunkStart + end` still map the exported range onto the capture session timeline. The prepared asset can now be a composition of multiple buffer files; its `chunkStart` is the composition's source-time origin and its event ID is the first contributing chunk. Do not assume that event ID identifies every writer contributing to an extended clip.
+
 Events contain schema version, process run ID, UTC time, system uptime and a boundary name. They contain no frames, audio, Photos identifiers or location. Each frame boundary aggregates once per wall-clock second while callbacks arrive:
 
 - `camera` records absolute source PTS, received-frame count, gaps greater than 1.5 expected frame periods, non-increasing timestamps, maximum gap, drop counts by `late`/`outOfBuffers`/`discontinuity`/`unknown`, and analysis coalescing. Coalescing is detector workload, not evidence of lost recorded frames.

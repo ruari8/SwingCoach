@@ -43,6 +43,8 @@ enum ExperimentalDetectorDefaults {
 }
 
 struct ExperimentalSettingsView: View {
+    @AppStorage(SwingClipContext.beforeKey) private var extraSecondsBefore = 0.0
+    @AppStorage(SwingClipContext.afterKey) private var extraSecondsAfter = 0.0
     @AppStorage(ClipStoragePreference.saveToPhotosKey) private var saveToPhotos = true
     @AppStorage(ExperimentalSettingKey.liveAutoSwingDetectionEnabled) private var liveAutoSwingDetectionEnabled = true
     @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
@@ -55,6 +57,27 @@ struct ExperimentalSettingsView: View {
 
     private let detectorSampleOptions = [2.0, 4.0, 8.0, 16.0]
 
+    private func clipContextControl(_ title: String, value: Binding<Double>, identifier: String) -> some View {
+        let boundedValue = Binding(
+            get: { SwingClipContext.validSeconds(value.wrappedValue) },
+            set: { value.wrappedValue = SwingClipContext.validSeconds($0) }
+        )
+        return HStack {
+            Text(title)
+            Spacer()
+            TextField("Seconds", value: boundedValue, format: .number.precision(.fractionLength(0...2)))
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .frame(width: 55)
+                .accessibilityLabel(title + " seconds")
+                .accessibilityIdentifier(identifier)
+            Text("s").foregroundStyle(.secondary)
+            Stepper(title, value: boundedValue, in: 0...SwingClipContext.maximumSeconds, step: 0.5)
+                .labelsHidden()
+                .accessibilityIdentifier(identifier + "-stepper")
+        }
+    }
+
     var body: some View {
         List {
             Section {
@@ -64,6 +87,15 @@ struct ExperimentalSettingsView: View {
                 Text("Video storage")
             } footer: {
                 Text("Also saves new Auto, Manual, and trimmed clips to Photos. When off, clips stay in SwingCoach's library and review. Existing videos are unchanged.")
+            }
+
+            Section {
+                clipContextControl("Before swing", value: $extraSecondsBefore, identifier: "swing-context-before")
+                clipContextControl("After swing", value: $extraSecondsAfter, identifier: "swing-context-after")
+            } header: {
+                Text("Extra swing footage")
+            } footer: {
+                Text("Add 0–30 seconds before or after the detected swing in Auto and Manual/Trim. Use +/− for half seconds, or enter a value. These are real seconds before slow-motion export. Auto waits for the extra footage; stopping early saves what was recorded. Existing clips are unchanged.")
             }
 
             Section {

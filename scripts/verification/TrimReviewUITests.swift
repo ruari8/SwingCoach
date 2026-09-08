@@ -115,6 +115,56 @@ final class TrimReviewUITests: XCTestCase {
         attach("retry-completed")
     }
 
+    func testContextSettingsPersistAndTrimClockMatchesPlayback() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-trim-context-clock", "-trim-context-reset"]
+        app.launch()
+        app.tabBars.buttons["Library"].tap()
+        app.buttons["Experimental settings"].tap()
+        let before = app.textFields["swing-context-before"]
+        let after = app.textFields["swing-context-after"]
+        XCTAssertTrue(before.waitForExistence(timeout: 5))
+        XCTAssertEqual(before.value as? String, "0")
+        app.buttons["swing-context-before-stepper-Increment"].tap()
+        for _ in 0..<4 { app.buttons["swing-context-after-stepper-Increment"].tap() }
+        XCTAssertEqual(before.value as? String, "0.5")
+        XCTAssertEqual(after.value as? String, "2")
+        after.tap()
+        after.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 4) + "2.25")
+        before.tap()
+        XCTAssertEqual(after.value as? String, "2.25")
+        attach("independent-extra-footage-settings")
+        app.terminate()
+        app.launchArguments = ["-trim-context-clock"]
+        app.launch()
+        app.tabBars.buttons["Library"].tap()
+        app.buttons["Experimental settings"].tap()
+        XCTAssertTrue(before.waitForExistence(timeout: 5))
+        XCTAssertEqual(before.value as? String, "0.5")
+        XCTAssertEqual(after.value as? String, "2.25")
+        app.navigationBars.buttons.firstMatch.tap()
+        app.tabBars.buttons["Capture"].tap()
+        app.segmentedControls.buttons["Manual"].tap()
+        openTrim(app)
+        let clock = app.staticTexts["trim-current-time"]
+        let playhead = app.otherElements["trim-playhead"]
+        XCTAssertTrue(clock.waitForExistence(timeout: 5))
+        XCTAssertEqual(playhead.value as? String, "1.50", "0.5 real seconds must precede the detection at 2s")
+        XCTAssertEqual(clock.label, "12.0", "Clock and export share the 8x slow-motion timeline")
+        app.buttons["Play Trim playback"].tap()
+        let advanced = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            (Double(playhead.value as? String ?? "") ?? 0) > 1.7
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [advanced], timeout: 5), .completed)
+        app.buttons["Pause Trim playback"].tap()
+        XCTAssertEqual(Double(clock.label) ?? -1, (Double(playhead.value as? String ?? "") ?? -10) * 8, accuracy: 0.15)
+        attach("trim-clock-matches-source-playback")
+        app.buttons["trim-export-only"].tap()
+        allowPhotosIfRequested(app)
+        XCTAssertTrue(app.staticTexts["Trim Swings"].waitForNonExistence(timeout: 90))
+    }
+
     private func allowPhotosIfRequested(_ app: XCUIApplication) {
         // Xcode can reinstall the app after the simctl pregrant. Accept the
         // actual runtime upgrade prompt too, instead of assuming TCC persisted.

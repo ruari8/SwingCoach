@@ -70,7 +70,9 @@ xcrun simctl privacy "$device" grant photos Pear.ai.SwingCoach
 } > "$artifacts/doctor.txt"
 xcrun simctl io "$device" screenshot "$artifacts/launch.png"
 test_status=0
-if [[ "${SWINGCOACH_TRIM_VERIFY_PARTIAL:-0}" == 1 ]]; then
+if [[ "${SWINGCOACH_TRIM_VERIFY_CONTEXT:-0}" == 1 ]]; then
+    test_targets=(-only-testing:SwingCoachUITests/TrimReviewUITests/testContextSettingsPersistAndTrimClockMatchesPlayback -only-testing:SwingCoachTests/SwingClipContextTests -only-testing:SwingCoachTests/AutoCaptureReviewSessionTests -only-testing:SwingCoachTests/TrimClipPreparationTests)
+elif [[ "${SWINGCOACH_TRIM_VERIFY_PARTIAL:-0}" == 1 ]]; then
     test_targets=(-only-testing:SwingCoachUITests/TrimReviewUITests/testPartialSaveKeepsFailedClipReachableForRetry)
 else
     test_targets=(-only-testing:SwingCoachUITests/TrimReviewUITests/testManualTrimSelectionReviewExportOnlyThenSubsetAnalysis)
@@ -94,22 +96,27 @@ import json, os, plistlib, subprocess, sys
 root = Path(sys.argv[1])
 summary = json.loads(Path(sys.argv[2]).read_text())
 partial = os.environ.get('SWINGCOACH_TRIM_VERIFY_PARTIAL') == '1'
-expected_tests = 1 if partial or os.environ.get('SWINGCOACH_TRIM_VERIFY_UI_ONLY') == '1' else 5
+context = os.environ.get('SWINGCOACH_TRIM_VERIFY_CONTEXT') == '1'
+expected_tests = 13 if context else 1 if partial or os.environ.get('SWINGCOACH_TRIM_VERIFY_UI_ONLY') == '1' else 5
 assert summary['passedTests'] == expected_tests and summary['failedTests'] == 0 and summary['skippedTests'] == 0, summary
 prefs = plistlib.loads((root / 'Library/Preferences/Pear.ai.SwingCoach.plist').read_bytes())
 ids = prefs.get('trim-verification-analysis-ids', [])
-assert len(ids) == 1, ids
+assert len(ids) == (0 if context else 1), ids
+if context:
+    assert prefs['capture.extraSecondsBeforeSwing'] == 0.5
+    assert prefs['capture.extraSecondsAfterSwing'] == 2.25
 library_files = list((root / 'Documents').rglob('*.json'))
 records = next(json.loads(p.read_text()) for p in library_files if p.name == 'swing_library.json')
 records = [record for record in records if not record.get('isReference', False)]
-assert len(records) == (3 if partial else 6), records
-assert any(record['id'] == ids[0] and record['localVideoFilename'] for record in records)
+assert len(records) == (3 if partial or context else 6), records
+if not context:
+    assert any(record['id'] == ids[0] and record['localVideoFilename'] for record in records)
 for record in records:
     video = root / 'Library/Application Support/SwingVideos' / record['localVideoFilename']
     assert video.is_file(), video
     probe = json.loads(subprocess.check_output(['ffprobe', '-v', 'error', '-show_streams', '-show_format', '-of', 'json', str(video)]))
     assert {stream['codec_type'] for stream in probe['streams']} == {'video', 'audio'}, probe
-    assert abs(float(probe['format']['duration']) - 3.0) < 0.15, probe
+    assert abs(float(probe['format']['duration']) - (30.0 if context else 3.0)) < 0.15, probe
 assert not list((root / 'tmp').glob('trim-review-*.mp4')), 'Completed recording was not removed'
-print(f'PASS: selected Trim checks and {len(records)} persisted clips with video/audio; partial_retry={partial}')
+print(f'PASS: selected Trim checks and {len(records)} persisted clips with video/audio; partial_retry={partial}; context_clock={context}')
 PYTEST
