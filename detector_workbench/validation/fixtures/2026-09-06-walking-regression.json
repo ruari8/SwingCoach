@@ -1,0 +1,68 @@
+{
+  "source_time_scale": 8,
+  "timing_basis": "Auto export at 8x: 19.2s playback corresponds to configured 1.6s pre-roll + 0.8s post-roll. Visual control swings are uniformly slowed. Inferred from export behavior and footage, not file nominal frame rate.",
+  "review": "Negative identified by reporter in issue #29; agent visually inspected it and three alphabetically selected smooth auto_swing controls. Baseline detections are regression values, not independent impact labels.",
+  "baseline_revision": "394ceedde76243a8e38e9625b1ea1528abefd997",
+  "cases": [
+    {
+      "filename": "fp_auto_swing_C066ED04.MP4",
+      "sha256": "0e434a5d67b6227442ae3f707bc7f108620fc3847543d712875418bfc50c9e4a",
+      "expected_count": 0,
+      "baseline_detections": [
+        {
+          "confidence": 0.774489704525211,
+          "declaredAt": 16.893333333333334,
+          "end": 19.053333333333335,
+          "impactTime": 12.653333333333334,
+          "start": 0
+        }
+      ],
+      "observations": "fp_auto_swing_C066ED04-observations.json"
+    },
+    {
+      "filename": "auto_swing_07BCC95D.MP4",
+      "sha256": "e2e198bff9a233ba639af09716a2cd1437c1a3fa68ca85b57f12c0296ae8c191",
+      "expected_count": 1,
+      "baseline_detections": [
+        {
+          "confidence": 0.9545098802431314,
+          "declaredAt": 15.293333333333333,
+          "end": 19.053333333333335,
+          "impactTime": 12.653333333333334,
+          "start": 0
+        }
+      ],
+      "observations": "auto_swing_07BCC95D-observations.json"
+    },
+    {
+      "filename": "auto_swing_129C3634.MP4",
+      "sha256": "924b2dc1f967099d8e5417fa2de80d2a7ad8541929cb9994ee977c3b5cf52773",
+      "expected_count": 1,
+      "baseline_detections": [
+        {
+          "confidence": 0.8817342625701922,
+          "declaredAt": 15.32,
+          "end": 19.613333333333333,
+          "impactTime": 13.213333333333333,
+          "start": 0.4116666666666667
+        }
+      ],
+      "observations": "auto_swing_129C3634-observations.json"
+    },
+    {
+      "filename": "auto_swing_1F843DE5.MP4",
+      "sha256": "1e7cc517a05d0e7f6fc8f3a89432df9c202d146d827d90d2b720da42036192c6",
+      "expected_count": 1,
+      "baseline_detections": [
+        {
+          "confidence": 0.8333629256219262,
+          "declaredAt": 14.8,
+          "end": 19.066666666666666,
+          "impactTime": 12.666666666666666,
+          "start": 0
+        }
+      ],
+      "observations": "auto_swing_1F843DE5-observations.json"
+    }
+  ]
+}

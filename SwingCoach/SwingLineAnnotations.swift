@@ -91,3 +91,12 @@ struct SwingLineOverlay: View {
         )
     }
 }
+
+/// The selected page owns its draft; review renders the rail outside the scroll strip.
+struct SwingLineControlsKey: PreferenceKey {
+    static var defaultValue: AnyView? { nil }
+
+    static func reduce(value: inout AnyView?, nextValue: () -> AnyView?) {
+        value = nextValue() ?? value
+    }
+}

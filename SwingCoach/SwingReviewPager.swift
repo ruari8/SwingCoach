@@ -47,11 +47,12 @@ struct ReviewPlaybackCornerControlsKey: PreferenceKey {
 
 /// Stable, viewport-sized pages. ScrollView owns dragging, cancellation and
 /// deceleration; changing selection never rebuilds or rebases the page strip.
-struct SwingReviewPager<Page: View>: View {
-    let swings: [SavedSwing]
+struct SwingReviewPager<Item: Identifiable, Page: View>: View where Item.ID == UUID {
+    let swings: [Item]
     @Binding var selection: UUID?
     var pagingEnabled = true
-    @ViewBuilder let page: (SavedSwing) -> Page
+    var title: (Item) -> String = { _ in "Swing video" }
+    @ViewBuilder let page: (Item) -> Page
     @State private var scrollID: UUID?
 
     var body: some View {
@@ -70,7 +71,7 @@ struct SwingReviewPager<Page: View>: View {
                             .allowsHitTesting(swing.id == selection)
                             .accessibilityElement(children: .contain)
                             .accessibilityIdentifier("swing-review-page")
-                            .accessibilityLabel(swing.title ?? "Swing video")
+                            .accessibilityLabel(title(swing))
                             .id(swing.id)
                     }
                 }

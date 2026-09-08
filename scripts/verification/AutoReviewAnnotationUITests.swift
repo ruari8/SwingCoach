@@ -11,7 +11,7 @@ final class AutoReviewAnnotationUITests: XCTestCase {
         app.launch()
         let saved = app.buttons["capture-saved-swings"]
         XCTAssertTrue(saved.waitForExistence(timeout: 5))
-        saved.tap()
+        openFirstAutoSwing(saved, app)
         beginDrawing(app)
         XCTAssertFalse(app.buttons["Undo last line"].exists)
         drawLine(app)
@@ -36,7 +36,7 @@ final class AutoReviewAnnotationUITests: XCTestCase {
         app.buttons["Finish drawing lines"].tap()
         app.buttons["Close swing review"].tap()
         XCTAssertTrue(saved.waitForExistence(timeout: 5))
-        saved.tap()
+        openFirstAutoSwing(saved, app)
         beginDrawing(app)
         XCTAssertTrue(app.buttons["Undo last line"].exists, "Reopening Auto review must retain the line")
         app.buttons["Close swing review"].tap()
@@ -68,7 +68,7 @@ final class AutoReviewAnnotationUITests: XCTestCase {
         app.buttons["Back to library"].tap()
         app.tabBars.buttons["Capture"].tap()
         XCTAssertTrue(saved.waitForExistence(timeout: 5))
-        saved.tap()
+        openFirstAutoSwing(saved, app)
         beginDrawing(app)
         XCTAssertFalse(app.buttons["Undo last line"].exists, "Clearing in Library must also clear Auto review")
         app.buttons["Finish drawing lines"].tap()
@@ -77,9 +77,21 @@ final class AutoReviewAnnotationUITests: XCTestCase {
         XCTAssertTrue(app.segmentedControls.buttons["Auto"].isSelected)
     }
 
+    private func openFirstAutoSwing(_ saved: XCUIElement, _ app: XCUIApplication) {
+        saved.tap()
+        assertPosition("3 of 3", app)
+        swipe(app, from: 0.2, to: 0.8)
+        assertPosition("2 of 3", app)
+        swipe(app, from: 0.2, to: 0.8)
+        assertPosition("1 of 3", app)
+    }
+
     private func beginDrawing(_ app: XCUIApplication) {
         let draw = app.buttons["Draw straight lines"]
         XCTAssertTrue(draw.waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons.matching(identifier: "Draw straight lines").count, 1)
+        XCTAssertFalse(app.otherElements.matching(identifier: "swing-review-page")
+            .buttons["Draw straight lines"].exists, "The drawing rail must be outside the moving video pages")
         draw.tap()
         XCTAssertTrue(app.buttons["Finish drawing lines"].exists)
     }

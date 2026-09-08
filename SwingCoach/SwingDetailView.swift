@@ -26,6 +26,7 @@ struct SwingDetailView: View {
     @State private var showMetadata = false
     @State private var selectedPage = 0
     @State private var isDrawingLines = false
+    @State private var controlsLocked = false
     @State private var draftLine: ManualAnnotation?
 
     init(swing: SavedSwing, reviewSwings: [SavedSwing]? = nil) {
@@ -122,7 +123,8 @@ struct SwingDetailView: View {
                     get: { currentSwingID },
                     set: { if let id = $0 { currentSwingID = id } }
                 ),
-                pagingEnabled: !isDrawingLines
+                pagingEnabled: !isDrawingLines,
+                title: { $0.title ?? "Swing video" }
             ) { pageSwing in
                 originalVideoPage(for: pageSwing)
             }
@@ -361,7 +363,7 @@ struct SwingDetailView: View {
                 allowsTransportGestures: !drawingEnabled,
                 contentOverlayAllowsHitTesting: drawingEnabled,
                 edgeToEdge: true,
-                allowsLock: true,
+                controlsLocked: $controlsLocked,
                 infoAction: { showMetadata = true },
                 contentOverlay: { currentTime, _ in
                     AnyView(
