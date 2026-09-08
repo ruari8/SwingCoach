@@ -8,6 +8,23 @@ Use `python3 scripts/profile_detector.py --video /absolute/path/to/clip.mp4 --ou
 
 ## V3 Swing Detector
 
+Issue #29's walking false positive and three smooth September 6 Auto exports
+have a hash-checked video gate. It runs both contact and practice modes, requires
+zero detections for the walk, and compares the controls' timestamps, clip bounds,
+and confidence with the pre-fix baseline:
+
+```bash
+python3 detector_workbench/validation/verify_walking_false_positive.py \
+  --fixtures-root '/Users/ruari/Downloads/6:9_range_session' \
+  --output .verification-artifacts/walking-regression/run-1
+```
+
+Use a new output directory for each run. Missing or changed videos fail before
+building. The [report](reports/2026-09-07-walking-false-positive.md) explains the
+8× timing assumption, visual trigger, and verification limits. The four small
+observation fixtures also run in the fast production-module checks below,
+without access to the private videos or model inference.
+
 Fast production-module regression checks cover club ownership under unrelated
 high-confidence detections, shaft support when a head is missing, mirrored and
 translated framing, practice swings, and temporary versus sustained occlusion:

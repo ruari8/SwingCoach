@@ -1685,7 +1685,7 @@ struct CaptureView: View {
                     onCancel: {
                         showTrimView = false
                     },
-                    onExportAndAnalyze: onAnalyzeSwings != nil ? { _ in } : nil
+                    onAnalyzeSwings: onAnalyzeSwings
                 )
             }
         }

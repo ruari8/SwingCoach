@@ -60,6 +60,16 @@ contact thresholds, and clip padding are unchanged. Replay Debug now reads the
 same practice-capture preference as Capture. See the
 [September 4 reproduction and regression](../detector_workbench/validation/reports/2026-09-04-duplicate-auto-capture.md).
 
+The September 6 walking false positive also exposed body translation in the
+image-space wrist score. With at least four readable hip-relative hand heights,
+the motion check now requires wrist travel relative to the hips in torso units
+as well as image-space travel. Both use the existing score ramp and acceptance
+threshold. Startup recovery uses this motion check too, and emits the same
+pose-motion decision trace as normal contact. Sparse pose retains the existing
+fallback. This rejects the recorded walk toward the camera, where a leg hides
+the target ball, without changing the three smooth control detections. See the
+[walking regression report](../detector_workbench/validation/reports/2026-09-07-walking-false-positive.md).
+
 ## Why the relationships matter
 
 - A single low-confidence clubhead box cannot move the target. Retargeting needs repeated evidence for the same ball ID.

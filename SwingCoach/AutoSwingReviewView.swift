@@ -8,12 +8,21 @@ struct AutoSwingReviewPresentation: Identifiable {
 struct AutoSwingReviewView: View {
     @Environment(\.dismiss) private var dismiss
     let swings: [SavedSwing]
-    let onDelete: (SavedSwing) async throws -> Void
+    let onDelete: @MainActor (SavedSwing) async throws -> Void
 
     @State private var selectedSwingID: UUID?
     @State private var swingPendingDeletion: SavedSwing?
     @State private var deletionError: ReviewDeletionError?
     @State private var isDeleting = false
+    @State private var controlsLocked = false
+
+    init(swings: [SavedSwing], onDelete: @escaping @MainActor (SavedSwing) async throws -> Void) {
+        self.swings = swings
+        self.onDelete = onDelete
+        // Capture appends clips chronologically. Every presentation starts at
+        // the newest clip while earlier swings remain a swipe to the right away.
+        _selectedSwingID = State(initialValue: swings.last?.id)
+    }
 
     var body: some View {
         ZStack {
@@ -27,11 +36,13 @@ struct AutoSwingReviewView: View {
                 )
                 .foregroundStyle(.white)
             } else {
-                SwingReviewPager(swings: swings, selection: $selectedSwingID, pagingEnabled: !isDeleting) { swing in
+                SwingReviewPager(swings: swings, selection: $selectedSwingID, pagingEnabled: !isDeleting,
+                                 title: { $0.title ?? "Swing video" }) { swing in
                     AutoSwingReviewPage(
                         swing: swing,
                         isSelected: selectedSwingID == swing.id,
                         deleteDisabled: isDeleting,
+                        controlsLocked: $controlsLocked,
                         onDelete: { swingPendingDeletion = swing }
                     )
                 }
@@ -41,9 +52,6 @@ struct AutoSwingReviewView: View {
             // own corner controls occupy the top-right, and delete sits in the
             // player's bottom-right accessory slot.
             reviewToolbar
-        }
-        .onAppear {
-            selectedSwingID = selectedSwingID ?? swings.first?.id
         }
         .onChange(of: swings.map(\.id)) { _, ids in
             if let selectedSwingID, ids.contains(selectedSwingID) { return }
@@ -146,6 +154,7 @@ private struct AutoSwingReviewPage: View {
     let swing: SavedSwing
     let isSelected: Bool
     let deleteDisabled: Bool
+    @Binding var controlsLocked: Bool
     let onDelete: () -> Void
 
     @State private var playerItem: AVPlayerItem?
@@ -161,7 +170,7 @@ private struct AutoSwingReviewPage: View {
                     allowsFullscreen: false,
                     allowsTransportGestures: true,
                     edgeToEdge: true,
-                    allowsLock: false
+                    controlsLocked: $controlsLocked
                 ) {
                     EmptyView()
                 } overlayAccessory: {
