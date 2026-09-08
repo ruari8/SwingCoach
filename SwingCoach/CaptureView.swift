@@ -802,6 +802,13 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                     localSourceURL: outputURL
                 )
             }
+            // Library batch export renames files but preserves SavedSwing.id in
+            // metadata.json. Keep that stable join plus the exact source range.
+            CaptureCadenceDiagnostics.shared.emit("swing-saved", id: diagnosticID, values: [
+                "chunkStart": preparedClip.sourceStartTime,
+                "start": preparedClip.startTime.seconds, "end": preparedClip.endTime.seconds,
+                "slowMotionFactor": recordedMode.sourceTimeScale
+            ], state: ["swingID": savedSwing.id.uuidString, "file": outputURL.lastPathComponent])
             savedCount = 1
 
             await MainActor.run {

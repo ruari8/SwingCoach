@@ -73,16 +73,30 @@ Events contain schema version, process run ID, UTC time, system uptime and a bou
 - Camera state includes requested FPS, actual active min/max frame duration, resolution, exposure, ISO, lens position, focus/exposure adjustment, active stabilization mode, thermal state and pressure level.
 - `buffer-input` records source PTS, relative capture time, source FPS, maximum delegate-to-buffer queue delay and active chunk count.
 - `writer-start` maps chunk ID to source PTS and relative time, FPS, resolution, bitrate, codec and rotation. `writer` records accepted chunk-relative PTS, maximum pending-frame depth seen at acceptance, current pending depth, readiness and writer status. `writer-end` includes final status/error and remaining cadence summary. Start, retime and append failures have separate events.
-- `export-start` maps chunk ID to the requested range and slow-motion factor. `export-written` adds the output filename. `export-end` records save success or failure.
+- `export-start` maps chunk ID to the requested range and slow-motion factor. `export-written` adds the output filename. `export-end` records save success or failure. `swing-saved` links the permanent `SavedSwing.id` to the chunk, exact source range, slow-motion factor and original filename. Library batch export already includes this ID as `swingID` in `metadata.json`, so renaming exported videos does not break the join.
 
 A gap between summaries remains counted. Timeline resets start a fresh counter and log `camera-reset`/`buffer-reset`; they are not misreported as frame drops. Event timestamps and chunk source PTS allow correlation across the camera, buffer, writer and exported playback timelines. A total callback stall appears as missing periodic events and, if delivery resumes, a large next PTS interval. A crash can lose queued events. These logs do not promise a complete per-frame trace.
 
 ## Collect after the next range session
 
-1. Run the PR build on a ready physical iPhone and use Auto normally. No diagnostic toggle is required.
-2. After the session, download the app container through Xcode's Devices and Simulators window and copy both `CaptureDiagnostics` files. Preserve the build/commit and device model with that packet. Do not reset or reinstall the app before collecting it.
-3. Export one affected clip and one smooth clip through SwingCoach. Keep their original `auto_swing_` filenames, which match `export-written` events. Include approximate session time and the selected capture FPS.
-4. Run the offline analyzer on the exported files and compare their gap intervals to the matched chunk's source and writer PTS. Multiply source time by the logged slow-motion factor when mapping to exported playback time.
+1. Install a build containing this change before the range session. Use Auto normally. Every saved swing, including smooth swings, gets a `swing-saved` record while camera/writer summaries run continuously during Auto. There is no jitter toggle or automatic user-visible jitter label.
+2. At home, select the affected swings and at least one smooth comparison in Library, then Export to the Mac. Keep the exported `metadata.json` beside the videos. For 30 swings with problems in 13, 18 and 19, identify those three clips for the investigator; display positions are not permanent IDs.
+3. Connect and unlock the development iPhone, then tell the agent that the phone is ready for log retrieval. The agent can use Xcode's `devicectl` to copy the diagnostic directory into the task's evidence folder. The command is below; the user does not need to navigate app-private folders. Device transfer is supported by the installed CLI but has not yet been verified on a physical iPhone for this change. Xcode's Devices and Simulators window can also download the app container.
+4. Join each exported video's `metadata.json` entry to the `swing-saved` event using `swingID`, then use the event's chunk ID and source range to select camera/writer evidence. An original `auto_swing_` filename can still match `export-written`, but Library export changes filenames, so prefer the permanent ID. Missing log records must be reported as missing, not matched by guesswork.
+5. Analyze the affected videos' presentation gaps and compare the corresponding source-time intervals with the logs. No debug data is embedded in the MP4: video-to-ID mapping is in `metadata.json`, and diagnostic readings are in the separate JSONL logs.
+
+Operator command, only after phone readiness is confirmed; substitute the resolved device ID and an owned output path:
+
+```bash
+xcrun devicectl device copy from \
+  --device '<device-id>' \
+  --domain-type appDataContainer --domain-identifier Pear.ai.SwingCoach \
+  --source 'Library/Application Support/CaptureDiagnostics' \
+  --destination '<evidence-directory>/CaptureDiagnostics' \
+  --json-output '<evidence-directory>/copy-result.json'
+```
+
+Copy logs soon after the session and before uninstalling the app. They survive relaunch, but rotation can overwrite older sessions. Storage is capped at 16 MiB total, about 17 MB, across all swings and sessions. The instrumentation stores text measurements and IDs; it adds no video copies. The retention period depends on capture activity, so a fixed number of sessions or hours is not guaranteed.
 
 The next controlled device comparison should cover 30/60/120/240 fps, warm versus cool device state, and detector load during a long Auto session. These are deferred hardware checks, not claims established by Simulator.
 

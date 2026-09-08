@@ -73,7 +73,7 @@ Implemented feature set:
 - AVFoundation recording session with video input and microphone input when available, so newly captured clips can carry audio for export and detector experiments.
 - Camera access is requested before first use; after permission is granted, the session configures and starts without requiring an app relaunch.
 - Audio configuration/activation failures and capture-session runtime errors are logged under subsystem `Pear.ai.SwingCoach`, category `Capture`. The configured-format message is emitted only after the format and frame durations have been applied. These diagnostics do not alter capture settings or recovery behavior.
-- Auto capture automatically retains bounded camera/drop, buffer/writer and export cadence diagnostics in the app container, independent of the on-screen model-stats preference. See [Auto capture cadence investigation](./AUTO_CAPTURE_CADENCE.md) for the seven affected clips, measured gaps, collection steps and remaining device checks. The upstream cause is still unproven; these diagnostics do not repair jittery clips.
+- Auto capture automatically retains bounded camera/drop, buffer/writer and export cadence diagnostics in the app container, independent of the on-screen model-stats preference. Each successful save logs its permanent swing ID, allowing exported videos to match their diagnostics through the Library export’s `metadata.json` even after filename changes. See [Auto capture cadence investigation](./AUTO_CAPTURE_CADENCE.md) for the seven affected clips, measured gaps, collection steps and remaining device checks. The upstream cause is still unproven; these diagnostics do not repair jittery clips.
 - Capture mode support:
   - `30fps HD`
   - `60fps HD`
