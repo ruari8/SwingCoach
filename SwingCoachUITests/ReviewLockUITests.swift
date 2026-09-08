@@ -36,7 +36,7 @@ final class ReviewLockUITests: XCTestCase {
         XCTAssertFalse(delete.frame.intersects(app.buttons["Keep controls on screen"].frame))
         XCTAssertFalse(delete.frame.intersects(app.otherElements["playback-timeline"].frame))
         delete.tap()
-        XCTAssertTrue(app.buttons["Delete from SwingCoach and Photos"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["Delete from SwingCoach"].waitForExistence(timeout: 3))
         // Reaching confirmation proves Delete is usable. End without deleting
         // the fixture; system popovers do not always expose a Cancel button.
         app.terminate()

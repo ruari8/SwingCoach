@@ -138,7 +138,7 @@ final class CaptureControlsUITests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [paged], timeout: 5), .completed)
         attach(app, "auto-review-shared-player")
         app.buttons["Delete this swing"].tap()
-        app.buttons["Delete from SwingCoach and Photos"].tap()
+        app.buttons["Delete from SwingCoach"].tap()
         let deleted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             position.label == "2 of 2"
         }, object: nil)

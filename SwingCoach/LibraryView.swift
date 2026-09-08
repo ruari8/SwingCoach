@@ -153,7 +153,7 @@ struct LibraryView: View {
                     deleteSelectedSwings()
                 }
             } message: {
-                Text("This will remove the selected swings from your library. The videos will remain in your Photos library.")
+                Text("This removes the selected swings and their local videos from SwingCoach. Any copies in Photos remain there.")
             }
             .sheet(item: $exportSharePayload, onDismiss: cleanupExportPayload) { payload in
                 ActivityView(activityItems: payload.itemURLs) {
@@ -163,14 +163,14 @@ struct LibraryView: View {
             .onAppear {
                 refreshPhotoLibraryAccessStatus()
                 Task {
-                    await loadLibraryAssetsIfPermitted()
+                    await loadLibraryAssets()
                 }
             }
             .onChange(of: scenePhase) { _, newPhase in
                 guard newPhase == .active else { return }
                 refreshPhotoLibraryAccessStatus()
                 Task {
-                    await loadLibraryAssetsIfPermitted()
+                    await loadLibraryAssets()
                 }
             }
             .sheet(isPresented: $showVideoPicker) {
@@ -647,6 +647,7 @@ struct LibraryView: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(height: 100)
                         .clipped()
+                        .contentShape(Rectangle())
                 } else {
                     Rectangle()
                         .fill(Color.gray.opacity(0.2))
@@ -869,11 +870,7 @@ struct LibraryView: View {
         photoLibraryAccessStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
     }
 
-    private func loadLibraryAssetsIfPermitted() async {
-        guard photoLibraryAccessStatus == .authorized || photoLibraryAccessStatus == .limited else {
-            return
-        }
-
+    private func loadLibraryAssets() async {
         if photoLibraryAccessStatus == .authorized {
             library.validateAssets()
         }
@@ -916,7 +913,7 @@ struct LibraryView: View {
         PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
             Task { @MainActor in
                 photoLibraryAccessStatus = status
-                await loadLibraryAssetsIfPermitted()
+                await loadLibraryAssets()
                 if openPickerAfterAuthorization {
                     switch status {
                     case .authorized:
@@ -943,7 +940,7 @@ struct LibraryView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
                 refreshPhotoLibraryAccessStatus()
                 Task {
-                    await loadLibraryAssetsIfPermitted()
+                    await loadLibraryAssets()
                 }
             }
         }
@@ -2201,16 +2198,19 @@ private enum SwingLibraryBatchExporter {
                 let displayName = exportDisplayName(for: swing, index: index + 1)
                 onProgress(index, swings.count, displayName)
 
-                let asset = try photoAsset(for: swing, displayName: displayName)
-                let resource = try videoResource(for: asset, displayName: displayName)
-                let filename = exportFilename(
-                    for: swing,
-                    index: index + 1,
-                    originalFilename: resource.originalFilename
-                )
-                let outputURL = exportFolder.appendingPathComponent(filename)
-
-                try await write(resource: resource, to: outputURL)
+                let filename: String
+                let outputURL: URL
+                if swing.photoAssetID.isEmpty, let localURL = SwingLibrary.shared.localVideoURL(for: swing) {
+                    filename = exportFilename(for: swing, index: index + 1, originalFilename: localURL.lastPathComponent)
+                    outputURL = exportFolder.appendingPathComponent(filename)
+                    try FileManager.default.copyItem(at: localURL, to: outputURL)
+                } else {
+                    let asset = try photoAsset(for: swing, displayName: displayName)
+                    let resource = try videoResource(for: asset, displayName: displayName)
+                    filename = exportFilename(for: swing, index: index + 1, originalFilename: resource.originalFilename)
+                    outputURL = exportFolder.appendingPathComponent(filename)
+                    try await write(resource: resource, to: outputURL)
+                }
                 itemURLs.append(outputURL)
                 manifestItems.append(
                     SwingLibraryExportManifestItem(

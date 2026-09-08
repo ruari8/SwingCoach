@@ -66,7 +66,7 @@ final class FastSwipePagingUITests: XCTestCase {
         let delete = app.buttons["Delete this swing"]
         XCTAssertTrue(delete.waitForExistence(timeout: 5))
         delete.tap()
-        app.buttons["Delete from SwingCoach and Photos"].tap()
+        app.buttons["Delete from SwingCoach"].tap()
     }
 
     private func exerciseFlicks(_ app: XCUIApplication, startingAt initialPosition: Int) {

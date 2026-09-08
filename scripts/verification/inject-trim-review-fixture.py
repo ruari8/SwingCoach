@@ -43,3 +43,18 @@ p = root / 'SwingCoachApp.swift';s=p.read_text().replace('struct SwingCoachApp: 
         UserDefaults.standard.removeObject(forKey: "trim-verification-analysis-ids")
     }
 ''',1);p.write_text(s)
+
+# Opt-in failure at the external save boundary; the production batch handles it.
+p = root / 'Models/SwingLibrary.swift'; s = p.read_text()
+needle = '    static func saveVideoAndGetID(url: URL) async -> String? {'
+assert needle in s
+s = s.replace(needle, needle + '''
+        if ProcessInfo.processInfo.arguments.contains("-trim-save-failure") {
+            let attempt = UserDefaults.standard.integer(forKey: "trim-save-attempt") + 1
+            UserDefaults.standard.set(attempt, forKey: "trim-save-attempt")
+            if attempt == 2 { return nil }
+        }
+''', 1)
+s = s.replace('        await withCheckedContinuation { continuation in\n            var assetID',
+              '        return await withCheckedContinuation { continuation in\n            var assetID', 1)
+p.write_text(s)

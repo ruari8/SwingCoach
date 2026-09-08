@@ -84,6 +84,37 @@ final class TrimReviewUITests: XCTestCase {
         attach("subset-handed-to-coach")
     }
 
+    func testPartialSaveKeepsFailedClipReachableForRetry() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-trim-save-failure"]
+        app.launch()
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        for _ in 0..<3 {
+            guard springboard.alerts.firstMatch.waitForExistence(timeout: 1) else { break }
+            springboard.alerts.firstMatch.buttons.firstMatch.tap()
+        }
+        let manual = app.segmentedControls.buttons["Manual"]
+        XCTAssertTrue(manual.waitForExistence(timeout: 10))
+        manual.tap()
+        openTrim(app)
+        app.buttons["Analyze swing 1"].tap()
+        app.buttons["trim-export-analyze"].tap()
+        allowPhotosIfRequested(app)
+        let error = app.alerts["Couldn’t Export Swings"]
+        XCTAssertTrue(error.waitForExistence(timeout: 60))
+        XCTAssertTrue(error.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Saved 2 of 3 swings.")).firstMatch.exists)
+        attach("partial-save-error")
+        error.buttons["OK"].tap()
+        XCTAssertTrue(app.buttons["trim-export-only"].isHittable)
+        XCTAssertEqual(app.buttons["trim-export-only"].label, "Export 1 Clip")
+        XCTAssertTrue(app.buttons["trim-clip-1"].isHittable)
+        XCTAssertFalse(app.buttons["trim-clip-2"].exists)
+        app.buttons["trim-export-only"].tap()
+        XCTAssertTrue(app.staticTexts["Trim Swings"].waitForNonExistence(timeout: 60))
+        attach("retry-completed")
+    }
+
     private func allowPhotosIfRequested(_ app: XCUIApplication) {
         // Xcode can reinstall the app after the simctl pregrant. Accept the
         // actual runtime upgrade prompt too, instead of assuming TCC persisted.

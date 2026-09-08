@@ -44,7 +44,7 @@ xcrun simctl bootstatus "$device" -b
 {
     echo "route=disposable Simulator; driver=XCUITest; device_readiness=not-needed"
     echo "simulator=$device; fixture=synthetic 310-second video with audio; deterministic detections at 2,150,300 seconds"
-    echo "hardware_recording=unverified; human_actions=none"
+    echo "hardware_recording=unverified; human_actions=none; partial_save_test=${SWINGCOACH_TRIM_VERIFY_PARTIAL:-0}"
     echo "actions=Manual,record,stop,late selection,full review,swipe,export only,relaunch,subset analysis"
     xcrun simctl list devices | grep -F "$device"
     git -C "$repo" rev-parse HEAD
@@ -70,9 +70,13 @@ xcrun simctl privacy "$device" grant photos Pear.ai.SwingCoach
 } > "$artifacts/doctor.txt"
 xcrun simctl io "$device" screenshot "$artifacts/launch.png"
 test_status=0
-test_targets=(-only-testing:SwingCoachUITests/TrimReviewUITests)
-if [[ "${SWINGCOACH_TRIM_VERIFY_UI_ONLY:-0}" != 1 ]]; then
-    test_targets+=(-only-testing:SwingCoachTests/TrimClipPreparationTests)
+if [[ "${SWINGCOACH_TRIM_VERIFY_PARTIAL:-0}" == 1 ]]; then
+    test_targets=(-only-testing:SwingCoachUITests/TrimReviewUITests/testPartialSaveKeepsFailedClipReachableForRetry)
+else
+    test_targets=(-only-testing:SwingCoachUITests/TrimReviewUITests/testManualTrimSelectionReviewExportOnlyThenSubsetAnalysis)
+    if [[ "${SWINGCOACH_TRIM_VERIFY_UI_ONLY:-0}" != 1 ]]; then
+        test_targets+=(-only-testing:SwingCoachTests/TrimClipPreparationTests)
+    fi
 fi
 xcodebuild -project "$scratch/repo/SwingCoach.xcodeproj" -scheme SwingCoach -configuration Debug \
     -destination "platform=iOS Simulator,id=$device" -derivedDataPath "$scratch/DerivedData" \
@@ -89,14 +93,16 @@ from pathlib import Path
 import json, os, plistlib, subprocess, sys
 root = Path(sys.argv[1])
 summary = json.loads(Path(sys.argv[2]).read_text())
-assert summary['passedTests'] == (1 if os.environ.get('SWINGCOACH_TRIM_VERIFY_UI_ONLY') == '1' else 5) and summary['failedTests'] == 0 and summary['skippedTests'] == 0, summary
+partial = os.environ.get('SWINGCOACH_TRIM_VERIFY_PARTIAL') == '1'
+expected_tests = 1 if partial or os.environ.get('SWINGCOACH_TRIM_VERIFY_UI_ONLY') == '1' else 5
+assert summary['passedTests'] == expected_tests and summary['failedTests'] == 0 and summary['skippedTests'] == 0, summary
 prefs = plistlib.loads((root / 'Library/Preferences/Pear.ai.SwingCoach.plist').read_bytes())
 ids = prefs.get('trim-verification-analysis-ids', [])
 assert len(ids) == 1, ids
 library_files = list((root / 'Documents').rglob('*.json'))
 records = next(json.loads(p.read_text()) for p in library_files if p.name == 'swing_library.json')
 records = [record for record in records if not record.get('isReference', False)]
-assert len(records) == 6, records
+assert len(records) == (3 if partial else 6), records
 assert any(record['id'] == ids[0] and record['localVideoFilename'] for record in records)
 for record in records:
     video = root / 'Library/Application Support/SwingVideos' / record['localVideoFilename']
@@ -105,5 +111,5 @@ for record in records:
     assert {stream['codec_type'] for stream in probe['streams']} == {'video', 'audio'}, probe
     assert abs(float(probe['format']['duration']) - 3.0) < 0.15, probe
 assert not list((root / 'tmp').glob('trim-review-*.mp4')), 'Completed recording was not removed'
-print('PASS: timeline seek, full review, paging, export-only, subset handoff and 6 persisted local clips')
+print(f'PASS: selected Trim checks and {len(records)} persisted clips with video/audio; partial_retry={partial}')
 PYTEST

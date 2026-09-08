@@ -99,17 +99,6 @@ struct AutoCaptureStatus: Equatable {
 
 final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecordingDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
     private static let logger = Logger(subsystem: "Pear.ai.SwingCoach", category: "Capture")
-    private enum AutoCaptureExportError: LocalizedError {
-        case photosSaveFailed
-
-        var errorDescription: String? {
-            switch self {
-            case .photosSaveFailed:
-                return "Swing clip could not be saved. Check Photos access and available storage."
-            }
-        }
-    }
-
     let session = AVCaptureSession()
     private let queue = DispatchQueue(label: "camera.session.queue")
     /// The AVCapture delegate must return immediately or the camera drops source
@@ -821,20 +810,13 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
             CaptureCadenceDiagnostics.shared.emit("export-written", id: diagnosticID,
                 state: ["file": outputURL.lastPathComponent])
-            guard let assetID = await PHPhotoLibrary.saveVideoAndGetID(url: outputURL) else {
-                throw AutoCaptureExportError.photosSaveFailed
-            }
-
             let thumbnail = try? await autoTrimmer.generateThumbnail(for: asset, at: clip.startCMTime)
-            let savedSwing = await MainActor.run {
-                SwingLibrary.shared.addSwing(
-                    photoAssetID: assetID,
-                    vantage: clip.vantage,
-                    duration: clip.duration * recordedMode.sourceTimeScale,
-                    initialThumbnail: thumbnail,
-                    localSourceURL: outputURL
-                )
-            }
+            let savedSwing = try await SwingLibrary.shared.saveExportedSwing(
+                from: outputURL,
+                vantage: clip.vantage,
+                duration: clip.duration * recordedMode.sourceTimeScale,
+                initialThumbnail: thumbnail
+            )
             // Library batch export renames files but preserves SavedSwing.id in
             // metadata.json. Keep that stable join plus the exact source range.
             CaptureCadenceDiagnostics.shared.emit("swing-saved", id: diagnosticID, values: [
@@ -1945,6 +1927,7 @@ struct CaptureView: View {
     }
 
     private func requestAutoCapturePhotosAccess() {
+        guard ClipStoragePreference.savesToPhotos else { return }
         PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
             guard status == .authorized else {
                 camera.reportPhotosAccessUnavailable()

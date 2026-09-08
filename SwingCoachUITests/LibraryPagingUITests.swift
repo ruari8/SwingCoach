@@ -120,7 +120,7 @@ final class LibraryPagingUITests: XCTestCase {
             $0.frame.intersects(app.frame) && $0.isHittable
         })
         deleteButton.tap()
-        app.buttons["Delete from SwingCoach and Photos"].tap()
+        app.buttons["Delete from SwingCoach"].tap()
         assertSettledPage(app, position: "2 of 2", reference: 3)
         drag(app, from: 0.18, to: 0.82, velocity: .fast)
         assertSettledPage(app, position: "1 of 2")
