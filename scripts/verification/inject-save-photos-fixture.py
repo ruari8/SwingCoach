@@ -31,8 +31,9 @@ replace('    func startAutoCapture() {', '    func stopAutoCapture() {', '''    
         Task {
             await exportAutoDetectedSwing(
                 detection: DetectedSwing(startTime: .zero, endTime: CMTime(seconds: 1, preferredTimescale: 600), confidence: 1),
-                preparedClip: AutoRollingVideoBuffer.PreparedClip(sourceURL: url, sourceStartTime: 0,
-                    startTime: .zero, endTime: CMTime(seconds: 1, preferredTimescale: 600), chunkID: UUID()),
+                preparedClip: AutoRollingVideoBuffer.PreparedClip(
+                    segments: [.init(chunkID: UUID(), url: url, range: CMTimeRange(start: .zero, duration: CMTime(seconds: 1, preferredTimescale: 600)))],
+                    sourceStartTime: 0, duration: CMTime(seconds: 1, preferredTimescale: 600)),
                 recordedMode: .normal
             )
         }

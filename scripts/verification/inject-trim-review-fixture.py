@@ -10,7 +10,7 @@ def replace(start, end, code):
     s = s[:a] + code + '\n\n' + s[b:]
 replace('    func start() {', '    private func configureAndStartSession()', '    func start() {}')
 replace('    private func requestAutoCapturePhotosAccess()', '    private func restoreIdleTimer()', '    private func requestAutoCapturePhotosAccess() {}')
-replace('    func startRecording() {', '    func startAutoCapture() {', '''    func startRecording() { recordedMode = .normal }
+replace('    func startRecording() {', '    func startAutoCapture() {', '''    func startRecording() { recordedMode = ProcessInfo.processInfo.arguments.contains("-trim-context-clock") ? .ultra : .normal }
     func stopRecording() {
         let fixture = Bundle.main.url(forResource: "trim-review-fixture", withExtension: "mp4")!
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("trim-review-\\(UUID()).mp4")
@@ -41,6 +41,13 @@ p = root / 'SwingCoachApp.swift';s=p.read_text().replace('struct SwingCoachApp: 
     init() {
         UserDefaults.standard.set(true, forKey: ExperimentalSettingKey.liveAutoSwingDetectionEnabled)
         UserDefaults.standard.removeObject(forKey: "trim-verification-analysis-ids")
+        if ProcessInfo.processInfo.arguments.contains("-trim-context-reset") {
+            UserDefaults.standard.removeObject(forKey: SwingClipContext.beforeKey)
+            UserDefaults.standard.removeObject(forKey: SwingClipContext.afterKey)
+        } else if !ProcessInfo.processInfo.arguments.contains("-trim-context-clock") {
+            UserDefaults.standard.set(1.0, forKey: SwingClipContext.beforeKey)
+            UserDefaults.standard.set(1.0, forKey: SwingClipContext.afterKey)
+        }
     }
 ''',1);p.write_text(s)
 

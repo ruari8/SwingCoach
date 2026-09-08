@@ -44,6 +44,7 @@ struct TrimView: View {
 
     // Clips
     @State private var clips: [SwingClip] = []
+    @State private var clipContext = SwingClipContext.load()
     @State private var autoDetectedClipIDs: Set<UUID> = []
     @State private var editingClipID: UUID?
     @State private var timelineSelectionRequest = UUID()
@@ -218,12 +219,14 @@ struct TrimView: View {
                         .foregroundColor(.white)
                         .frame(width: 40, height: 40)
                 }
+                .accessibilityLabel(isPlaying ? "Pause Trim playback" : "Play Trim playback")
 
                 seekButton(systemImage: "forward.frame.fill", direction: 1)
             }
 
             // Time display
-            Text(formatTimeCompact(currentTime))
+            Text(TrimTimecode.format(currentTime, scale: displayTimeScale))
+                .accessibilityIdentifier("trim-current-time")
                 .font(.system(size: 18, weight: .semibold, design: .monospaced))
                 .foregroundColor(.white)
 
@@ -477,7 +480,7 @@ struct TrimView: View {
                 .foregroundColor(.white)
                 .padding(.horizontal)
                 if !autoDetectedClipIDs.isEmpty {
-                    Text("Added padding: 1s before and after")
+                    Text("Extra footage: \(clipContext.before.formatted())s before, \(clipContext.after.formatted())s after")
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.6))
                         .padding(.horizontal)
@@ -763,7 +766,7 @@ struct TrimView: View {
             timeObserver = nil
         }
 
-        let interval = CMTime(seconds: 0.1, preferredTimescale: 600)
+        let interval = TrimTimecode.observationInterval(playbackRate: preferredPlaybackRate)
         timeObserver = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
             currentTime = time
 
@@ -884,7 +887,7 @@ struct TrimView: View {
         let detectedClips = detections.map {
             TrimClipPreparation.detectedClip($0, duration: duration,
                                              sourceTimeScale: detectorTimelineScale,
-                                             vantage: selectedVantage)
+                                             vantage: selectedVantage, context: clipContext)
         }
 
         clips = detectedClips
@@ -1096,15 +1099,6 @@ struct TrimView: View {
     }
 
     // MARK: - Helpers
-
-    /// Compact format: just seconds and tenths (e.g., "05.3")
-    private func formatTimeCompact(_ time: CMTime) -> String {
-        let totalSeconds = CMTimeGetSeconds(time)
-        let displaySeconds = totalSeconds * displayTimeScale
-        let secs = Int(displaySeconds)
-        let tenths = Int((displaySeconds * 10).truncatingRemainder(dividingBy: 10))
-        return String(format: "%02d.%d", secs, tenths)
-    }
 
     private var primaryExportButtonTitle: String {
         if clips.isEmpty {

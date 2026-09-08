@@ -92,7 +92,7 @@ struct ThumbnailTimeline: View {
             .frame(height: thumbnailHeight + 28)
             
             HStack {
-                Text(formatSeconds(currentTime))
+                Text(TrimTimecode.format(currentTime, scale: displayTimeScale))
                     .font(.system(size: 13, weight: .semibold, design: .monospaced))
                     .foregroundColor(.yellow)
                 
@@ -110,7 +110,7 @@ struct ThumbnailTimeline: View {
                 
                 Spacer()
                 
-                Text(formatSeconds(duration))
+                Text(TrimTimecode.format(duration, scale: displayTimeScale))
                     .font(.system(size: 13, weight: .medium, design: .monospaced))
                     .foregroundColor(.white.opacity(0.5))
             }
@@ -359,13 +359,7 @@ struct ThumbnailTimeline: View {
         let seconds = Double(fraction) * durationSeconds
         return CMTime(seconds: seconds, preferredTimescale: 600)
     }
-    
-    private func formatSeconds(_ time: CMTime) -> String {
-        let totalSeconds = CMTimeGetSeconds(time) * displayTimeScale
-        let secs = Int(totalSeconds)
-        let tenths = Int((totalSeconds * 10).truncatingRemainder(dividingBy: 10))
-        return String(format: "%02d.%d", secs, tenths)
-    }
+
 }
 
 // MARK: - Helper Shapes

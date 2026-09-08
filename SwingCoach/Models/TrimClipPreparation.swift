@@ -1,15 +1,14 @@
 import AVFoundation
 
-/// Trim adds context around detector windows without changing Auto capture.
+/// Shared Trim preparation; source-time conversion happens only at the boundary.
 enum TrimClipPreparation {
-    static let extraPaddingSeconds = 1.0
-
     static func detectedClip(_ detection: DetectedSwing, duration: CMTime,
-                             sourceTimeScale: Double, vantage: Vantage) -> SwingClip {
-        let padding = CMTime(seconds: extraPaddingSeconds * sourceTimeScale, preferredTimescale: 600)
+                             sourceTimeScale: Double, vantage: Vantage,
+                             context: SwingClipContext) -> SwingClip {
+        let range = context.range(for: detection, sourceTimeScale: sourceTimeScale)
         return SwingClip(
-            startTime: CMTimeMaximum(.zero, CMTimeSubtract(detection.startTime, padding)),
-            endTime: CMTimeMinimum(duration, CMTimeAdd(detection.endTime, padding)),
+            startTime: range.start,
+            endTime: CMTimeMinimum(duration, range.end),
             vantage: vantage,
             detectionImpactTime: detection.impactTime,
             detectionDeclaredAt: detection.declaredAt
