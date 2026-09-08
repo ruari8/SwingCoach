@@ -71,7 +71,7 @@ xcrun simctl privacy "$device" grant photos Pear.ai.SwingCoach
 xcrun simctl io "$device" screenshot "$artifacts/launch.png"
 test_status=0
 if [[ "${SWINGCOACH_TRIM_VERIFY_CONTEXT:-0}" == 1 ]]; then
-    test_targets=(-only-testing:SwingCoachUITests/TrimReviewUITests/testContextSettingsPersistAndTrimClockMatchesPlayback -only-testing:SwingCoachTests/SwingClipContextTests -only-testing:SwingCoachTests/TrimClipPreparationTests)
+    test_targets=(-only-testing:SwingCoachUITests/TrimReviewUITests/testContextSettingsPersistAndTrimClockMatchesPlayback -only-testing:SwingCoachTests/SwingClipContextTests -only-testing:SwingCoachTests/AutoCaptureReviewSessionTests -only-testing:SwingCoachTests/TrimClipPreparationTests)
 elif [[ "${SWINGCOACH_TRIM_VERIFY_PARTIAL:-0}" == 1 ]]; then
     test_targets=(-only-testing:SwingCoachUITests/TrimReviewUITests/testPartialSaveKeepsFailedClipReachableForRetry)
 else
@@ -97,7 +97,7 @@ root = Path(sys.argv[1])
 summary = json.loads(Path(sys.argv[2]).read_text())
 partial = os.environ.get('SWINGCOACH_TRIM_VERIFY_PARTIAL') == '1'
 context = os.environ.get('SWINGCOACH_TRIM_VERIFY_CONTEXT') == '1'
-expected_tests = 10 if context else 1 if partial or os.environ.get('SWINGCOACH_TRIM_VERIFY_UI_ONLY') == '1' else 5
+expected_tests = 13 if context else 1 if partial or os.environ.get('SWINGCOACH_TRIM_VERIFY_UI_ONLY') == '1' else 5
 assert summary['passedTests'] == expected_tests and summary['failedTests'] == 0 and summary['skippedTests'] == 0, summary
 prefs = plistlib.loads((root / 'Library/Preferences/Pear.ai.SwingCoach.plist').read_bytes())
 ids = prefs.get('trim-verification-analysis-ids', [])

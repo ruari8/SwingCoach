@@ -14,6 +14,7 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
             let chunkID: UUID
             let url: URL
             let range: CMTimeRange
+            let timelineStart: CMTime
         }
         let segments: [Segment]
         let sourceStartTime: Double
@@ -43,8 +44,11 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
                     throw BufferError.rotationChanged
                 }
                 transform = nextTransform
-                try destination.insertTimeRange(segment.range, of: track, at: position)
-                position = CMTimeAdd(position, segment.range.duration)
+                if segment.timelineStart > position {
+                    destination.insertEmptyTimeRange(CMTimeRange(start: position, end: segment.timelineStart))
+                }
+                try destination.insertTimeRange(segment.range, of: track, at: segment.timelineStart)
+                position = CMTimeAdd(segment.timelineStart, segment.range.duration)
             }
             destination.preferredTransform = transform ?? .identity
             return composition
@@ -271,23 +275,35 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
         var segments: [PreparedClip.Segment] = []
         // Greedy coverage uses each source range once, dropping overlap between chunks.
         while cursor < end - 0.000001 {
-            guard let chunk = available.filter({ $0.startRelativeTime <= cursor + 0.000001 &&
+            let coveringChunk = available.filter({ $0.startRelativeTime <= cursor + 0.000001 &&
                                                  $0.endRelativeTime > cursor + 0.000001 })
-                .max(by: { $0.endRelativeTime < $1.endRelativeTime }) else {
+                .max(by: { $0.endRelativeTime < $1.endRelativeTime })
+            // Finishing an export closes the current writer. If the camera drops
+            // its next frame, the new chunk starts later than the old chunk ends.
+            // Retain that hole on the source timeline instead of losing the clip
+            // or moving every subsequent frame and detection timestamp earlier.
+            let nextChunk = coveringChunk ?? available.filter {
+                $0.startRelativeTime > cursor && $0.startRelativeTime < end &&
+                $0.endRelativeTime > $0.startRelativeTime
+            }.min(by: { $0.startRelativeTime < $1.startRelativeTime })
+            guard let chunk = nextChunk else {
+                if !segments.isEmpty { break }
                 completion(.failure(BufferError.clipUnavailable))
                 return
             }
+            cursor = max(cursor, chunk.startRelativeTime)
             let segmentEnd = min(end, chunk.endRelativeTime)
             let range = CMTimeRange(
                 start: Self.sourceTime(cursor - chunk.startRelativeTime),
                 end: Self.sourceTime(segmentEnd - chunk.startRelativeTime)
             )
-            segments.append(.init(chunkID: chunk.id, url: chunk.url, range: range))
+            segments.append(.init(chunkID: chunk.id, url: chunk.url, range: range,
+                                  timelineStart: Self.sourceTime(cursor - start)))
             selected.append(chunk)
             cursor = segmentEnd
         }
         let prepared = PreparedClip(segments: segments, sourceStartTime: start,
-                                   duration: Self.sourceTime(end - start))
+                                   duration: Self.sourceTime(cursor - start))
         let finalization = DispatchGroup()
         for chunk in selected {
             chunk.pendingExports += 1
@@ -594,4 +610,3 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
         }
     }
 }
-

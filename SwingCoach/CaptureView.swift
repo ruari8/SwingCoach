@@ -137,6 +137,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private var lastLiveSwingSampleTime = -Double.greatestFiniteMagnitude
     private var autoCaptureIsActive = false
     private var autoCaptureIsPausedForReview = false
+    // Review identity and counters are owned by the main actor.
+    private var autoReviewSessionID = UUID()
+    // Captured with detector work on analysisQueue; never read by UI callbacks.
+    private var autoDetectionReviewSessionID = UUID()
     private var autoSavedSwingCount = 0
     private var autoPendingSwingCount = 0
     private var autoExportedDetectionIDs: Set<UUID> = []
@@ -485,15 +489,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
             self.autoCaptureIsActive = true
             self.autoCaptureIsPausedForReview = false
-            self.autoSavedSwingCount = 0
-            self.autoPendingSwingCount = 0
             self.recordedMode = self.captureMode
-            self.resetLiveSwingDetection()
-            self.bufferQueue.async {
-                self.autoRollingBuffer.reset(preservingPendingExports: true)
-            }
+            let reviewSessionID = UUID()
             DispatchQueue.main.async {
-                self.autoSessionSwings = []
+                self.beginAutoReviewSession(id: reviewSessionID)
                 self.autoCaptureStatus = AutoCaptureStatus(
                     isActive: true,
                     savedSwingCount: 0,
@@ -501,6 +500,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                     message: "Auto watching",
                     lastErrorMessage: nil
                 )
+            }
+            self.resetLiveSwingDetection(reviewSessionID: reviewSessionID)
+            self.bufferQueue.async {
+                self.autoRollingBuffer.reset(preservingPendingExports: true)
             }
         }
     }
@@ -530,7 +533,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         return directory.appendingPathComponent(filename)
     }
 
-    private func resetLiveSwingDetection() {
+    private func resetLiveSwingDetection(reviewSessionID: UUID? = nil) {
         let detectorEnabled = isLiveSwingDetectionEnabled || autoCaptureIsActive
         qualityQueue.async {
             CaptureCadenceDiagnostics.shared.emit("camera-reset", cadence: self.captureCadence.takeSummary())
@@ -545,6 +548,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             self.pendingAnalysisFrame = nil
         }
         analysisQueue.async {
+            if let reviewSessionID { self.autoDetectionReviewSessionID = reviewSessionID }
             self.autoExportedDetectionIDs = []
             self.liveSwingDetector = SwingDetectorV3(configuration: self.liveV3Configuration())
             self.liveSwingDetector.reset(enabled: detectorEnabled)
@@ -776,7 +780,8 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private func exportAutoDetectedSwing(
         detection: DetectedSwing,
         preparedClip: AutoRollingVideoBuffer.PreparedClip,
-        recordedMode: SloMoMode
+        recordedMode: SloMoMode,
+        reviewSessionID: UUID
     ) async {
         let diagnosticID = preparedClip.chunkID.uuidString
         CaptureCadenceDiagnostics.shared.emit("export-start", id: diagnosticID, values: [
@@ -784,7 +789,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             "start": preparedClip.startTime.seconds, "end": preparedClip.endTime.seconds,
             "slowMotionFactor": recordedMode.sourceTimeScale
         ], state: ["detection": detection.id.uuidString])
-        var savedCount = 0
+        var savedSwingForReview: SavedSwing?
         var lastErrorMessage: String?
 
         do {
@@ -824,29 +829,18 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 "start": preparedClip.startTime.seconds, "end": preparedClip.endTime.seconds,
                 "slowMotionFactor": recordedMode.sourceTimeScale
             ], state: ["swingID": savedSwing.id.uuidString, "file": outputURL.lastPathComponent])
-            savedCount = 1
-
-            await MainActor.run {
-                self.autoSessionSwings.append(savedSwing)
-            }
+            savedSwingForReview = savedSwing
         } catch {
             lastErrorMessage = error.localizedDescription
         }
 
         await MainActor.run {
-            self.autoSavedSwingCount += savedCount
-            self.autoPendingSwingCount = max(0, self.autoPendingSwingCount - 1)
-            self.autoCaptureStatus = AutoCaptureStatus(
-                isActive: self.autoCaptureIsActive,
-                savedSwingCount: self.autoSavedSwingCount,
-                pendingSwingCount: self.autoPendingSwingCount,
-                message: self.autoCaptureIsActive ? "Auto watching" : "Auto capture off",
-                lastErrorMessage: lastErrorMessage
-            )
+            self.finishAutoReviewRequest(sessionID: reviewSessionID, savedSwing: savedSwingForReview,
+                                         errorMessage: lastErrorMessage)
         }
 
         CaptureCadenceDiagnostics.shared.emit("export-end", id: diagnosticID,
-            values: ["saved": Double(savedCount)], state: ["error": lastErrorMessage ?? "none"])
+            values: ["saved": savedSwingForReview == nil ? 0 : 1], state: ["error": lastErrorMessage ?? "none"])
         bufferQueue.async {
             self.autoRollingBuffer.release(preparedClip)
         }
@@ -950,14 +944,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private func prepareAutoClip(_ detection: DetectedSwing) {
         let range = SwingClipContext.load().range(for: detection)
         let mode = recordedMode
+        let reviewSessionID = autoDetectionReviewSessionID
         DispatchQueue.main.async {
-            self.autoPendingSwingCount += 1
-            self.autoCaptureStatus = AutoCaptureStatus(
-                isActive: self.autoCaptureIsActive,
-                savedSwingCount: self.autoSavedSwingCount,
-                pendingSwingCount: self.autoPendingSwingCount,
-                message: "Collecting swing footage", lastErrorMessage: nil
-            )
+            self.beginAutoReviewRequest(sessionID: reviewSessionID)
         }
         bufferQueue.async {
             self.autoRollingBuffer.prepareClip(in: range) { [weak self] result in
@@ -966,23 +955,54 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 case .success(let preparedClip):
                     Task {
                         await self.exportAutoDetectedSwing(
-                            detection: detection, preparedClip: preparedClip, recordedMode: mode
+                            detection: detection, preparedClip: preparedClip, recordedMode: mode,
+                            reviewSessionID: reviewSessionID
                         )
                     }
                 case .failure(let error):
                     DispatchQueue.main.async {
-                        self.autoPendingSwingCount = max(0, self.autoPendingSwingCount - 1)
-                        self.autoCaptureStatus = AutoCaptureStatus(
-                            isActive: self.autoCaptureIsActive,
-                            savedSwingCount: self.autoSavedSwingCount,
-                            pendingSwingCount: self.autoPendingSwingCount,
-                            message: self.autoCaptureIsActive ? "Auto watching" : "Auto capture off",
-                            lastErrorMessage: error.localizedDescription
-                        )
+                        self.finishAutoReviewRequest(sessionID: reviewSessionID, savedSwing: nil,
+                                                     errorMessage: error.localizedDescription)
                     }
                 }
             }
         }
+    }
+
+    @MainActor
+    func beginAutoReviewSession(id: UUID) {
+        autoReviewSessionID = id
+        autoSavedSwingCount = 0
+        autoPendingSwingCount = 0
+        autoSessionSwings = []
+    }
+
+    @MainActor
+    func beginAutoReviewRequest(sessionID: UUID) {
+        guard sessionID == autoReviewSessionID else { return }
+        autoPendingSwingCount += 1
+        autoCaptureStatus = AutoCaptureStatus(
+            isActive: autoCaptureIsActive, savedSwingCount: autoSavedSwingCount,
+            pendingSwingCount: autoPendingSwingCount,
+            message: "Collecting swing footage", lastErrorMessage: nil
+        )
+    }
+
+    /// An old session still saves to Library, but cannot change a newer review.
+    @MainActor
+    func finishAutoReviewRequest(sessionID: UUID, savedSwing: SavedSwing?, errorMessage: String?) {
+        guard sessionID == autoReviewSessionID else { return }
+        if let savedSwing {
+            autoSessionSwings.append(savedSwing)
+            autoSavedSwingCount += 1
+        }
+        autoPendingSwingCount = max(0, autoPendingSwingCount - 1)
+        autoCaptureStatus = AutoCaptureStatus(
+            isActive: autoCaptureIsActive, savedSwingCount: autoSavedSwingCount,
+            pendingSwingCount: autoPendingSwingCount,
+            message: autoCaptureIsActive ? "Auto watching" : "Auto capture off",
+            lastErrorMessage: errorMessage
+        )
     }
 
     private func liveTelemetrySnapshot(

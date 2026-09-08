@@ -32,9 +32,10 @@ replace('    func startAutoCapture() {', '    func stopAutoCapture() {', '''    
             await exportAutoDetectedSwing(
                 detection: DetectedSwing(startTime: .zero, endTime: CMTime(seconds: 1, preferredTimescale: 600), confidence: 1),
                 preparedClip: AutoRollingVideoBuffer.PreparedClip(
-                    segments: [.init(chunkID: UUID(), url: url, range: CMTimeRange(start: .zero, duration: CMTime(seconds: 1, preferredTimescale: 600)))],
+                    segments: [.init(chunkID: UUID(), url: url, range: CMTimeRange(start: .zero, duration: CMTime(seconds: 1, preferredTimescale: 600)), timelineStart: .zero)],
                     sourceStartTime: 0, duration: CMTime(seconds: 1, preferredTimescale: 600)),
-                recordedMode: .normal
+                recordedMode: .normal,
+                reviewSessionID: autoReviewSessionID
             )
         }
     }''')
