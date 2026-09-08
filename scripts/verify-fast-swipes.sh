@@ -13,14 +13,20 @@ scratch=$(mktemp -d "${TMPDIR:-/tmp}/swingcoach-flick.XXXXXX")
 device=""
 cleanup() {
     local status=$?
+    local simulator_absent=not-created
     trap - EXIT
     if [[ -n "$device" ]]; then
         xcrun simctl shutdown "$device" >/dev/null 2>&1 || true
         xcrun simctl delete "$device" >/dev/null 2>&1 || true
-        if xcrun simctl list devices | grep -Fq "$device"; then status=1; fi
+        if xcrun simctl list devices | grep -Fq "$device"; then
+            status=1
+            simulator_absent=false
+        else
+            simulator_absent=true
+        fi
     fi
     rm -rf "$scratch"
-    echo "exit=$status owned_simulator=$device" > "$artifacts/cleanup.txt"
+    echo "exit=$status owned_simulator=$device simulator_absent_after_delete=$simulator_absent" > "$artifacts/cleanup.txt"
     exit "$status"
 }
 trap cleanup EXIT
@@ -33,7 +39,9 @@ xcrun simctl bootstatus "$device" -b
     echo "simulator=$device; bundle=Pear.ai.SwingCoach; configuration=Debug"
     echo "fixtures=171 synthetic reference videos; no Photos writes"
     echo "entry=Library launch argument and Auto review fixture"
-    echo "gestures=left/right flicks at 1500,3000,6000 points per second; first-page boundary"
+    echo "gestures=left/right flicks at 1500,3000,6000 points per second; latest boundary; reopen, delete, append"
+    echo "simulator_os=$(xcrun simctl getenv "$device" SIMULATOR_RUNTIME_VERSION)"
+    echo "human_actions=none"
     git -C "$repo" rev-parse HEAD
     git -C "$repo" status --short
 } > "$artifacts/route.txt"
@@ -61,6 +69,26 @@ for i in range(1, 172):
 (root / 'Documents').mkdir(exist_ok=True)
 (root / 'Documents/swing_library.json').write_text(json.dumps(swings))
 PY
+# Verify the installed Debug instance before XCTest drives the seeded session.
+launch_output=$(xcrun simctl launch "$device" Pear.ai.SwingCoach -ui-testing-auto-review)
+installed_app=$(xcrun simctl get_app_container "$device" Pear.ai.SwingCoach app)
+installed_bundle=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$installed_app/Info.plist")
+simulator_line=$(xcrun simctl list devices | grep -F "$device")
+launch_services=$(xcrun simctl spawn "$device" launchctl print user/501)
+[[ "$installed_bundle" == "Pear.ai.SwingCoach" && "$simulator_line" == *"(Booted)"* ]]
+grep -Fq 'Pear.ai.SwingCoach' <<< "$launch_services"
+tcc_db="$HOME/Library/Developer/CoreSimulator/Devices/$device/data/Library/TCC/TCC.db"
+tcc_rows=$(sqlite3 -readonly "$tcc_db" "SELECT service || '=' || auth_value FROM access WHERE client = 'Pear.ai.SwingCoach' ORDER BY service;" 2>/dev/null || true)
+{
+    echo "simulator=$simulator_line"
+    echo "bundle_id=$installed_bundle; configuration=Debug"
+    echo "launch=$launch_output"
+    echo "running_bundle=Pear.ai.SwingCoach verified-in-launch-services"
+    echo "photos_authorization_raw=${tcc_rows:-notDetermined}"
+    git -C "$repo" rev-parse HEAD
+    git -C "$repo" status --short
+} > "$artifacts/doctor.txt"
+xcrun simctl io "$device" screenshot "$artifacts/launch.png"
 test_status=0
 xcodebuild -project "$repo/SwingCoach.xcodeproj" -scheme SwingCoach -configuration Debug \
     -destination "platform=iOS Simulator,id=$device" -derivedDataPath "$scratch/DerivedData" \
@@ -69,11 +97,12 @@ xcodebuild -project "$repo/SwingCoach.xcodeproj" -scheme SwingCoach -configurati
     CODE_SIGNING_ALLOWED=NO test-without-building > "$artifacts/test.log" 2>&1 || test_status=$?
 xcrun xcresulttool get test-results summary --path "$artifacts/swipes.xcresult" > "$artifacts/test-summary.json"
 xcrun xcresulttool export attachments --path "$artifacts/swipes.xcresult" --output-path "$artifacts/screenshots" >/dev/null
+xcrun simctl io "$device" screenshot "$artifacts/final-simulator.png"
 [[ "$test_status" -eq 0 ]] || exit "$test_status"
 python3 - "$artifacts/test-summary.json" <<'PY'
 import json, sys
 summary = json.load(open(sys.argv[1]))
-assert summary['passedTests'] == 2 and summary['failedTests'] == 0 and summary['skippedTests'] == 0, summary
-print('PASS: one video per fast flick in Library and Auto review; first-page boundary preserved')
+assert summary['passedTests'] == 3 and summary['failedTests'] == 0 and summary['skippedTests'] == 0, summary
+print('PASS: one video per fast flick; Auto review latest entry, reopening, deletion and simulated new clip')
 PY
 echo "Evidence: $artifacts"

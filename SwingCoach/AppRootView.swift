@@ -87,6 +87,31 @@ struct AppRootView: View {
 /// Exercises the real review UI with local clips, without camera or Photos writes.
 private struct AutoReviewFixture: View {
     @State private var swings = SwingLibrary.shared.swings.filter(\.isReference)
+    @State private var presentation: AutoSwingReviewPresentation? = AutoSwingReviewPresentation()
+
+    var body: some View {
+        VStack {
+            Button("Review fixture swings") {
+                presentation = AutoSwingReviewPresentation()
+            }
+            Button("Append fixture swing") {
+                guard let source = swings.last else { return }
+                swings.append(SavedSwing(
+                    id: UUID(), photoAssetID: "", vantage: source.vantage,
+                    duration: source.duration, createdAt: Date(), notes: nil,
+                    analyzed: false, isReference: true, title: "New fixture swing",
+                    localVideoFilename: source.localVideoFilename
+                ))
+            }
+        }
+        .fullScreenCover(item: $presentation) { _ in
+            AutoReviewFixtureSession(swings: $swings)
+        }
+    }
+}
+
+private struct AutoReviewFixtureSession: View {
+    @Binding var swings: [SavedSwing]
 
     var body: some View {
         AutoSwingReviewView(swings: swings) { swing in
