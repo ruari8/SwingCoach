@@ -1,0 +1,1639 @@
+{
+  "version": 1,
+  "source_id": "HQNKUS_BSGY",
+  "url": "https://www.youtube.com/watch?v=HQNKUS_BSGY",
+  "title": "This World #1 Golf Coach Shows Me How to Easily Hit Your Driver & Irons Pure",
+  "publisher": "Jerome Rufin",
+  "published": "20260531",
+  "duration_seconds": 3654,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "golfer": "Jerome Rufin",
+    "coach": "Chris; Chris Mayson Golf branding visible in the lesson",
+    "attribution_basis": "Spoken first name and visible lesson signage; no claim based on facial identification."
+  },
+  "context": {
+    "handedness": "right",
+    "clubs": "Iron practice and driver/iron applications; specific clubs identified only where spoken.",
+    "golfer_report": "Returning after an arm injury and time away; source includes joking dialogue, so no medical conclusions are drawn.",
+    "style": "Technical diagnosis, physical guidance, exaggerated feels, repeated feedback, blunt conversational delivery. This delivery style is not automatically prescribed to app users.",
+    "body_screening": "No formal body handicap or physical screen shown in the reviewed lesson."
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/HQNKUS_BSGY/HQNKUS_BSGY.mp4",
+    "raw_captions": ".videos/coaching-knowledge/HQNKUS_BSGY/HQNKUS_BSGY.en-orig.json3",
+    "transcript": ".videos/coaching-knowledge/HQNKUS_BSGY/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/HQNKUS_BSGY/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/HQNKUS_BSGY/HQNKUS_BSGY.info.json",
+    "overview": ".videos/coaching-knowledge/HQNKUS_BSGY/overview/index.json",
+    "detail": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/index.json",
+    "sequences": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/index.json",
+    "preset": ".videos/coaching-knowledge/HQNKUS_BSGY/preset/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 2103,
+    "transcript_kind": "YouTube en-orig automatic captions; speaker changes inferred from dialogue/video, not diarization metadata.",
+    "audio_independently_transcribed": false,
+    "visual_review_method": "61 overview frames across the full timeline; 100 targeted detail frames, 48 sequence frames, and 12 preset-rehearsal frames, all 20 contact sheets inspected. Repeated timestamps may occur across sets. This is sampled visual review, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/HQNKUS_BSGY/overview/index.json",
+      ".videos/coaching-knowledge/HQNKUS_BSGY/detail/index.json",
+      ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/index.json",
+      ".videos/coaching-knowledge/HQNKUS_BSGY/preset/index.json"
+    ],
+    "limitations": [
+      "At 480p, replay panels and tablets are small; exact grip/face/angle values cannot be measured reliably.",
+      "No legible monitor metric table or force/pressure plot verified.",
+      "Caption timing is source playback time, not real swing time.",
+      "The edited video interleaves earlier lessons and course inserts; timestamps are not a single chronological practice session."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        65,
+        181
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=65s",
+      "attribution": "Chris and Jerome",
+      "kind": "coach_explanation",
+      "session": "current_lesson",
+      "summary": "Jerome describes trying to turn more. Chris diagnoses excessive initial rotation and an inside, closed takeaway, followed by deep arms and an across-line club. He connects that pattern to pushes and hooks.",
+      "frames": [
+        {
+          "time_seconds": 140,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-00140.000.jpg",
+          "observation": "Edited replay beside the discussion shows the takeaway. Text boxes explain push and hook patterns."
+        },
+        {
+          "time_seconds": 165,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-00165.000.jpg",
+          "observation": "A replay at the top accompanies the diagnosis; another panel shows the next part of the swing."
+        },
+        {
+          "time_seconds": 175,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-00175.000.jpg",
+          "observation": "Face-on replay accompanies discussion of loading the lead side early."
+        }
+      ],
+      "limitations": [
+        "Pressure distribution is spoken interpretation, not visible force data.",
+        "No calibrated face angle or path number is legible in these frames."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        205,
+        369
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=205s",
+      "attribution": "Chris",
+      "kind": "drill_demonstration",
+      "session": "current_lesson",
+      "summary": "For this pattern, rehearse to shaft-horizontal P2 with a quieter lower body, shoulder-led takeaway and clubhead feeling outside the hands. Preserve hand width, turn slowly to the top, then hit a soft shot.",
+      "frames": [
+        {
+          "time_seconds": 225,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-00225.000.jpg",
+          "observation": "Coach demonstrates a shaft-horizontal takeaway with arms extended in front of the torso."
+        },
+        {
+          "time_seconds": 282,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-00282.000.jpg",
+          "observation": "Golfer rehearses a stopped takeaway while the coach watches."
+        },
+        {
+          "time_seconds": 312,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-00312.000.jpg",
+          "observation": "Coach physically guides the golfer into a wider arm position at the top."
+        }
+      ],
+      "limitations": []
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        390,
+        430
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=390s",
+      "attribution": "Chris",
+      "kind": "feel_and_intended_change",
+      "session": "current_lesson",
+      "summary": "The intended wide radius belongs to the hands. He asks for the arms to stop when the body stops rather than continuing to wrap behind the golfer.",
+      "frames": [
+        {
+          "time_seconds": 405,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-00405.000.jpg",
+          "observation": "Coach holds and guides the golfer's extended arms during the top-position explanation."
+        }
+      ],
+      "limitations": []
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        440,
+        538
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=440s",
+      "attribution": "Chris, with Jerome demonstration",
+      "kind": "setup_demonstration",
+      "session": "embedded_earlier_lesson",
+      "summary": "Setup routine: grip first, feet together, club resting on the ground, posture and balance, then lead foot placement and stance width. Chris gives a four-inch lead-foot step for non-driver clubs and a lead-heel ball-position exception for driver.",
+      "frames": [
+        {
+          "time_seconds": 460,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-00460.000.jpg",
+          "observation": "Earlier-lesson front view shows feet together and club at address."
+        },
+        {
+          "time_seconds": 490,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-00490.000.jpg",
+          "observation": "Coach stands front-on with a wider stance during the ball-position explanation."
+        },
+        {
+          "time_seconds": 520,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-00520.000.jpg",
+          "observation": "Earlier-lesson wide view shows Jerome setting up with driver while Chris observes."
+        }
+      ],
+      "limitations": [
+        "Four inches is the coach's heuristic, not a validated universal ball-position distance.",
+        "Toe/heel balance is a reported sensation, not measured pressure."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        635,
+        665
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=635s",
+      "attribution": "Chris",
+      "kind": "immediate_retest",
+      "session": "current_lesson",
+      "summary": "During replay review Chris says the face and top position are improved and reports club path 2.2 inside.",
+      "frames": [
+        {
+          "time_seconds": 646,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-00646.000.jpg",
+          "observation": "Split screen shows a top-of-backswing replay alongside tablet discussion."
+        },
+        {
+          "time_seconds": 654,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-00654.000.jpg",
+          "observation": "The replay progresses to follow-through while the coach continues the review."
+        }
+      ],
+      "limitations": [
+        "2.2 is from automatic captions; no readable numeric display was verified.",
+        "Degrees are inferred from surrounding path discussion, not stated next to this caption."
+      ]
+    },
+    {
+      "id": "E06",
+      "span_seconds": [
+        683,
+        839
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=683s",
+      "attribution": "Chris and Jerome",
+      "kind": "priority_and_feel",
+      "session": "current_lesson",
+      "summary": "Chris postpones a toe-strike concern, clarifies hand-radius stretch rather than simply moving the arms, and accepts exaggerated sensations during the slow drill. He redirects Jerome away from adding a landing thought.",
+      "frames": [
+        {
+          "time_seconds": 738,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-00738.000.jpg",
+          "observation": "Coach manually guides the extended arms while explaining the width sensation."
+        },
+        {
+          "time_seconds": 757,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-00757.000.jpg",
+          "observation": "Golfer rehearses with club in front; coach observes."
+        }
+      ],
+      "limitations": [
+        "Acceptance of exaggerated right-side sensation applies to this rehearsal, not a 100% trail-foot pressure target for a normal swing."
+      ]
+    },
+    {
+      "id": "E07",
+      "span_seconds": [
+        1018,
+        1140
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=1018s",
+      "attribution": "Chris and Jerome",
+      "kind": "adaptation",
+      "session": "current_lesson",
+      "summary": "When linking the steps, Jerome narrows and turns excessively again. Chris changes the feel to moving outward and letting the lead arm move over the trail arm. The feeling of a very open face is checked against the replay.",
+      "frames": [
+        {
+          "time_seconds": 1035,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-01035.000.jpg",
+          "observation": "Coach demonstrates the outward arm motion beside the golfer."
+        },
+        {
+          "time_seconds": 1060,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-01060.000.jpg",
+          "observation": "Golfer rehearses a top position and checks the unfamiliar feel."
+        },
+        {
+          "time_seconds": 1090,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-01090.000.jpg",
+          "observation": "Golfer and coach inspect the tablet after a swing."
+        }
+      ],
+      "limitations": [
+        "A feel of opening is not a measured open face.",
+        "Source reports an earlier approximately ten-degree inside path; no paired monitor export is available."
+      ]
+    },
+    {
+      "id": "E08",
+      "span_seconds": [
+        1200,
+        1355
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=1200s",
+      "attribution": "Chris and Jerome",
+      "kind": "error_correction",
+      "session": "current_lesson",
+      "summary": "Repeated rehearsals show the first move can improve while later narrowing/rotation returns. Chris contrasts the previous arm movement with the desired width and trail-side loading.",
+      "frames": [
+        {
+          "time_seconds": 1220,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-01220.000.jpg",
+          "observation": "Coach stands toward the intended exaggerated takeaway direction as Jerome rehearses."
+        },
+        {
+          "time_seconds": 1343,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-01343.000.jpg",
+          "observation": "Coach demonstrates a takeaway with the club extended outward."
+        }
+      ],
+      "limitations": []
+    },
+    {
+      "id": "E09",
+      "span_seconds": [
+        1360,
+        1400
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=1360s",
+      "attribution": "Chris",
+      "kind": "coach_explanation",
+      "session": "embedded_earlier_lesson",
+      "summary": "Earlier lesson insert describes a stretch sequence from lead hand through arm and torso, then pressure into the lead foot during transition.",
+      "frames": [
+        {
+          "time_seconds": 1370,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-01370.000.jpg",
+          "observation": "Earlier-lesson coach points across his torso while holding a club."
+        },
+        {
+          "time_seconds": 1380,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-01380.000.jpg",
+          "observation": "Coach demonstrates the top position in an earlier-lesson front view."
+        }
+      ],
+      "limitations": [
+        "The sequence is the coach's explanatory model; no kinetic or 3D timing data is shown."
+      ]
+    },
+    {
+      "id": "E10",
+      "span_seconds": [
+        1440,
+        1525
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=1440s",
+      "attribution": "Chris",
+      "kind": "visual_reassessment",
+      "session": "current_lesson",
+      "summary": "Chris reports an earlier path 10.5 degrees inside, then reviews the improved shaft/hand/forearm progression and top position. He says the golfer already pushes well into the lead side and should not add that as a focus.",
+      "frames": [
+        {
+          "time_seconds": 1501,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-01501.000.jpg",
+          "observation": "Replay shows takeaway near shaft-horizontal beside the tablet review."
+        },
+        {
+          "time_seconds": 1505,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-01505.000.jpg",
+          "observation": "Replay shows arms partway through the backswing."
+        },
+        {
+          "time_seconds": 1507,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-01507.000.jpg",
+          "observation": "Replay freezes near the top while the coach discusses the desired end point."
+        }
+      ],
+      "limitations": [
+        "Plane references are spoken. The inspected edited replay does not supply legible calibrated plane angles or a numeric monitor readout.",
+        "Do not turn ten or 10.5 into a universal fault threshold or a continuous before/after series."
+      ]
+    },
+    {
+      "id": "E11",
+      "span_seconds": [
+        1594,
+        1650
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=1594s",
+      "attribution": "Chris",
+      "kind": "alternative_rehearsal",
+      "session": "embedded_earlier_lesson",
+      "summary": "An earlier-lesson insert uses setting the club in front before turning to illustrate width and flow rather than lifting/hinging the arms at the top.",
+      "frames": [
+        {
+          "time_seconds": 1625,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-01625.000.jpg",
+          "observation": "Earlier-lesson coach demonstrates a short swing while Jerome watches."
+        },
+        {
+          "time_seconds": 1608,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/preset/frame-01608.000.jpg",
+          "observation": "Earlier-lesson coach guides the starting arm/club position in front of the golfer."
+        },
+        {
+          "time_seconds": 1612,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/preset/frame-01612.000.jpg",
+          "observation": "Coach guides the extended arms toward the top during the preset-and-turn demonstration."
+        },
+        {
+          "time_seconds": 1632,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/preset/frame-01632.000.jpg",
+          "observation": "Golfer repeats the wider top position while the coach checks the arm structure."
+        }
+      ],
+      "limitations": [
+        "Short embedded example; no isolated efficacy test."
+      ]
+    },
+    {
+      "id": "E12",
+      "span_seconds": [
+        1823,
+        1870
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=1823s",
+      "attribution": "Chris",
+      "kind": "shot_shape_selection",
+      "session": "current_lesson",
+      "summary": "Coach reports a smaller draw and a four-degree value. He accepts either shot shape but suggests exploring a fade for Jerome because he has speed and tends toward overrotation, an across-line club, and a closed face.",
+      "frames": [
+        {
+          "time_seconds": 1835,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-01835.000.jpg",
+          "observation": "Golfer performs another slow backswing rehearsal between the coach's comments."
+        }
+      ],
+      "limitations": [
+        "The four-degree value is contextually club path, without readable screen confirmation.",
+        "Speed is the coach's assessment, not a captured speed measurement."
+      ]
+    },
+    {
+      "id": "E13",
+      "span_seconds": [
+        1950,
+        1970
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=1950s",
+      "attribution": "Chris and Jerome",
+      "kind": "immediate_retest",
+      "session": "current_lesson",
+      "summary": "Coach reports 4.8 inside after another shot; Jerome reports feeling as though he jammed the swing toward the right.",
+      "frames": [
+        {
+          "time_seconds": 1960,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-01960.000.jpg",
+          "observation": "Golfer stands after a shot while the path value is discussed; no numeric panel is visible."
+        }
+      ],
+      "limitations": [
+        "Caption says 4.8 in. Here in denotes inside in context, not an inch measurement. Unit remains contextual degrees."
+      ]
+    },
+    {
+      "id": "E14",
+      "span_seconds": [
+        2057,
+        2217
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=2057s",
+      "attribution": "Chris",
+      "kind": "practice_routine",
+      "session": "embedded_earlier_lesson",
+      "summary": "Earlier-lesson routine covers selecting a shot, visualising the target, breathing 4 seconds in/1 hold/4 out, rehearsing the intended distance and flight, committing, then either reinforcing success or learning from the outcome.",
+      "frames": [
+        {
+          "time_seconds": 2110,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-02110.000.jpg",
+          "observation": "Coach demonstrates a rehearsal next to an edited list of mental-process steps."
+        },
+        {
+          "time_seconds": 2175,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-02175.000.jpg",
+          "observation": "On-screen list adds commitment to the rehearsed feel."
+        },
+        {
+          "time_seconds": 2200,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-02200.000.jpg",
+          "observation": "Coach rehearses a swing while explaining post-shot reinforcement."
+        }
+      ],
+      "limitations": [
+        "The 105-yard 54-degree wedge example is this coach's example; it is not a distance prescription for another golfer.",
+        "No measured psychological or scoring effect is isolated."
+      ]
+    },
+    {
+      "id": "E15",
+      "span_seconds": [
+        2218,
+        2345
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=2218s",
+      "attribution": "Jerome",
+      "kind": "on_course_application",
+      "session": "edited_on_course_insert",
+      "summary": "On-course insert applies a width cue and discusses preferring a pull-cut for predictability given his distance. He describes choosing a five-iron layup and repeats the setup routine.",
+      "frames": [
+        {
+          "time_seconds": 2240,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-02240.000.jpg",
+          "observation": "Golfer reports the tee-shot outcome from a cart; this is self-report rather than measured dispersion."
+        },
+        {
+          "time_seconds": 2320,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-02320.000.jpg",
+          "observation": "Golfer demonstrates address and stance during the layup explanation."
+        }
+      ],
+      "limitations": [
+        "No complete dispersion sample, shot dataset, or verified date interval from the lesson."
+      ]
+    },
+    {
+      "id": "E16",
+      "span_seconds": [
+        2345,
+        2445
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=2345s",
+      "attribution": "Jerome",
+      "kind": "narrated_practice_application",
+      "session": "edited_on_course_insert",
+      "summary": "For an approximately 85-yard approach, Jerome describes a personal clock-length wedge feel, reduced hand manipulation, and selecting a landing level on a tiered green. He reports finishing roughly 15 feet away and making par.",
+      "frames": [
+        {
+          "time_seconds": 2370,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/overview/frame-02370.000.jpg",
+          "observation": "Golfer demonstrates an abbreviated wedge backswing during the clock-system explanation."
+        },
+        {
+          "time_seconds": 2430,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-02430.000.jpg",
+          "observation": "Golfer points toward the green while discussing its tiers and the shot result."
+        }
+      ],
+      "limitations": [
+        "Narrator attribution; do not present all wording as a direct Chris instruction.",
+        "No personal distance calibration table or launch/landing measurements.",
+        "The broad advice to play long on false-front greens is context-dependent; hazards and green shape were not systematically assessed."
+      ]
+    },
+    {
+      "id": "E17",
+      "span_seconds": [
+        2474,
+        2500
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=2474s",
+      "attribution": "Chris",
+      "kind": "visual_reassessment",
+      "session": "current_lesson",
+      "summary": "Replay reassessment connects the revised top position and clubface to an improved delivery. Chris again identifies the lead-side push as something Jerome already does well.",
+      "frames": [
+        {
+          "time_seconds": 2479,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-02479.000.jpg",
+          "observation": "Top-position replay is held beside the coach's tablet discussion."
+        },
+        {
+          "time_seconds": 2485,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-02485.000.jpg",
+          "observation": "Coach gestures with his hands beside the same top-position replay."
+        },
+        {
+          "time_seconds": 2489,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-02489.000.jpg",
+          "observation": "Replay advances into delivery beside the coach."
+        }
+      ],
+      "limitations": [
+        "No legible numeric angle or pressure measurement; face-square wording lacks an explicit calibrated reference."
+      ]
+    },
+    {
+      "id": "E18",
+      "span_seconds": [
+        2520,
+        2605
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=2520s",
+      "attribution": "Chris, followed by Jerome rehearsal",
+      "kind": "alternative_drill",
+      "session": "current_lesson",
+      "summary": "For excessive arm depth/across-line tendencies, Chris reverses the hand order, left below right for this right-handed golfer, rehearses a folding trail arm and wide lead arm, then returns to the ordinary grip and transfers the feel.",
+      "frames": [
+        {
+          "time_seconds": 2536,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-02536.000.jpg",
+          "observation": "Coach shows the changed grip before starting the rehearsal."
+        },
+        {
+          "time_seconds": 2551,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-02551.000.jpg",
+          "observation": "Coach reaches the top with the changed grip."
+        },
+        {
+          "time_seconds": 2563,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-02563.000.jpg",
+          "observation": "Coach resets his hands before demonstrating transfer."
+        },
+        {
+          "time_seconds": 2586,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-02586.000.jpg",
+          "observation": "Golfer rehearses the new arm structure while the coach watches."
+        },
+        {
+          "time_seconds": 2594,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-02594.000.jpg",
+          "observation": "Coach guides the golfer's arms near the top."
+        }
+      ],
+      "limitations": [
+        "Shown as a rehearsal and feel-transfer drill, not as instruction to hit full-speed shots with reversed hands.",
+        "No separate measured result attributable only to this drill."
+      ]
+    },
+    {
+      "id": "E19",
+      "span_seconds": [
+        2638,
+        2822
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=2638s",
+      "attribution": "Chris and Jerome",
+      "kind": "conditional_explanation",
+      "session": "current_lesson",
+      "summary": "Jerome asks when to release because he feels he holds on. Chris makes release conditional on grip and wrist structure, contrasts tour-player examples, and explains sequencing. For Jerome he explicitly withholds a new release-timing thought.",
+      "frames": [
+        {
+          "time_seconds": 2640,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-02640.000.jpg",
+          "observation": "Golfer demonstrates the held-on sensation with club and hands in front."
+        },
+        {
+          "time_seconds": 2670,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-02670.000.jpg",
+          "observation": "Coach explains grip/wrist conditions at the tablet."
+        },
+        {
+          "time_seconds": 2700,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-02700.000.jpg",
+          "observation": "Edited tour-player illustration accompanies the coach's comparison."
+        },
+        {
+          "time_seconds": 2770,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-02770.000.jpg",
+          "observation": "Coach gestures along lower-body and torso movement during sequencing explanation."
+        },
+        {
+          "time_seconds": 2800,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-02800.000.jpg",
+          "observation": "Coach demonstrates an arm/club follow-through position."
+        }
+      ],
+      "limitations": [
+        "Tour examples and centrifugal-force/acceleration descriptions are coach claims, not independently validated biomechanics.",
+        "No 3D kinematic-sequence graph is present.",
+        "A coarse camera frame cannot establish precise grip strength or wrist flexion."
+      ]
+    },
+    {
+      "id": "E20",
+      "span_seconds": [
+        2830,
+        2910
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=2830s",
+      "attribution": "Chris and Jerome",
+      "kind": "conditional_drill",
+      "session": "earlier_lesson_insert_then_current_explanation",
+      "summary": "Earlier-lesson insert contrasts moving everything together in transition with keeping the upper structure up while pressing toward the lead foot. In the current lesson Chris says Jerome already does this adequately.",
+      "frames": [
+        {
+          "time_seconds": 2840,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-02840.000.jpg",
+          "observation": "Earlier-lesson golfer demonstrates the transition concern."
+        },
+        {
+          "time_seconds": 2860,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-02860.000.jpg",
+          "observation": "Earlier-lesson coach holds the arms high in a transition rehearsal."
+        },
+        {
+          "time_seconds": 2870,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-02870.000.jpg",
+          "observation": "Coach changes lower-body position while retaining a raised arm structure."
+        },
+        {
+          "time_seconds": 2890,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-02890.000.jpg",
+          "observation": "Current-lesson coach gestures downward while explaining the golfer's existing pressure movement."
+        }
+      ],
+      "limitations": [
+        "Pressure, force, flexion magnitude, and sequence timing are not measured.",
+        "The coach rejects making this another current focus for Jerome."
+      ]
+    },
+    {
+      "id": "E21",
+      "span_seconds": [
+        2900,
+        2938
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=2900s",
+      "attribution": "Chris",
+      "kind": "priority_rule",
+      "session": "current_lesson",
+      "summary": "Coach explicitly connects the unwanted rightward path and closed face to this golfer's backswing, and asks him to stop redirecting the lesson toward how to hit from the top.",
+      "frames": [
+        {
+          "time_seconds": 2910,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/overview/frame-02910.000.jpg",
+          "observation": "Coach talks beside the tablet while explaining the priority."
+        }
+      ],
+      "limitations": []
+    },
+    {
+      "id": "E22",
+      "span_seconds": [
+        2970,
+        3075
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=2970s",
+      "attribution": "Chris and Jerome",
+      "kind": "decision_rule",
+      "session": "current_lesson",
+      "summary": "Troubleshooting starts with observed start line and curvature, then checks the backswing. If the shape remains excessive after that, a cut feel can be considered. Chris tells Jerome to judge changes by the ball rather than how unfamiliar the feel seems.",
+      "frames": [
+        {
+          "time_seconds": 2980,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-02980.000.jpg",
+          "observation": "Golfer discusses the previous shot while rehearsing club position."
+        },
+        {
+          "time_seconds": 3020,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-03020.000.jpg",
+          "observation": "Golfer checks the takeaway position after the coach's correction."
+        },
+        {
+          "time_seconds": 3045,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-03045.000.jpg",
+          "observation": "Golfer returns to address for a further attempt."
+        }
+      ],
+      "limitations": [
+        "Shot start line alone does not identify every causal variable; this rule belongs to the already assessed case.",
+        "No isolated ball-flight measurement appears in these frames."
+      ]
+    },
+    {
+      "id": "E23",
+      "span_seconds": [
+        3155,
+        3270
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=3155s",
+      "attribution": "Chris",
+      "kind": "priority_and_reassessment_rule",
+      "session": "current_lesson",
+      "summary": "With a reported five-degree inside path, Chris again checks width, top alignment and face first. Only after those are satisfactory and unwanted draw remains does he consider changing the downswing. He acknowledges exceptions to across-line/laid-off tendencies, limits Jerome to two linked backswing cues, and requests video checks.",
+      "frames": [
+        {
+          "time_seconds": 3160,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-03160.000.jpg",
+          "observation": "Coach reviews the problem beside the tablet."
+        },
+        {
+          "time_seconds": 3220,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-03220.000.jpg",
+          "observation": "Coach demonstrates the arm/club position while narrowing the active instructions."
+        },
+        {
+          "time_seconds": 3250,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-03250.000.jpg",
+          "observation": "Coach addresses the golfer during the follow-up/video-check discussion."
+        }
+      ],
+      "limitations": [
+        "Five-degree path is spoken, not screen-verified.",
+        "Across-line and laid-off positions are not deterministic ball-flight classifiers; the coach explicitly names exceptions."
+      ]
+    },
+    {
+      "id": "E24",
+      "span_seconds": [
+        3280,
+        3359
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=3280s",
+      "attribution": "Chris and Jerome",
+      "kind": "alternative_drill",
+      "session": "current_lesson",
+      "summary": "Alternative top-position rehearsal: take normal grip, place club on shoulder, adopt posture, turn, push arms away, inspect the resulting position, return to address and reproduce the feel.",
+      "frames": [
+        {
+          "time_seconds": 3290,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-03290.000.jpg",
+          "observation": "Coach demonstrates the turn-and-extend rehearsal."
+        },
+        {
+          "time_seconds": 3306,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-03306.000.jpg",
+          "observation": "Golfer holds the club near his shoulder in posture."
+        },
+        {
+          "time_seconds": 3310,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-03310.000.jpg",
+          "observation": "Golfer extends arms after turning; coach watches."
+        },
+        {
+          "time_seconds": 3318,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-03318.000.jpg",
+          "observation": "Golfer resets the club near his shoulder to repeat."
+        },
+        {
+          "time_seconds": 3322,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-03322.000.jpg",
+          "observation": "Golfer repeats the extended-arm top position."
+        },
+        {
+          "time_seconds": 3326,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-03326.000.jpg",
+          "observation": "Coach makes a small hand-position adjustment."
+        },
+        {
+          "time_seconds": 3330,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/sequences/frame-03330.000.jpg",
+          "observation": "Golfer returns to address to transfer the rehearsal."
+        }
+      ],
+      "limitations": [
+        "Top position is individually adjusted by the coach; this does not define a universal angular target.",
+        "No prescribed rep count or isolated ball-striking result."
+      ]
+    },
+    {
+      "id": "E25",
+      "span_seconds": [
+        3360,
+        3420
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=3360s",
+      "attribution": "Chris and Jerome",
+      "kind": "exception_and_overcorrection",
+      "session": "current_lesson",
+      "summary": "Coach corrects an over-literal interpretation: keeping the lower body quiet must not eliminate the body turn. Hand width should help wind the body up.",
+      "frames": [
+        {
+          "time_seconds": 3380,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-03380.000.jpg",
+          "observation": "Coach and golfer discuss the feel while holding clubs."
+        },
+        {
+          "time_seconds": 3390,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/overview/frame-03390.000.jpg",
+          "observation": "Coach gestures through the winding action during the clarification."
+        }
+      ],
+      "limitations": []
+    },
+    {
+      "id": "E26",
+      "span_seconds": [
+        3420,
+        3620
+      ],
+      "source_url": "https://www.youtube.com/watch?v=HQNKUS_BSGY&t=3420s",
+      "attribution": "Jerome",
+      "kind": "on_course_outcome",
+      "session": "edited_on_course_insert",
+      "summary": "Edited second-hole example uses the pull-cut/width intention with driver and an approach, then shows putting. Jerome reports par compared with a prior triple bogey.",
+      "frames": [
+        {
+          "time_seconds": 3430,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-03430.000.jpg",
+          "observation": "Golfer at driver address in the on-course segment."
+        },
+        {
+          "time_seconds": 3470,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-03470.000.jpg",
+          "observation": "An edited shot tracer is shown over the fairway."
+        },
+        {
+          "time_seconds": 3510,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/overview/frame-03510.000.jpg",
+          "observation": "Approach follow-through with an edited tracer."
+        },
+        {
+          "time_seconds": 3570,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/overview/frame-03570.000.jpg",
+          "observation": "Golfer addresses a putt on the green."
+        },
+        {
+          "time_seconds": 3605,
+          "path": ".videos/coaching-knowledge/HQNKUS_BSGY/detail/frame-03605.000.jpg",
+          "observation": "A subsequent putting shot is shown near the closing celebration."
+        }
+      ],
+      "limitations": [
+        "Edited examples and narrator report, not proof of retained learning, causal effect, or a handicap reduction.",
+        "Putting contributes to the reported score; it cannot be attributed entirely to the swing intervention."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "HQNKUS_BSGY-C01",
+      "title": "Inside takeaway and excessive arm depth: rebuild width before adding downswing changes",
+      "tags": {
+        "phase": [
+          "P1-P2",
+          "P2-P4"
+        ],
+        "body": [
+          "hands",
+          "arms",
+          "torso"
+        ],
+        "outcome": [
+          "push",
+          "hook"
+        ],
+        "concept": [
+          "inside_takeaway",
+          "across_line",
+          "arm_width",
+          "overrotation"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E05",
+        "E06",
+        "E07",
+        "E08",
+        "E10",
+        "E17",
+        "E21",
+        "E23",
+        "E25"
+      ],
+      "coaching_finding": "Chris identifies an inside/closed first move and excessive rotation/arm depth in Jerome's backswing.",
+      "coach_reasoning": "He links the backswing to the unwanted rightward delivery and closed face, while judging the golfer's existing lead-side movement adequate.",
+      "intervention": {
+        "intended_change": "Keep arm structure wider and less wrapped behind the torso, with an improved takeaway and top position.",
+        "feel": [
+          "Take the club outward relative to Jerome's habitual inward move.",
+          "Keep hand width while winding to the top; stop arms with the turn."
+        ],
+        "drill": [
+          "Pause at shaft-horizontal P2.",
+          "Turn slowly to the top while maintaining width.",
+          "Hit a soft shot, then join the stages as the shape becomes repeatable."
+        ],
+        "avoid_literal_interpretation": [
+          "Do not freeze the hips or remove the turn.",
+          "Do not prescribe an objectively wide-open clubface because the feel seems open.",
+          "Do not turn a slow-drill pressure sensation into a normal-swing pressure target."
+        ]
+      },
+      "applicability": [
+        "Right-handed example with pushes/hooks and coach-confirmed inside takeaway plus excessive depth/rotation.",
+        "Check camera view, intended shot shape, clubface context, and more than one swing before applying to another golfer."
+      ],
+      "unknowns": [
+        "No validated arm-width or face-angle threshold.",
+        "No measured mobility screening.",
+        "Captioned path values lack legible instrument confirmation."
+      ],
+      "observed_result": "Coach reports improved position and several less-inside paths, but later values fluctuate. Edited course examples show application without a controlled retention test.",
+      "selection": {
+        "coaching_focus": "backswing arm structure",
+        "max_simultaneous_cues": 2,
+        "before": [
+          "new release-timing cue",
+          "extra lead-side push cue"
+        ],
+        "reassess": "Verify takeaway/top on video, then inspect strike and ball flight before adding a delivery change."
+      },
+      "alternative_case_ids": [
+        "HQNKUS_BSGY-C03",
+        "HQNKUS_BSGY-C04",
+        "HQNKUS_BSGY-C10"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "HQNKUS_BSGY-C02",
+      "title": "Repeatable setup with a driver exception",
+      "tags": {
+        "phase": [
+          "P1"
+        ],
+        "body": [
+          "feet",
+          "posture"
+        ],
+        "outcome": [
+          "setup_consistency"
+        ],
+        "concept": [
+          "ball_position",
+          "balance",
+          "stance_width"
+        ]
+      },
+      "evidence_ids": [
+        "E04",
+        "E15"
+      ],
+      "coaching_finding": "Chris repeatedly corrects Jerome's setup process.",
+      "coach_reasoning": "He uses a consistent order to make ball position and balance repeatable as stance width changes.",
+      "intervention": {
+        "drill": [
+          "Grip and place feet together.",
+          "Rest club on the ground and set posture.",
+          "Use the demonstrated lead-foot placement, then trail-foot placement to set stance width.",
+          "For driver, use the stated lead-heel exception."
+        ],
+        "feel": [
+          "Notice whether balance feels toward toes or heels."
+        ]
+      },
+      "applicability": [
+        "Treat as this coach's setup routine and calibrate for club/golfer.",
+        "Requires a view that reveals feet, ball, and posture."
+      ],
+      "unknowns": [
+        "Four-inch rule is not validated for every body, club, lie or shot.",
+        "Actual foot pressure cannot be recovered from these frames."
+      ],
+      "observed_result": "Coach approves later setups; no isolated setup-versus-control test.",
+      "selection": {
+        "coaching_focus": "setup routine",
+        "max_simultaneous_cues": 1,
+        "reassess": "Check repeated address positions before changing swing mechanics."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "HQNKUS_BSGY-C03",
+      "title": "Reversed-hand rehearsal for a deep/across-line backswing",
+      "tags": {
+        "phase": [
+          "P2-P4"
+        ],
+        "body": [
+          "lead_arm",
+          "trail_arm"
+        ],
+        "outcome": [
+          "top_position"
+        ],
+        "concept": [
+          "reversed_grip_rehearsal",
+          "arm_depth",
+          "arm_width"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E18",
+        "E23"
+      ],
+      "coaching_finding": "The same excessive-depth/across-line pattern needs a simpler physical feel.",
+      "coach_reasoning": "Chris says the changed hand order encourages trail-arm folding while keeping the lead arm wide and the trail arm in front.",
+      "intervention": {
+        "drill": [
+          "For the demonstrated right-handed golfer, put the left hand below the right.",
+          "Rehearse the backswing with trail arm folding and lead arm extending.",
+          "Return to normal grip and reproduce the arm-structure feel."
+        ],
+        "feel": [
+          "Lead arm over trail arm; width at the top."
+        ],
+        "delivery_mode": "Rehearsal then normal-grip transfer; no full-speed reversed-grip hitting prescription."
+      },
+      "applicability": [
+        "Use as an alternative way to teach the C01 pattern when verbal instruction is hard to execute.",
+        "Match handedness explicitly; left-handed adaptation was not demonstrated."
+      ],
+      "unknowns": [
+        "No dose/repetition count or measured isolated outcome.",
+        "No physical-screen prerequisites supplied."
+      ],
+      "observed_result": "Jerome rehearses the change and coach guides it; transfer is demonstrated, sustained performance untested.",
+      "selection": {
+        "coaching_focus": "backswing arm structure",
+        "max_simultaneous_cues": 1,
+        "reassess": "Normal-grip video should retain the intended structure without creating another compensation."
+      },
+      "alternative_case_ids": [
+        "HQNKUS_BSGY-C01",
+        "HQNKUS_BSGY-C04",
+        "HQNKUS_BSGY-C10"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "HQNKUS_BSGY-C04",
+      "title": "Shoulder, turn, extend rehearsal to locate an individual top position",
+      "tags": {
+        "phase": [
+          "P4"
+        ],
+        "body": [
+          "arms",
+          "torso"
+        ],
+        "outcome": [
+          "top_position"
+        ],
+        "concept": [
+          "shoulder_rehearsal",
+          "arm_width"
+        ]
+      },
+      "evidence_ids": [
+        "E24",
+        "E25"
+      ],
+      "coaching_finding": "Jerome needs a repeatable way to find the wider top position rather than guess or wrap arms around himself.",
+      "coach_reasoning": "Chris uses a staged physical rehearsal and then adjusts the hands to help Jerome recognise that position.",
+      "intervention": {
+        "drill": [
+          "Take normal grip and place the club on the shoulder.",
+          "Adopt posture, turn, then push arms away.",
+          "Inspect and adjust with the coach.",
+          "Return to address and recreate the position in a backswing."
+        ],
+        "feel": [
+          "Arms remain in front with width; the body still turns."
+        ]
+      },
+      "applicability": [
+        "Alternative for the C01 arm-structure finding.",
+        "The resulting position must be checked for this golfer rather than assumed ideal."
+      ],
+      "unknowns": [
+        "No universal angles, rep count or independent striking test.",
+        "The source does not assess physical capacity for another golfer."
+      ],
+      "observed_result": "Jerome reproduces the rehearsal and says it matches the previous feel; coach makes a small adjustment.",
+      "selection": {
+        "coaching_focus": "backswing arm structure",
+        "max_simultaneous_cues": 1,
+        "reassess": "Compare rehearsed position with an ordinary backswing and check that the turn remains."
+      },
+      "alternative_case_ids": [
+        "HQNKUS_BSGY-C01",
+        "HQNKUS_BSGY-C03",
+        "HQNKUS_BSGY-C10"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "HQNKUS_BSGY-C05",
+      "title": "Release advice must match grip and wrist structure",
+      "tags": {
+        "phase": [
+          "P4-P8"
+        ],
+        "body": [
+          "grip",
+          "lead_wrist",
+          "arms",
+          "torso"
+        ],
+        "outcome": [
+          "face_control"
+        ],
+        "concept": [
+          "release",
+          "matchups",
+          "hold_off"
+        ]
+      },
+      "evidence_ids": [
+        "E19",
+        "E21"
+      ],
+      "coaching_finding": "Jerome worries he holds the club stable too long and asks for release timing.",
+      "coach_reasoning": "Chris considers grip and wrist flexion before discussing release, and judges a new timing thought unnecessary for this golfer.",
+      "intervention": {
+        "action": "Keep the existing priority on backswing structure; do not add conscious release timing in this case.",
+        "educational_content": "Different grip/wrist combinations can call for different release patterns in the coach's framework.",
+        "withheld_instruction": "No universal release instant or tour-player copying prescription."
+      },
+      "applicability": [
+        "Requires confirmed grip/wrist/face context and actual ball-flight/strike problem.",
+        "Educational explanation can answer a question without creating another active swing task."
+      ],
+      "unknowns": [
+        "No precise 3D wrist, face or sequence measurements.",
+        "Tour-player examples and force language need independent review before becoming general rules."
+      ],
+      "observed_result": "No controlled release intervention is performed; this is evidence for withholding an unnecessary change.",
+      "selection": {
+        "coaching_focus": "retain existing backswing focus",
+        "max_simultaneous_cues": 0,
+        "reassess": "Revisit only if verified residual delivery/face evidence remains."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "HQNKUS_BSGY-C06",
+      "title": "Troubleshoot residual curvature after checking the original change",
+      "tags": {
+        "phase": [
+          "P2",
+          "P4",
+          "P6-P8"
+        ],
+        "body": [
+          "hands",
+          "clubface"
+        ],
+        "outcome": [
+          "start_line",
+          "curvature",
+          "club_path"
+        ],
+        "concept": [
+          "priority",
+          "error_detection",
+          "reassessment"
+        ]
+      },
+      "evidence_ids": [
+        "E05",
+        "E10",
+        "E13",
+        "E22",
+        "E23"
+      ],
+      "coaching_finding": "Ball flight improves but some shots remain too far inside or curve more than intended.",
+      "coach_reasoning": "Chris checks the original backswing change before changing the downswing; later he explicitly permits a delivery adjustment only when width, alignment and face are satisfactory.",
+      "intervention": {
+        "decision_steps": [
+          "Check intended start line and curvature against the actual shot.",
+          "Check takeaway/top against the agreed source-specific finding.",
+          "If the original change is absent, continue that intervention.",
+          "If the backswing meets the agreed checks and unwanted draw remains, consider the cut/leftward delivery feel."
+        ],
+        "feel": [
+          "A cut feel is a conditional next step, not a mandatory simultaneous third thought."
+        ]
+      },
+      "applicability": [
+        "This decision procedure follows a previously assessed pushes/hooks case.",
+        "Needs reliable ball-flight evidence and view-appropriate swing evidence."
+      ],
+      "unknowns": [
+        "No measured universal definition of satisfactory top/face position.",
+        "Ball flight alone does not identify all causes, including strike location.",
+        "No automated recognition threshold established."
+      ],
+      "observed_result": "Coach supplies repeated correction and conditional escalation; reported path values vary rather than improve monotonically.",
+      "selection": {
+        "coaching_focus": "verify current backswing intervention",
+        "max_simultaneous_cues": 2,
+        "reassess": "Use later video and ball flight, not subjective unfamiliarity alone."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "HQNKUS_BSGY-C07",
+      "title": "Target-led pre-shot routine and useful post-shot review",
+      "tags": {
+        "phase": [
+          "before_shot",
+          "after_shot"
+        ],
+        "body": [],
+        "outcome": [
+          "commitment",
+          "practice_transfer"
+        ],
+        "concept": [
+          "visualisation",
+          "pre_shot_routine",
+          "post_shot_routine"
+        ]
+      },
+      "evidence_ids": [
+        "E14",
+        "E15",
+        "E26"
+      ],
+      "coaching_finding": "Chris wants Jerome to prepare an intended shot and avoid running a mechanical checklist over the ball.",
+      "coach_reasoning": "He separates deciding, visualising and rehearsing from execution, then treats the outcome as confidence or information.",
+      "intervention": {
+        "routine": [
+          "Choose target, distance and flight.",
+          "Visualise the intended shot; the demonstrated breathing pattern is 4-in, 1-hold, 4-out.",
+          "Rehearse the intended shot feel.",
+          "Commit and execute.",
+          "Reinforce a successful feel or identify what to learn."
+        ],
+        "note": "These are sequential routine stages, not five simultaneous swing thoughts."
+      },
+      "applicability": [
+        "Can support transferring a current coaching focus into play.",
+        "Target and distance rehearsal should be personalised."
+      ],
+      "unknowns": [
+        "No isolated proof that the breathing cadence or routine improves score.",
+        "The 105-yard example is not another golfer's distance map."
+      ],
+      "observed_result": "Coach demonstrates the routine; the edited course footage is application evidence only.",
+      "selection": {
+        "coaching_focus": "shot intention",
+        "max_simultaneous_cues": 1,
+        "reassess": "Record whether the golfer completed the routine and the intended-versus-actual shot."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "HQNKUS_BSGY-C08",
+      "title": "Clock-length wedge rehearsal requires individual calibration",
+      "tags": {
+        "phase": [
+          "partial_swing"
+        ],
+        "body": [
+          "arms"
+        ],
+        "outcome": [
+          "distance_control"
+        ],
+        "concept": [
+          "clock_system",
+          "wedge",
+          "landing_target"
+        ]
+      },
+      "evidence_ids": [
+        "E14",
+        "E16"
+      ],
+      "coaching_finding": "Jerome needs an approximately 85-yard approach to a specific tier of a green.",
+      "coach_reasoning": "He describes choosing a familiar backswing length rather than adding hand manipulation to manufacture distance.",
+      "intervention": {
+        "drill": [
+          "Use personally calibrated clock-length rehearsals for the chosen wedge.",
+          "Select a landing area appropriate to the green and conditions."
+        ],
+        "feel": [
+          "Width through the partial swing."
+        ],
+        "attribution": "Jerome's application; Chris separately demonstrates a different personal distance example."
+      },
+      "applicability": [
+        "Partial wedge shots with a golfer-specific calibration history."
+      ],
+      "unknowns": [
+        "No validated clock-to-yardage table.",
+        "Lie, spin, wind and rollout are not controlled."
+      ],
+      "observed_result": "Jerome reports roughly 15 feet remaining and par; an edited example, not calibration evidence.",
+      "selection": {
+        "coaching_focus": "distance intention",
+        "max_simultaneous_cues": 1,
+        "reassess": "Build a measured personal carry/dispersion record rather than copy this yardage."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "HQNKUS_BSGY-C09",
+      "title": "Transition stretch rehearsal that is deliberately not the current priority",
+      "tags": {
+        "phase": [
+          "P4-P5"
+        ],
+        "body": [
+          "lead_leg",
+          "pelvis",
+          "torso",
+          "arms"
+        ],
+        "outcome": [
+          "strike"
+        ],
+        "concept": [
+          "transition",
+          "pressure",
+          "sequencing"
+        ]
+      },
+      "evidence_ids": [
+        "E09",
+        "E20",
+        "E21"
+      ],
+      "coaching_finding": "An earlier lesson addresses Jerome's concern that his whole upper structure moves down together when he lands.",
+      "coach_reasoning": "Chris contrasts that with a pressure/stretch rehearsal, then in the present lesson says Jerome already performs that part well.",
+      "intervention": {
+        "drill": [
+          "In the earlier demonstration, keep the upper structure raised while rehearsing the move toward the lead foot.",
+          "Then allow the turn to follow."
+        ],
+        "current_case_action": "Do not add this drill to Jerome's current backswing assignment."
+      },
+      "applicability": [
+        "Only consider after observing the relevant transition issue; current case explicitly withholds it.",
+        "Force/pressure claims require more than a phone image."
+      ],
+      "unknowns": [
+        "No force-plate measurements, validated movement timing, dosage or screening.",
+        "Not evidence for a universal back-to-target or lead-foot force prescription."
+      ],
+      "observed_result": "Visual contrast is demonstrated; no isolated measured improvement in the insert.",
+      "selection": {
+        "coaching_focus": "transition only when separately justified",
+        "max_simultaneous_cues": 1,
+        "withhold_for_source_golfer": true,
+        "reassess": "Verify transition and strike evidence before displacing the existing priority."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "HQNKUS_BSGY-C10",
+      "title": "Set the club in front before turning: another rehearsal for width",
+      "tags": {
+        "phase": [
+          "P2-P4"
+        ],
+        "body": [
+          "arms",
+          "torso"
+        ],
+        "outcome": [
+          "backswing_structure"
+        ],
+        "concept": [
+          "pre_set_rehearsal",
+          "width",
+          "flow"
+        ]
+      },
+      "evidence_ids": [
+        "E11",
+        "E03",
+        "E25"
+      ],
+      "coaching_finding": "An earlier lesson identifies arm lifting/late hinging while seeking a wider, flowing turn.",
+      "coach_reasoning": "Chris uses a preset structure to help Jerome feel a turn with width, rather than throwing arms behind or adding excessive rotation.",
+      "intervention": {
+        "drill": [
+          "Set the club in front as demonstrated.",
+          "Turn to the top retaining the arm structure.",
+          "Transfer the feeling to a normal backswing."
+        ]
+      },
+      "applicability": [
+        "Alternative teaching route within the same width/arm-structure family.",
+        "Brief prior-session example should be used with its surrounding width explanation."
+      ],
+      "unknowns": [
+        "Exact preset geometry and rep count not specified.",
+        "No separate measured result."
+      ],
+      "observed_result": "Coach demonstrates and golfer rehearses in the embedded clip.",
+      "selection": {
+        "coaching_focus": "backswing arm structure",
+        "max_simultaneous_cues": 1,
+        "reassess": "Normal-swing video must show the intended width while retaining turn."
+      },
+      "alternative_case_ids": [
+        "HQNKUS_BSGY-C01",
+        "HQNKUS_BSGY-C03",
+        "HQNKUS_BSGY-C04"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "HQNKUS_BSGY-C11",
+      "title": "Choose a shot shape using the golfer's tendencies and available distance",
+      "tags": {
+        "phase": [
+          "shot_planning"
+        ],
+        "body": [],
+        "outcome": [
+          "dispersion",
+          "shot_shape"
+        ],
+        "concept": [
+          "fade",
+          "player_tendencies",
+          "course_transfer"
+        ]
+      },
+      "evidence_ids": [
+        "E12",
+        "E15",
+        "E26"
+      ],
+      "coaching_finding": "Jerome has unwanted push/hook tendencies and sufficient distance in the coach's assessment.",
+      "coach_reasoning": "Chris is open to draw or fade but suggests exploring a fade for this player's pattern and speed.",
+      "intervention": {
+        "action": "Test a fade intention after the underlying backswing work and compare useful shot patterns.",
+        "feel": [
+          "The source golfer uses a pull-cut intention."
+        ]
+      },
+      "applicability": [
+        "Needs the player's chosen target, actual dispersion, distance needs and strike evidence.",
+        "Not a rule that all golfers should fade or that a pull is desirable in every context."
+      ],
+      "unknowns": [
+        "No measured speed/dispersion baseline or comparison over multiple rounds."
+      ],
+      "observed_result": "Jerome reports favourable positions on two edited holes; retention and comparative advantage remain unproven.",
+      "selection": {
+        "coaching_focus": "shot-shape intention",
+        "max_simultaneous_cues": 1,
+        "reassess": "Compare real outcomes over repeated shots and retain an appropriate target strategy."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "caption_time_seconds": 661.32,
+      "quantity": "club_path",
+      "value": 2.2,
+      "unit": "degrees inferred from context",
+      "direction": "inside / rightward for this right-handed player",
+      "source": "coach in automatic captions",
+      "screen_verified": false
+    },
+    {
+      "caption_time_seconds": 1443.6,
+      "quantity": "earlier club_path",
+      "value": 10.5,
+      "unit": "degrees stated",
+      "direction": "inside",
+      "source": "coach recalling earlier value",
+      "screen_verified": false
+    },
+    {
+      "caption_time_seconds": 1838.8,
+      "quantity": "club_path inferred from dialogue",
+      "value": 4,
+      "unit": "degrees stated",
+      "direction": "inside inferred from dialogue",
+      "source": "coach in automatic captions",
+      "screen_verified": false
+    },
+    {
+      "caption_time_seconds": 1960.72,
+      "quantity": "club_path",
+      "value": 4.8,
+      "unit": "degrees inferred from context; caption in means inside, not inches",
+      "direction": "inside",
+      "source": "coach in automatic captions",
+      "screen_verified": false
+    },
+    {
+      "caption_time_seconds": 3157.12,
+      "quantity": "club_path",
+      "value": 5,
+      "unit": "degrees stated",
+      "direction": "inside",
+      "source": "coach in automatic captions",
+      "screen_verified": false
+    }
+  ],
+  "annotation_opportunities": [
+    {
+      "observation": "Clubhead relative to hands near P2",
+      "evidence_ids": [
+        "E01",
+        "E02"
+      ],
+      "possible_visual": "Label hands and clubhead in a suitable down-the-line checkpoint.",
+      "limitation": "Camera alignment and shaft/clubhead visibility required; no numerical cutoff learned here."
+    },
+    {
+      "observation": "Arm width/depth and shaft direction near P4",
+      "evidence_ids": [
+        "E03",
+        "E10",
+        "E17",
+        "E24"
+      ],
+      "possible_visual": "Compare current swing with the same golfer's reviewed rehearsal/top position.",
+      "limitation": "Source frame is evidence for a case, not a universal ideal; do not infer physical limitations."
+    },
+    {
+      "observation": "Grip/wrist/face relation",
+      "evidence_ids": [
+        "E19"
+      ],
+      "possible_visual": "Request closer suitable footage or human review before any face-angle claim.",
+      "limitation": "Current lesson review images insufficient for calibrated wrist/face angles."
+    },
+    {
+      "observation": "Foot pressure/kinematic sequence",
+      "evidence_ids": [
+        "E09",
+        "E20"
+      ],
+      "possible_visual": null,
+      "limitation": "Narrative context only; no pressure/force measurements available from these images."
+    }
+  ],
+  "excluded_material": [
+    {
+      "span_seconds": [
+        0,
+        65
+      ],
+      "reason": "Promotional teaser; revisit substantive instruction rather than duplicate claims."
+    },
+    {
+      "span_seconds": [
+        599,
+        638
+      ],
+      "reason": "Creator injury/travel backstory retained only as context."
+    },
+    {
+      "span_seconds": [
+        881,
+        967
+      ],
+      "reason": "Sponsored nutrition segment; no golf-coaching extraction."
+    },
+    {
+      "span_seconds": [
+        1972,
+        2037
+      ],
+      "reason": "Banter, not diagnostic evidence."
+    },
+    {
+      "span_seconds": [
+        3620,
+        3654
+      ],
+      "reason": "Outro and promotional encouragement."
+    }
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Source-grounded research cases; conditions and detector capability still require review before app recommendation."
+  },
+  "asset_sha256": {
+    "video": "d683fb8f7f962883e81e4a6655ba964e0312ba0a502ada421f6fa1863f3078f8",
+    "raw_captions": "0bb393453e5e609930238d3a07d780840ba423de6172bd736fcc37d2a5f07a4c",
+    "transcript": "c00cbc52ea0043b358f2ef8f422039a2b94fb068600a4b39a32f3866d3722745"
+  }
+}

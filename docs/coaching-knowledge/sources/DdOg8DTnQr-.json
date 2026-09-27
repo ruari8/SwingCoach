@@ -1,0 +1,334 @@
+{
+  "version": 1,
+  "source_id": "DdOg8DTnQr-",
+  "url": "https://www.instagram.com/p/DdOg8DTnQr-/",
+  "title": "Eli: a drill checkpoint reached through the wrong movement",
+  "publisher": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+  "published": "20260913",
+  "duration_seconds": 148.771995,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "coach": "Dom Caminiti | Golf Swing Reviews",
+    "student": "Eli, named in speech"
+  },
+  "context": {
+    "format": "Review of an existing student drill attempt with coach correction demonstration",
+    "handedness": "Right-handed",
+    "body_context": "No physical screening supplied"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/DdOg8DTnQr-/DdOg8DTnQr-.mp4",
+    "raw_captions": ".videos/coaching-knowledge/DdOg8DTnQr-/asr-raw.json",
+    "transcript": ".videos/coaching-knowledge/DdOg8DTnQr-/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/DdOg8DTnQr-/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/DdOg8DTnQr-/DdOg8DTnQr-.info.json",
+    "overview": ".videos/coaching-knowledge/DdOg8DTnQr-/overview/index.json",
+    "detail": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 24,
+    "transcript_kind": "Local MLX Whisper ASR with visual inspection",
+    "audio_independently_transcribed": true,
+    "visual_review_method": "15 overview and 34 detail frames across five portrait sheets inspected; student drill attempt, hand-height boxes and coach hinge demonstration reviewed.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/DdOg8DTnQr-/overview/index.json",
+      ".videos/coaching-knowledge/DdOg8DTnQr-/detail/index.json"
+    ],
+    "limitations": [
+      "Sampled frames, not continuous playback.",
+      "Coach reasoning is attributed, not independently validated."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        32
+      ],
+      "source_url": "https://www.instagram.com/p/DdOg8DTnQr-/",
+      "attribution": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+      "kind": "annotated_coaching_review",
+      "session": "Eli: a drill checkpoint reached through the wrong movement",
+      "summary": "Eli has begun a drill using stick extended along club shaft, initially prescribed because club went too low/inside. Coach sees improvement in club staying in front of hands and stick running down lead leg. Prior inside takeaway is reported history; current footage shows drill attempt.",
+      "frames": [
+        {
+          "time_seconds": 5,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00005.000.jpg",
+          "observation": "Stick extends from club grip toward lead leg."
+        },
+        {
+          "time_seconds": 13,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00013.000.jpg",
+          "observation": "Illustrative prior low/inside path."
+        },
+        {
+          "time_seconds": 23,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00023.000.jpg",
+          "observation": "Current club moves in front."
+        },
+        {
+          "time_seconds": 27,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00027.000.jpg",
+          "observation": "Stick/leg relation during drill."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        32,
+        60
+      ],
+      "source_url": "https://www.instagram.com/p/DdOg8DTnQr-/",
+      "attribution": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+      "kind": "annotated_coaching_review",
+      "session": "Eli: a drill checkpoint reached through the wrong movement",
+      "summary": "Coach questions how checkpoint was reached: student lifts hands above starting hand-height box to bring clubhead level, rather than hinge club while hands stay low. Desired arrows illustrate separate hand and clubhead actions.",
+      "frames": [
+        {
+          "time_seconds": 39,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00039.000.jpg",
+          "observation": "Student starting hands."
+        },
+        {
+          "time_seconds": 43,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00043.000.jpg",
+          "observation": "Starting hand box."
+        },
+        {
+          "time_seconds": 46,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00046.000.jpg",
+          "observation": "Hands lifted above box."
+        },
+        {
+          "time_seconds": 49,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00049.000.jpg",
+          "observation": "Hands and head same-height crosses."
+        },
+        {
+          "time_seconds": 57,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00057.000.jpg",
+          "observation": "Desired low-hand/up-club arrows."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        60,
+        112
+      ],
+      "source_url": "https://www.instagram.com/p/DdOg8DTnQr-/",
+      "attribution": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+      "kind": "annotated_coaching_review",
+      "session": "Eli: a drill checkpoint reached through the wrong movement",
+      "summary": "Coach demonstrates starting with turn, arms/hands following inside hand-plane line, and gradual vertical wrist hinge. Hand box shows his hands slightly lower during takeaway while club rises to hand height, running extended stick down lead leg.",
+      "frames": [
+        {
+          "time_seconds": 66,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00066.000.jpg",
+          "observation": "Turn/body reference."
+        },
+        {
+          "time_seconds": 71,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00071.000.jpg",
+          "observation": "Initial hand-plane reference."
+        },
+        {
+          "time_seconds": 79,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00079.000.jpg",
+          "observation": "Hand and clubhead marks."
+        },
+        {
+          "time_seconds": 87,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00087.000.jpg",
+          "observation": "Coach starting hand box."
+        },
+        {
+          "time_seconds": 95,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00095.000.jpg",
+          "observation": "Hands move down/in relative to box."
+        },
+        {
+          "time_seconds": 99,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00099.000.jpg",
+          "observation": "Club rises without raised hands."
+        },
+        {
+          "time_seconds": 106,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00106.000.jpg",
+          "observation": "Coach hinged takeaway."
+        },
+        {
+          "time_seconds": 110,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00110.000.jpg",
+          "observation": "Stick running down lead leg."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        112,
+        138
+      ],
+      "source_url": "https://www.instagram.com/p/DdOg8DTnQr-/",
+      "attribution": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+      "kind": "annotated_coaching_review",
+      "session": "Eli: a drill checkpoint reached through the wrong movement",
+      "summary": "Coach claims hinge stores more energy/leverage for later release and that golfers without it often lift arms and over-rotate/spin body from top to search for speed. These are unmeasured explanatory claims, not a diagnosis proved from Eli's rehearsal. No post-correction Eli shot is shown.",
+      "frames": [
+        {
+          "time_seconds": 118,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00118.000.jpg",
+          "observation": "Illustrative release arrow over original student drill."
+        },
+        {
+          "time_seconds": 126,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00126.000.jpg",
+          "observation": "Original student takeaway replay."
+        },
+        {
+          "time_seconds": 134,
+          "path": ".videos/coaching-knowledge/DdOg8DTnQr-/detail/frame-00134.000.jpg",
+          "observation": "Body/arm box during generalized explanation."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "DdOg8DTnQr--C01",
+      "title": "Correct hand lifting within the shaft-stick takeaway drill",
+      "case_type": "student_drill_execution_review_with_coach_correction_demo",
+      "tags": {
+        "phase": [
+          "takeaway",
+          "P2"
+        ],
+        "body": [
+          "hands",
+          "wrists",
+          "club"
+        ],
+        "outcome": [
+          "drill execution",
+          "vertical hinge",
+          "false success checkpoint"
+        ],
+        "concept": [
+          "drill execution",
+          "vertical hinge",
+          "false success checkpoint"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E04"
+      ],
+      "coaching_finding": "Student reaches stick-down-leg and clubhead-at-hand-height checkpoint partly by lifting hands.",
+      "coach_reasoning": "Coach distinguishes the endpoint from its mechanism: desired clubhead rise comes from wrist hinge while turn carries relatively low hands inward.",
+      "intervention": {
+        "setup": "Extend alignment stick along club shaft; source mentions seven iron but says other clubs can be used.",
+        "cue": "Let turn carry hands inward and low while gradually hinging club up.",
+        "check": "Compare hands with their starting-height box, as well as stick/leg contact and clubhead height.",
+        "limits": "No repetitions, shaft flex or energy measurement supplied."
+      },
+      "applicability": [
+        "Assess a golfer actually doing this drill; reaching the prop checkpoint alone is insufficient.",
+        "Use comparable camera framing and starting hand reference.",
+        "Hands low is a takeaway instruction, not a command to keep them low at top."
+      ],
+      "unknowns": [
+        "Exact grip/attachment setup and original undrilled baseline.",
+        "Student response after corrective explanation.",
+        "Mechanical energy, speed and generalized spin-out causal claim."
+      ],
+      "observed_result": "Partial existing drill success identified, correction demonstrated by coach; no Eli retest or measured performance change.",
+      "selection": {
+        "coaching_focus": "One takeaway mechanism within existing drill",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus preference; retain source sequencing and avoid simultaneous competing thoughts.",
+        "reassess": "Proposed app check: review hand-height path and club rise together, then verify aid-free strike instead of merely checking stick contact."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "relative_2d_hand_height",
+      "value": "Student hands rise out of starting box; coach hands stay low/slightly lower as club rises",
+      "evidence_ids": [
+        "E02",
+        "E03"
+      ],
+      "limits": [
+        "Image-relative comparison; no calibrated displacement."
+      ]
+    },
+    {
+      "kind": "unmeasured_mechanism_claim",
+      "value": "Hinge stores energy/leverage and may avoid speed-seeking spin-out",
+      "evidence_ids": [
+        "E04"
+      ],
+      "limits": [
+        "No force, shaft deflection, energy or speed measurement; not an automatic downstream diagnosis."
+      ]
+    }
+  ],
+  "source_ambiguities": [],
+  "cross_source_links": [
+    {
+      "source_case": "Dc-kqu1qKgW-C01",
+      "current_case": "DdOg8DTnQr--C01",
+      "relation": "Separate movement components",
+      "explanation": "Clapp distinguishes timing of forearm rotation; Dom here distinguishes wrist hinge from hand lift. Club position alone cannot identify which component produced it."
+    },
+    {
+      "source_case": "vGGIn2IAW-Q-C04",
+      "current_case": "DdOg8DTnQr--C01",
+      "relation": "Drill success requires more than apparent compliance",
+      "explanation": "Ruffels checks aid-free target execution. Eli also shows why a prop checkpoint needs mechanism inspection before it is called successful practice."
+    }
+  ],
+  "within_source_distinctions": [],
+  "annotation_opportunities": [
+    "Track start hand box and clubhead height together.",
+    "Show actual student attempt beside coach demonstration, labelled separately.",
+    "Avoid numerical stored-energy claims from 2D geometry."
+  ],
+  "excluded_material": [
+    "Generalized body spin claim treated as observed Eli fault.",
+    "Implied post-correction success.",
+    "VIP solicitation after 138 seconds."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Source extraction preserves evidence and conditions; a source match and response check are still needed for another golfer."
+  },
+  "asset_sha256": {
+    "video": "22b9483ccf9116959565a806c2fa24ed47abd03d0806f3dedb4261a332c790ba",
+    "raw_captions": "313309bfec519ada09e916f3608110e1e351bb490d316db1a55ac5d790c2b5e4",
+    "transcript": "abb2505b99b3028aee2a7d59429586120942f27c456f09e5dcabe92b40931b50"
+  }
+}

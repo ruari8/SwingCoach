@@ -21,6 +21,7 @@ This folder and `backend/docs` are the active documentation set.
 - [Deployment](./DEPLOYMENT.md)
 - [Swing Annotation Research Notes](../annotations.md)
 - [Dom Caminiti Video Annotation Reference](./DOMCAMINITI_VIDEO_ANNOTATION_REFERENCE.md)
+- [Coaching knowledge library and source queue](./coaching-knowledge/README.md)
 
 ## Code quality
 

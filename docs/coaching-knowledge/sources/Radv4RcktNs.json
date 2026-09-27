@@ -1,0 +1,1528 @@
+{
+  "version": 1,
+  "source_id": "Radv4RcktNs",
+  "url": "https://www.youtube.com/watch?v=Radv4RcktNs",
+  "title": "Fix Your Short Game Now - Training for the Tour",
+  "publisher": "Ryan Ruffels",
+  "published": "20240425",
+  "duration_seconds": 1044,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "instructor": "Ryan Ruffels",
+    "student": null
+  },
+  "context": {
+    "handedness": "Right-handed",
+    "format": "Conditional short-game tutorial with self-demonstrated shot options and source technique cards",
+    "setting": "Florida practice green, Bermuda/grain discussed; rough and deep bunker",
+    "club": "Pitching wedge explicitly used for bump-and-run; lofted wedges elsewhere without consistently verified specifications.",
+    "body_context": "No physical assessment.",
+    "style": "Lie and landing-space decisions, player preferences, subjective grip/weight feels and acknowledged mishits"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/Radv4RcktNs/Radv4RcktNs.mp4",
+    "raw_captions": ".videos/coaching-knowledge/Radv4RcktNs/Radv4RcktNs.en-orig.json3",
+    "transcript": ".videos/coaching-knowledge/Radv4RcktNs/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/Radv4RcktNs/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/Radv4RcktNs/Radv4RcktNs.info.json",
+    "overview": ".videos/coaching-knowledge/Radv4RcktNs/overview/index.json",
+    "detail": ".videos/coaching-knowledge/Radv4RcktNs/detail/index.json",
+    "sequences": ".videos/coaching-knowledge/Radv4RcktNs/sequences/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 465,
+    "transcript_kind": "Full YouTube en-orig automatic captions",
+    "audio_independently_transcribed": false,
+    "visual_review_method": "35 overview, 94 detail and 36 targeted frames across 14 contact sheets, all inspected. Includes close tee reference, grip adaptation, lie demonstrations, bunker setup and source technique cards. Sampled review across 17:24, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/Radv4RcktNs/overview/index.json",
+      ".videos/coaching-knowledge/Radv4RcktNs/detail/index.json",
+      ".videos/coaching-knowledge/Radv4RcktNs/sequences/index.json"
+    ],
+    "limitations": [
+      "480p source; wide rough views cannot independently quantify ball depth or grass density.",
+      "Landing views show examples but no calibrated proximity, carry/roll or spin.",
+      "Instructor stages alternatives and admits imperfect shots; no assessed student or measured improvement."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        28,
+        170
+      ],
+      "source_url": "https://www.youtube.com/watch?v=Radv4RcktNs&t=28s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his shot choices",
+      "kind": "conditional_short_game_tutorial",
+      "session": "Practice-green and bunker demonstrations in Florida, no assessed student",
+      "summary": "Basic shot from below green level with plenty of green. A tee in grip butt should keep pointing toward belt buckle while chest turns, avoiding exaggerated handle drag or wrist flick. Stand close with handle high and small shoulder motion. Source card repeats butt at buckle, raised handle and minimal wrist break. He presents this as a simple default, including under nerves.",
+      "frames": [
+        {
+          "time_seconds": 45,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00045.000.jpg",
+          "observation": "Instructor introduces tee reference."
+        },
+        {
+          "time_seconds": 65,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00065.000.jpg",
+          "observation": "Staged wrist/handle contrast."
+        },
+        {
+          "time_seconds": 85,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00085.000.jpg",
+          "observation": "Close, high-handle address."
+        },
+        {
+          "time_seconds": 100,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/overview/frame-00100.000.jpg",
+          "observation": "Green view and basic-shot card."
+        },
+        {
+          "time_seconds": 134,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00134.000.jpg",
+          "observation": "Close tee/butt reference during follow-through comparison."
+        },
+        {
+          "time_seconds": 138,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00138.000.jpg",
+          "observation": "Close hands/club reference."
+        },
+        {
+          "time_seconds": 146,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00146.000.jpg",
+          "observation": "Close address grip and handle."
+        }
+      ],
+      "limitations": [
+        "Tee pointing at buckle is a feel/reference, not measured invariant. Claimed 80\u201385 percent applicability is an estimate, not a validated selection rule."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        170,
+        238
+      ],
+      "source_url": "https://www.youtube.com/watch?v=Radv4RcktNs&t=170s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his shot choices",
+      "kind": "conditional_short_game_tutorial",
+      "session": "Practice-green and bunker demonstrations in Florida, no assessed student",
+      "summary": "With less green available, Ruffels first reads the lie, contrasting sparse sandy ground with a better sitting ball. For a simple higher shot he stands farther away, lowers handle and opens face while keeping a similar quiet-hand motion. He prefers this option when nervous or less comfortable with the lie. Source card matches these setup changes.",
+      "frames": [
+        {
+          "time_seconds": 175,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00175.000.jpg",
+          "observation": "Instructor moves to second shot situation."
+        },
+        {
+          "time_seconds": 185,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00185.000.jpg",
+          "observation": "Lie and landing-area discussion."
+        },
+        {
+          "time_seconds": 195,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00195.000.jpg",
+          "observation": "Farther-away lower-handle address."
+        },
+        {
+          "time_seconds": 205,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00205.000.jpg",
+          "observation": "Quiet-hand rehearsal."
+        },
+        {
+          "time_seconds": 225,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00225.000.jpg",
+          "observation": "Simple-high-shot card and green view."
+        }
+      ],
+      "limitations": [
+        "No measured height/spin comparison or guarantee the open-face shot suits every poor lie. Start with the actual lie and required carry."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        238,
+        327
+      ],
+      "source_url": "https://www.youtube.com/watch?v=Radv4RcktNs&t=238s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his shot choices",
+      "kind": "conditional_short_game_tutorial",
+      "session": "Practice-green and bunker demonstrations in Florida, no assessed student",
+      "summary": "Advanced higher option needs a good lie. Glove logo turns more toward sky as face slides open; tee/handle returns neutral by impact, then releases. Ruffels admits first demonstration did not come out as intended. His personal feel is a heavy clubhead falling first from top rather than pulling handle. He returns to recommending quieter hands for most people; a later shot he calls fat still works acceptably.",
+      "frames": [
+        {
+          "time_seconds": 245,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00245.000.jpg",
+          "observation": "Glove/face opening rehearsal."
+        },
+        {
+          "time_seconds": 255,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00255.000.jpg",
+          "observation": "Handle/tee relationship through demonstration."
+        },
+        {
+          "time_seconds": 265,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00265.000.jpg",
+          "observation": "Released finish."
+        },
+        {
+          "time_seconds": 275,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00275.000.jpg",
+          "observation": "Advanced-high-shot card."
+        },
+        {
+          "time_seconds": 285,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00285.000.jpg",
+          "observation": "Instructor discusses imperfect first attempt."
+        },
+        {
+          "time_seconds": 295,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00295.000.jpg",
+          "observation": "Clubhead-first feel explanation."
+        },
+        {
+          "time_seconds": 305,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00305.000.jpg",
+          "observation": "Front-view small-shot setup."
+        },
+        {
+          "time_seconds": 315,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00315.000.jpg",
+          "observation": "Follow-up explanation after green view."
+        }
+      ],
+      "limitations": [
+        "Card says release after impact while spoken clubhead-first is a transition feel. Preserve both rather than turn them into measured release timing. Imperfect attempts are not claimed as consistent success."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        327,
+        377
+      ],
+      "source_url": "https://www.youtube.com/watch?v=Radv4RcktNs&t=327s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his shot choices",
+      "kind": "conditional_short_game_tutorial",
+      "session": "Practice-green and bunker demonstrations in Florida, no assessed student",
+      "summary": "Into-grain Bermuda example requires committing to one shot because early ground contact is less forgiving. He demonstrates a back-in-stance chop as an available method used by others, but explicitly dislikes it personally because it is low-only and contact-sensitive.",
+      "frames": [
+        {
+          "time_seconds": 335,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00335.000.jpg",
+          "observation": "Grain/lie discussion."
+        },
+        {
+          "time_seconds": 345,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00345.000.jpg",
+          "observation": "Instructor describes committing to a shot."
+        },
+        {
+          "time_seconds": 355,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00355.000.jpg",
+          "observation": "Back-ball/chop option introduced."
+        },
+        {
+          "time_seconds": 365,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00365.000.jpg",
+          "observation": "Back-in-stance demonstration."
+        },
+        {
+          "time_seconds": 375,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00375.000.jpg",
+          "observation": "Explains limited versatility."
+        }
+      ],
+      "limitations": [
+        "Grass/grain identified by source, not independent botanical analysis. This is a recorded alternative, not his preferred recommendation."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        377,
+        424
+      ],
+      "source_url": "https://www.youtube.com/watch?v=Radv4RcktNs&t=377s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his shot choices",
+      "kind": "conditional_short_game_tutorial",
+      "session": "Practice-green and bunker demonstrations in Florida, no assessed student",
+      "summary": "For softness into grain, his preferred lazy-hands option uses extremely light grip, described as about one, with clubhead passing hands and a shallow motion. He wants to take speed out of the flight. Source card confirms very soft grip and lazy hands.",
+      "frames": [
+        {
+          "time_seconds": 385,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00385.000.jpg",
+          "observation": "Soft-grip explanation."
+        },
+        {
+          "time_seconds": 395,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00395.000.jpg",
+          "observation": "Address for lazy-hands shot."
+        },
+        {
+          "time_seconds": 400,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/overview/frame-00400.000.jpg",
+          "observation": "Small-shot motion."
+        },
+        {
+          "time_seconds": 415,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00415.000.jpg",
+          "observation": "Into-grain shot-one card and landing view."
+        }
+      ],
+      "limitations": [
+        "Grip scale is subjective, not measured force. Almost falling out is an exaggerated feel, not instruction to lose the club."
+      ]
+    },
+    {
+      "id": "E06",
+      "span_seconds": [
+        424,
+        463
+      ],
+      "source_url": "https://www.youtube.com/watch?v=Radv4RcktNs&t=424s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his shot choices",
+      "kind": "conditional_short_game_tutorial",
+      "session": "Practice-green and bunker demonstrations in Florida, no assessed student",
+      "summary": "If anxiety prevents a light hold, Ruffels removes little finger of gloved lead hand to make a nine-finger grip, intended to allow club to pass hands more easily. He demonstrates and reports soft flight, then reiterates this is his preferred method.",
+      "frames": [
+        {
+          "time_seconds": 424,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00424.000.jpg",
+          "observation": "Introduces grip adaptation."
+        },
+        {
+          "time_seconds": 428,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00428.000.jpg",
+          "observation": "Shows lead-hand finger change."
+        },
+        {
+          "time_seconds": 432,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00432.000.jpg",
+          "observation": "Grip held up near shoulder while explaining."
+        },
+        {
+          "time_seconds": 440,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00440.000.jpg",
+          "observation": "Rehearsal with adapted grip."
+        },
+        {
+          "time_seconds": 444,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00444.000.jpg",
+          "observation": "Address for adapted shot."
+        },
+        {
+          "time_seconds": 455,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00455.000.jpg",
+          "observation": "Green view following example."
+        }
+      ],
+      "limitations": [
+        "Optional constraint for this specific shot, not a general full-swing grip change. Contact forces and actual pressure are unmeasured."
+      ]
+    },
+    {
+      "id": "E07",
+      "span_seconds": [
+        463,
+        515
+      ],
+      "source_url": "https://www.youtube.com/watch?v=Radv4RcktNs&t=463s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his shot choices",
+      "kind": "conditional_short_game_tutorial",
+      "session": "Practice-green and bunker demonstrations in Florida, no assessed student",
+      "summary": "Alternative into-grain/bad-lie shot raises handle strongly, puts toe down and uses quiet hands with a long shallow brushing region. Ball is allowed to chase. Source card reads high handle/toe down, dead hands and shallow. Ruffels extends potential use to hardpan, sandier or dead lies.",
+      "frames": [
+        {
+          "time_seconds": 465,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00465.000.jpg",
+          "observation": "High-handle alternative introduced."
+        },
+        {
+          "time_seconds": 475,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00475.000.jpg",
+          "observation": "Toe-down/high-handle address."
+        },
+        {
+          "time_seconds": 485,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00485.000.jpg",
+          "observation": "Technique card over address."
+        },
+        {
+          "time_seconds": 490,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/overview/frame-00490.000.jpg",
+          "observation": "Green view after runner."
+        },
+        {
+          "time_seconds": 505,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00505.000.jpg",
+          "observation": "Discusses other poor lies."
+        }
+      ],
+      "limitations": [
+        "No measured low-point length or guarantee all hardpan/sandy lies suit this. Compare required carry/run with actual surface."
+      ]
+    },
+    {
+      "id": "E08",
+      "span_seconds": [
+        515,
+        650
+      ],
+      "source_url": "https://www.youtube.com/watch?v=Radv4RcktNs&t=515s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his shot choices",
+      "kind": "conditional_short_game_tutorial",
+      "session": "Practice-green and bunker demonstrations in Florida, no assessed student",
+      "summary": "For back pin with room to run over a ridge, pitching wedge replaces a more lofted wedge. Same tee-at-buckle motion; do not add extra handle lean just because it is a bump-and-run. Less club loft supplies rollout. He suggests about 70/30 lead-side weight feel, demonstrates and says he should practice/use it more. A sandy example follows.",
+      "frames": [
+        {
+          "time_seconds": 525,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00525.000.jpg",
+          "observation": "Pitching-wedge choice explained."
+        },
+        {
+          "time_seconds": 545,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00545.000.jpg",
+          "observation": "Buckle/tee rehearsal."
+        },
+        {
+          "time_seconds": 555,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00555.000.jpg",
+          "observation": "Back-pin/ridge target discussion."
+        },
+        {
+          "time_seconds": 565,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00565.000.jpg",
+          "observation": "Bump-and-run card with lower loft, butt at buckle and weight forward."
+        },
+        {
+          "time_seconds": 595,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00595.000.jpg",
+          "observation": "Green view with ball near flag, unmeasured distance."
+        },
+        {
+          "time_seconds": 605,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00605.000.jpg",
+          "observation": "Repeated simple motion."
+        },
+        {
+          "time_seconds": 625,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00625.000.jpg",
+          "observation": "Discusses sandy lie."
+        },
+        {
+          "time_seconds": 635,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00635.000.jpg",
+          "observation": "Green view after sandy example."
+        }
+      ],
+      "limitations": [
+        "70/30 is a feel, not force-plate result. No calibrated proximity, rollout or club bounce specification. Claim that pitching wedges have much bounce is not a universal equipment fact."
+      ]
+    },
+    {
+      "id": "E09",
+      "span_seconds": [
+        650,
+        707
+      ],
+      "source_url": "https://www.youtube.com/watch?v=Radv4RcktNs&t=650s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his shot choices",
+      "kind": "conditional_short_game_tutorial",
+      "session": "Practice-green and bunker demonstrations in Florida, no assessed student",
+      "summary": "First rough lie is perched on top. It looks favorable but a steep entry may strike high on face and come out dead. Ruffels uses a wide shallow arc, feeling the club brushes across the top of grass rather than cutting underneath; intended strike moves toward face center. Card repeats wide and shallow.",
+      "frames": [
+        {
+          "time_seconds": 658,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00658.000.jpg",
+          "observation": "Instructor identifies first rough lie."
+        },
+        {
+          "time_seconds": 668,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00668.000.jpg",
+          "observation": "Explains high-face/dead-flight risk."
+        },
+        {
+          "time_seconds": 678,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00678.000.jpg",
+          "observation": "Shallow brushing rehearsal."
+        },
+        {
+          "time_seconds": 685,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00685.000.jpg",
+          "observation": "Club traces long low arc."
+        },
+        {
+          "time_seconds": 695,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00695.000.jpg",
+          "observation": "Good-lie rough card over setup."
+        },
+        {
+          "time_seconds": 700,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/overview/frame-00700.000.jpg",
+          "observation": "Green view after shot."
+        }
+      ],
+      "limitations": [
+        "Source identifies perched height; sampled wide frames cannot quantify ball depth. No measured impact mark or confirmed face-center contact. Bottoming out back is an exaggerated feel here, not a fat-shot instruction for every lie."
+      ]
+    },
+    {
+      "id": "E10",
+      "span_seconds": [
+        707,
+        750
+      ],
+      "source_url": "https://www.youtube.com/watch?v=Radv4RcktNs&t=707s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his shot choices",
+      "kind": "conditional_short_game_tutorial",
+      "session": "Practice-green and bunker demonstrations in Florida, no assessed student",
+      "summary": "Second rough lie sits halfway down. Grass before ball is expected, so he chooses firmer wrists/grip around seven or eight out of ten and enough speed to feel as though hitting seven/eight yards beyond hole. Source card says firm wrists, 8/10 grip and aim past hole. Even the demonstration comes out somewhat dead by his report.",
+      "frames": [
+        {
+          "time_seconds": 708,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00708.000.jpg",
+          "observation": "Moves to medium-depth rough lie."
+        },
+        {
+          "time_seconds": 715,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00715.000.jpg",
+          "observation": "Extra distance/speed requirement explained."
+        },
+        {
+          "time_seconds": 725,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00725.000.jpg",
+          "observation": "Firm wrist/hand demonstration."
+        },
+        {
+          "time_seconds": 735,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00735.000.jpg",
+          "observation": "Grip-pressure explanation."
+        },
+        {
+          "time_seconds": 745,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00745.000.jpg",
+          "observation": "Medium-lie rough card and green view."
+        },
+        {
+          "time_seconds": 748,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00748.000.jpg",
+          "observation": "Same card confirms 8/10 and aim-past-hole cue."
+        }
+      ],
+      "limitations": [
+        "Grip scale and extra yards are player sensations, not measured pressure or reliable distance correction. Actual speed loss depends on lie."
+      ]
+    },
+    {
+      "id": "E11",
+      "span_seconds": [
+        750,
+        830
+      ],
+      "source_url": "https://www.youtube.com/watch?v=Radv4RcktNs&t=750s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his shot choices",
+      "kind": "conditional_short_game_tutorial",
+      "session": "Practice-green and bunker demonstrations in Florida, no assessed student",
+      "summary": "Third rough lie is buried near ground with much grass behind ball. Quiet-hands shallow motion is rejected for this lie. Ruffels picks club up more, opens face and uses speed to slap the rear/toe bounce area into ground while avoiding leading-edge dig. He calls it unpredictable even for a skilled player; this demonstration happens to be best of the three.",
+      "frames": [
+        {
+          "time_seconds": 755,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00755.000.jpg",
+          "observation": "Identifies deeper lie."
+        },
+        {
+          "time_seconds": 768,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00768.000.jpg",
+          "observation": "Explains why shallow method cannot reach ball."
+        },
+        {
+          "time_seconds": 778,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00778.000.jpg",
+          "observation": "Shows clubhead/bounce area."
+        },
+        {
+          "time_seconds": 785,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00785.000.jpg",
+          "observation": "Steeper preparation."
+        },
+        {
+          "time_seconds": 788,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00788.000.jpg",
+          "observation": "Bounce/ground-contact rehearsal."
+        },
+        {
+          "time_seconds": 805,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00805.000.jpg",
+          "observation": "Setup for buried-lie shot."
+        },
+        {
+          "time_seconds": 815,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00815.000.jpg",
+          "observation": "Bad-lie rough card: speed, down into ground, open face/exposed bounce."
+        }
+      ],
+      "limitations": [
+        "No measured rough depth, entry angle or landing proximity. Best demonstration does not make this the most predictable option; source explicitly says the opposite."
+      ]
+    },
+    {
+      "id": "E12",
+      "span_seconds": [
+        840,
+        944
+      ],
+      "source_url": "https://www.youtube.com/watch?v=Radv4RcktNs&t=840s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his shot choices",
+      "kind": "conditional_short_game_tutorial",
+      "session": "Practice-green and bunker demonstrations in Florida, no assessed student",
+      "summary": "Deep bunker and short-sided target require height. Ruffels uses wide stance, opens face and moves handle back until face points toward target. Trail hand sits on top in a weak orientation, intended to resist face closing and help throw clubhead with speed. Source card preserves these four choices. Several shots are shown; one is called unlucky.",
+      "frames": [
+        {
+          "time_seconds": 845,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00845.000.jpg",
+          "observation": "Deep-bunker situation introduced."
+        },
+        {
+          "time_seconds": 858,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00858.000.jpg",
+          "observation": "Wide stance and open-face demonstration."
+        },
+        {
+          "time_seconds": 866,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00866.000.jpg",
+          "observation": "Explains where open face points."
+        },
+        {
+          "time_seconds": 870,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00870.000.jpg",
+          "observation": "Handle-back address demonstration."
+        },
+        {
+          "time_seconds": 878,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00878.000.jpg",
+          "observation": "Rehearses delivery with handle back."
+        },
+        {
+          "time_seconds": 894,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00894.000.jpg",
+          "observation": "Trail-hand orientation shown."
+        },
+        {
+          "time_seconds": 898,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00898.000.jpg",
+          "observation": "Clubhead-release rehearsal."
+        },
+        {
+          "time_seconds": 920,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00920.000.jpg",
+          "observation": "Bunker shot motion and technique card."
+        },
+        {
+          "time_seconds": 924,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/sequences/frame-00924.000.jpg",
+          "observation": "Green view after shot with card."
+        },
+        {
+          "time_seconds": 935,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00935.000.jpg",
+          "observation": "Next bunker setup."
+        }
+      ],
+      "limitations": [
+        "Weak refers to hand orientation, not the one-out-of-ten pressure of lazy hands. No measured face/loft, sand firmness/depth, entry point or landing distance. Not every bunker lie supports this shot."
+      ]
+    },
+    {
+      "id": "E13",
+      "span_seconds": [
+        944,
+        982
+      ],
+      "source_url": "https://www.youtube.com/watch?v=Radv4RcktNs&t=944s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his shot choices",
+      "kind": "conditional_short_game_tutorial",
+      "session": "Practice-green and bunker demonstrations in Florida, no assessed student",
+      "summary": "Ruffels clarifies that a face aimed at target does not mean square stance. He prefers a closed stance because it helps his chest stay down/in the shot; open stance can make him push toward target or help ball upward. Card says closed stance, keeps chest down.",
+      "frames": [
+        {
+          "time_seconds": 945,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00945.000.jpg",
+          "observation": "Explains face aim versus stance."
+        },
+        {
+          "time_seconds": 955,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00955.000.jpg",
+          "observation": "Side-view stance comparison."
+        },
+        {
+          "time_seconds": 965,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00965.000.jpg",
+          "observation": "Body/finish comparison."
+        },
+        {
+          "time_seconds": 975,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00975.000.jpg",
+          "observation": "Closed-stance card and address."
+        }
+      ],
+      "limitations": [
+        "Personal tendency and feel, not universal stance geometry. No calibrated alignment or evidence all open stances cause lifting."
+      ]
+    },
+    {
+      "id": "E14",
+      "span_seconds": [
+        982,
+        1010
+      ],
+      "source_url": "https://www.youtube.com/watch?v=Radv4RcktNs&t=982s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his shot choices",
+      "kind": "conditional_short_game_tutorial",
+      "session": "Practice-green and bunker demonstrations in Florida, no assessed student",
+      "summary": "To reach a farther bunker pin with more run, he squares face somewhat, narrows stance and stands taller, keeping handle neutral rather than ahead. Demonstration aims for lower flight and more rollout. Closing high-launch success cue belongs to bunker learning context and is not a numeric pass/fail rule.",
+      "frames": [
+        {
+          "time_seconds": 985,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00985.000.jpg",
+          "observation": "Introduces farther-shot adjustments."
+        },
+        {
+          "time_seconds": 995,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/detail/frame-00995.000.jpg",
+          "observation": "Narrower/taller rehearsal."
+        },
+        {
+          "time_seconds": 1000,
+          "path": ".videos/coaching-knowledge/Radv4RcktNs/overview/frame-01000.000.jpg",
+          "observation": "Adjusted bunker address."
+        }
+      ],
+      "limitations": [
+        "No measured flight/rollout comparison. More square face is relative to preceding open-face setup; high launch alone does not establish correct sand contact or distance control."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "Radv4RcktNs-C01",
+      "title": "Use the simple buckle-reference chip when there is room to run",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "chipping",
+          "setup"
+        ],
+        "body": [
+          "hands",
+          "chest"
+        ],
+        "outcome": [
+          "contact",
+          "carry versus rollout"
+        ],
+        "concept": [
+          "short game",
+          "lie reading",
+          "shot selection"
+        ]
+      },
+      "evidence_ids": [
+        "E01"
+      ],
+      "coaching_finding": "Basic greenside shot has ample green; staged handle drag/flick can disturb strike.",
+      "coach_reasoning": "Keeping butt/tee toward buckle with chest motion is intended to limit digging and wrist manipulation.",
+      "intervention": {
+        "drill": "Put tee in grip butt; rehearse it pointing toward belt buckle as chest turns.",
+        "setup": "Stand close with handle high.",
+        "cue": "Keep the tee directed toward you through the small motion."
+      },
+      "applicability": [
+        "Room for a simple low-running shot and lie allows selected contact."
+      ],
+      "unknowns": [
+        "No measured shaft-angle invariant or validated 80\u201385 percent applicability."
+      ],
+      "observed_result": "Instructor chip examples; no student test or measured success rate.",
+      "selection": {
+        "coaching_focus": "Repeat a simple chip motion",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Select a shot first; setup substeps are not simultaneous swing thoughts.",
+        "reassess": "Check strike and rollout from the actual lie."
+      },
+      "alternative_case_ids": [
+        "Radv4RcktNs-C02",
+        "Radv4RcktNs-C07"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "Radv4RcktNs-C02",
+      "title": "Get modest height through setup while keeping quiet hands",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "chipping",
+          "setup"
+        ],
+        "body": [
+          "hands",
+          "wrists"
+        ],
+        "outcome": [
+          "contact",
+          "carry versus rollout"
+        ],
+        "concept": [
+          "short game",
+          "lie reading",
+          "shot selection"
+        ]
+      },
+      "evidence_ids": [
+        "E02"
+      ],
+      "coaching_finding": "Less green to work with requires more carry/height; nervousness or uncertain lie makes extra wrist action less attractive.",
+      "coach_reasoning": "Lower handle and open face can change loft while retaining familiar motion.",
+      "intervention": {
+        "setup": "Stand farther away, lower handle and open face relative to basic shot.",
+        "cue": "Use the familiar quiet-hand motion."
+      },
+      "applicability": [
+        "Height needed, actual lie permits face/bounce use, and quieter motion suits player."
+      ],
+      "unknowns": [
+        "No measured height/spin or guarantee for every poor lie."
+      ],
+      "observed_result": "Instructor demonstration; relative higher flight/spin described.",
+      "selection": {
+        "coaching_focus": "Add height with a simple motion",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Select a shot first; setup substeps are not simultaneous swing thoughts.",
+        "reassess": "Compare carry and strike before selecting a more wrist-active shot."
+      },
+      "alternative_case_ids": [
+        "Radv4RcktNs-C03"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "Radv4RcktNs-C03",
+      "title": "Reserve the softer wrist-active high shot for a good lie",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "chipping",
+          "backswing",
+          "release"
+        ],
+        "body": [
+          "wrists",
+          "hands"
+        ],
+        "outcome": [
+          "contact",
+          "carry versus rollout"
+        ],
+        "concept": [
+          "short game",
+          "lie reading",
+          "shot selection"
+        ]
+      },
+      "evidence_ids": [
+        "E03"
+      ],
+      "coaching_finding": "Higher/softer option is desired from a favorable lie.",
+      "coach_reasoning": "Opening with glove logo up adds loft; neutral return and release avoid handle drag or early bottoming out.",
+      "intervention": {
+        "feel": "Let clubhead feel heavy and fall first rather than pull handle.",
+        "sequence": "Open in backswing, return handle/tee neutral near strike and allow release.",
+        "avoid": "Do not prescribe this advanced wrist action from an unsuitable lie."
+      },
+      "applicability": [
+        "Good lie and sufficient skill/comfort for this option."
+      ],
+      "unknowns": [
+        "No measured release timing; clubhead-first feel and release-after-impact card need contextual reading."
+      ],
+      "observed_result": "First demonstration not as intended; later fat example acceptable. Not consistent success.",
+      "selection": {
+        "coaching_focus": "Create the selected soft higher flight",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Select a shot first; setup substeps are not simultaneous swing thoughts.",
+        "reassess": "Check strike reliability against quiet-hand alternative."
+      },
+      "alternative_case_ids": [
+        "Radv4RcktNs-C02"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "Radv4RcktNs-C04",
+      "title": "Record the grain chop as a limited alternative",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "chipping",
+          "lie reading"
+        ],
+        "body": [
+          "hands",
+          "club delivery"
+        ],
+        "outcome": [
+          "contact",
+          "carry versus rollout"
+        ],
+        "concept": [
+          "short game",
+          "lie reading",
+          "shot selection"
+        ]
+      },
+      "evidence_ids": [
+        "E04"
+      ],
+      "coaching_finding": "Into-grain contact can catch if player bottoms out early or mixes techniques.",
+      "coach_reasoning": "Back-ball chopping can make a low shot, but Ruffels regards it as contact-sensitive and less versatile.",
+      "intervention": {
+        "option": "Ball back and chop down for low flight.",
+        "preference": "Explicitly not Ruffels' preferred method; choose one method before starting."
+      },
+      "applicability": [
+        "Low-only flight is acceptable and player can execute the required contact."
+      ],
+      "unknowns": [
+        "No comparative success rate or universal impossibility of other trajectories."
+      ],
+      "observed_result": "Technique demonstrated as alternative; no measured comparison.",
+      "selection": {
+        "coaching_focus": "Choose and commit to an appropriate grain shot",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Select a shot first; setup substeps are not simultaneous swing thoughts.",
+        "reassess": "Compare contact reliability with other lie-compatible options."
+      },
+      "alternative_case_ids": [
+        "Radv4RcktNs-C05",
+        "Radv4RcktNs-C06"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "Radv4RcktNs-C05",
+      "title": "Use very soft hands for the selected shallow into-grain shot",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "chipping",
+          "into grain"
+        ],
+        "body": [
+          "hands",
+          "wrists"
+        ],
+        "outcome": [
+          "contact",
+          "carry versus rollout"
+        ],
+        "concept": [
+          "short game",
+          "lie reading",
+          "shot selection"
+        ]
+      },
+      "evidence_ids": [
+        "E05",
+        "E06"
+      ],
+      "coaching_finding": "Into-grain shot needs soft flight; anxiety may prevent the intended light hold.",
+      "coach_reasoning": "Very light grip and clubhead passing hands are intended to create shallow delivery and reduce ball speed.",
+      "intervention": {
+        "cue": "Let the hands feel lazy and the clubhead pass.",
+        "grip_feel": "About one on his subjective scale; retain control of the club.",
+        "optional_constraint": "Lift gloved lead-hand little finger for a nine-finger rehearsal if light grip is difficult."
+      },
+      "applicability": [
+        "Same shallow soft-flight shot and lie, with enough control to use this method."
+      ],
+      "unknowns": [
+        "Subjective pressure has no force calibration; optional finger removal is not a stock full-swing grip."
+      ],
+      "observed_result": "Soft flight demonstrated and preferred by instructor; no controlled student comparison.",
+      "selection": {
+        "coaching_focus": "Create soft flight with the selected shallow method",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Select a shot first; setup substeps are not simultaneous swing thoughts.",
+        "reassess": "Check strike and carry; avoid transferring this pressure to resistant rough."
+      },
+      "alternative_case_ids": [
+        "Radv4RcktNs-C06"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "Radv4RcktNs-C06",
+      "title": "Use a high-handle toe-down runner for a suitable poor lie",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "chipping",
+          "into grain"
+        ],
+        "body": [
+          "hands",
+          "clubhead"
+        ],
+        "outcome": [
+          "contact",
+          "carry versus rollout"
+        ],
+        "concept": [
+          "short game",
+          "lie reading",
+          "shot selection"
+        ]
+      },
+      "evidence_ids": [
+        "E07"
+      ],
+      "coaching_finding": "Into-grain or poor surface needs a running option.",
+      "coach_reasoning": "Toe-down/high handle with quiet hands is intended to brush a long shallow region and let ball chase.",
+      "intervention": {
+        "setup": "Raise handle and set toe down.",
+        "cue": "Brush shallowly and let the ball run."
+      },
+      "applicability": [
+        "Required carry is small enough and runoff/landing space suits a runner."
+      ],
+      "unknowns": [
+        "No measured low-point length; not a guarantee for all hardpan or sandy lies."
+      ],
+      "observed_result": "Instructor runner shown with matching technique card.",
+      "selection": {
+        "coaching_focus": "Get reliable running contact",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Select a shot first; setup substeps are not simultaneous swing thoughts.",
+        "reassess": "Check actual carry and rollout before applying to another poor lie."
+      },
+      "alternative_case_ids": [
+        "Radv4RcktNs-C05",
+        "Radv4RcktNs-C07"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "Radv4RcktNs-C07",
+      "title": "Use lower loft for a back-pin bump-and-run",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "bump and run",
+          "club selection"
+        ],
+        "body": [
+          "hands",
+          "body balance"
+        ],
+        "outcome": [
+          "contact",
+          "carry versus rollout"
+        ],
+        "concept": [
+          "short game",
+          "lie reading",
+          "shot selection"
+        ]
+      },
+      "evidence_ids": [
+        "E08"
+      ],
+      "coaching_finding": "Back pin and ridge provide room for rolling ball, while a lob-wedge spin shot adds complexity.",
+      "coach_reasoning": "Pitching-wedge loft supplies run without additional handle lean; same buckle-reference motion preserves contact.",
+      "intervention": {
+        "club": "Pitching wedge in this example.",
+        "setup": "About 70/30 lead-side weight feel.",
+        "cue": "Keep butt/tee directed toward belt buckle."
+      },
+      "applicability": [
+        "Open landing/run route and lie permit rolling shot."
+      ],
+      "unknowns": [
+        "No exact weight distribution, bounce specification or universal carry/run ratio."
+      ],
+      "observed_result": "Instructor calls first result good and says he should use it more; sandy example also shown.",
+      "selection": {
+        "coaching_focus": "Let club selection create the rollout",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Select a shot first; setup substeps are not simultaneous swing thoughts.",
+        "reassess": "Practice landing and run distances across available lofts."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "Radv4RcktNs-C08",
+      "title": "Use a wide shallow arc for a ball perched on rough",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "rough",
+          "chipping"
+        ],
+        "body": [
+          "arms",
+          "club delivery"
+        ],
+        "outcome": [
+          "contact",
+          "carry versus rollout"
+        ],
+        "concept": [
+          "short game",
+          "lie reading",
+          "shot selection"
+        ]
+      },
+      "evidence_ids": [
+        "E09"
+      ],
+      "coaching_finding": "Ball sits on top of rough and risks high-face, dead contact if entry is steep.",
+      "coach_reasoning": "A wide shallow sweep across grass top is intended to contact nearer face center.",
+      "intervention": {
+        "cue": "Brush across the top with a wide shallow arc.",
+        "feel": "Bottoming out behind is an exaggerated reference for this perched lie."
+      },
+      "applicability": [
+        "Ball genuinely supported on top of grass, not halfway down or buried."
+      ],
+      "unknowns": [
+        "No measured strike location or ball-height threshold."
+      ],
+      "observed_result": "Instructor shot and wide/shallow card; no impact-mark verification.",
+      "selection": {
+        "coaching_focus": "Match entry to the perched ball",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Select a shot first; setup substeps are not simultaneous swing thoughts.",
+        "reassess": "Check contact speed and avoid passing underneath."
+      },
+      "alternative_case_ids": [
+        "Radv4RcktNs-C09",
+        "Radv4RcktNs-C10"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "Radv4RcktNs-C09",
+      "title": "Use firmer hands and allow for speed loss in medium rough",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "rough",
+          "chipping"
+        ],
+        "body": [
+          "hands",
+          "wrists"
+        ],
+        "outcome": [
+          "contact",
+          "carry versus rollout"
+        ],
+        "concept": [
+          "short game",
+          "lie reading",
+          "shot selection"
+        ]
+      },
+      "evidence_ids": [
+        "E10"
+      ],
+      "coaching_finding": "Ball halfway down requires grass contact before ball, which can slow/twist delivery.",
+      "coach_reasoning": "Firmer grip/wrists resist breakdown and added effort compensates for energy lost in grass.",
+      "intervention": {
+        "grip_feel": "Seven or eight out of ten, card rounds to eight.",
+        "distance_feel": "As if hitting seven/eight yards past hole in this example.",
+        "cue": "Keep the chosen firmer hand relationship through the rough."
+      },
+      "applicability": [
+        "Medium-depth rough with grass between club and ball."
+      ],
+      "unknowns": [
+        "Pressure scale and extra yards are subjective and lie-dependent."
+      ],
+      "observed_result": "Demonstration still comes out somewhat dead by instructor report.",
+      "selection": {
+        "coaching_focus": "Maintain contact through resisting grass",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Select a shot first; setup substeps are not simultaneous swing thoughts.",
+        "reassess": "Reassess actual speed loss rather than add a fixed number of yards automatically."
+      },
+      "alternative_case_ids": [
+        "Radv4RcktNs-C08",
+        "Radv4RcktNs-C10"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "Radv4RcktNs-C10",
+      "title": "Use speed and exposed bounce to escape a buried rough lie",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "rough",
+          "recovery"
+        ],
+        "body": [
+          "hands",
+          "clubhead"
+        ],
+        "outcome": [
+          "contact",
+          "carry versus rollout"
+        ],
+        "concept": [
+          "short game",
+          "lie reading",
+          "shot selection"
+        ]
+      },
+      "evidence_ids": [
+        "E11"
+      ],
+      "coaching_finding": "Ball at base of rough cannot be reached with the preceding shallow quiet-hands method.",
+      "coach_reasoning": "More upward pickup and steeper delivery reach the ball; open face/exposed rear-toe bounce are intended to avoid leading-edge dig.",
+      "intervention": {
+        "setup": "Open face and prepare a steeper entry.",
+        "cue": "Slap the rear-toe bounce area into the grass/ground with enough speed.",
+        "expectation": "Allow for unpredictable results; prioritize escape."
+      },
+      "applicability": [
+        "Buried ball with much grass behind and little beneath it, as described in source."
+      ],
+      "unknowns": [
+        "No exact entry angle/depth or reliable distance prediction."
+      ],
+      "observed_result": "This example is called best of three despite source calling it the most unpredictable lie.",
+      "selection": {
+        "coaching_focus": "Escape the buried lie with appropriate contact",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Select a shot first; setup substeps are not simultaneous swing thoughts.",
+        "reassess": "Judge escape and acceptable miss, not precision expected from a clean lie."
+      },
+      "alternative_case_ids": [
+        "Radv4RcktNs-C08",
+        "Radv4RcktNs-C09"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "Radv4RcktNs-C11",
+      "title": "Use the open-face handle-back setup for a high short bunker shot",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "bunker",
+          "setup",
+          "release"
+        ],
+        "body": [
+          "trail hand",
+          "chest",
+          "clubhead"
+        ],
+        "outcome": [
+          "contact",
+          "carry versus rollout"
+        ],
+        "concept": [
+          "short game",
+          "lie reading",
+          "shot selection"
+        ]
+      },
+      "evidence_ids": [
+        "E12",
+        "E13"
+      ],
+      "coaching_finding": "Deep bunker with short-sided target needs height. Simply opening face points it away from target in his demonstration.",
+      "coach_reasoning": "Moving handle back reorients face; weak trail-hand orientation resists closing. His closed stance helps him avoid lifting/pushing body toward target.",
+      "intervention": {
+        "setup": "Wide low stance; open face, move handle back toward selected target alignment, trail hand on top in weak orientation.",
+        "personal_option": "Closed stance used to keep chest in shot; face aim and stance aim remain distinct.",
+        "cue": "Throw the clubhead through with speed."
+      },
+      "applicability": [
+        "High soft bunker shot required and sand/lie permit this style of splash."
+      ],
+      "unknowns": [
+        "No sand-depth/firmness test, entry distance or calibrated loft/face angle. Weak hand orientation is separate from light grip force."
+      ],
+      "observed_result": "Several instructor examples; one called unlucky. No measured landing proximity.",
+      "selection": {
+        "coaching_focus": "Launch the bunker shot with selected loft and bounce",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Select a shot first; setup substeps are not simultaneous swing thoughts.",
+        "reassess": "Check escape, contact and carry; do not force same setup for every bunker lie."
+      },
+      "alternative_case_ids": [
+        "Radv4RcktNs-C12"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "Radv4RcktNs-C12",
+      "title": "Adjust bunker setup for a farther target",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "bunker",
+          "trajectory"
+        ],
+        "body": [
+          "hands",
+          "stance",
+          "clubface"
+        ],
+        "outcome": [
+          "contact",
+          "carry versus rollout"
+        ],
+        "concept": [
+          "short game",
+          "lie reading",
+          "shot selection"
+        ]
+      },
+      "evidence_ids": [
+        "E14"
+      ],
+      "coaching_finding": "Farther bunker pin calls for lower flight and more rollout than short-sided example.",
+      "coach_reasoning": "Relatively squarer face, narrower stance and taller posture change flight while avoiding forward handle drag.",
+      "intervention": {
+        "setup": "Square face somewhat, narrow stance and stand taller relative to short-shot setup.",
+        "cue": "Keep handle neutral through the same basic release."
+      },
+      "applicability": [
+        "Longer target with space to run and suitable bunker lie."
+      ],
+      "unknowns": [
+        "No measured carry/run comparison or exact stance/face values."
+      ],
+      "observed_result": "Instructor adjustment demonstrated without quantitative result.",
+      "selection": {
+        "coaching_focus": "Change bunker flight for the target",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Select a shot first; setup substeps are not simultaneous swing thoughts.",
+        "reassess": "Verify required lip clearance as well as carry and rollout."
+      },
+      "alternative_case_ids": [
+        "Radv4RcktNs-C11"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "id": "M01",
+      "evidence_ids": [
+        "E01"
+      ],
+      "kind": "instructor_estimate",
+      "description": "Basic shot said to fit 80\u201385 percent of greenside situations; not a measured prevalence or app rule."
+    },
+    {
+      "id": "M02",
+      "evidence_ids": [
+        "E05",
+        "E10"
+      ],
+      "kind": "subjective_pressure_scale",
+      "values": {
+        "lazy_hands_about": 1,
+        "medium_rough_spoken": [
+          7,
+          8
+        ],
+        "medium_rough_card": 8
+      },
+      "limits": [
+        "No force measurement; deliberately different pressures for different lies/shots."
+      ]
+    },
+    {
+      "id": "M03",
+      "evidence_ids": [
+        "E08"
+      ],
+      "kind": "setup_feel",
+      "values": {
+        "bump_run_lead_trail_about": [
+          70,
+          30
+        ]
+      },
+      "limits": [
+        "Weight feel, not force-plate percentage."
+      ]
+    },
+    {
+      "id": "M04",
+      "evidence_ids": [
+        "E10"
+      ],
+      "kind": "distance_intent",
+      "values": {
+        "medium_rough_imagine_yards_past_hole": [
+          7,
+          8
+        ]
+      },
+      "limits": [
+        "Compensation feel for this example, not observed miss distance or universal formula."
+      ]
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        0,
+        1044
+      ],
+      "issue": "Automatic captions contain tea/te for tee, dead hens for dead hands, and other errors. Visual tee and technique cards support contextual normalization; original captions retained."
+    },
+    {
+      "span_seconds": [
+        238,
+        327
+      ],
+      "issue": "Advanced shot card says release after impact; clubhead-first-from-top is a spoken feel. Do not claim a measured release onset."
+    },
+    {
+      "span_seconds": [
+        377,
+        463
+      ],
+      "issue": "One/very-light grip and almost-falling-out language is subjective; keep club controlled."
+    },
+    {
+      "span_seconds": [
+        840,
+        1010
+      ],
+      "issue": "Face aimed at target differs from stance aim. Weak right-hand orientation differs from grip-pressure scale."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "JgaKrhspwik-C03",
+      "current_case": "Radv4RcktNs-C05",
+      "relation": "Shot-specific pressure and grip exception",
+      "explanation": "Harrington's secure stock grip and Ruffels' optional nine-finger soft chip serve different tasks. Do not convert either to an unconditional rule."
+    },
+    {
+      "source_case": "iP0sBzIXRtc-C09",
+      "current_case": "Radv4RcktNs-C01",
+      "relation": "Handle drag avoided in different tasks",
+      "explanation": "Cowen corrects full-swing handle-driving interpretation; Ruffels uses tee-at-buckle for chips. Similar concern does not make pressure cues interchangeable."
+    },
+    {
+      "source_case": "G3QNDLEo2Gw-C07",
+      "current_case": "Radv4RcktNs-C03",
+      "relation": "Finesse-shot release differs from full swing",
+      "explanation": "Earlier pitch lesson and Ruffels' advanced high shot preserve task-specific release, lie and trajectory conditions."
+    },
+    {
+      "source_case": "NOMY1bzMI28-C09",
+      "current_case": "Radv4RcktNs-C02",
+      "relation": "Lower-handle higher-shot option",
+      "explanation": "Brennan's high-soft work follows base stabilization; Ruffels gives a general setup option. Lower handle alone is not a diagnosis or complete prescription."
+    },
+    {
+      "source_case": "NOMY1bzMI28-C11",
+      "current_case": "Radv4RcktNs-C11",
+      "relation": "Bunker slope exception to handle-back language",
+      "explanation": "Brennan downhill bunker example deliberately changes handle relationship. Ruffels' short-sided setup must retain its lie/slope context rather than prohibit all forward lean."
+    },
+    {
+      "source_case": "G3QNDLEo2Gw-C11",
+      "current_case": "Radv4RcktNs-C12",
+      "relation": "Bunker flight variables after contact",
+      "explanation": "Both use setup variables for carry/flight; choose an adjustment only after establishing playable sand contact."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "Radv4RcktNs-C02",
+        "Radv4RcktNs-C03"
+      ],
+      "relationship": "Quiet-hand higher shot versus wrist-active higher shot: actual lie, pressure and reliability determine selection."
+    },
+    {
+      "cases": [
+        "Radv4RcktNs-C04",
+        "Radv4RcktNs-C05",
+        "Radv4RcktNs-C06"
+      ],
+      "relationship": "Into-grain alternatives; chop is not preferred, lazy hands soften flight, toe-down method runs. Select one before swinging."
+    },
+    {
+      "cases": [
+        "Radv4RcktNs-C05",
+        "Radv4RcktNs-C09"
+      ],
+      "relationship": "Very soft grip for chosen shallow chip versus firm grip against resisting medium rough; do not average them."
+    },
+    {
+      "cases": [
+        "Radv4RcktNs-C08",
+        "Radv4RcktNs-C09",
+        "Radv4RcktNs-C10"
+      ],
+      "relationship": "Perched, medium and buried rough are different lie categories with different entry and pressure requirements."
+    },
+    {
+      "cases": [
+        "Radv4RcktNs-C01",
+        "Radv4RcktNs-C07",
+        "Radv4RcktNs-C11"
+      ],
+      "relationship": "Buckle-reference chipping, lower-loft runner and handle-back bunker shot have different delivery/loft contexts."
+    },
+    {
+      "cases": [
+        "Radv4RcktNs-C11",
+        "Radv4RcktNs-C12"
+      ],
+      "relationship": "Wide/open/low short bunker setup changes for farther flight; no universal stance width or face openness."
+    }
+  ],
+  "annotation_opportunities": [
+    "Highlight grip-butt tee versus belt buckle in close references and mark deliberate drag/flick contrasts.",
+    "Attach source technique cards to exact shot conditions, not merely a general short-game tag.",
+    "Request a useful lie view before selecting perched, medium or buried rough cases; do not classify depth from a distant swing-only clip.",
+    "Show trail-hand orientation and separate it from grip-pressure instruction.",
+    "Label desired carry/run route and bunker lip context alongside setup examples."
+  ],
+  "excluded_material": [
+    "Unverified broad applicability percentages and guaranteed ease across all handicaps.",
+    "General pitching-wedge bounce claim as a universal equipment specification.",
+    "Subscribe requests and off-course outro.",
+    "Claims of measured spin, proximity or reliable success from edited landing examples."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Source-backed conditional tutorial with observed examples; no assessed student, independent applicability test or quantified outcomes."
+  },
+  "asset_sha256": {
+    "video": "cefcc5c6dba8a7ccc4786ddbfd20a917ef7b9c5054714bcfb22d0308370cf271",
+    "raw_captions": "2ee83fd1014fae4ac050d8f56e9e668c84234cbfd97bb7d86d7496b362571c30",
+    "transcript": "5e3041ce109a7a3d404f921db81837671e8edb3eff1e2dbb5cded38c52a8515e"
+  }
+}

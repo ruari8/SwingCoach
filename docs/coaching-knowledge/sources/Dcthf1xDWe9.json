@@ -1,0 +1,539 @@
+{
+  "version": 1,
+  "source_id": "Dcthf1xDWe9",
+  "url": "https://www.instagram.com/p/Dcthf1xDWe9/",
+  "title": "Kyle: two-month grip-to-transition progression",
+  "publisher": "Teagan Moore / teaganmooregolf",
+  "published": "20260831",
+  "duration_seconds": 130.335011,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "coach": "Teagan Moore",
+    "student": "Kyle, named by coach"
+  },
+  "context": {
+    "format": "Coach retrospective with earlier and later student footage",
+    "handedness": "Right-handed",
+    "body_context": "No physical screening supplied",
+    "club": "Earlier driver on course; later iron on range, exact models unknown"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/Dcthf1xDWe9/Dcthf1xDWe9.mp4",
+    "raw_captions": ".videos/coaching-knowledge/Dcthf1xDWe9/asr-raw.json",
+    "transcript": ".videos/coaching-knowledge/Dcthf1xDWe9/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/Dcthf1xDWe9/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/Dcthf1xDWe9/Dcthf1xDWe9.info.json",
+    "overview": ".videos/coaching-knowledge/Dcthf1xDWe9/overview/index.json",
+    "detail": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 28,
+    "transcript_kind": "Local MLX Whisper ASR with visual inspection",
+    "audio_independently_transcribed": true,
+    "visual_review_method": "13 overview and 36 detail frames across five portrait sheets inspected, including earlier driver and later iron sequences.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/Dcthf1xDWe9/overview/index.json",
+      ".videos/coaching-knowledge/Dcthf1xDWe9/detail/index.json"
+    ],
+    "limitations": [
+      "Sampled frames, not continuous playback.",
+      "Coach reasoning is attributed, not independently validated."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        20
+      ],
+      "source_url": "https://www.instagram.com/p/Dcthf1xDWe9/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Kyle: two-month grip-to-transition progression",
+      "summary": "Coach reports weak pull-slice as Kyle's only shot two months earlier. Attributes shoulders pointing left to weak, on-top trail-hand grip. Earlier footage is driver on a teeing ground.",
+      "frames": [
+        {
+          "time_seconds": 13,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00013.000.jpg",
+          "observation": "Earlier driver setup."
+        },
+        {
+          "time_seconds": 17,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00017.000.jpg",
+          "observation": "Trail-hand region at address."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        20,
+        43
+      ],
+      "source_url": "https://www.instagram.com/p/Dcthf1xDWe9/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Kyle: two-month grip-to-transition progression",
+      "summary": "Coach describes early forearm roll, club deep/behind and open face, then club weight pulling hands too far behind heels and a flat shoulder plane. This causal explanation is unmeasured.",
+      "frames": [
+        {
+          "time_seconds": 24,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00024.000.jpg",
+          "observation": "Early forearm/club rotation."
+        },
+        {
+          "time_seconds": 27,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00027.000.jpg",
+          "observation": "Arrow behind body toward club."
+        },
+        {
+          "time_seconds": 31,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00031.000.jpg",
+          "observation": "Arrow from clubface region."
+        },
+        {
+          "time_seconds": 34,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00034.000.jpg",
+          "observation": "Circle marks club."
+        },
+        {
+          "time_seconds": 40,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00040.000.jpg",
+          "observation": "Vertical hands behind heels reference."
+        },
+        {
+          "time_seconds": 42,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00042.000.jpg",
+          "observation": "Earlier top position."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        43,
+        62
+      ],
+      "source_url": "https://www.instagram.com/p/Dcthf1xDWe9/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Kyle: two-month grip-to-transition progression",
+      "summary": "Coach says weak face and deep top led to trail shoulder kicking up, shaft tipping outside hands and pull-fade. Original shot shown with illustrative curve, no launch data.",
+      "frames": [
+        {
+          "time_seconds": 49,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00049.000.jpg",
+          "observation": "Shoulder-direction arrows."
+        },
+        {
+          "time_seconds": 52,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00052.000.jpg",
+          "observation": "Original downswing."
+        },
+        {
+          "time_seconds": 55,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00055.000.jpg",
+          "observation": "Shaft-outside-hands line."
+        },
+        {
+          "time_seconds": 58,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00058.000.jpg",
+          "observation": "Through impact."
+        },
+        {
+          "time_seconds": 62,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00062.000.jpg",
+          "observation": "Drawn pull-fade curve."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        62,
+        85
+      ],
+      "source_url": "https://www.instagram.com/p/Dcthf1xDWe9/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Kyle: two-month grip-to-transition progression",
+      "summary": "First change was neutralizing trail-hand grip and body alignments parallel left of target. Next, hands moved with turn without early forearm roll, club hinged upward and stayed outside hands with face matching spine. Later footage is an iron on a range mat; exact grip adjustment is not shown close-up.",
+      "frames": [
+        {
+          "time_seconds": 66,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00066.000.jpg",
+          "observation": "Later iron setup."
+        },
+        {
+          "time_seconds": 70,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00070.000.jpg",
+          "observation": "Alignment sticks and later setup."
+        },
+        {
+          "time_seconds": 74,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00074.000.jpg",
+          "observation": "Later takeaway with reference."
+        },
+        {
+          "time_seconds": 78,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00078.000.jpg",
+          "observation": "Hands/club relationship."
+        },
+        {
+          "time_seconds": 82,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00082.000.jpg",
+          "observation": "Clubface reference."
+        },
+        {
+          "time_seconds": 85,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00085.000.jpg",
+          "observation": "Later takeaway checkpoint."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        85,
+        102
+      ],
+      "source_url": "https://www.instagram.com/p/Dcthf1xDWe9/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Kyle: two-month grip-to-transition progression",
+      "summary": "Later halfway-back hands split bicep and shaft points toward ball; at top lead arm matches shoulders, hands over heels and face matches lead arm. Coach uses these as readiness for transition work.",
+      "frames": [
+        {
+          "time_seconds": 88,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00088.000.jpg",
+          "observation": "Later halfway-back."
+        },
+        {
+          "time_seconds": 92,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00092.000.jpg",
+          "observation": "Shaft reference."
+        },
+        {
+          "time_seconds": 98,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00098.000.jpg",
+          "observation": "Lead-arm/shoulder line."
+        },
+        {
+          "time_seconds": 101,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00101.000.jpg",
+          "observation": "Clubface reference."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E06",
+      "span_seconds": [
+        102,
+        126
+      ],
+      "source_url": "https://www.instagram.com/p/Dcthf1xDWe9/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Kyle: two-month grip-to-transition progression",
+      "summary": "Only after earlier changes, coach says Kyle can benefit from shifting lead side and rotating, hands directly toward ball while shaft shallows. Later swing is shown and stock shots are reported. No dispersion, scores or practice history beyond two months is provided.",
+      "frames": [
+        {
+          "time_seconds": 105,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00105.000.jpg",
+          "observation": "Lead-side shift mark."
+        },
+        {
+          "time_seconds": 109,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00109.000.jpg",
+          "observation": "Top-to-ball hand reference."
+        },
+        {
+          "time_seconds": 112,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00112.000.jpg",
+          "observation": "Hands and shaft descent."
+        },
+        {
+          "time_seconds": 117,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00117.000.jpg",
+          "observation": "Shaft near original plane."
+        },
+        {
+          "time_seconds": 119,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00119.000.jpg",
+          "observation": "Later impact."
+        },
+        {
+          "time_seconds": 122,
+          "path": ".videos/coaching-knowledge/Dcthf1xDWe9/detail/frame-00122.000.jpg",
+          "observation": "Later finish."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "Dcthf1xDWe9-C01",
+      "title": "Neutralize weak trail-hand grip before alignment and takeaway work",
+      "case_type": "retrospective_individual_progression_with_uncontrolled_followup",
+      "tags": {
+        "phase": [
+          "setup"
+        ],
+        "body": [
+          "trail hand",
+          "shoulders"
+        ],
+        "outcome": [
+          "grip",
+          "alignment",
+          "sequence"
+        ],
+        "concept": [
+          "grip",
+          "alignment",
+          "sequence"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E04"
+      ],
+      "coaching_finding": "Coach identifies weak trail-hand placement on top and shoulders pointing left.",
+      "coach_reasoning": "Grip is treated as upstream contributor to alignment and later compensations.",
+      "intervention": {
+        "action": "Neutralize trail-hand grip, then establish body alignments parallel left of intended target.",
+        "limits": "No exact finger placement, rotation amount or grip close-up supplied; do not invent it."
+      },
+      "applicability": [
+        "Assess actual grip and alignment; not every pull-slice has this cause."
+      ],
+      "unknowns": [
+        "Exact neutral-grip procedure and independent alignment measurements."
+      ],
+      "observed_result": "Coach presents later iron swing and reports better stock shots after two months. Different club, venue and camera prevent a controlled effect estimate.",
+      "selection": {
+        "coaching_focus": "Trail-hand grip first",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus preference; retain source sequencing and avoid simultaneous competing thoughts.",
+        "reassess": "Proposed app check: confirm grip/setup and resulting takeaway before adding another cue."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "Dcthf1xDWe9-C02",
+      "title": "Reduce early forearm roll while retaining hands moving with turn",
+      "case_type": "retrospective_individual_progression_with_uncontrolled_followup",
+      "tags": {
+        "phase": [
+          "takeaway",
+          "P2",
+          "P3",
+          "P4"
+        ],
+        "body": [
+          "forearms",
+          "hands",
+          "club"
+        ],
+        "outcome": [
+          "early roll",
+          "excess hand depth",
+          "face control"
+        ],
+        "concept": [
+          "early roll",
+          "excess hand depth",
+          "face control"
+        ]
+      },
+      "evidence_ids": [
+        "E02",
+        "E04",
+        "E05"
+      ],
+      "coaching_finding": "Earlier club rolls inside/open and hands become deeper than heels; later club remains outside hands while hinging.",
+      "coach_reasoning": "Coach expects preventing early roll to remove the overly deep, weak-face top and reduce need for compensation.",
+      "intervention": {
+        "cue": "Hands move with turn while club hinges up outside hands.",
+        "sequence": "After grip and alignment correction; no formal drill or dose supplied."
+      },
+      "applicability": [
+        "Distinguish excessive early club roll from useful later forearm rotation.",
+        "Do not prescribe more hand depth to a golfer already excessively deep."
+      ],
+      "unknowns": [
+        "How much rotation changes and whether grip alone accounts for it."
+      ],
+      "observed_result": "Coach presents later iron swing and reports better stock shots after two months. Different club, venue and camera prevent a controlled effect estimate.",
+      "selection": {
+        "coaching_focus": "Takeaway relationship",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus preference; retain source sequencing and avoid simultaneous competing thoughts.",
+        "reassess": "Proposed app check: review early face/club and top, then retest normal swing."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "Dcthf1xDWe9-C03",
+      "title": "Introduce lead-side shift and rotation once backswing conditions improve",
+      "case_type": "retrospective_individual_progression_with_uncontrolled_followup",
+      "tags": {
+        "phase": [
+          "transition",
+          "downswing"
+        ],
+        "body": [
+          "pelvis",
+          "hands",
+          "club"
+        ],
+        "outcome": [
+          "transition readiness",
+          "staged learning"
+        ],
+        "concept": [
+          "transition readiness",
+          "staged learning"
+        ]
+      },
+      "evidence_ids": [
+        "E03",
+        "E05",
+        "E06"
+      ],
+      "coaching_finding": "Earlier transition compensates for weak/deep backswing; later top is judged usable.",
+      "coach_reasoning": "Coach explicitly makes transition benefit conditional on earlier grip/setup/backswing work.",
+      "intervention": {
+        "cue": "Shift into lead side and turn.",
+        "supporting_intent": "Hands toward ball while shaft shallows; present only after first task is understood.",
+        "limits": "No pressure data or exact timing provided."
+      },
+      "applicability": [
+        "Reassess preceding changes before adding transition work.",
+        "Avoid treating this full sequence as simultaneous swing thoughts."
+      ],
+      "unknowns": [
+        "Practice frequency, individual adaptation and same-club retention."
+      ],
+      "observed_result": "Coach presents later iron swing and reports better stock shots after two months. Different club, venue and camera prevent a controlled effect estimate.",
+      "selection": {
+        "coaching_focus": "Transition after prerequisites",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus preference; retain source sequencing and avoid simultaneous competing thoughts.",
+        "reassess": "Proposed app check: compare same-club, same-view aid-free swing and actual flight after sequential practice."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "coach_reported_followup_interval",
+      "value": "Two months",
+      "evidence_ids": [
+        "E01",
+        "E06"
+      ],
+      "limits": [
+        "No session log, exact dates, dose or isolated intervention effect."
+      ]
+    },
+    {
+      "kind": "qualitative_2d_comparison",
+      "value": "Earlier driver versus later iron",
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E04",
+        "E05",
+        "E06"
+      ],
+      "limits": [
+        "Different club, scene and camera. No calibrated angular/ball-flight measures."
+      ]
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        129,
+        130.335011
+      ],
+      "issue": "ASR closing repetition is not coaching content and is excluded."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "DcY33a3Ck73-C01",
+      "current_case": "Dcthf1xDWe9-C02",
+      "relation": "Opposite depth conditions",
+      "explanation": "Marius lacks depth at top; Kyle begins with excessive depth after an inside roll. A generic get-hands-deeper cue would ignore the difference."
+    },
+    {
+      "source_case": "Dc-kqu1qKgW-C01",
+      "current_case": "Dcthf1xDWe9-C02",
+      "relation": "Rotation timing matters",
+      "explanation": "Clapp retains later useful forearm rotation while limiting too-early roll; Kyle's change should not become zero forearm rotation throughout swing."
+    },
+    {
+      "source_case": "HQNKUS_BSGY-C06",
+      "current_case": "Dcthf1xDWe9-C03",
+      "relation": "Prerequisite before downstream change",
+      "explanation": "Both lessons reassess earlier movement before selecting a transition correction."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "Dcthf1xDWe9-C01",
+        "Dcthf1xDWe9-C02",
+        "Dcthf1xDWe9-C03"
+      ],
+      "relationship": "Reported teaching order is grip/setup, takeaway/top, then transition. Store all stages but select only current priority."
+    }
+  ],
+  "annotation_opportunities": [
+    "Label earlier driver and later iron clearly.",
+    "Compare early clubface/club position before comparing top.",
+    "Show progression order and distinguish observed footage from reported outcome."
+  ],
+  "excluded_material": [
+    "Guaranteed cure for all slices.",
+    "Numerical improvement inferred from different-club comparison.",
+    "Review solicitation after 126 seconds."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Source extraction preserves evidence and conditions; a source match and response check are still needed for another golfer."
+  },
+  "asset_sha256": {
+    "video": "0ada3ffc063f712379d1af4dce55005030cf4355902ff2ce9916e025b1be71c9",
+    "raw_captions": "f333e5dd4bd69114180bc2c28022155b220f5f5511e158f10ab20c47be736946",
+    "transcript": "1c0e57c41052b1c506eba03b58c6778fa7f312c169908f8580521c74cfa1c2a5"
+  }
+}

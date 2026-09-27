@@ -1,0 +1,370 @@
+{
+  "version": 1,
+  "source_id": "DdNBm5SKGvb",
+  "url": "https://www.instagram.com/p/DdNBm5SKGvb/",
+  "title": "Faldo preset-and-turn drill (shared by Ron Chang)",
+  "publisher": "Ron Chang / ronchanggolf",
+  "published": "20260912",
+  "duration_seconds": 27.749002,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "uploader": "Ron Chang",
+    "instructor": "Nick Faldo, credited in uploader description",
+    "student": null
+  },
+  "context": {
+    "format": "Short vertical edit: uploader demonstration/testimonial followed by archival instructional excerpt",
+    "handedness": "Right-handed demonstration",
+    "club": "Iron; number not established",
+    "body_context": "No physical screen",
+    "style": "Visual rehearsal and concise verbal cues"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/DdNBm5SKGvb/DdNBm5SKGvb.mp4",
+    "raw_captions": ".videos/coaching-knowledge/DdNBm5SKGvb/asr-raw.json",
+    "transcript": ".videos/coaching-knowledge/DdNBm5SKGvb/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/DdNBm5SKGvb/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/DdNBm5SKGvb/DdNBm5SKGvb.info.json",
+    "overview": ".videos/coaching-knowledge/DdNBm5SKGvb/overview/index.json",
+    "detail": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 8,
+    "transcript_kind": "Local MLX Whisper large-v3-turbo ASR; embedded captions checked in sampled frames",
+    "audio_independently_transcribed": true,
+    "audio_transcription_note": "Generated from media audio locally, independently of platform captions; not a human-verification claim.",
+    "visual_review_method": "15 overview and 32 detail frames across five portrait contact sheets, all inspected. Repeated preset-to-top rehearsals and final shot sampled down to 0.25-second intervals. Not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/DdNBm5SKGvb/overview/index.json",
+      ".videos/coaching-knowledge/DdNBm5SKGvb/detail/index.json"
+    ],
+    "limitations": [
+      "Original media 1080\u00d71920, but embedded archival footage is soft and cropped.",
+      "ASR timing estimated; raw words and confidence-related fields retained.",
+      "Instagram permalink has no verified seeking parameter; use recorded playback seconds with local media."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        6.5
+      ],
+      "source_url": "https://www.instagram.com/p/DdNBm5SKGvb/",
+      "attribution": "Ron Chang opening overlay/description, then instructional excerpt attributed to Nick Faldo",
+      "kind": "edited_tutorial_demonstration",
+      "session": "Preset wrist/club position then turn to top and hit",
+      "summary": "Opening uploader footage carries a claim that the drill changed his ball striking. The edit then presents Faldo at the top praising the backswing position. These are testimonial and instructor assertions, not a before/after assessment.",
+      "frames": [
+        {
+          "time_seconds": 0,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/overview/frame-00000.000.jpg",
+          "observation": "Opening ball-striking claim above a golfer at address."
+        },
+        {
+          "time_seconds": 2,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/overview/frame-00002.000.jpg",
+          "observation": "Opening golfer in follow-through."
+        },
+        {
+          "time_seconds": 3,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00003.000.jpg",
+          "observation": "Instructor holds top position while embedded caption praises it."
+        }
+      ],
+      "limitations": [
+        "No prior swing, launch data, shot distribution or long-term follow-up. The opening swing cannot establish improvement."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        6.5,
+        14.5
+      ],
+      "source_url": "https://www.instagram.com/p/DdNBm5SKGvb/",
+      "attribution": "Nick Faldo instructional excerpt, attributed by the uploader",
+      "kind": "edited_tutorial_demonstration",
+      "session": "Preset wrist/club position then turn to top and hit",
+      "summary": "Faldo starts with wrists set and shaft roughly horizontal, then instructs continuing the shoulder turn with left shoulder moving under. He holds the resulting top position and calls it correct. The demonstration separates preset from turn.",
+      "frames": [
+        {
+          "time_seconds": 7,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00007.000.jpg",
+          "observation": "Front view: club shaft held roughly horizontal at hand/waist height."
+        },
+        {
+          "time_seconds": 9.5,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00009.500.jpg",
+          "observation": "Preset retained as instruction says to continue turning."
+        },
+        {
+          "time_seconds": 10.5,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00010.500.jpg",
+          "observation": "Closer oblique view of preset grip/club."
+        },
+        {
+          "time_seconds": 11.5,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00011.500.jpg",
+          "observation": "Shoulders and arms turn upward from preset; left-shoulder-under caption."
+        },
+        {
+          "time_seconds": 13,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00013.000.jpg",
+          "observation": "Top position held as instructor evaluates it."
+        }
+      ],
+      "limitations": [
+        "Parallel/horizontal is a qualitative visual description and uploader instruction, not a measured angle. Ideal position claim is source opinion. No exact wrist angles, clubface target or amount of turn established."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        14.5,
+        22.75
+      ],
+      "source_url": "https://www.instagram.com/p/DdNBm5SKGvb/",
+      "attribution": "Nick Faldo instructional excerpt, attributed by the uploader",
+      "kind": "edited_tutorial_demonstration",
+      "session": "Preset wrist/club position then turn to top and hit",
+      "summary": "He returns to the preset and repeats winding up with shoulder turn, verbally adding weight moving to the right. The top is held again. This supplies the rehearsal sequence and source weight cue, without quantified force or pressure.",
+      "frames": [
+        {
+          "time_seconds": 15.5,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00015.500.jpg",
+          "observation": "Returned to the low preset position."
+        },
+        {
+          "time_seconds": 17.5,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00017.500.jpg",
+          "observation": "Rehearsal moving upward with shoulder turn."
+        },
+        {
+          "time_seconds": 18.5,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00018.500.jpg",
+          "observation": "Raised hands and turned torso near top."
+        },
+        {
+          "time_seconds": 19.5,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00019.500.jpg",
+          "observation": "Embedded caption says moving the weight."
+        },
+        {
+          "time_seconds": 20.5,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00020.500.jpg",
+          "observation": "Embedded caption completes to the right; no force graphic."
+        }
+      ],
+      "limitations": [
+        "Weight-right wording belongs to the backswing rehearsal; no percentage, centre-of-pressure trace or downswing prescription. Camera cannot measure pressure."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        22.75,
+        27.749002
+      ],
+      "source_url": "https://www.instagram.com/p/DdNBm5SKGvb/",
+      "attribution": "Nick Faldo instructional excerpt, attributed by the uploader",
+      "kind": "edited_tutorial_demonstration",
+      "session": "Preset wrist/club position then turn to top and hit",
+      "summary": "Final front-view demonstration pauses in preset to check position, then turns and releases into a shot and full finish. This shows how to use the rehearsal to hit a ball; the clip supplies no ball-flight or launch result.",
+      "frames": [
+        {
+          "time_seconds": 23.5,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00023.500.jpg",
+          "observation": "Preset pause while caption says check everything."
+        },
+        {
+          "time_seconds": 25.25,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00025.250.jpg",
+          "observation": "Still in preset before final swing."
+        },
+        {
+          "time_seconds": 25.75,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00025.750.jpg",
+          "observation": "Backswing from preset."
+        },
+        {
+          "time_seconds": 26.25,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00026.250.jpg",
+          "observation": "Delivery moving through ball area."
+        },
+        {
+          "time_seconds": 26.75,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00026.750.jpg",
+          "observation": "Rotated follow-through."
+        },
+        {
+          "time_seconds": 27.25,
+          "path": ".videos/coaching-knowledge/DdNBm5SKGvb/detail/frame-00027.250.jpg",
+          "observation": "Finish with trail heel raised."
+        }
+      ],
+      "limitations": [
+        "Sampled sequence does not independently locate exact impact time. Visible shot execution is not proof of improved strike, face control or scoring."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "DdNBm5SKGvb-C01",
+      "title": "Rehearse a wrist preset followed by shoulder turn, then hit from the preset",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "setup",
+          "backswing",
+          "top",
+          "P4",
+          "practice"
+        ],
+        "body": [
+          "wrists",
+          "shoulders",
+          "torso"
+        ],
+        "outcome": [
+          "backswing organization",
+          "ball striking claim"
+        ],
+        "concept": [
+          "preset drill",
+          "rehearsal",
+          "turn",
+          "weight-shift language"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E04"
+      ],
+      "coaching_finding": "No player-specific fault is diagnosed. The excerpt demonstrates a desired backswing construction; uploader reports personal benefit.",
+      "coach_reasoning": "Presetting the wrists/club leaves shoulder turn to complete the backswing, with the left shoulder moving under. Faldo judges the resulting position favourably. A deeper causal explanation or diagnosis-to-drill test is absent.",
+      "intervention": {
+        "procedure": [
+          "At golf posture, preset the wrists so the club is held roughly horizontal as demonstrated.",
+          "Turn shoulders to complete the backswing; the source cues left shoulder under.",
+          "Return and repeat the preset-to-top rehearsal.",
+          "For the ball-striking demonstration, briefly check the preset, then turn and release through the shot."
+        ],
+        "primary_cue": "Preset, then turn.",
+        "supporting_source_cues": [
+          "Left shoulder under.",
+          "Weight moving right during backswing."
+        ],
+        "presentation": "Store the sequence together; surface only the selected cue, not all stored cues at once.",
+        "uploader_description": "The uploader additionally describes staying connected and better rotation through impact; this is uploader framing, not an assessed finding."
+      },
+      "applicability": [
+        "A player learning the demonstrated preset-to-turn sequence and able to rehearse it comfortably.",
+        "Matching an actual golfer requires separate evidence that this task addresses their priority; the clip provides no diagnostic eligibility test."
+      ],
+      "unknowns": [
+        "Original full lesson context and complete publication history of the embedded Faldo excerpt.",
+        "Specific starting fault, causal reason for poor strike and alternatives.",
+        "Exact wrist/face orientation, required turn amount and individualized physical capacity.",
+        "Quantified strike or ball-flight change, retention and transfer to an ordinary swing."
+      ],
+      "observed_result": "Instructor demonstrates held top positions and one final shot. Uploader claims improved ball striking without supplied baseline or measurement.",
+      "selection": {
+        "coaching_focus": "Organize backswing using one preset-to-turn task",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus and at most two compatible cues. Reassessment below is proposed app policy, not an instruction verified in this clip.",
+        "reassess": "Check the intended preset-to-turn movement, then compare ordinary swings and actual strike outcomes before retaining the drill."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "qualitative_geometry",
+      "evidence_ids": [
+        "E02"
+      ],
+      "value": "Shaft roughly horizontal in preset",
+      "limits": [
+        "No calibrated degree value."
+      ]
+    },
+    {
+      "kind": "verbal_weight_shift",
+      "evidence_ids": [
+        "E03"
+      ],
+      "value": "Move weight right in backswing",
+      "limits": [
+        "No measurement or percentage."
+      ]
+    },
+    {
+      "kind": "unmeasured_testimonial",
+      "evidence_ids": [
+        "E01"
+      ],
+      "value": "Uploader claims better ball striking",
+      "limits": [
+        "No before/after comparison."
+      ]
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "HQNKUS_BSGY-C10",
+      "current_case": "DdNBm5SKGvb-C01",
+      "relation": "Related preset-and-turn rehearsal with different evidence context",
+      "explanation": "Chris Mayson\u2019s preset-club-and-turn option appears in an assessed lesson. This Faldo excerpt demonstrates a related drill but provides no student diagnosis; retain that difference when considering retrieval."
+    },
+    {
+      "source_case": "vGGIn2IAW-Q-C04",
+      "current_case": "DdNBm5SKGvb-C01",
+      "relation": "Transfer check is missing from this short excerpt",
+      "explanation": "Ruffels explicitly removes aids for target transfer. The Faldo excerpt ends with a preset shot; it does not demonstrate transfer to an ordinary uninterrupted swing."
+    }
+  ],
+  "within_source_distinctions": [],
+  "annotation_opportunities": [
+    "Label preset, turn-to-top, reset and final shot as separate drill phases.",
+    "Show the sampled source sequence beside the cue; do not use the staged preset as a required normal takeaway position.",
+    "Keep the uploader testimonial separate from instructor teaching and measured outcomes."
+  ],
+  "excluded_material": [
+    "Universal ideal backswing angle or a quantified pressure instruction.",
+    "Diagnosis of early extension, getting stuck or a particular clubface fault.",
+    "Claim that an opening and closing shot establish a before/after improvement."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Tutorial excerpt and testimonial with no assessed starting fault or outcome comparison."
+  },
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        22.0,
+        25.5
+      ],
+      "issue": "ASR renders the setup phrase as Tits are there; embedded caption at23s reads SIT TO THERE. Neither is adopted as coaching anatomy. Visual pause in the preset and the following check instruction are clear; exact opening wording remains unresolved."
+    },
+    {
+      "span_seconds": [
+        27.0,
+        27.749002
+      ],
+      "issue": "ASR adds So lets go at the end. This short closing fragment is not independently confirmed and supplies no coaching claim."
+    }
+  ],
+  "asset_sha256": {
+    "video": "e1cc1d3ce709e01291534223819c6ec51ed2e74712c4e415e22e31bc35dd56d7",
+    "raw_captions": "0df2a9094dfc1f24aecc519b5e029c8c6588b4fa5d1c5644f5a13668d2be8e06",
+    "transcript": "35aaa736556d27d3a4f4d079e81181f18d8623504b36ca431a5410efdbcc19a6"
+  }
+}

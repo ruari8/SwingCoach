@@ -1,0 +1,633 @@
+{
+  "version": 1,
+  "source_id": "DdHAGJkKLFB",
+  "url": "https://www.instagram.com/p/DdHAGJkKLFB/",
+  "title": "Four early-extension drill options",
+  "publisher": "Jenny Kim / jennykimgolf",
+  "published": "20260910",
+  "duration_seconds": 14.375011,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "instructor_and_demonstrator": "Jenny Kim",
+    "student": null
+  },
+  "context": {
+    "format": "Rapid vertical demonstration montage with on-screen cues and detailed creator post description",
+    "handedness": "Right-handed demonstration",
+    "club": "Iron; number unknown",
+    "body_context": "No physical screen",
+    "style": "External constraints and sensations; four alternatives"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/DdHAGJkKLFB/DdHAGJkKLFB.mp4",
+    "raw_captions": ".videos/coaching-knowledge/DdHAGJkKLFB/on-screen-transcript.json",
+    "transcript": ".videos/coaching-knowledge/DdHAGJkKLFB/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/DdHAGJkKLFB/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/DdHAGJkKLFB/DdHAGJkKLFB.info.json",
+    "raw_audio_asr": ".videos/coaching-knowledge/DdHAGJkKLFB/asr-raw.json",
+    "audio_transcript": ".videos/coaching-knowledge/DdHAGJkKLFB/asr-transcript.json",
+    "audio_provenance": ".videos/coaching-knowledge/DdHAGJkKLFB/asr-provenance.json",
+    "overview": ".videos/coaching-knowledge/DdHAGJkKLFB/overview/index.json",
+    "detail": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 5,
+    "transcript_kind": "On-screen coaching text manually read from source frames; full creator description read separately",
+    "audio_independently_transcribed": true,
+    "audio_transcription_note": "ASR attempted and full output reviewed; repetitive output rejected as coaching evidence. No reliable spoken coaching transcript claimed.",
+    "visual_review_method": "15 overview and 38 detail frames across six portrait sheets, all inspected. Includes all four titles/cues, prop placement and quarter-second samples through shots. These are sampled frames, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/DdHAGJkKLFB/overview/index.json",
+      ".videos/coaching-knowledge/DdHAGJkKLFB/detail/index.json"
+    ],
+    "limitations": [
+      "Four very short examples; no patient/student assessment.",
+      "Prop contact and exact impact not fully established by quarter-second samples.",
+      "Background simulator values lack a confirmed association and readable labels; not used as measurements.",
+      "ASR does not reliably represent the audio; coaching record uses visible text and creator description."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        1.75
+      ],
+      "source_url": "https://www.instagram.com/p/DdHAGJkKLFB/",
+      "attribution": "Jenny Kim: on-screen instructions and demonstrations; rationale/procedural detail from accompanying creator post text",
+      "kind": "visual_tutorial_with_creator_description",
+      "session": "Four alternative early-extension drill demonstrations",
+      "summary": "Opening title asks about early extension and offers four drills. Creator description defines the issue as hips moving toward the ball too early in downswing, reducing arm/club space. This is the stated target, not a diagnosis of the demonstrator.",
+      "frames": [
+        {
+          "time_seconds": 0,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/overview/frame-00000.000.jpg",
+          "observation": "Opening title over address position."
+        },
+        {
+          "time_seconds": 1,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/overview/frame-00001.000.jpg",
+          "observation": "Address view; no before-swing comparison or pelvis line."
+        }
+      ],
+      "limitations": [
+        "No assessed student, initial fault capture or controlled before/after.",
+        "Timing is source playback; post description is static text associated with this demonstration."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        1.75,
+        4.75
+      ],
+      "source_url": "https://www.instagram.com/p/DdHAGJkKLFB/",
+      "attribution": "Jenny Kim: on-screen instructions and demonstrations; rationale/procedural detail from accompanying creator post text",
+      "kind": "visual_tutorial_with_creator_description",
+      "session": "Four alternative early-extension drill demonstrations",
+      "summary": "Open-stance drill is labelled open stance plus rotate, with cue to create room for hips to turn. Creator text explains opening stance may help lower body rotate through instead of driving toward ball. One shot is demonstrated.",
+      "frames": [
+        {
+          "time_seconds": 1.75,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00001.750.jpg",
+          "observation": "Open-stance drill title with address."
+        },
+        {
+          "time_seconds": 2.25,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00002.250.jpg",
+          "observation": "Create-room cue and foot arrangement."
+        },
+        {
+          "time_seconds": 2.75,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00002.750.jpg",
+          "observation": "Backswing from open stance."
+        },
+        {
+          "time_seconds": 3.25,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00003.250.jpg",
+          "observation": "Delivery near ball area."
+        },
+        {
+          "time_seconds": 3.5,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00003.500.jpg",
+          "observation": "Rotated follow-through."
+        },
+        {
+          "time_seconds": 4.25,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00004.250.jpg",
+          "observation": "Finish; trail heel raised."
+        }
+      ],
+      "limitations": [
+        "No assessed student, initial fault capture or controlled before/after.",
+        "Timing is source playback; post description is static text associated with this demonstration."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        4.75,
+        7.5
+      ],
+      "source_url": "https://www.instagram.com/p/DdHAGJkKLFB/",
+      "attribution": "Jenny Kim: on-screen instructions and demonstrations; rationale/procedural detail from accompanying creator post text",
+      "kind": "visual_tutorial_with_creator_description",
+      "session": "Four alternative early-extension drill demonstrations",
+      "summary": "Bucket drill places trail foot into/under a tipped basket opening. Title says keep trail leg back and avoid hitting bucket. Creator text specifies avoiding trail shin pushing into its top to discourage knee/hip driving toward ball. Demonstration goes to a normal finish.",
+      "frames": [
+        {
+          "time_seconds": 4.75,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00004.750.jpg",
+          "observation": "Tipped green basket around trail-foot area."
+        },
+        {
+          "time_seconds": 5.25,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00005.250.jpg",
+          "observation": "Trail foot at basket opening before swing."
+        },
+        {
+          "time_seconds": 6.25,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00006.250.jpg",
+          "observation": "Backswing with do-not-hit-bucket cue."
+        },
+        {
+          "time_seconds": 6.5,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00006.500.jpg",
+          "observation": "Delivery with basket feedback obstacle."
+        },
+        {
+          "time_seconds": 6.75,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00006.750.jpg",
+          "observation": "Rotation into follow-through."
+        },
+        {
+          "time_seconds": 7.25,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00007.250.jpg",
+          "observation": "Finish with heel raised; basket still present."
+        }
+      ],
+      "limitations": [
+        "No assessed student, initial fault capture or controlled before/after.",
+        "Timing is source playback; post description is static text associated with this demonstration."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        7.5,
+        11
+      ],
+      "source_url": "https://www.instagram.com/p/DdHAGJkKLFB/",
+      "attribution": "Jenny Kim: on-screen instructions and demonstrations; rationale/procedural detail from accompanying creator post text",
+      "kind": "visual_tutorial_with_creator_description",
+      "session": "Four alternative early-extension drill demonstrations",
+      "summary": "Alignment stick passes through an upright basket beside trail foot. Caption specifically says not to hit stick before impact. Creator text identifies early trail-knee contact as possible evidence of movement toward ball instead of creating space. Timing of contact is the point; later contact is not categorically prohibited by the source.",
+      "frames": [
+        {
+          "time_seconds": 7.5,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00007.500.jpg",
+          "observation": "Upright basket and stick beside trail side."
+        },
+        {
+          "time_seconds": 8.25,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00008.250.jpg",
+          "observation": "Backswing with barrier near trail knee/leg area."
+        },
+        {
+          "time_seconds": 8.5,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00008.500.jpg",
+          "observation": "Explicit before-impact caption."
+        },
+        {
+          "time_seconds": 8.75,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00008.750.jpg",
+          "observation": "Delivery close to impact; exact contact not verified."
+        },
+        {
+          "time_seconds": 9.25,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00009.250.jpg",
+          "observation": "Follow-through beyond impact phase."
+        },
+        {
+          "time_seconds": 10.75,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00010.750.jpg",
+          "observation": "Finish; barrier remains visible."
+        }
+      ],
+      "limitations": [
+        "No assessed student, initial fault capture or controlled before/after.",
+        "Timing is source playback; post description is static text associated with this demonstration."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        11,
+        14.375011
+      ],
+      "source_url": "https://www.instagram.com/p/DdHAGJkKLFB/",
+      "attribution": "Jenny Kim: on-screen instructions and demonstrations; rationale/procedural detail from accompanying creator post text",
+      "kind": "visual_tutorial_with_creator_description",
+      "session": "Four alternative early-extension drill demonstrations",
+      "summary": "Ball-under-trail-toes drill is labelled with stay-back-and-rotate-through cue. Creator text says ball may sit under/in front of trail toes, with controlled swings to feel less pressure into toes and trail hip staying back. The demonstration finishes with heel raised and the ball visible under the trail forefoot area.",
+      "frames": [
+        {
+          "time_seconds": 11.25,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00011.250.jpg",
+          "observation": "Ball at trail forefoot under/toe area during setup."
+        },
+        {
+          "time_seconds": 12.25,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00012.250.jpg",
+          "observation": "Stay-back plus rotate-through caption."
+        },
+        {
+          "time_seconds": 12.75,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00012.750.jpg",
+          "observation": "Backswing."
+        },
+        {
+          "time_seconds": 13.25,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00013.250.jpg",
+          "observation": "Delivery toward ball."
+        },
+        {
+          "time_seconds": 13.75,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00013.750.jpg",
+          "observation": "Finish with trail heel raised and feedback ball visible."
+        },
+        {
+          "time_seconds": 14.25,
+          "path": ".videos/coaching-knowledge/DdHAGJkKLFB/detail/frame-00014.250.jpg",
+          "observation": "Finished stance; ball under forefoot region."
+        }
+      ],
+      "limitations": [
+        "No assessed student, initial fault capture or controlled before/after.",
+        "Timing is source playback; post description is static text associated with this demonstration."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "DdHAGJkKLFB-C01",
+      "title": "Try an open stance to make rotation through feel easier",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "downswing",
+          "impact",
+          "follow-through"
+        ],
+        "body": [
+          "pelvis",
+          "trail hip",
+          "trail knee",
+          "trail foot"
+        ],
+        "outcome": [
+          "space for arms",
+          "pelvis depth",
+          "early extension"
+        ],
+        "concept": [
+          "external feedback",
+          "rotation",
+          "alternative drills"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02"
+      ],
+      "coaching_finding": "Creator targets hips/trail side moving toward ball too early in downswing and reducing arm space. No individual golfer is assessed in this source.",
+      "coach_reasoning": "Creator explains an open stance can make lower-body rotation easier to feel, reducing intent to drive toward ball.",
+      "intervention": {
+        "drill": "Open stance as shown and make a controlled swing.",
+        "cue": "Create room for the hips to turn.",
+        "scope": "Source drill stance; not a universal permanent setup prescription."
+      },
+      "applicability": [
+        "Corresponding movement established in the golfer, rather than inferred from a single standing-up appearance.",
+        "Use one drill that gives a useful response; source says to try alternatives to find the best feel."
+      ],
+      "unknowns": [
+        "Why the individual golfer moves toward the ball; club delivery, setup and physical-screen contributors not assessed.",
+        "Individual fit, precise prop placement and amount of movement.",
+        "Measured pelvis/pressure change, strike benefit, transfer or retention."
+      ],
+      "observed_result": "Instructor executes a demonstration shot. No baseline comparison, contact sensor or validated improvement is provided.",
+      "selection": {
+        "coaching_focus": "Retain space while rotating through delivery",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus constraint. Store four alternatives; select one, then reassess before switching.",
+        "reassess": "Proposed app check: compare actual pelvis/trail-side movement and strike without prop. For barrier drills, inspect contact timing rather than claim success from finish alone."
+      },
+      "alternative_case_ids": [
+        "DdHAGJkKLFB-C02",
+        "DdHAGJkKLFB-C03",
+        "DdHAGJkKLFB-C04"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "DdHAGJkKLFB-C02",
+      "title": "Use a basket at the trail foot as feedback for the shin",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "downswing",
+          "impact",
+          "follow-through"
+        ],
+        "body": [
+          "pelvis",
+          "trail hip",
+          "trail knee",
+          "trail foot"
+        ],
+        "outcome": [
+          "space for arms",
+          "pelvis depth",
+          "early extension"
+        ],
+        "concept": [
+          "external feedback",
+          "rotation",
+          "alternative drills"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E03"
+      ],
+      "coaching_finding": "Creator targets hips/trail side moving toward ball too early in downswing and reducing arm space. No individual golfer is assessed in this source.",
+      "coach_reasoning": "Basket gives external feedback when trail shin pushes toward its top, addressing creator's trail-side movement target.",
+      "intervention": {
+        "drill": "Place trail foot in the tipped basket opening as demonstrated; rehearse without trail shin pushing into its top.",
+        "cue": "Avoid pushing into the bucket.",
+        "scope": "Do not interpret keep-leg-back as freezing the foot throughout finish; demonstration raises heel."
+      },
+      "applicability": [
+        "Corresponding movement established in the golfer, rather than inferred from a single standing-up appearance.",
+        "Use one drill that gives a useful response; source says to try alternatives to find the best feel."
+      ],
+      "unknowns": [
+        "Why the individual golfer moves toward the ball; club delivery, setup and physical-screen contributors not assessed.",
+        "Individual fit, precise prop placement and amount of movement.",
+        "Measured pelvis/pressure change, strike benefit, transfer or retention."
+      ],
+      "observed_result": "Instructor executes a demonstration shot. No baseline comparison, contact sensor or validated improvement is provided.",
+      "selection": {
+        "coaching_focus": "Retain space while rotating through delivery",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus constraint. Store four alternatives; select one, then reassess before switching.",
+        "reassess": "Proposed app check: compare actual pelvis/trail-side movement and strike without prop. For barrier drills, inspect contact timing rather than claim success from finish alone."
+      },
+      "alternative_case_ids": [
+        "DdHAGJkKLFB-C01",
+        "DdHAGJkKLFB-C03",
+        "DdHAGJkKLFB-C04"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "DdHAGJkKLFB-C03",
+      "title": "Use a stick barrier to check early trail-knee movement",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "downswing",
+          "impact",
+          "follow-through"
+        ],
+        "body": [
+          "pelvis",
+          "trail hip",
+          "trail knee",
+          "trail foot"
+        ],
+        "outcome": [
+          "space for arms",
+          "pelvis depth",
+          "early extension"
+        ],
+        "concept": [
+          "external feedback",
+          "rotation",
+          "alternative drills"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E04"
+      ],
+      "coaching_finding": "Creator targets hips/trail side moving toward ball too early in downswing and reducing arm space. No individual golfer is assessed in this source.",
+      "coach_reasoning": "Early knee contact with barrier can signal the unwanted direction; creator phrases this as probable, not diagnostic certainty.",
+      "intervention": {
+        "drill": "Place stick through basket beside trail foot and rehearse reaching impact without trail knee hitting it.",
+        "cue": "Avoid the stick before impact.",
+        "scope": "Preserve before-impact condition. Source does not say all later contact is failure."
+      },
+      "applicability": [
+        "Corresponding movement established in the golfer, rather than inferred from a single standing-up appearance.",
+        "Use one drill that gives a useful response; source says to try alternatives to find the best feel."
+      ],
+      "unknowns": [
+        "Why the individual golfer moves toward the ball; club delivery, setup and physical-screen contributors not assessed.",
+        "Individual fit, precise prop placement and amount of movement.",
+        "Measured pelvis/pressure change, strike benefit, transfer or retention."
+      ],
+      "observed_result": "Instructor executes a demonstration shot. No baseline comparison, contact sensor or validated improvement is provided.",
+      "selection": {
+        "coaching_focus": "Retain space while rotating through delivery",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus constraint. Store four alternatives; select one, then reassess before switching.",
+        "reassess": "Proposed app check: compare actual pelvis/trail-side movement and strike without prop. For barrier drills, inspect contact timing rather than claim success from finish alone."
+      },
+      "alternative_case_ids": [
+        "DdHAGJkKLFB-C01",
+        "DdHAGJkKLFB-C02",
+        "DdHAGJkKLFB-C04"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "DdHAGJkKLFB-C04",
+      "title": "Use a ball under trail toes for a pressure feel",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "downswing",
+          "impact",
+          "follow-through"
+        ],
+        "body": [
+          "pelvis",
+          "trail hip",
+          "trail knee",
+          "trail foot"
+        ],
+        "outcome": [
+          "space for arms",
+          "pelvis depth",
+          "early extension"
+        ],
+        "concept": [
+          "external feedback",
+          "rotation",
+          "alternative drills"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E05"
+      ],
+      "coaching_finding": "Creator targets hips/trail side moving toward ball too early in downswing and reducing arm space. No individual golfer is assessed in this source.",
+      "coach_reasoning": "Creator proposes toe feedback to feel less pressure moving into toes and keep trail hip back while rotating.",
+      "intervention": {
+        "drill": "Place a golf ball underneath/in front of trail toes and make controlled swings as shown.",
+        "cue": "Stay back and rotate through.",
+        "scope": "Feel instruction only; video cannot establish measured toe pressure or required heel-loading percentage."
+      },
+      "applicability": [
+        "Corresponding movement established in the golfer, rather than inferred from a single standing-up appearance.",
+        "Use one drill that gives a useful response; source says to try alternatives to find the best feel."
+      ],
+      "unknowns": [
+        "Why the individual golfer moves toward the ball; club delivery, setup and physical-screen contributors not assessed.",
+        "Individual fit, precise prop placement and amount of movement.",
+        "Measured pelvis/pressure change, strike benefit, transfer or retention."
+      ],
+      "observed_result": "Instructor executes a demonstration shot. No baseline comparison, contact sensor or validated improvement is provided.",
+      "selection": {
+        "coaching_focus": "Retain space while rotating through delivery",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus constraint. Store four alternatives; select one, then reassess before switching.",
+        "reassess": "Proposed app check: compare actual pelvis/trail-side movement and strike without prop. For barrier drills, inspect contact timing rather than claim success from finish alone."
+      },
+      "alternative_case_ids": [
+        "DdHAGJkKLFB-C01",
+        "DdHAGJkKLFB-C02",
+        "DdHAGJkKLFB-C03"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "unavailable_pressure_measurement",
+      "evidence_ids": [
+        "E05"
+      ],
+      "value": null,
+      "reason": "Toe-pressure feel is creator explanation; no plate or sensor output."
+    },
+    {
+      "kind": "unverified_contact_timing",
+      "evidence_ids": [
+        "E03",
+        "E04"
+      ],
+      "value": null,
+      "reason": "No contact sensor and sampled visuals cannot certify no barrier contact before impact."
+    },
+    {
+      "kind": "excluded_background_simulator_values",
+      "evidence_ids": [
+        "E02",
+        "E03",
+        "E04",
+        "E05"
+      ],
+      "value": null,
+      "reason": "Background screen is not a labelled before/after outcome presentation."
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        0,
+        14.375011
+      ],
+      "issue": "Full ASR attempt degenerates into repetitive non-coaching text. Preserve raw attempt; do not represent this as a spoken instruction transcript."
+    },
+    {
+      "span_seconds": [
+        11,
+        14.375011
+      ],
+      "issue": "Creator text allows ball underneath/in front of trail toes. No exact offset or pressure target specified."
+    },
+    {
+      "span_seconds": [
+        0,
+        14.375011
+      ],
+      "issue": "Title and cue onset/offset are sampled estimates grouped by drill, not frame-exact caption timestamps."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "IJSu7440Ick-C04",
+      "current_case": "DdHAGJkKLFB-C01",
+      "relation": "A diagnosis must precede matching an early-extension drill",
+      "explanation": "TPI rejected an initial early-extension hypothesis for Josh Allen after measurement. Kim\u2019s tutorial supplies drill options only after a corresponding movement is established; a standing-up impression alone does not justify retrieval."
+    },
+    {
+      "source_case": "p_HZJ2u0TIo-C01",
+      "current_case": "DdHAGJkKLFB-C02",
+      "relation": "Do not change an effective motion solely to match an appearance",
+      "explanation": "Harrington withholds hip changes when motion works. Kim\u2019s generic drills do not establish that another golfer needs a pelvis correction."
+    },
+    {
+      "source_case": "p_HZJ2u0TIo-C04",
+      "current_case": "DdHAGJkKLFB-C03",
+      "relation": "Barrier timing and normal trail-side movement must be kept distinct",
+      "explanation": "Harrington\u2019s transition explanation permits trail-side movement and treats heel height as insufficient evidence. Kim\u2019s stick cue is specifically before impact; do not turn it into a frozen trail leg or heel rule."
+    },
+    {
+      "source_case": "IJSu7440Ick-C08",
+      "current_case": "DdHAGJkKLFB-C04",
+      "relation": "Different pressure dimensions and phases",
+      "explanation": "Allen\u2019s initial right/left distribution adjustment concerns side-to-side setup. Kim\u2019s toe feedback concerns forward movement into the trail forefoot during delivery. Do not conflate the two into a single pressure percentage."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "DdHAGJkKLFB-C01",
+        "DdHAGJkKLFB-C02",
+        "DdHAGJkKLFB-C03",
+        "DdHAGJkKLFB-C04"
+      ],
+      "relationship": "Four alternatives for one stated target, not a four-drill prescription. Open stance changes setup; bucket/stick provide contact feedback; ball supplies a pressure feel. Selection depends on individual response."
+    }
+  ],
+  "annotation_opportunities": [
+    "Label all four drills as alternatives and expose only the chosen task.",
+    "Pair a confirmed impact event with barrier-contact timing if later available.",
+    "Distinguish prop-contact observation from inferred hip position and measured pressure.",
+    "Do not annotate every elevated trail heel as failure; all demonstrations allow a finish."
+  ],
+  "excluded_material": [
+    "Claim that any demonstrator has early extension at baseline.",
+    "A prescription to stay down, freeze trail foot or keep weight right through impact.",
+    "Automated pressure readings from a ball under toes.",
+    "Background simulator numbers as proof of before/after improvement.",
+    "Unreliable repetitive audio ASR."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Generic drill montage with creator rationale; no diagnostic assessment or validated result."
+  },
+  "asset_sha256": {
+    "video": "bf75700f74d02740f45711dcf2f81312241f4d2fd389eec99826317755c6bf2f",
+    "raw_captions": "0d7ec07110fb0eafc9488aa87f3da725c84c17813675a69b6ccfa7d3c1e77594",
+    "transcript": "0d7ec07110fb0eafc9488aa87f3da725c84c17813675a69b6ccfa7d3c1e77594"
+  }
+}

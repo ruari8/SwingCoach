@@ -1,0 +1,301 @@
+{
+  "version": 1,
+  "source_id": "DcwID0KRE5Q",
+  "url": "https://www.instagram.com/p/DcwID0KRE5Q/",
+  "title": "Shallowing barrier: prerequisites and swing-under setup",
+  "publisher": "Teagan Moore / teaganmooregolf",
+  "published": "20260901",
+  "duration_seconds": 19.343991,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "coach": "Teagan Moore"
+  },
+  "context": {
+    "format": "Coach demonstration with titles and written post instructions, no assessed student",
+    "handedness": "Right-handed",
+    "body_context": "No physical screening supplied"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/DcwID0KRE5Q/DcwID0KRE5Q.mp4",
+    "raw_captions": ".videos/coaching-knowledge/DcwID0KRE5Q/on-screen-transcript.json",
+    "transcript": ".videos/coaching-knowledge/DcwID0KRE5Q/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/DcwID0KRE5Q/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/DcwID0KRE5Q/DcwID0KRE5Q.info.json",
+    "overview": ".videos/coaching-knowledge/DcwID0KRE5Q/overview/index.json",
+    "detail": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/index.json",
+    "raw_audio_asr": ".videos/coaching-knowledge/DcwID0KRE5Q/asr-raw.json",
+    "audio_transcript": ".videos/coaching-knowledge/DcwID0KRE5Q/asr-transcript.json",
+    "audio_provenance": ".videos/coaching-knowledge/DcwID0KRE5Q/asr-provenance.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 4,
+    "transcript_kind": "Manually inspected on-screen titles; coaching procedure from creator post description",
+    "audio_independently_transcribed": false,
+    "visual_review_method": "2 overview and 32 detail frames across four portrait sheets inspected. Half-second setup/swing sequence and all title changes inspected; repeated edited motion is not a set of independent outcomes.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/DcwID0KRE5Q/overview/index.json",
+      ".videos/coaching-knowledge/DcwID0KRE5Q/detail/index.json"
+    ],
+    "limitations": [
+      "Sampled frames, not continuous playback.",
+      "Coach reasoning is attributed, not independently validated."
+    ],
+    "audio_transcription_note": "Local ASR attempt retained; only isolated so fragment and no reliable coaching speech. No spoken transcript claimed."
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        4.1
+      ],
+      "source_url": "https://www.instagram.com/p/DcwID0KRE5Q/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Shallowing barrier: prerequisites and swing-under setup",
+      "summary": "Opening swing and Over the top? title identify topic, not a diagnosed fault in the instructor. Description assumes setup, alignment and backswing already suitable.",
+      "frames": [
+        {
+          "time_seconds": 0,
+          "path": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/frame-00000.000.jpg",
+          "observation": "Yellow padded barrier just beyond/above hands in down-the-line view."
+        },
+        {
+          "time_seconds": 1,
+          "path": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/frame-00001.000.jpg",
+          "observation": "Coach backswing."
+        },
+        {
+          "time_seconds": 1.5,
+          "path": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/frame-00001.500.jpg",
+          "observation": "Through swing and topic title."
+        },
+        {
+          "time_seconds": 3,
+          "path": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/frame-00003.000.jpg",
+          "observation": "Held finish with barrier unchanged."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        4.5,
+        10.5
+      ],
+      "source_url": "https://www.instagram.com/p/DcwID0KRE5Q/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Shallowing barrier: prerequisites and swing-under setup",
+      "summary": "Front-on setup then down-the-line demonstration. Written caption instructs stick about two feet behind, end just above hands in down-the-line view, start slowly and swing under it. Placement and under-barrier path are visible; exact distance not calibrated.",
+      "frames": [
+        {
+          "time_seconds": 4.5,
+          "path": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/frame-00004.500.jpg",
+          "observation": "Front-on barrier and feet."
+        },
+        {
+          "time_seconds": 5,
+          "path": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/frame-00005.000.jpg",
+          "observation": "Coach adjusts position relative to prop."
+        },
+        {
+          "time_seconds": 6.5,
+          "path": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/frame-00006.500.jpg",
+          "observation": "Settled front-on setup."
+        },
+        {
+          "time_seconds": 8,
+          "path": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/frame-00008.000.jpg",
+          "observation": "Down-the-line end of barrier above hands."
+        },
+        {
+          "time_seconds": 9.5,
+          "path": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/frame-00009.500.jpg",
+          "observation": "Coach top."
+        },
+        {
+          "time_seconds": 10,
+          "path": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/frame-00010.000.jpg",
+          "observation": "Downswing toward underside of barrier."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        10.5,
+        19.343991
+      ],
+      "source_url": "https://www.instagram.com/p/DcwID0KRE5Q/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Shallowing barrier: prerequisites and swing-under setup",
+      "summary": "Shallowing drill title and repeated swing passages; closing title directs viewer to caption. Caption explicitly says neutralize an open face before attempting drill, predicting a worse right miss otherwise. No grip method or individual face diagnosis is given.",
+      "frames": [
+        {
+          "time_seconds": 10.5,
+          "path": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/frame-00010.500.jpg",
+          "observation": "Through motion under barrier."
+        },
+        {
+          "time_seconds": 12,
+          "path": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/frame-00012.000.jpg",
+          "observation": "Finish."
+        },
+        {
+          "time_seconds": 14,
+          "path": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/frame-00014.000.jpg",
+          "observation": "Repeated through motion."
+        },
+        {
+          "time_seconds": 17,
+          "path": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/frame-00017.000.jpg",
+          "observation": "Read the caption title."
+        },
+        {
+          "time_seconds": 18,
+          "path": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/frame-00018.000.jpg",
+          "observation": "Repeated backswing."
+        },
+        {
+          "time_seconds": 19,
+          "path": ".videos/coaching-knowledge/DcwID0KRE5Q/detail/frame-00019.000.jpg",
+          "observation": "Return to address."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "DcwID0KRE5Q-C01",
+      "title": "Swing beneath a padded barrier only after setup, backswing and face checks",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "setup",
+          "transition",
+          "downswing"
+        ],
+        "body": [
+          "hands",
+          "clubface",
+          "shaft"
+        ],
+        "outcome": [
+          "shallowing",
+          "open-face exception",
+          "physical constraint"
+        ],
+        "concept": [
+          "shallowing",
+          "open-face exception",
+          "physical constraint"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03"
+      ],
+      "coaching_finding": "Tutorial proposes over-the-top topic without assessed student.",
+      "coach_reasoning": "Barrier supplies a delivery constraint; source explicitly warns that an open face needs attention first.",
+      "intervention": {
+        "setup": "Stick about two feet behind; padded end just above hands from down-the-line view.",
+        "cue": "Start slowly and swing under the barrier.",
+        "prerequisites": "Setup, alignment and backswing suitable; neutralize open face before this task.",
+        "limits": "No grip-adjustment procedure, dose or speed progression specified."
+      },
+      "applicability": [
+        "Actual steep/over-the-top pattern merits this task after upstream checks.",
+        "Source contraindication: do not use before addressing open clubface.",
+        "Different from a stick placed beneath shaft to prevent dropping under plane."
+      ],
+      "unknowns": [
+        "Exact 3D barrier placement and safe clearance not dimensioned.",
+        "Original shot count, ball-flight results and aid-free transfer."
+      ],
+      "observed_result": "Illustrative instructor motion only; no assessed student improvement or linked instrument result.",
+      "selection": {
+        "coaching_focus": "One under-barrier rehearsal",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus preference; retain source sequencing and avoid simultaneous competing thoughts.",
+        "reassess": "Proposed app check: verify face/start line and normal aid-free delivery; stop stacking shallowing cues if right miss worsens."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "source_prop_instruction",
+      "value": "About two feet behind, end just above hands",
+      "evidence_ids": [
+        "E02"
+      ],
+      "limits": [
+        "Written source setup, not calibrated 3D position."
+      ]
+    },
+    {
+      "kind": "background_instrument_values",
+      "value": "Down-the-line panel 209.4 / 195.8 / 94.3 / 5320; front-on panel 212.1 / 193.8 / 92.1 / 4920",
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03"
+      ],
+      "limits": [
+        "Different edited view panels; readings already present before swings. Units and shot association not established. Not used as before/after evidence."
+      ]
+    }
+  ],
+  "source_ambiguities": [],
+  "cross_source_links": [
+    {
+      "source_case": "DcY33a3Ck73-C02",
+      "current_case": "DcwID0KRE5Q-C01",
+      "relation": "Opposite barrier constraint for different delivery",
+      "explanation": "Marius drill places stick below address shaft and aims to prevent excessive drop underneath. This tutorial puts end above hands and asks for an under-stick swing. Similar-looking props cannot be retrieved without placement, direction and finding."
+    },
+    {
+      "source_case": "DVI2JDpDC5Z-C01",
+      "current_case": "DcwID0KRE5Q-C01",
+      "relation": "Prerequisites before downswing task",
+      "explanation": "Ryan review selects backswing first. This tutorial explicitly assumes setup/alignment/backswing are already suitable and adds an open-face exclusion."
+    }
+  ],
+  "within_source_distinctions": [],
+  "annotation_opportunities": [
+    "Show which side of barrier the club should pass.",
+    "Keep written open-face prerequisite beside clip.",
+    "Label reused motion and background readings as unassociated."
+  ],
+  "excluded_material": [
+    "Isolated ASR fragment as coaching.",
+    "Opening topic title treated as instructor diagnosis.",
+    "Repeated edited swings counted as repeated successful trials.",
+    "Written solicitation."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Source extraction preserves evidence and conditions; a source match and response check are still needed for another golfer."
+  },
+  "asset_sha256": {
+    "video": "f526f51af4481165f131af9db9cf5fc547c4fbd58f467977b12ebd099cdc0073",
+    "raw_captions": "3c902a8743e112a24e8e8b57fd342e21b242e3124b52cdd22ee2dc26d0ad8be1",
+    "transcript": "3c902a8743e112a24e8e8b57fd342e21b242e3124b52cdd22ee2dc26d0ad8be1"
+  }
+}

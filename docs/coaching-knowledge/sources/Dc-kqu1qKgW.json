@@ -1,0 +1,521 @@
+{
+  "version": 1,
+  "source_id": "Dc-kqu1qKgW",
+  "url": "https://www.instagram.com/p/Dc-kqu1qKgW/",
+  "title": "Forearm rotation: takeaway timing and trail-arm structure",
+  "publisher": "Alex Clapp Golf Coach / alexclappgolf",
+  "published": "20260907",
+  "duration_seconds": 91.558005,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "coach": "Alex Clapp",
+    "student": "Unnamed in this source"
+  },
+  "context": {
+    "format": "Edited live lesson with manual guidance and contrast demonstrations",
+    "handedness": "Right-handed student",
+    "club": "Iron; number unknown",
+    "body_context": "No physical screen or measured mobility",
+    "style": "Tactile rehearsal plus explanation of timing and geometry"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/Dc-kqu1qKgW/Dc-kqu1qKgW.mp4",
+    "raw_captions": ".videos/coaching-knowledge/Dc-kqu1qKgW/asr-raw.json",
+    "transcript": ".videos/coaching-knowledge/Dc-kqu1qKgW/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/Dc-kqu1qKgW/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/Dc-kqu1qKgW/Dc-kqu1qKgW.info.json",
+    "overview": ".videos/coaching-knowledge/Dc-kqu1qKgW/overview/index.json",
+    "detail": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 76,
+    "transcript_kind": "Local MLX Whisper large-v3-turbo ASR; embedded captions compared at inspected frames",
+    "audio_independently_transcribed": true,
+    "audio_transcription_note": "Locally generated speech transcript independent of embedded captions; no independent human audio certification.",
+    "visual_review_method": "19 overview and 56 detail frames across seven portrait contact sheets, all inspected. Covers hand placement, guided repetitions, early/later rotation contrast and both upright geometry examples. Sampled review, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/Dc-kqu1qKgW/overview/index.json",
+      ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/index.json"
+    ],
+    "limitations": [
+      "Edited lesson starts mid-instruction.",
+      "No struck shot, instrumented baseline or outcome.",
+      "Some hand/body relationships occluded by coach; do not infer exact angles.",
+      "ASR tail contains implausible repetitions; preserved raw and excluded from claims."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        16
+      ],
+      "source_url": "https://www.instagram.com/p/Dc-kqu1qKgW/",
+      "attribution": "Alex Clapp coaching an unnamed student; speaker roles follow visible instruction and responses",
+      "kind": "guided_student_rehearsal_and_coach_explanation",
+      "session": "Forearm rotation timing and trail-arm structure",
+      "summary": "After an opening partial demonstration, coach places the student's left hand/fingers behind the right arm just above the elbow. Student holds club in right hand and moves to an established takeaway position. Contact is for the upcoming feel, not a quantified force test.",
+      "frames": [
+        {
+          "time_seconds": 4,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00004.000.jpg",
+          "observation": "Opening instructor demonstration with student watching."
+        },
+        {
+          "time_seconds": 6,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00006.000.jpg",
+          "observation": "Left hand positioned across body toward right upper arm."
+        },
+        {
+          "time_seconds": 8,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00008.000.jpg",
+          "observation": "Coach adjusts fingers near right arm above elbow."
+        },
+        {
+          "time_seconds": 13,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00013.000.jpg",
+          "observation": "Club held in right hand; coach indicates takeaway."
+        },
+        {
+          "time_seconds": 16,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00016.000.jpg",
+          "observation": "Takeaway position and left-hand upper-arm contact."
+        }
+      ],
+      "limitations": [
+        "Short lesson excerpt with guided positions; no measured normal-swing baseline or struck-shot outcome."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        16,
+        35.5
+      ],
+      "source_url": "https://www.instagram.com/p/Dc-kqu1qKgW/",
+      "attribution": "Alex Clapp coaching an unnamed student; speaker roles follow visible instruction and responses",
+      "kind": "guided_student_rehearsal_and_coach_explanation",
+      "session": "Forearm rotation timing and trail-arm structure",
+      "summary": "From takeaway, student keeps pressure/contact with left hand while right forearm rotates and the arm works upward/back with turn. Coach manually guides the motion, asks student to feel stretching in the demonstrated direction, then repeats and approves the rehearsal.",
+      "frames": [
+        {
+          "time_seconds": 18,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00018.000.jpg",
+          "observation": "Coach touches feedback hand/upper arm while student holds club in right hand."
+        },
+        {
+          "time_seconds": 21,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00021.000.jpg",
+          "observation": "Coach guides right forearm/hand upward."
+        },
+        {
+          "time_seconds": 24,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00024.000.jpg",
+          "observation": "Extended rehearsal toward top with left hand still at right arm."
+        },
+        {
+          "time_seconds": 28,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00028.000.jpg",
+          "observation": "Student resets to takeaway."
+        },
+        {
+          "time_seconds": 32,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00032.000.jpg",
+          "observation": "Second guided rotation rehearsal."
+        },
+        {
+          "time_seconds": 34,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00034.000.jpg",
+          "observation": "Student near top; coach says that is it."
+        }
+      ],
+      "limitations": [
+        "Pressure and stretch are tactile coaching feels; magnitude and exact anatomical rotation axes are not measured. Approval applies to rehearsal, not ball striking."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        35.5,
+        57
+      ],
+      "source_url": "https://www.instagram.com/p/Dc-kqu1qKgW/",
+      "attribution": "Alex Clapp coaching an unnamed student; speaker roles follow visible instruction and responses",
+      "kind": "guided_student_rehearsal_and_coach_explanation",
+      "session": "Forearm rotation timing and trail-arm structure",
+      "summary": "Coach says golfers may omit forearm rotation or actively add it too early, which he links to an inside takeaway. He identifies early inside rotation as this student's tendency/history and demonstrates it. The demonstration is an illustration of his diagnosis, not an independently observed natural swing.",
+      "frames": [
+        {
+          "time_seconds": 43,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00043.000.jpg",
+          "observation": "Instructor begins exaggerated early rotation example."
+        },
+        {
+          "time_seconds": 46,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00046.000.jpg",
+          "observation": "Embedded caption connects timing to inside takeaway."
+        },
+        {
+          "time_seconds": 47,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00047.000.jpg",
+          "observation": "Caption identifies student tendency."
+        },
+        {
+          "time_seconds": 53,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00053.000.jpg",
+          "observation": "Instructor contrasts top arm position."
+        },
+        {
+          "time_seconds": 56,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00056.000.jpg",
+          "observation": "Staged club-inside example with shaft across body."
+        }
+      ],
+      "limitations": [
+        "No normal swing capture showing original fault. Do not infer every inside takeaway has this cause. Exact amount and timing threshold absent."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        57,
+        66.5
+      ],
+      "source_url": "https://www.instagram.com/p/Dc-kqu1qKgW/",
+      "attribution": "Alex Clapp coaching an unnamed student; speaker roles follow visible instruction and responses",
+      "kind": "guided_student_rehearsal_and_coach_explanation",
+      "session": "Forearm rotation timing and trail-arm structure",
+      "summary": "Preferred sequence is the takeaway first, then blend forearm rotation with body turn. Coach demonstrates a transition and finish while saying he can then shift in and post. The excerpt offers no separate lower-body diagnosis or detailed weight-shift drill.",
+      "frames": [
+        {
+          "time_seconds": 58,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00058.000.jpg",
+          "observation": "Takeaway demonstrated before added rotation."
+        },
+        {
+          "time_seconds": 59,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00059.000.jpg",
+          "observation": "Club at lower takeaway checkpoint."
+        },
+        {
+          "time_seconds": 61,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00061.000.jpg",
+          "observation": "Forearm rotation blended upward with turn."
+        },
+        {
+          "time_seconds": 63,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00063.000.jpg",
+          "observation": "Top reached in coach demonstration."
+        },
+        {
+          "time_seconds": 64,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00064.000.jpg",
+          "observation": "Transition gesture while coach says shift in."
+        },
+        {
+          "time_seconds": 65,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/overview/frame-00065.000.jpg",
+          "observation": "Finish/post demonstration."
+        }
+      ],
+      "limitations": [
+        "Shift and post are downstream explanation, not a second prescribed focus. No pressure or kinematic measurement."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        66.5,
+        91.558005
+      ],
+      "source_url": "https://www.instagram.com/p/Dc-kqu1qKgW/",
+      "attribution": "Alex Clapp coaching an unnamed student; speaker roles follow visible instruction and responses",
+      "kind": "guided_student_rehearsal_and_coach_explanation",
+      "session": "Forearm rotation timing and trail-arm structure",
+      "summary": "Coach uses an upright demonstration to compare structures. Student first turns with club upright and then adds forward bend; coach says this resembles his usual position without added forearm rotation. They reset, rotate club to roughly parallel with floor while upright, turn, then bend into golf posture. Coach calls this a better club position and contrasts it with right elbow pulling behind and forearm orientation keeping club closed.",
+      "frames": [
+        {
+          "time_seconds": 68,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00068.000.jpg",
+          "observation": "Upright student holds shaft near vertical before turn."
+        },
+        {
+          "time_seconds": 71,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00071.000.jpg",
+          "observation": "After turn and bend, coach labels position usual tendency."
+        },
+        {
+          "time_seconds": 74,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00074.000.jpg",
+          "observation": "Held first comparison position."
+        },
+        {
+          "time_seconds": 78,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00078.000.jpg",
+          "observation": "Reset upright club position."
+        },
+        {
+          "time_seconds": 79,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00079.000.jpg",
+          "observation": "Club rotated toward horizontal before torso turn."
+        },
+        {
+          "time_seconds": 81,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00081.000.jpg",
+          "observation": "Upright torso turn with changed club orientation."
+        },
+        {
+          "time_seconds": 83,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00083.000.jpg",
+          "observation": "Forward bend added to complete second comparison."
+        },
+        {
+          "time_seconds": 86,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00086.000.jpg",
+          "observation": "Coach points to right elbow relationship."
+        },
+        {
+          "time_seconds": 89,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00089.000.jpg",
+          "observation": "Contrasting forearm/club position."
+        },
+        {
+          "time_seconds": 91,
+          "path": ".videos/coaching-knowledge/Dc-kqu1qKgW/detail/frame-00091.000.jpg",
+          "observation": "Final embedded caption says closed."
+        }
+      ],
+      "limitations": [
+        "Body-relative hand and shaft geometry shown through guided rehearsal; no calibrated elbow, wrist or face angle. Body occlusion limits some views. Final ASR tail repetitions are excluded from coaching interpretation."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "Dc-kqu1qKgW-C01",
+      "title": "Use upper-arm contact to feel later forearm rotation after the takeaway",
+      "case_type": "coach_assessed_student_guided_rehearsal",
+      "tags": {
+        "phase": [
+          "takeaway",
+          "backswing",
+          "top",
+          "transition"
+        ],
+        "body": [
+          "forearms",
+          "trail elbow",
+          "wrists",
+          "torso"
+        ],
+        "outcome": [
+          "club position",
+          "inside takeaway",
+          "clubface orientation"
+        ],
+        "concept": [
+          "rotation timing",
+          "guided rehearsal",
+          "phase-dependent instruction"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E04"
+      ],
+      "coaching_finding": "Coach identifies early forearm rotation pulling takeaway inside, while also explaining that insufficient rotation later leaves the student in an unwanted top structure with right elbow behind and club closed. These are phase-specific observations from coach testimony.",
+      "coach_reasoning": "Get the initial takeaway first, then blend forearm rotation with torso turn. Removing rotation throughout the swing loses the later arm/club organization the coach wants.",
+      "intervention": {
+        "drill": "Hold club in right hand; place a couple of left fingers behind right arm just above elbow. Reach takeaway, retain light feedback contact and rehearse the demonstrated forearm movement with turn.",
+        "cue": "Takeaway first, then blend rotation with turn.",
+        "source_feel": "Keep contact/pressure and feel stretching in the demonstrated direction.",
+        "limits": "Do not translate tactile pressure into a force target or forcibly clamp the elbow."
+      },
+      "applicability": [
+        "Coach-established correspondence to this timing/arm-structure pattern.",
+        "Check initial takeaway separately from later rotation; do not apply a generic more-roll cue from address."
+      ],
+      "unknowns": [
+        "Original diagnosis footage, ball-flight complaint, measured angles and physical constraints.",
+        "Whether guided rehearsal transfers to normal speed or improves strike/dispersion.",
+        "Exact pressure, amount of rotation and definition of a correct takeaway for another golfer."
+      ],
+      "observed_result": "Student performs guided rehearsals and coach approves selected positions. No ball is struck in the extracted lesson.",
+      "selection": {
+        "coaching_focus": "Blend forearm rotation at the intended backswing phase",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus constraint; choose one of the source teaching variants rather than stack both.",
+        "reassess": "Proposed app check: compare takeaway and top after removing manual/left-hand assistance, then inspect actual strike and flight. This transfer test is not shown in the clip."
+      },
+      "alternative_case_ids": [
+        "Dc-kqu1qKgW-C02"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "Dc-kqu1qKgW-C02",
+      "title": "Use upright rotate\u2013turn\u2013bend comparison to explain top structure",
+      "case_type": "coach_assessed_student_guided_rehearsal",
+      "tags": {
+        "phase": [
+          "takeaway",
+          "backswing",
+          "top",
+          "transition"
+        ],
+        "body": [
+          "forearms",
+          "trail elbow",
+          "wrists",
+          "torso"
+        ],
+        "outcome": [
+          "club position",
+          "inside takeaway",
+          "clubface orientation"
+        ],
+        "concept": [
+          "rotation timing",
+          "guided rehearsal",
+          "phase-dependent instruction"
+        ]
+      },
+      "evidence_ids": [
+        "E03",
+        "E04",
+        "E05"
+      ],
+      "coaching_finding": "Coach identifies early forearm rotation pulling takeaway inside, while also explaining that insufficient rotation later leaves the student in an unwanted top structure with right elbow behind and club closed. These are phase-specific observations from coach testimony.",
+      "coach_reasoning": "Get the initial takeaway first, then blend forearm rotation with torso turn. Removing rotation throughout the swing loses the later arm/club organization the coach wants.",
+      "intervention": {
+        "drill": "Compare turning with upright club then bending into posture against rotating club roughly horizontal while upright, adding torso turn, then bending.",
+        "cue": "Set the arm/club orientation before completing the comparison.",
+        "teaching_purpose": "Isolate the contribution of forearm rotation to the final club/arm relationship.",
+        "limits": "This is a staged explanatory sequence; it is not the required chronological sequence of a normal backswing."
+      },
+      "applicability": [
+        "Coach-established correspondence to this timing/arm-structure pattern.",
+        "Check initial takeaway separately from later rotation; do not apply a generic more-roll cue from address."
+      ],
+      "unknowns": [
+        "Original diagnosis footage, ball-flight complaint, measured angles and physical constraints.",
+        "Whether guided rehearsal transfers to normal speed or improves strike/dispersion.",
+        "Exact pressure, amount of rotation and definition of a correct takeaway for another golfer."
+      ],
+      "observed_result": "Student performs guided rehearsals and coach approves selected positions. No ball is struck in the extracted lesson.",
+      "selection": {
+        "coaching_focus": "Blend forearm rotation at the intended backswing phase",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus constraint; choose one of the source teaching variants rather than stack both.",
+        "reassess": "Proposed app check: compare takeaway and top after removing manual/left-hand assistance, then inspect actual strike and flight. This transfer test is not shown in the clip."
+      },
+      "alternative_case_ids": [
+        "Dc-kqu1qKgW-C01"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "qualitative_drill_geometry",
+      "evidence_ids": [
+        "E05"
+      ],
+      "value": "Club parallel to floor during upright explanation",
+      "limits": [
+        "No measured angle or normal-swing checkpoint."
+      ]
+    },
+    {
+      "kind": "unmeasured_tactile_cue",
+      "evidence_ids": [
+        "E01",
+        "E02"
+      ],
+      "value": "A couple of fingers above elbow with maintained pressure",
+      "limits": [
+        "No force magnitude."
+      ]
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        0,
+        11
+      ],
+      "issue": "Opening pronouns/hand-placement phrases are disfluent. Inspected frames establish left hand contacting right upper arm and club held right-handed; exact finger placement remains qualitative."
+    },
+    {
+      "span_seconds": [
+        91.0,
+        91.558005
+      ],
+      "issue": "ASR repeats thats where youre going and thank you many times in fractions of a second. This is treated as transcription artefact, not source speech evidence. Raw output retained; final closed caption is visually supported."
+    },
+    {
+      "span_seconds": [
+        35.5,
+        91.0
+      ],
+      "issue": "The post description makes broader claims about shallowing, width/depth and wrist conditions. Video supports coach reasoning and guided positions, not measured proof of all advertised benefits."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "DdNBm5SKGvb-C01",
+      "current_case": "Dc-kqu1qKgW-C02",
+      "relation": "Similar teaching decomposition with distinct setup and diagnosis",
+      "explanation": "Faldo uses a low wrist preset then turn; Clapp uses an upright arm/club rotation\u2013turn\u2013bend comparison for an identified student pattern. Both split a movement for teaching, but the geometry and eligibility cannot be assumed identical."
+    },
+    {
+      "source_case": "HQNKUS_BSGY-C01",
+      "current_case": "Dc-kqu1qKgW-C01",
+      "relation": "Related inside takeaway finding with different mechanism and intervention",
+      "explanation": "Mayson\u2019s student lesson prioritizes width and a shorter backswing. Clapp emphasizes timing of forearm rotation. An inside takeaway label alone does not choose between these cases."
+    },
+    {
+      "source_case": "vGGIn2IAW-Q-C01",
+      "current_case": "Dc-kqu1qKgW-C02",
+      "relation": "Rehearsal constraints require normal-swing transfer check",
+      "explanation": "Ruffels distinguishes constrained aid appearance from normal motion. Clapp\u2019s upright construction likewise should remain an explanatory rehearsal rather than a normal-swing template."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "Dc-kqu1qKgW-C01",
+        "Dc-kqu1qKgW-C02"
+      ],
+      "relationship": "Two teaching variants for one timing/structure focus. First uses tactile feedback in posture; second decomposes geometry while upright. Early excessive rotation and missing later rotation must remain phase-specific."
+    }
+  ],
+  "annotation_opportunities": [
+    "Pair early-takeaway and later-backswing sequences when attaching the word rotation.",
+    "Label coach simulation, manually guided student rehearsal and independent student attempt separately.",
+    "Mark the feedback hand and approximate upper-arm contact area, without estimating pressure.",
+    "Present the two upright comparison sequences side by side with posture stage labels."
+  ],
+  "excluded_material": [
+    "Automatic more-forearm-roll recommendation from an inside takeaway alone.",
+    "Treating instructor simulated fault as his natural swing.",
+    "Measured shallowing, clubface correction or ball-flight improvement.",
+    "Treating shift/post demonstration as a separate lower-body diagnosis.",
+    "ASR end-of-clip repeated phrases."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Coach reasoning and guided position feedback are preserved; original swing and ball-flight outcomes absent."
+  },
+  "asset_sha256": {
+    "video": "5ac8bfb5b71318b4cfdc8eb5da606accfc5fd06bc0c7ce881f30c2a515f6abdb",
+    "raw_captions": "bab31d8b7cacf3a90d030a4a930134fbb9276942f703d419a9fe162867ed42ae",
+    "transcript": "1c196377364b029269559591d08f1f413ab190091c5872fdef2837b415e2314a"
+  }
+}

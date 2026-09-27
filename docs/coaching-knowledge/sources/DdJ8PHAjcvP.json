@@ -1,0 +1,350 @@
+{
+  "version": 1,
+  "source_id": "DdJ8PHAjcvP",
+  "url": "https://www.instagram.com/p/DdJ8PHAjcvP/",
+  "title": "Brad: grip and wrist conditions before setup compensation",
+  "publisher": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+  "published": "20260911",
+  "duration_seconds": 76.650998,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "coach": "Dom Caminiti | Golf Swing Reviews",
+    "student": "Brad"
+  },
+  "context": {
+    "format": "Student review with wrist-aid product image; no aid fitting or student retest",
+    "handedness": "Right-handed",
+    "body_context": "No physical screening supplied"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/DdJ8PHAjcvP/DdJ8PHAjcvP.mp4",
+    "raw_captions": ".videos/coaching-knowledge/DdJ8PHAjcvP/asr-raw.json",
+    "transcript": ".videos/coaching-knowledge/DdJ8PHAjcvP/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/DdJ8PHAjcvP/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/DdJ8PHAjcvP/DdJ8PHAjcvP.info.json",
+    "overview": ".videos/coaching-knowledge/DdJ8PHAjcvP/overview/index.json",
+    "detail": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 15,
+    "transcript_kind": "Local MLX Whisper ASR with visual inspection",
+    "audio_independently_transcribed": true,
+    "visual_review_method": "8 overview and 24 detail frames across three portrait sheets inspected, including clubface annotations, product illustration and setup correction.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/DdJ8PHAjcvP/overview/index.json",
+      ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/index.json"
+    ],
+    "limitations": [
+      "Sampled frames, not continuous playback.",
+      "Coach reasoning is attributed, not independently validated."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        30
+      ],
+      "source_url": "https://www.instagram.com/p/DdJ8PHAjcvP/",
+      "attribution": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+      "kind": "annotated_coaching_review",
+      "session": "Brad: grip and wrist conditions before setup compensation",
+      "summary": "Coach identifies cupped lead wrist, club toe toward ground and head left of shaft in this source view, interpreting face as open. Prefers a slight closed error to open in this case; this is not a universal face rule.",
+      "frames": [
+        {
+          "time_seconds": 6,
+          "path": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/frame-00006.000.jpg",
+          "observation": "Original top."
+        },
+        {
+          "time_seconds": 10,
+          "path": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/frame-00010.000.jpg",
+          "observation": "Arrow at lead-wrist region."
+        },
+        {
+          "time_seconds": 14,
+          "path": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/frame-00014.000.jpg",
+          "observation": "Arrow at toe/head side of shaft."
+        },
+        {
+          "time_seconds": 18,
+          "path": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/frame-00018.000.jpg",
+          "observation": "Illustrative face line."
+        },
+        {
+          "time_seconds": 22,
+          "path": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/frame-00022.000.jpg",
+          "observation": "Top reference."
+        },
+        {
+          "time_seconds": 27,
+          "path": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/frame-00027.000.jpg",
+          "observation": "Alternative face orientation illustration."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        30,
+        53
+      ],
+      "source_url": "https://www.instagram.com/p/DdJ8PHAjcvP/",
+      "attribution": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+      "kind": "annotated_coaching_review",
+      "session": "Brad: grip and wrist conditions before setup compensation",
+      "summary": "Coach recommends wrist trainer together with grip trainer, predicting flatter lead wrist and face closer to lead arm. Source shows a GreenHaven-branded yellow shaft-mounted wrist-hinge aid product image; it does not show installation, a separately identified grip trainer, or Brad using either. Desired top lines are drawn on original swing.",
+      "frames": [
+        {
+          "time_seconds": 33,
+          "path": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/frame-00033.000.jpg",
+          "observation": "Product image names GreenHaven golf wrist-hinge training aid."
+        },
+        {
+          "time_seconds": 35,
+          "path": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/frame-00035.000.jpg",
+          "observation": "Arrow highlights aid contact/hinge area in product image."
+        },
+        {
+          "time_seconds": 37,
+          "path": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/frame-00037.000.jpg",
+          "observation": "Same product illustration."
+        },
+        {
+          "time_seconds": 42,
+          "path": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/frame-00042.000.jpg",
+          "observation": "Original setup replay."
+        },
+        {
+          "time_seconds": 48,
+          "path": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/frame-00048.000.jpg",
+          "observation": "Desired face/arm lines at original top."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        53,
+        70
+      ],
+      "source_url": "https://www.instagram.com/p/DdJ8PHAjcvP/",
+      "attribution": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+      "kind": "annotated_coaching_review",
+      "session": "Brad: grip and wrist conditions before setup compensation",
+      "summary": "Alongside grip/wrist work, coach asks for softer trail arm and slightly more closed shoulders. He explains open-face golfers may alter setup in anticipation. This general causal account is not independently demonstrated in Brad.",
+      "frames": [
+        {
+          "time_seconds": 56,
+          "path": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/frame-00056.000.jpg",
+          "observation": "Original setup."
+        },
+        {
+          "time_seconds": 59,
+          "path": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/frame-00059.000.jpg",
+          "observation": "Trail-arm bend/shoulder direction illustration."
+        },
+        {
+          "time_seconds": 62,
+          "path": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/frame-00062.000.jpg",
+          "observation": "Arrow toward clubhead."
+        },
+        {
+          "time_seconds": 65,
+          "path": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/frame-00065.000.jpg",
+          "observation": "Setup replay."
+        },
+        {
+          "time_seconds": 69,
+          "path": ".videos/coaching-knowledge/DdJ8PHAjcvP/detail/frame-00069.000.jpg",
+          "observation": "Setup before closing replay."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "DdJ8PHAjcvP-C01",
+      "title": "Address open face with grip and lead-wrist feedback",
+      "case_type": "individual_video_review_with_no_verified_student_retest",
+      "tags": {
+        "phase": [
+          "grip",
+          "backswing",
+          "P4"
+        ],
+        "body": [
+          "lead wrist",
+          "clubface",
+          "hands"
+        ],
+        "outcome": [
+          "face control",
+          "training aid"
+        ],
+        "concept": [
+          "face control",
+          "training aid"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02"
+      ],
+      "coaching_finding": "Coach judges top face open with cupped wrist in current grip context.",
+      "coach_reasoning": "He expects grip plus wrist feedback to bring face nearer lead-arm alignment and reduce difficult late compensation.",
+      "intervention": {
+        "action": "Use grip and wrist feedback to explore flatter lead wrist and more neutral face.",
+        "source_aids": "Wrist-hinge trainer shown; grip trainer recommended verbally.",
+        "limits": "No fitting instructions, exact grip change or practice dose supplied. Product is source example, not independently evaluated endorsement."
+      },
+      "applicability": [
+        "Verify clubface together with grip and wrist, not wrist extension alone.",
+        "Ensure actual problem is open face under suitable viewing conditions."
+      ],
+      "unknowns": [
+        "Exact grip pattern, impact face and ball flight.",
+        "Aid effectiveness, fitting and student response."
+      ],
+      "observed_result": "Desired positions and product image only; no Brad after-aid swing or outcome.",
+      "selection": {
+        "coaching_focus": "One face-control priority",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus preference; retain source sequencing and avoid simultaneous competing thoughts.",
+        "reassess": "Proposed app check: suitable grip/top view and real start line, then aid-free response."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "DdJ8PHAjcvP-C02",
+      "title": "Reassess trail-arm tension and shoulder alignment with face work",
+      "case_type": "individual_video_review_with_no_verified_student_retest",
+      "tags": {
+        "phase": [
+          "setup"
+        ],
+        "body": [
+          "trail arm",
+          "shoulders"
+        ],
+        "outcome": [
+          "setup compensation",
+          "alignment"
+        ],
+        "concept": [
+          "setup compensation",
+          "alignment"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E03"
+      ],
+      "coaching_finding": "Coach selects softer trail arm and slightly closed shoulders.",
+      "coach_reasoning": "He attributes setup adjustments to anticipation of open face, making face work part of context.",
+      "intervention": {
+        "cue": "Soften trail arm and allow shoulders to close slightly.",
+        "sequence": "Recheck with grip/wrist work rather than layering unrelated alignment fixes."
+      },
+      "applicability": [
+        "Actual setup supports this direction of change.",
+        "Do not prescribe closed shoulders to every golfer with an open face."
+      ],
+      "unknowns": [
+        "True target line and measured shoulder alignment.",
+        "Whether face change alone removes setup adjustment."
+      ],
+      "observed_result": "No adjusted student setup or shot shown.",
+      "selection": {
+        "coaching_focus": "One supporting setup check",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus preference; retain source sequencing and avoid simultaneous competing thoughts.",
+        "reassess": "Proposed app check: reassess alignment after face intervention and retain only necessary change."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "2d_source_references",
+      "value": "Clubhead side of shaft, face-to-arm alignment and trail-arm/shoulder lines",
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03"
+      ],
+      "limits": [
+        "Camera-dependent illustrative judgments, not measured face or shoulder angles."
+      ]
+    },
+    {
+      "kind": "source_product_image",
+      "value": "GreenHaven wrist-hinge training aid",
+      "evidence_ids": [
+        "E02"
+      ],
+      "limits": [
+        "Shown retail image does not validate effectiveness or installation; price/reviews excluded."
+      ]
+    }
+  ],
+  "source_ambiguities": [],
+  "cross_source_links": [
+    {
+      "source_case": "DcqwwGio81y-C01",
+      "current_case": "DdJ8PHAjcvP-C01",
+      "relation": "Wrist extension depends on grip and face",
+      "explanation": "Cameron's wrist extension is accepted with strong grip and face matching arm. Brad's open face is selected for change. A cupped-wrist label cannot substitute for the grip/face relationship."
+    },
+    {
+      "source_case": "DcwID0KRE5Q-C01",
+      "current_case": "DdJ8PHAjcvP-C01",
+      "relation": "Face check before shallowing",
+      "explanation": "Moore's barrier tutorial excludes unresolved open face. Brad illustrates a face-first priority, but this source does not automatically establish that he needs a subsequent shallowing drill."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "DdJ8PHAjcvP-C01",
+        "DdJ8PHAjcvP-C02"
+      ],
+      "relationship": "Primary face priority with supporting setup reassessment. Avoid presenting aid, grip, wrist, arm and shoulder changes as five simultaneous thoughts."
+    }
+  ],
+  "annotation_opportunities": [
+    "Label desired face line separately from actual clubface.",
+    "Attach grip context to wrist finding.",
+    "Mark retail image as illustration, not student demonstration."
+  ],
+  "excluded_material": [
+    "Retail price and ratings as coaching evidence.",
+    "Guaranteed effect of trainer.",
+    "Universal flatter-wrist prescription.",
+    "Review solicitation after 70 seconds."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Source extraction preserves evidence and conditions; a source match and response check are still needed for another golfer."
+  },
+  "asset_sha256": {
+    "video": "0b990e090f98beeda0cdbc17fcd049cf07680cd48c73473ec0ff975e1b22e099",
+    "raw_captions": "ee1b57b8ebf4c3d05725dc52081253d61a69b4c2c0459780ec46f6d5c16d5bcd",
+    "transcript": "2d501debd918ab1bc743031706b99289ed15b635435a13a023b70ddf7c5a6836"
+  }
+}

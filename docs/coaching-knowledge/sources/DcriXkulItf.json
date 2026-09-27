@@ -1,0 +1,326 @@
+{
+  "version": 1,
+  "source_id": "DcriXkulItf",
+  "url": "https://www.instagram.com/p/DcriXkulItf/",
+  "title": "Stay patient: later-power feel and diagnostic-system promotion",
+  "publisher": "Trace Martin / trace_teaches_golf",
+  "published": "20260830",
+  "duration_seconds": 42.006009,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "uploader": "Trace Martin",
+    "embedded_speaker": "Unnamed in supplied post; identity not inferred from appearance"
+  },
+  "context": {
+    "format": "Short patience tip followed by course promotion",
+    "handedness": "Right-handed uploader swing",
+    "club": "Iron in opening; embedded speaker gestures without club",
+    "body_context": "No physical screen",
+    "style": "Simple feel, then diagnostic-system marketing"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/DcriXkulItf/DcriXkulItf.mp4",
+    "raw_captions": ".videos/coaching-knowledge/DcriXkulItf/asr-raw.json",
+    "transcript": ".videos/coaching-knowledge/DcriXkulItf/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/DcriXkulItf/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/DcriXkulItf/DcriXkulItf.info.json",
+    "opening_asr": ".videos/coaching-knowledge/DcriXkulItf/opening-asr/asr-raw.json",
+    "opening_audio": ".videos/coaching-knowledge/DcriXkulItf/opening-0-19.wav",
+    "opening_asr_provenance": ".videos/coaching-knowledge/DcriXkulItf/opening-asr/transcript-provenance.json",
+    "full_file_asr_transcript": ".videos/coaching-knowledge/DcriXkulItf/full-file-asr-transcript.json",
+    "overview": ".videos/coaching-knowledge/DcriXkulItf/overview/index.json",
+    "detail": ".videos/coaching-knowledge/DcriXkulItf/detail/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 9,
+    "transcript_kind": "Composite local ASR: recovered opening plus full-file promotional speech",
+    "audio_independently_transcribed": true,
+    "audio_transcription_note": "Initial full-file run skipped opening. A0\u201319s audio pass recovered coaching, checked against visual captions. Boundary timing remains approximate.",
+    "visual_review_method": "15 overview and 28 detail frames across five portrait sheets, all inspected. Includes opening swing, speaker gestures/captions and promoted course outline. Sampled review, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/DcriXkulItf/overview/index.json",
+      ".videos/coaching-knowledge/DcriXkulItf/detail/index.json"
+    ],
+    "limitations": [
+      "Embedded captions and speech may be offset; spans include contextual overlap.",
+      "Promotional course headings do not supply full instructional conditions.",
+      "No exact physical timing or result measurement."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        8.5
+      ],
+      "source_url": "https://www.instagram.com/p/DcriXkulItf/",
+      "attribution": "Trace Martin opening label; unnamed speaker in embedded public-event clip",
+      "kind": "reposted_tip_and_creator_promotion",
+      "session": "Patient transition / later-power feel",
+      "summary": "Opening uploader swing is labelled Stay Patient. Embedded speaker describes the urge to hit the ball and warns that trying to hit from top of swing loses the good movement. He gestures near head and with arms to illustrate the intention, but no actual fault swing is assessed.",
+      "frames": [
+        {
+          "time_seconds": 1,
+          "path": ".videos/coaching-knowledge/DcriXkulItf/detail/frame-00001.000.jpg",
+          "observation": "Uploader delivery with Stay Patient title."
+        },
+        {
+          "time_seconds": 2,
+          "path": ".videos/coaching-knowledge/DcriXkulItf/detail/frame-00002.000.jpg",
+          "observation": "Uploader finish."
+        },
+        {
+          "time_seconds": 4,
+          "path": ".videos/coaching-knowledge/DcriXkulItf/detail/frame-00004.000.jpg",
+          "observation": "Embedded speaker gestures near head while describing hit intention."
+        },
+        {
+          "time_seconds": 7,
+          "path": ".videos/coaching-knowledge/DcriXkulItf/detail/frame-00007.000.jpg",
+          "observation": "Caption warns about hit from top of swing."
+        },
+        {
+          "time_seconds": 8,
+          "path": ".videos/coaching-knowledge/DcriXkulItf/detail/frame-00008.000.jpg",
+          "observation": "Hand gesture accompanies losing good movement."
+        }
+      ],
+      "limitations": [
+        "No student baseline, quantified timing or controlled shot comparison."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        8.5,
+        20.8
+      ],
+      "source_url": "https://www.instagram.com/p/DcriXkulItf/",
+      "attribution": "Unnamed embedded speaker; not identified from appearance",
+      "kind": "reposted_tip_and_creator_promotion",
+      "session": "Patient transition / later-power feel",
+      "summary": "Speaker recommends feeling power added as late as possible and patience all the way to the ball. He calls it his go-to pro-am tip and says it seems to help many people. Gestures illustrate the sensation, with no measured force/release curve or demonstration shot by the speaker.",
+      "frames": [
+        {
+          "time_seconds": 10,
+          "path": ".videos/coaching-knowledge/DcriXkulItf/detail/frame-00010.000.jpg",
+          "observation": "Caption says late as possible."
+        },
+        {
+          "time_seconds": 11,
+          "path": ".videos/coaching-knowledge/DcriXkulItf/detail/frame-00011.000.jpg",
+          "observation": "Hand/arm gesture while describing late power."
+        },
+        {
+          "time_seconds": 13,
+          "path": ".videos/coaching-knowledge/DcriXkulItf/detail/frame-00013.000.jpg",
+          "observation": "Caption says patient all the way."
+        },
+        {
+          "time_seconds": 14,
+          "path": ".videos/coaching-knowledge/DcriXkulItf/detail/frame-00014.000.jpg",
+          "observation": "Gesture toward ball direction."
+        },
+        {
+          "time_seconds": 17,
+          "path": ".videos/coaching-knowledge/DcriXkulItf/detail/frame-00017.000.jpg",
+          "observation": "Pro-am tip caption."
+        },
+        {
+          "time_seconds": 19,
+          "path": ".videos/coaching-knowledge/DcriXkulItf/detail/frame-00019.000.jpg",
+          "observation": "Speaker reports it seems to help people."
+        }
+      ],
+      "limitations": [
+        "No student baseline, quantified timing or controlled shot comparison."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        19,
+        42.006009
+      ],
+      "source_url": "https://www.instagram.com/p/DcriXkulItf/",
+      "attribution": "Trace Martin creator narration and displayed course page",
+      "kind": "reposted_tip_and_creator_promotion",
+      "session": "Patient transition / later-power feel",
+      "summary": "Creator says a bad shot can turn into a bad hole/round because golfer lacks a diagnostic system, then promotes a free video series. Course titles and reviews scroll behind him. This post does not teach the advertised diagnostic rules, so the titles and testimonials are not extracted as complete prescriptions or proof of efficacy.",
+      "frames": [
+        {
+          "time_seconds": 22,
+          "path": ".videos/coaching-knowledge/DcriXkulItf/detail/frame-00022.000.jpg",
+          "observation": "Creator over course sales/lesson description."
+        },
+        {
+          "time_seconds": 25,
+          "path": ".videos/coaching-knowledge/DcriXkulItf/detail/frame-00025.000.jpg",
+          "observation": "Course outline visible."
+        },
+        {
+          "time_seconds": 29,
+          "path": ".videos/coaching-knowledge/DcriXkulItf/detail/frame-00029.000.jpg",
+          "observation": "More lesson titles; complete teaching absent."
+        },
+        {
+          "time_seconds": 34,
+          "path": ".videos/coaching-knowledge/DcriXkulItf/detail/frame-00034.000.jpg",
+          "observation": "Testimonials shown behind creator."
+        },
+        {
+          "time_seconds": 41,
+          "path": ".videos/coaching-knowledge/DcriXkulItf/detail/frame-00041.000.jpg",
+          "observation": "End of promotional segment."
+        }
+      ],
+      "limitations": [
+        "No student baseline, quantified timing or controlled shot comparison."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "DcriXkulItf-C01",
+      "title": "Try a patience/later-power feel for a tendency to hit from the top",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "transition",
+          "downswing"
+        ],
+        "body": [
+          "whole swing"
+        ],
+        "outcome": [
+          "timing",
+          "effort control"
+        ],
+        "concept": [
+          "patience",
+          "power timing feel",
+          "pro-am advice"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03"
+      ],
+      "coaching_finding": "Embedded speaker targets an intention to hit hard immediately from the top. No assessed golfer or measurable fault threshold is supplied.",
+      "coach_reasoning": "Speaker says early hit intention disrupts useful movement and suggests a later-power sensation. This is experiential advice without a specified physical mechanism or force measurement.",
+      "intervention": {
+        "cue": "Stay patient; feel the power arrive later.",
+        "scope": "One sensation to test. The source does not instruct consciously holding wrist angle or define actual release timing."
+      },
+      "applicability": [
+        "Golfer has an established tendency to force/hit from the top and responds usefully to a patience feel.",
+        "Compare actual outcomes; do not infer a force-timing defect from a bad shot alone."
+      ],
+      "unknowns": [
+        "Original speaker name and surrounding discussion not verified textually.",
+        "Objective timing, amount/direction of force and physical cause.",
+        "Whether this tip improves the intended golfer's strike or scoring.",
+        "The advertised diagnostic system is not provided in this post."
+      ],
+      "observed_result": "Uploader swing and speaker gestures, plus testimonial statement that tip helps many people. No measured before/after.",
+      "selection": {
+        "coaching_focus": "One patient-transition sensation",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus constraint; proposed eligibility is not a validated test in the source.",
+        "reassess": "Compare strike, flight and perceived effort after the cue. Do not simultaneously add an opposing earlier-hit instruction."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "unquantified_success_testimonial",
+      "evidence_ids": [
+        "E02"
+      ],
+      "value": "Speaker says pro-am tip seems to help many people",
+      "limits": [
+        "No sample size, outcome definition or comparison."
+      ]
+    },
+    {
+      "kind": "excluded_promotional_reviews",
+      "evidence_ids": [
+        "E03"
+      ],
+      "value": null,
+      "reason": "Displayed course testimonials are not measured coaching outcomes."
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        0,
+        20.8
+      ],
+      "issue": "Full-file ASR missed opening speech; separate clip recovers it. Composite keeps original segment text and provenance instead of pretending first pass was complete."
+    },
+    {
+      "span_seconds": [
+        8.5,
+        20.8
+      ],
+      "issue": "Power late is a feel; its relation to wrist release, arm acceleration and force timing is undefined."
+    },
+    {
+      "span_seconds": [
+        19,
+        42.006009
+      ],
+      "issue": "Creator asserts lack of diagnostic system explains bad-shot escalation. This broad promotional claim does not rule out swing, strategy or other contributors."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "DcsppaMOFHi-C01",
+      "current_case": "DcriXkulItf-C01",
+      "relation": "Apparent cue conflict; preserve intended variable and golfer conditions",
+      "explanation": "McGrane compilation advocates an earlier-release feel; this speaker advocates later power and patience. The clips do not establish that power application and release intention mean the same thing. Keep the apparent conflict unresolved and do not present both cues at once."
+    },
+    {
+      "source_case": "BcG-r_13z_I-C01",
+      "current_case": "DcriXkulItf-C01",
+      "relation": "Technical diagnosis may establish whether early arm timing matters",
+      "explanation": "TPI measures Menante\u2019s unusual sequencing before choosing coaching. This patience tip has no comparable measurement, so similarity to early-arms language does not establish applicability."
+    },
+    {
+      "source_case": "vGGIn2IAW-Q-C04",
+      "current_case": "DcriXkulItf-C01",
+      "relation": "Mental cue and target transfer",
+      "explanation": "Ruffels limits technical thoughts during target practice. Patience is a single attention cue, but its outcome still needs a task-specific check."
+    }
+  ],
+  "within_source_distinctions": [],
+  "annotation_opportunities": [
+    "Pair the patience cue with source gestures and explicitly label it a feel.",
+    "Separate actual instructional excerpt from course headings/promotional claims.",
+    "Flag missing ASR coverage when visible captions show untranscribed coaching."
+  ],
+  "excluded_material": [
+    "Unseen course content reconstructed from titles.",
+    "Testimonials treated as measured success.",
+    "A claim that every bad round is caused solely by absence of diagnostic system.",
+    "Universal hold-lag or delay-release prescription."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Brief experiential cue with no assessment or outcome; promoted diagnostic process not supplied."
+  },
+  "asset_sha256": {
+    "video": "95767ec73a8ef578a1c45870f5ccfea03b38c105b7b79af342856b3bf17114ef",
+    "raw_captions": "1d629115cea76e114e614be9230e3c340b9bf83c72e0ea95ec9b2b6ea9cd9040",
+    "transcript": "4195d5e24996b6eac1b42bf4ba3edf922f73372255154019eefe22fca6831608",
+    "opening_asr": "60adf17cb77688782d578c5d70b4ae187c4a4d4742a7086b95e2c15b9a1fd179"
+  }
+}

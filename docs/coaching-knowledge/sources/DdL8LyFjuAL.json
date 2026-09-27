@@ -1,0 +1,432 @@
+{
+  "version": 1,
+  "source_id": "DdL8LyFjuAL",
+  "url": "https://www.instagram.com/p/DdL8LyFjuAL/",
+  "title": "Tyler: preserve backswing and let arms catch up in transition",
+  "publisher": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+  "published": "20260912",
+  "duration_seconds": 98.71,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "coach": "Dom Caminiti | Golf Swing Reviews",
+    "student": "Tyler"
+  },
+  "context": {
+    "format": "Annotated student review; prescribed props are drawings, not performed drills",
+    "handedness": "Right-handed",
+    "body_context": "No physical screening supplied"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/DdL8LyFjuAL/DdL8LyFjuAL.mp4",
+    "raw_captions": ".videos/coaching-knowledge/DdL8LyFjuAL/asr-raw.json",
+    "transcript": ".videos/coaching-knowledge/DdL8LyFjuAL/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/DdL8LyFjuAL/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/DdL8LyFjuAL/DdL8LyFjuAL.info.json",
+    "overview": ".videos/coaching-knowledge/DdL8LyFjuAL/overview/index.json",
+    "detail": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 31,
+    "transcript_kind": "Local MLX Whisper ASR with visual inspection",
+    "audio_independently_transcribed": true,
+    "visual_review_method": "10 overview and 28 detail frames across four portrait sheets inspected, including top strengths, thigh/hand comparison and both illustrated drill options.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/DdL8LyFjuAL/overview/index.json",
+      ".videos/coaching-knowledge/DdL8LyFjuAL/detail/index.json"
+    ],
+    "limitations": [
+      "Sampled frames, not continuous playback.",
+      "Coach reasoning is attributed, not independently validated."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        19
+      ],
+      "source_url": "https://www.instagram.com/p/DdL8LyFjuAL/",
+      "attribution": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+      "kind": "annotated_coaching_review",
+      "session": "Tyler: preserve backswing and let arms catch up in transition",
+      "summary": "Coach compares backswing to Adam Scott and praises plane, halfway-back shaft toward ball, lead arm near shoulder plane, hands over heels and arm structure. Explicitly preserves this backswing later.",
+      "frames": [
+        {
+          "time_seconds": 8,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00008.000.jpg",
+          "observation": "Halfway-back reference."
+        },
+        {
+          "time_seconds": 12,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00012.000.jpg",
+          "observation": "Approaching top."
+        },
+        {
+          "time_seconds": 16,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00016.000.jpg",
+          "observation": "Arm-plane and heel-depth lines."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        19,
+        47
+      ],
+      "source_url": "https://www.instagram.com/p/DdL8LyFjuAL/",
+      "attribution": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+      "kind": "annotated_coaching_review",
+      "session": "Tyler: preserve backswing and let arms catch up in transition",
+      "summary": "Coach identifies lower body firing quickly while hands/arms/club lag behind, producing steep delivery. Compares thighs relatively square with hands still above shoulder, versus desired hands nearer belt height. No angular velocity or 3D sequencing is measured.",
+      "frames": [
+        {
+          "time_seconds": 22,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00022.000.jpg",
+          "observation": "Pelvis/thigh box."
+        },
+        {
+          "time_seconds": 28,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00028.000.jpg",
+          "observation": "Hands still high during transition."
+        },
+        {
+          "time_seconds": 32,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00032.000.jpg",
+          "observation": "Delivery/reference-plane comparison."
+        },
+        {
+          "time_seconds": 35,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00035.000.jpg",
+          "observation": "Thigh reference arrow."
+        },
+        {
+          "time_seconds": 38,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00038.000.jpg",
+          "observation": "Shoulder-height hand arrow."
+        },
+        {
+          "time_seconds": 41,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00041.000.jpg",
+          "observation": "Desired lower hand-height arrow."
+        },
+        {
+          "time_seconds": 45,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00045.000.jpg",
+          "observation": "Belt-height line."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        47,
+        58
+      ],
+      "source_url": "https://www.instagram.com/p/DdL8LyFjuAL/",
+      "attribution": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+      "kind": "annotated_coaching_review",
+      "session": "Tyler: preserve backswing and let arms catch up in transition",
+      "summary": "Coach says continued release/rotation throws club outside hands and predicts frequent pulls or pull-slices. Indoor net footage cannot verify the probable ball flight.",
+      "frames": [
+        {
+          "time_seconds": 49,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00049.000.jpg",
+          "observation": "Original downswing."
+        },
+        {
+          "time_seconds": 53,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00053.000.jpg",
+          "observation": "Through impact."
+        },
+        {
+          "time_seconds": 56,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00056.000.jpg",
+          "observation": "Original finish."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        58,
+        69
+      ],
+      "source_url": "https://www.instagram.com/p/DdL8LyFjuAL/",
+      "attribution": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+      "kind": "annotated_coaching_review",
+      "session": "Tyler: preserve backswing and let arms catch up in transition",
+      "summary": "First option: keep backswing, put alignment stick through belt loops, rehearse very slowly dropping hands and arms in front of stick while shifting lead side. Green line illustrates belt stick; no physical drill trial shown.",
+      "frames": [
+        {
+          "time_seconds": 60,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00060.000.jpg",
+          "observation": "Original replay."
+        },
+        {
+          "time_seconds": 63,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00063.000.jpg",
+          "observation": "Original backswing."
+        },
+        {
+          "time_seconds": 66,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00066.000.jpg",
+          "observation": "Green belt-stick illustration."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        69,
+        89
+      ],
+      "source_url": "https://www.instagram.com/p/DdL8LyFjuAL/",
+      "attribution": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+      "kind": "annotated_coaching_review",
+      "session": "Tyler: preserve backswing and let arms catch up in transition",
+      "summary": "Alternative: stick two feet behind with end just above hands in down-the-line view. Keep back facing target and lower body quieter while shifting lead side and lowering arms in front, to avoid striking barrier. Source predicts shallowing; green prop/arrow illustrations remain over original footage.",
+      "frames": [
+        {
+          "time_seconds": 72,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00072.000.jpg",
+          "observation": "Illustrated barrier at setup."
+        },
+        {
+          "time_seconds": 78,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00078.000.jpg",
+          "observation": "Original delivery relative to barrier."
+        },
+        {
+          "time_seconds": 81,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00081.000.jpg",
+          "observation": "Top with barrier."
+        },
+        {
+          "time_seconds": 84,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00084.000.jpg",
+          "observation": "Quieter lower-body box."
+        },
+        {
+          "time_seconds": 87,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00087.000.jpg",
+          "observation": "Arm-drop arrow."
+        },
+        {
+          "time_seconds": 89,
+          "path": ".videos/coaching-knowledge/DdL8LyFjuAL/detail/frame-00089.000.jpg",
+          "observation": "Arrow to barrier."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "DdL8LyFjuAL-C01",
+      "title": "Use belt-stick rehearsal to bring arms in front with lead-side shift",
+      "case_type": "individual_video_review_with_no_verified_student_retest",
+      "tags": {
+        "phase": [
+          "transition",
+          "downswing"
+        ],
+        "body": [
+          "pelvis",
+          "hands",
+          "arms"
+        ],
+        "outcome": [
+          "body-arm timing",
+          "preserve backswing"
+        ],
+        "concept": [
+          "body-arm timing",
+          "preserve backswing"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E04"
+      ],
+      "coaching_finding": "Coach finds lower body advancing ahead of still-high hands from a good top.",
+      "coach_reasoning": "Arms need to return in front without changing the retained backswing.",
+      "intervention": {
+        "setup": "Stick through belt loops.",
+        "cue": "Slowly drop arms in front of stick as you shift lead side.",
+        "limits": "No detailed prop fitting or repetitions shown."
+      },
+      "applicability": [
+        "Backswing already judged usable and transition shows body advancing while hands remain high.",
+        "Do not select from steepness or getting-stuck phrase alone.",
+        "Lead-side shift remains part of task; quieter rotation does not mean staying on trail side."
+      ],
+      "unknowns": [
+        "Actual rotation speeds, pressure shift and face/path.",
+        "Probable pull-slice is not verified.",
+        "Student execution and response to either drill."
+      ],
+      "observed_result": "Instructions illustrated on original footage; no drill execution, post-change swing or measured outcome.",
+      "selection": {
+        "coaching_focus": "One slow arms-in-front rehearsal",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus preference; retain source sequencing and avoid simultaneous competing thoughts.",
+        "reassess": "Proposed app check: reassess hand/body relationship and actual strike without prop."
+      },
+      "alternative_case_ids": [
+        "DdL8LyFjuAL-C02"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "DdL8LyFjuAL-C02",
+      "title": "Use an above-hand barrier with a quieter-turn feel as an alternative",
+      "case_type": "individual_video_review_with_no_verified_student_retest",
+      "tags": {
+        "phase": [
+          "transition",
+          "downswing"
+        ],
+        "body": [
+          "pelvis",
+          "back",
+          "arms",
+          "club"
+        ],
+        "outcome": [
+          "body-arm timing",
+          "barrier rehearsal"
+        ],
+        "concept": [
+          "body-arm timing",
+          "barrier rehearsal"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E05"
+      ],
+      "coaching_finding": "Same transition sequence; alternate external constraint.",
+      "coach_reasoning": "Coach expects back-to-target/quieter lower-body feel to allow arms to descend before being pulled around.",
+      "intervention": {
+        "setup": "Stick about two feet behind, end just above hands from down-the-line.",
+        "cue": "Keep back toward target briefly while arms drop in front with lead-side shift.",
+        "limits": "A rehearsal feel, not an instruction to stop rotating throughout downswing."
+      },
+      "applicability": [
+        "Backswing already judged usable and transition shows body advancing while hands remain high.",
+        "Do not select from steepness or getting-stuck phrase alone.",
+        "Lead-side shift remains part of task; quieter rotation does not mean staying on trail side."
+      ],
+      "unknowns": [
+        "Actual rotation speeds, pressure shift and face/path.",
+        "Probable pull-slice is not verified.",
+        "Student execution and response to either drill."
+      ],
+      "observed_result": "Instructions illustrated on original footage; no drill execution, post-change swing or measured outcome.",
+      "selection": {
+        "coaching_focus": "One alternative transition rehearsal",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus preference; retain source sequencing and avoid simultaneous competing thoughts.",
+        "reassess": "Proposed app check: verify normal delivery and real shot outcome; do not stack with belt-stick task."
+      },
+      "alternative_case_ids": [
+        "DdL8LyFjuAL-C01"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "qualitative_timing_checkpoint",
+      "value": "Hands above shoulders when thighs judged square; desired closer to belt",
+      "evidence_ids": [
+        "E02"
+      ],
+      "limits": [
+        "No measured 3D thigh angle, velocity or universal timing threshold."
+      ]
+    },
+    {
+      "kind": "prop_instruction",
+      "value": "Barrier two feet behind, above hands",
+      "evidence_ids": [
+        "E05"
+      ],
+      "limits": [
+        "Drawn illustration, no physical demonstration."
+      ]
+    }
+  ],
+  "source_ambiguities": [],
+  "cross_source_links": [
+    {
+      "source_case": "DVI2JDpDC5Z-C01",
+      "current_case": "DdL8LyFjuAL-C01",
+      "relation": "Same steep delivery, different selected cause",
+      "explanation": "Ryan is assigned backswing changes; Tyler is explicitly told to keep backswing and work on transition. Retrieval needs the earlier sequence, not only steep shaft appearance."
+    },
+    {
+      "source_case": "BcG-r_13z_I-C01",
+      "current_case": "DdL8LyFjuAL-C01",
+      "relation": "Opposite sequencing finding",
+      "explanation": "Menante assessment identifies arms too early with late trunk using instrumented evidence. Tyler is interpreted as body ahead of high arms from 2D footage. Do not merge either into a universal arms-first or hips-first cue."
+    },
+    {
+      "source_case": "DcwID0KRE5Q-C01",
+      "current_case": "DdL8LyFjuAL-C02",
+      "relation": "Related barrier with prerequisite",
+      "explanation": "Moore's barrier tutorial explicitly excludes unresolved open face. Tyler source gives no measured face diagnosis, so similar barrier geometry does not settle that prerequisite."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "DdL8LyFjuAL-C01",
+        "DdL8LyFjuAL-C02"
+      ],
+      "relationship": "Two alternative drills for one transition priority; select one and retain backswing."
+    }
+  ],
+  "annotation_opportunities": [
+    "Show thigh reference and hand height at same moment.",
+    "Mark ball-flight statement as probable.",
+    "Distinguish prop drawings from actual drill execution."
+  ],
+  "excluded_material": [
+    "Universal hands-at-belt threshold.",
+    "Famous-player comparison as validation.",
+    "Guide promotion after 89 seconds."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Source extraction preserves evidence and conditions; a source match and response check are still needed for another golfer."
+  },
+  "asset_sha256": {
+    "video": "bfc6f1124eff9ea01a42d128c0ac206c0ab091ac2d1d60f71ea8504e905b07d0",
+    "raw_captions": "9afc534c338b316e93eb2de2a59642b230144a02a6851060eada021b6f58b440",
+    "transcript": "88c466c1c9c89d74a5eb71be3071faa254c9dd46374b815a66def187fc132d49"
+  }
+}

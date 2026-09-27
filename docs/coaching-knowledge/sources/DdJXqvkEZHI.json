@@ -1,0 +1,358 @@
+{
+  "version": 1,
+  "source_id": "DdJXqvkEZHI",
+  "url": "https://www.instagram.com/p/DdJXqvkEZHI/",
+  "title": "Carter: shoulder barrier for backswing depth and hip turn",
+  "publisher": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+  "published": "20260911",
+  "duration_seconds": 77.3,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "coach": "Dom Caminiti | Golf Swing Reviews",
+    "student": "Carter"
+  },
+  "context": {
+    "format": "Student driver review followed by coach iron demonstration",
+    "handedness": "Right-handed",
+    "body_context": "No physical screening supplied",
+    "club": "Student driver, coach iron; not a matched before/after"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/DdJXqvkEZHI/DdJXqvkEZHI.mp4",
+    "raw_captions": ".videos/coaching-knowledge/DdJXqvkEZHI/asr-raw.json",
+    "transcript": ".videos/coaching-knowledge/DdJXqvkEZHI/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/DdJXqvkEZHI/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/DdJXqvkEZHI/DdJXqvkEZHI.info.json",
+    "overview": ".videos/coaching-knowledge/DdJXqvkEZHI/overview/index.json",
+    "detail": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 15,
+    "transcript_kind": "Local MLX Whisper ASR with visual inspection",
+    "audio_independently_transcribed": true,
+    "visual_review_method": "8 overview and 24 detail frames across three portrait sheets inspected; student driver fault sequence and coach padded-barrier rehearsal/shot reviewed.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/DdJXqvkEZHI/overview/index.json",
+      ".videos/coaching-knowledge/DdJXqvkEZHI/detail/index.json"
+    ],
+    "limitations": [
+      "Sampled frames, not continuous playback.",
+      "Coach reasoning is attributed, not independently validated."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        22
+      ],
+      "source_url": "https://www.instagram.com/p/DdJXqvkEZHI/",
+      "attribution": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+      "kind": "annotated_coaching_review",
+      "session": "Carter: shoulder barrier for backswing depth and hip turn",
+      "summary": "Coach identifies lead arm above shoulder plane, insufficient backswing hip turn and hands over toes. Connects this to steep transition, club outside hands and leftward swing direction. Student driver footage is annotated; no measured path or ball-flight result.",
+      "frames": [
+        {
+          "time_seconds": 3,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00003.000.jpg",
+          "observation": "Student high top."
+        },
+        {
+          "time_seconds": 6,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00006.000.jpg",
+          "observation": "Arm/shoulder and hip references."
+        },
+        {
+          "time_seconds": 9,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00009.000.jpg",
+          "observation": "Hands high over forward part of stance."
+        },
+        {
+          "time_seconds": 12,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00012.000.jpg",
+          "observation": "Top-to-ball line."
+        },
+        {
+          "time_seconds": 15,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00015.000.jpg",
+          "observation": "Original downswing."
+        },
+        {
+          "time_seconds": 18,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00018.000.jpg",
+          "observation": "Through driver motion."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        22,
+        45
+      ],
+      "source_url": "https://www.instagram.com/p/DdJXqvkEZHI/",
+      "attribution": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+      "kind": "annotated_coaching_review",
+      "session": "Carter: shoulder barrier for backswing depth and hip turn",
+      "summary": "Coach names Hogan pane-of-glass drill and demonstrates stick with blue padding above trail shoulder. Rehearses to top missing barrier with hands, arms and club; shows lead arm near shoulder plane and hands above heels.",
+      "frames": [
+        {
+          "time_seconds": 26,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00026.000.jpg",
+          "observation": "Physical blue padded barrier above trail shoulder."
+        },
+        {
+          "time_seconds": 29,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00029.000.jpg",
+          "observation": "Yellow line follows barrier."
+        },
+        {
+          "time_seconds": 32,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00032.000.jpg",
+          "observation": "Takeaway beneath barrier."
+        },
+        {
+          "time_seconds": 35,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00035.000.jpg",
+          "observation": "Coach top without crossing barrier."
+        },
+        {
+          "time_seconds": 38,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00038.000.jpg",
+          "observation": "Lead-arm plane reference."
+        },
+        {
+          "time_seconds": 41,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00041.000.jpg",
+          "observation": "Hand-depth and plane references."
+        },
+        {
+          "time_seconds": 44,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00044.000.jpg",
+          "observation": "Arrow toward top clearance."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        45,
+        59
+      ],
+      "source_url": "https://www.instagram.com/p/DdJXqvkEZHI/",
+      "attribution": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+      "kind": "annotated_coaching_review",
+      "session": "Carter: shoulder barrier for backswing depth and hip turn",
+      "summary": "Coach says hips have turned/opened 45 degrees at demonstrated top, allowing room to bring arms in front. Then describes hands toward ball and shallowing. Angle is a verbal estimate illustrated by lines, not measured 3D rotation.",
+      "frames": [
+        {
+          "time_seconds": 47,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00047.000.jpg",
+          "observation": "Hip reference at backswing top."
+        },
+        {
+          "time_seconds": 50,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00050.000.jpg",
+          "observation": "Coach held top."
+        },
+        {
+          "time_seconds": 53,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00053.000.jpg",
+          "observation": "Arrow toward space in front of body."
+        },
+        {
+          "time_seconds": 56,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00056.000.jpg",
+          "observation": "Top-to-ball hand line."
+        },
+        {
+          "time_seconds": 59,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00059.000.jpg",
+          "observation": "Coach delivery under barrier/reference."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        59,
+        69
+      ],
+      "source_url": "https://www.instagram.com/p/DdJXqvkEZHI/",
+      "attribution": "Dom Caminiti | Golf Swing Reviews / domcaminitigolf",
+      "kind": "annotated_coaching_review",
+      "session": "Carter: shoulder barrier for backswing depth and hip turn",
+      "summary": "Coach demonstrates release and rotation through shot, predicts stock draws without overcurving line. Orange drawn trajectory illustrates intended outcome; no matched shot metrics or Carter retest.",
+      "frames": [
+        {
+          "time_seconds": 62,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00062.000.jpg",
+          "observation": "Club approaching ball."
+        },
+        {
+          "time_seconds": 65,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00065.000.jpg",
+          "observation": "Through swing."
+        },
+        {
+          "time_seconds": 68,
+          "path": ".videos/coaching-knowledge/DdJXqvkEZHI/detail/frame-00068.000.jpg",
+          "observation": "Finish with illustrative draw lines."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "DdJXqvkEZHI-C01",
+      "title": "Use an above-shoulder barrier to rehearse a more usable backswing",
+      "case_type": "individual_video_review_with_no_verified_student_retest",
+      "tags": {
+        "phase": [
+          "backswing",
+          "P4",
+          "transition"
+        ],
+        "body": [
+          "lead arm",
+          "hands",
+          "hips",
+          "club"
+        ],
+        "outcome": [
+          "hand depth",
+          "hip turn",
+          "external constraint"
+        ],
+        "concept": [
+          "hand depth",
+          "hip turn",
+          "external constraint"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E04"
+      ],
+      "coaching_finding": "Coach finds high/forward hands and insufficient hip turn before steep driver delivery.",
+      "coach_reasoning": "Barrier constrains top while hip turn provides room, which coach expects to make subsequent shallowing and release easier.",
+      "intervention": {
+        "setup": "Padded stick above trail shoulder as shown in coach demonstration.",
+        "cue": "Rehearse to top without hitting barrier with hands, arms or club.",
+        "intended_change": "Lead arm nearer shoulder plane, hands nearer heel depth with backswing hip turn.",
+        "progression": "Only after top is usable, rehearse delivery and normal release/turn; not a stack of simultaneous thoughts.",
+        "limits": "No mounting distance, calibrated barrier angle or repetition count supplied."
+      },
+      "applicability": [
+        "Earlier backswing conditions match the source; steep delivery alone does not justify drill.",
+        "Do not treat 45 degrees as a universal required hip angle or infer mobility from video.",
+        "Same coach has other cases where backswing should be retained."
+      ],
+      "unknowns": [
+        "Actual 3D hip rotation, mobility and target-relative path.",
+        "Carter drill execution and driver transfer from iron demonstration.",
+        "Measured curvature or dispersion."
+      ],
+      "observed_result": "Coach demonstration and shot only; Carter has no retest and draw benefit is predicted.",
+      "selection": {
+        "coaching_focus": "One backswing barrier rehearsal",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus preference; retain source sequencing and avoid simultaneous competing thoughts.",
+        "reassess": "Proposed app check: verify comfortable clearance, earlier hip/hand relationship and aid-free same-club outcome before adding transition work."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "spoken_angle_claim",
+      "value": "45 degrees hip turn at coach demonstrated backswing top",
+      "evidence_ids": [
+        "E03"
+      ],
+      "limits": [
+        "No instrument or calibrated 3D estimate. Backward turn at top, not a measured impact-open angle."
+      ]
+    },
+    {
+      "kind": "illustrative_geometry",
+      "value": "Padded shoulder barrier, hand depth and shaft lines, desired draw",
+      "evidence_ids": [
+        "E02",
+        "E04"
+      ],
+      "limits": [
+        "No physical setup dimensions or measured ball flight."
+      ]
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        22,
+        29
+      ],
+      "issue": "ASR painted glass is retained in raw transcript; context and physical barrier support pane-of-glass drill interpretation. Hogan attribution is by coach, not independently verified against original text."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "DdL8LyFjuAL-C01",
+      "current_case": "DdJXqvkEZHI-C01",
+      "relation": "Backswing versus transition branch",
+      "explanation": "Tyler's backswing is retained while transition is changed. Carter's earlier hip/hand conditions are selected for a backswing barrier. Same steep result does not identify same treatment."
+    },
+    {
+      "source_case": "DbTWAp7gCEt-C01",
+      "current_case": "DdJXqvkEZHI-C01",
+      "relation": "High top can remain functional",
+      "explanation": "Mohammad's high top and stronger face are accepted for preferred cut. Carter's full preceding/subsequent sequence is the source condition; a universal high-arm fault rule would erase this distinction."
+    },
+    {
+      "source_case": "DdOg8DTnQr--C01",
+      "current_case": "DdJXqvkEZHI-C01",
+      "relation": "Check mechanism as well as prop clearance",
+      "explanation": "Eli's drill review shows a prop endpoint can be met through unintended motion. Clearing the shoulder barrier alone would not prove useful hip/arm sequence or shot improvement."
+    }
+  ],
+  "within_source_distinctions": [],
+  "annotation_opportunities": [
+    "Separate student driver and coach iron clips.",
+    "Mark padding/clearance and hip-turn context at top.",
+    "Label 45 degrees spoken estimate and draw illustration."
+  ],
+  "excluded_material": [
+    "Post title Everyone should try this treated as universal eligibility.",
+    "Hogan attribution treated as separately verified history.",
+    "Draw graphic counted as measured result.",
+    "VIP solicitation after 69 seconds."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Source extraction preserves evidence and conditions; a source match and response check are still needed for another golfer."
+  },
+  "asset_sha256": {
+    "video": "595f2c1e442d0b6a844fddceae4a39a4821964020e9fc6e6c8aef1fa062cc9e2",
+    "raw_captions": "46ae1f6376c9b04e12e3e12abc399451eefdaaddde80a45cbcf875ab984e8fc7",
+    "transcript": "729a8f24abbebe4fc554effb1514df32c2558992872fd04648162bfc84ccb157"
+  }
+}

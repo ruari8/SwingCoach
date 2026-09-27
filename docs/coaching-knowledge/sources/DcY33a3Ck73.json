@@ -1,0 +1,431 @@
+{
+  "version": 1,
+  "source_id": "DcY33a3Ck73",
+  "url": "https://www.instagram.com/p/DcY33a3Ck73/",
+  "title": "Marius: setup before an under-plane push correction",
+  "publisher": "Teagan Moore / teaganmooregolf",
+  "published": "20260823",
+  "duration_seconds": 145.4,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "coach": "Teagan Moore",
+    "student": "Marius, named in speech"
+  },
+  "context": {
+    "format": "Annotated swing review",
+    "handedness": "Right-handed",
+    "body_context": "No physical screening supplied"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/DcY33a3Ck73/DcY33a3Ck73.mp4",
+    "raw_captions": ".videos/coaching-knowledge/DcY33a3Ck73/asr-raw.json",
+    "transcript": ".videos/coaching-knowledge/DcY33a3Ck73/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/DcY33a3Ck73/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/DcY33a3Ck73/DcY33a3Ck73.info.json",
+    "overview": ".videos/coaching-knowledge/DcY33a3Ck73/overview/index.json",
+    "detail": ".videos/coaching-knowledge/DcY33a3Ck73/detail/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 40,
+    "transcript_kind": "Local MLX Whisper ASR with visual inspection",
+    "audio_independently_transcribed": true,
+    "visual_review_method": "15 overview and 36 detail frames across five portrait sheets inspected, including full annotation sequence and coach prop rehearsal/shot.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/DcY33a3Ck73/overview/index.json",
+      ".videos/coaching-knowledge/DcY33a3Ck73/detail/index.json"
+    ],
+    "limitations": [
+      "Sampled frames, not continuous playback.",
+      "Coach reasoning is attributed, not independently validated."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        33
+      ],
+      "source_url": "https://www.instagram.com/p/DcY33a3Ck73/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Marius: setup before an under-plane push correction",
+      "summary": "Coach identifies right push, outward takeaway, high hands through shoulder and insufficient depth with hands above balls of feet. His scratch comment is subjective praise, not handicap evidence.",
+      "frames": [
+        {
+          "time_seconds": 14,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00014.000.jpg",
+          "observation": "Outward-hand reference."
+        },
+        {
+          "time_seconds": 22,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00022.000.jpg",
+          "observation": "Arrow through shoulder region."
+        },
+        {
+          "time_seconds": 31,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00031.000.jpg",
+          "observation": "Hands-to-feet vertical reference."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        33,
+        55
+      ],
+      "source_url": "https://www.instagram.com/p/DcY33a3Ck73/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Marius: setup before an under-plane push correction",
+      "summary": "Coach interprets high top followed by hands dropping behind as compensation that puts club under original plane and creates push. Drawn shot arrow illustrates interpretation; no measured flight.",
+      "frames": [
+        {
+          "time_seconds": 39,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00039.000.jpg",
+          "observation": "High hand and original shaft references."
+        },
+        {
+          "time_seconds": 44,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00044.000.jpg",
+          "observation": "Hands start down."
+        },
+        {
+          "time_seconds": 48,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00048.000.jpg",
+          "observation": "Hands drop behind reference."
+        },
+        {
+          "time_seconds": 51,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00051.000.jpg",
+          "observation": "Under-plane comparison."
+        },
+        {
+          "time_seconds": 54,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00054.000.jpg",
+          "observation": "Drawn push arrow."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        55,
+        104
+      ],
+      "source_url": "https://www.instagram.com/p/DcY33a3Ck73/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Marius: setup before an under-plane push correction",
+      "summary": "Coach attributes open shoulders and outward hands to insufficient targetward hip bump and upper-body tilt away. Prescribes small hip bump plus 5\u201310 degrees upper-body tilt away, judging lead-arm visibility as setup clue. Only down-the-line student footage is supplied; tilt angle is not measured.",
+      "frames": [
+        {
+          "time_seconds": 64,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00064.000.jpg",
+          "observation": "Arrows around arm visibility."
+        },
+        {
+          "time_seconds": 69,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00069.000.jpg",
+          "observation": "Hip-bump arrows."
+        },
+        {
+          "time_seconds": 74,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00074.000.jpg",
+          "observation": "Opposing upper/lower-body arrows."
+        },
+        {
+          "time_seconds": 78,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00078.000.jpg",
+          "observation": "Illustrative tilt line."
+        },
+        {
+          "time_seconds": 90,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00090.000.jpg",
+          "observation": "Takeaway relationship revisited."
+        },
+        {
+          "time_seconds": 101,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00101.000.jpg",
+          "observation": "Setup cue repeated."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        104,
+        127
+      ],
+      "source_url": "https://www.instagram.com/p/DcY33a3Ck73/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Marius: setup before an under-plane push correction",
+      "summary": "After setup, coach demonstrates padded stick about two feet behind, angled like address shaft directly below it. Rehearses backswing to deeper hands and lead arm matching shoulder plane. Prop is physically present in indoor example.",
+      "frames": [
+        {
+          "time_seconds": 111,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00111.000.jpg",
+          "observation": "Padded stick below shaft."
+        },
+        {
+          "time_seconds": 114,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00114.000.jpg",
+          "observation": "Circled base and aligned shaft/stick references."
+        },
+        {
+          "time_seconds": 117,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00117.000.jpg",
+          "observation": "Address prop geometry."
+        },
+        {
+          "time_seconds": 123,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00123.000.jpg",
+          "observation": "Coach top rehearsal."
+        },
+        {
+          "time_seconds": 126,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00126.000.jpg",
+          "observation": "Arm-plane and heel-depth lines."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        127,
+        139
+      ],
+      "source_url": "https://www.instagram.com/p/DcY33a3Ck73/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Marius: setup before an under-plane push correction",
+      "summary": "Coach then uses direct hands-toward-ball intent without dropping behind and demonstrates delivery and shot/follow-through. Predicts stock shots for student. Background TrackMan panel remains unchanged across preparation and motion, so its values cannot be assigned to this demonstration or Marius.",
+      "frames": [
+        {
+          "time_seconds": 132,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00132.000.jpg",
+          "observation": "Hands down from rehearsed top."
+        },
+        {
+          "time_seconds": 133,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00133.000.jpg",
+          "observation": "Delivery above padded stick."
+        },
+        {
+          "time_seconds": 135,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00135.000.jpg",
+          "observation": "Repeated delivery."
+        },
+        {
+          "time_seconds": 137,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00137.000.jpg",
+          "observation": "Through shot motion."
+        },
+        {
+          "time_seconds": 139,
+          "path": ".videos/coaching-knowledge/DcY33a3Ck73/detail/frame-00139.000.jpg",
+          "observation": "Coach finish."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "DcY33a3Ck73-C01",
+      "title": "Adjust setup first for the open-shoulder, outward-takeaway sequence",
+      "case_type": "individual_video_review_with_no_verified_student_retest",
+      "tags": {
+        "phase": [
+          "setup",
+          "takeaway",
+          "P4",
+          "transition"
+        ],
+        "body": [
+          "pelvis",
+          "shoulders",
+          "hands"
+        ],
+        "outcome": [
+          "right push",
+          "under-plane delivery",
+          "setup priority"
+        ],
+        "concept": [
+          "right push",
+          "under-plane delivery",
+          "setup priority"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03"
+      ],
+      "coaching_finding": "Coach finds hands out/high, then behind and club under plane, with open shoulders inferred at address.",
+      "coach_reasoning": "He traces this sequence to setup and expects targetward hip bump plus torso tilt away to square shoulders and change takeaway.",
+      "intervention": {
+        "cue": "Small hip bump toward target with upper body tilted away.",
+        "source_target": "5\u201310 degrees tilt away, a stated target rather than measured current value."
+      },
+      "applicability": [
+        "Confirm setup and subsequent sequence; do not prescribe from high hands or push alone.",
+        "Suitable face-on evidence is needed before a phone app could assess stated tilt; source uses down-the-line clues."
+      ],
+      "unknowns": [
+        "Actual shoulder alignment, torso tilt, pressure and face/path.",
+        "Whether setup change alone corrects delivery."
+      ],
+      "observed_result": "No student after-change swing shown.",
+      "selection": {
+        "coaching_focus": "Setup relationship",
+        "max_simultaneous_cues": 2,
+        "policy_origin": "User one-focus preference; retain source sequencing and avoid simultaneous competing thoughts.",
+        "reassess": "Proposed app check: reassess setup and takeaway before adding transition cue."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "DcY33a3Ck73-C02",
+      "title": "Use shaft-angle stick and direct hand intent after setup change",
+      "case_type": "individual_video_review_with_no_verified_student_retest",
+      "tags": {
+        "phase": [
+          "backswing",
+          "P4",
+          "downswing"
+        ],
+        "body": [
+          "hands",
+          "club"
+        ],
+        "outcome": [
+          "hand depth",
+          "prop rehearsal",
+          "avoid dropping behind"
+        ],
+        "concept": [
+          "hand depth",
+          "prop rehearsal",
+          "avoid dropping behind"
+        ]
+      },
+      "evidence_ids": [
+        "E02",
+        "E04",
+        "E05"
+      ],
+      "coaching_finding": "Coach selects excessive behind-body hand drop after high top as compensating move.",
+      "coach_reasoning": "Deeper backswing after setup change is expected to remove need for that drop.",
+      "intervention": {
+        "setup": "Padded stick about two feet behind at address-shaft angle, below shaft.",
+        "cue": "From the deeper top, hands feel directly toward ball.",
+        "sequence": "Setup correction first; rehearse then verify aid-free delivery."
+      },
+      "applicability": [
+        "Retain prerequisite setup/depth check; direct hand intent from original high top is not the same task.",
+        "Use prop as source demonstration, not an arbitrary 3D ideal plane."
+      ],
+      "unknowns": [
+        "Student execution, actual improved shot shape and transfer."
+      ],
+      "observed_result": "Coach rehearsal and shot shown; stock-shot benefit for Marius remains prediction.",
+      "selection": {
+        "coaching_focus": "One transition intent after setup",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus preference; retain source sequencing and avoid simultaneous competing thoughts.",
+        "reassess": "Proposed app check: ensure hands no longer drop excessively behind and verify real strike/start line with no prop."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "source_target",
+      "value": "5\u201310 degrees torso tilt away; stick about two feet behind",
+      "evidence_ids": [
+        "E03",
+        "E04"
+      ],
+      "limits": [
+        "Not calibrated image measurements or universal thresholds."
+      ]
+    },
+    {
+      "kind": "background_instrument_display",
+      "value": "174.9, 150.3, 87.8, 5310 visible on TrackMan screen",
+      "evidence_ids": [
+        "E04",
+        "E05"
+      ],
+      "limits": [
+        "Pre-existing unchanged display; labels/units and shot association not established. Excluded from outcome metrics."
+      ]
+    }
+  ],
+  "source_ambiguities": [],
+  "cross_source_links": [
+    {
+      "source_case": "DVI2JDpDC5Z-C01",
+      "current_case": "DcY33a3Ck73-C01",
+      "relation": "Same high top, different intervening sequence",
+      "explanation": "Ryan delivers steeply after a high top; Marius drops hands behind and delivers under plane. Top-position similarity alone is insufficient to choose a correction."
+    },
+    {
+      "source_case": "DcqwwGio81y-C02",
+      "current_case": "DcY33a3Ck73-C01",
+      "relation": "Different timing and direction of hip bump",
+      "explanation": "Cameron's prop drill starts with a trail-side bump during takeaway. Marius is asked to preset hips targetward at setup. Keep stage and direction explicit."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "DcY33a3Ck73-C01",
+        "DcY33a3Ck73-C02"
+      ],
+      "relationship": "Setup prerequisite before prop/transition task; do not deliver all cues at once."
+    }
+  ],
+  "annotation_opportunities": [
+    "Pair high top with actual subsequent hand drop.",
+    "Label background TrackMan values unassociated.",
+    "Show prop above/below relationship and distinguish setup bump from takeaway bump."
+  ],
+  "excluded_material": [
+    "Scratch-handicap inference from praise.",
+    "Review solicitation after 139 seconds.",
+    "Background numbers treated as student improvement."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Source extraction preserves evidence and conditions; a source match and response check are still needed for another golfer."
+  },
+  "asset_sha256": {
+    "video": "fe3879289c3775d38e370bc4522c8cf6668895d61ff8e62e3c4d9a67bb16c67f",
+    "raw_captions": "83b17621132770b685a0a40839bb974f9a14d64d4d218eafcb6ebacce34b7162",
+    "transcript": "726efdbd67db7122812561463482d74ab29dbc412924806c63fa6006d6919623"
+  }
+}

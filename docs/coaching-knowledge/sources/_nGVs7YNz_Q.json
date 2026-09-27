@@ -1,0 +1,1070 @@
+{
+  "version": 1,
+  "source_id": "_nGVs7YNz_Q",
+  "url": "https://www.youtube.com/watch?v=_nGVs7YNz_Q",
+  "title": "Drive it Further With These Easy Steps\u2026",
+  "publisher": "Ryan Ruffels",
+  "published": "20240822",
+  "duration_seconds": 590,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "instructor": "Ryan Ruffels",
+    "student": null
+  },
+  "context": {
+    "format": "Driver-speed tutorial with own shot progression and result cards",
+    "handedness": "Right-handed",
+    "body_context": "No physical assessment",
+    "style": "Four movement ideas, then controlled and maximum effort; progressively warming up"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/_nGVs7YNz_Q/_nGVs7YNz_Q.mp4",
+    "raw_captions": ".videos/coaching-knowledge/_nGVs7YNz_Q/_nGVs7YNz_Q.en-orig.json3",
+    "transcript": ".videos/coaching-knowledge/_nGVs7YNz_Q/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/_nGVs7YNz_Q/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/_nGVs7YNz_Q/_nGVs7YNz_Q.info.json",
+    "overview": ".videos/coaching-knowledge/_nGVs7YNz_Q/overview/index.json",
+    "detail": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/index.json",
+    "sequences": ".videos/coaching-knowledge/_nGVs7YNz_Q/sequences/index.json",
+    "results": ".videos/coaching-knowledge/_nGVs7YNz_Q/results/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 224,
+    "transcript_kind": "YouTube en-orig automatic captions",
+    "audio_independently_transcribed": false,
+    "visual_review_method": "20 overview, 54 detail, 39 sequence and nine result-check frames across 12 contact sheets, all inspected. Source annotations and stable result cards checked. Sampled visual review across 9:50, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/_nGVs7YNz_Q/overview/index.json",
+      ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/index.json",
+      ".videos/coaching-knowledge/_nGVs7YNz_Q/sequences/index.json",
+      ".videos/coaching-knowledge/_nGVs7YNz_Q/results/index.json"
+    ],
+    "limitations": [
+      "480p source and edited replays; no calibrated pose or instrument export.",
+      "Result-card animations contain transient digits; only settled values used.",
+      "No student diagnosis or measured long-term training improvement."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        52,
+        102
+      ],
+      "source_url": "https://www.youtube.com/watch?v=_nGVs7YNz_Q&t=52s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his own driver-speed work",
+      "kind": "tutorial_self_demonstration_with_reported_results",
+      "session": "Single driver session, progressively increasing effort",
+      "summary": "Ruffels wants a longer speed swing created through torso and hip turn rather than arms dragging independently. Hands, arms and body start takeaway together. Longer backswing is presented as more time/stretch. Source cards support body turn and length.",
+      "frames": [
+        {
+          "time_seconds": 65,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00065.000.jpg",
+          "observation": "Instructor introduces connected takeaway."
+        },
+        {
+          "time_seconds": 75,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00075.000.jpg",
+          "observation": "Body-turn tip card and rehearsal."
+        },
+        {
+          "time_seconds": 85,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00085.000.jpg",
+          "observation": "Longer-swing discussion."
+        },
+        {
+          "time_seconds": 95,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00095.000.jpg",
+          "observation": "Longer-swing source card."
+        }
+      ],
+      "limitations": [
+        "No measured hip/torso angle, stretch or segment timing. More turn/length is a speed option, not a universal cure."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        102,
+        138
+      ],
+      "source_url": "https://www.youtube.com/watch?v=_nGVs7YNz_Q&t=102s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his own driver-speed work",
+      "kind": "tutorial_self_demonstration_with_reported_results",
+      "session": "Single driver session, progressively increasing effort",
+      "summary": "He contrasts tensing forearms and gripping hard when trying for speed with a very soft loose hold. Almost letting club fall out is his exaggerated feel for allowing lag; later he clarifies hands support club and do not death-grip it.",
+      "frames": [
+        {
+          "time_seconds": 115,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00115.000.jpg",
+          "observation": "Staged tense address."
+        },
+        {
+          "time_seconds": 125,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00125.000.jpg",
+          "observation": "Grip-pressure explanation."
+        },
+        {
+          "time_seconds": 135,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00135.000.jpg",
+          "observation": "Soft-grip tip card."
+        }
+      ],
+      "limitations": [
+        "No grip-force measure or proof more lag always means more speed. Maintain control of club; do not prescribe literal loss of grip."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        138,
+        167
+      ],
+      "source_url": "https://www.youtube.com/watch?v=_nGVs7YNz_Q&t=138s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his own driver-speed work",
+      "kind": "tutorial_self_demonstration_with_reported_results",
+      "session": "Single driver session, progressively increasing effort",
+      "summary": "Ruffels describes his own high-effort tendency: lead arm moves off chest and hands travel far out, with unstable face by his account. He wants lead-upper-arm/chest connection while rotating.",
+      "frames": [
+        {
+          "time_seconds": 145,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00145.000.jpg",
+          "observation": "Points to lead upper arm/chest relationship."
+        },
+        {
+          "time_seconds": 155,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00155.000.jpg",
+          "observation": "Connection tip card and demonstration."
+        },
+        {
+          "time_seconds": 160,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/overview/frame-00160.000.jpg",
+          "observation": "Club/hand-path contrast."
+        }
+      ],
+      "limitations": [
+        "Personal tendency rather than diagnosis of all golfers. Later he explicitly says contact is not maintained completely."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        167,
+        205
+      ],
+      "source_url": "https://www.youtube.com/watch?v=_nGVs7YNz_Q&t=167s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his own driver-speed work",
+      "kind": "tutorial_self_demonstration_with_reported_results",
+      "session": "Single driver session, progressively increasing effort",
+      "summary": "First fuller-turn shot is demonstrated, with source circles around torso/pelvis. Result card displays 178 ball speed and 299 carry; he says he is still warming up.",
+      "frames": [
+        {
+          "time_seconds": 175,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00175.000.jpg",
+          "observation": "Setup before turn-focused shot."
+        },
+        {
+          "time_seconds": 178,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/sequences/frame-00178.000.jpg",
+          "observation": "Backswing in source replay."
+        },
+        {
+          "time_seconds": 181,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/sequences/frame-00181.000.jpg",
+          "observation": "Source circles highlight torso/pelvis turn."
+        },
+        {
+          "time_seconds": 185,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00185.000.jpg",
+          "observation": "Shot finish."
+        },
+        {
+          "time_seconds": 195,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00195.000.jpg",
+          "observation": "Result card 178 ball speed, 299 carry."
+        }
+      ],
+      "limitations": [
+        "Source-added circles illustrate movement, not measured rotation. Card is edited source report, not a raw launch-monitor export. Warm-up and effort vary across shots."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        205,
+        242
+      ],
+      "source_url": "https://www.youtube.com/watch?v=_nGVs7YNz_Q&t=205s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his own driver-speed work",
+      "kind": "tutorial_self_demonstration_with_reported_results",
+      "session": "Single driver session, progressively increasing effort",
+      "summary": "Longer than his fairway-finder/normal swing, Ruffels wants driver shaft at least parallel at top, while normally slightly short. Source horizontal/shaft lines illustrate that reference. Card shows 181 ball speed and 315 carry, resolving missing digit in automatic caption.",
+      "frames": [
+        {
+          "time_seconds": 215,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00215.000.jpg",
+          "observation": "Source horizontal line at backswing reference."
+        },
+        {
+          "time_seconds": 216,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/sequences/frame-00216.000.jpg",
+          "observation": "Horizontal red and shaft yellow lines at top."
+        },
+        {
+          "time_seconds": 225,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00225.000.jpg",
+          "observation": "Finish of longer-swing attempt."
+        },
+        {
+          "time_seconds": 235,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00235.000.jpg",
+          "observation": "Stable result card 181 / 315."
+        }
+      ],
+      "limitations": [
+        "Parallel is this player's speed-swing target, not universal threshold. No calibrated shaft angle. Caption 35 is not used as carry."
+      ]
+    },
+    {
+      "id": "E06",
+      "span_seconds": [
+        242,
+        291
+      ],
+      "source_url": "https://www.youtube.com/watch?v=_nGVs7YNz_Q&t=242s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his own driver-speed work",
+      "kind": "tutorial_self_demonstration_with_reported_results",
+      "session": "Single driver session, progressively increasing effort",
+      "summary": "He adds softer hands while retaining turn and length, using small steps/waggles to avoid tension. Card shows 184 ball speed and 322 carry.",
+      "frames": [
+        {
+          "time_seconds": 245,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00245.000.jpg",
+          "observation": "Explains cumulative soft-grip step."
+        },
+        {
+          "time_seconds": 255,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00255.000.jpg",
+          "observation": "Loose-hand explanation."
+        },
+        {
+          "time_seconds": 271,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/sequences/frame-00271.000.jpg",
+          "observation": "Moving address."
+        },
+        {
+          "time_seconds": 274,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/sequences/frame-00274.000.jpg",
+          "observation": "Waggle/hand movement."
+        },
+        {
+          "time_seconds": 275,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00275.000.jpg",
+          "observation": "Full-shot finish."
+        },
+        {
+          "time_seconds": 285,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00285.000.jpg",
+          "observation": "Stable card 184 / 322."
+        }
+      ],
+      "limitations": [
+        "One cumulative example cannot isolate grip-pressure effect. No measured force or lag change."
+      ]
+    },
+    {
+      "id": "E07",
+      "span_seconds": [
+        291,
+        346
+      ],
+      "source_url": "https://www.youtube.com/watch?v=_nGVs7YNz_Q&t=291s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his own driver-speed work",
+      "kind": "tutorial_self_demonstration_with_reported_results",
+      "session": "Single driver session, progressively increasing effort",
+      "summary": "For control at higher effort, he repeats upper-arm/chest connection. He clarifies it will not stay entirely touching; intention brings hand path inward, club outward and stabilizes face by his account. The combined shot card shows 183 ball speed and 323 carry.",
+      "frames": [
+        {
+          "time_seconds": 295,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00295.000.jpg",
+          "observation": "Connection explanation."
+        },
+        {
+          "time_seconds": 305,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00305.000.jpg",
+          "observation": "Arm/chest and hand-path rehearsal."
+        },
+        {
+          "time_seconds": 315,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00315.000.jpg",
+          "observation": "Control-purpose clarification."
+        },
+        {
+          "time_seconds": 325,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00325.000.jpg",
+          "observation": "Address for combined attempt."
+        },
+        {
+          "time_seconds": 335,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00335.000.jpg",
+          "observation": "Finish."
+        },
+        {
+          "time_seconds": 345,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00345.000.jpg",
+          "observation": "Stable result card 183 / 323."
+        }
+      ],
+      "limitations": [
+        "Ball speed decreases from previous 184 despite general faster-through-each-step commentary. No measured face stability or hand-path radius. Do not pin arm rigidly to chest."
+      ]
+    },
+    {
+      "id": "E08",
+      "span_seconds": [
+        346,
+        396
+      ],
+      "source_url": "https://www.youtube.com/watch?v=_nGVs7YNz_Q&t=346s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his own driver-speed work",
+      "kind": "tutorial_self_demonstration_with_reported_results",
+      "session": "Single driver session, progressively increasing effort",
+      "summary": "Ruffels describes repeated speed work and pushing familiar effort limits over time. He suggests 20\u201330 hard shots a day as his example and rejects expecting one session to create durable 170-to-180 ball-speed improvement. He distinguishes already-practiced feels from a beginner thinking of all steps.",
+      "frames": [
+        {
+          "time_seconds": 355,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00355.000.jpg",
+          "observation": "Practice history and training discussion."
+        },
+        {
+          "time_seconds": 365,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00365.000.jpg",
+          "observation": "Explains repetition and effort."
+        },
+        {
+          "time_seconds": 375,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00375.000.jpg",
+          "observation": "Continues learning discussion."
+        },
+        {
+          "time_seconds": 385,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00385.000.jpg",
+          "observation": "Describes own maximum before examples."
+        }
+      ],
+      "limitations": [
+        "Dose is source suggestion, not personalized training program; no recovery, readiness, adherence or longitudinal data. Mental-limit explanation is not independently validated."
+      ]
+    },
+    {
+      "id": "E09",
+      "span_seconds": [
+        396,
+        455
+      ],
+      "source_url": "https://www.youtube.com/watch?v=_nGVs7YNz_Q&t=396s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his own driver-speed work",
+      "kind": "tutorial_self_demonstration_with_reported_results",
+      "session": "Single driver session, progressively increasing effort",
+      "summary": "Two attempts at the fastest effort he would use on a wide-open course hole are shown. Stable result cards show 186/334 and 186/336. He distinguishes this from a still faster effort where he loses control.",
+      "frames": [
+        {
+          "time_seconds": 400,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/sequences/frame-00400.000.jpg",
+          "observation": "Address for on-course high-effort example."
+        },
+        {
+          "time_seconds": 402,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/sequences/frame-00402.000.jpg",
+          "observation": "Shot finish."
+        },
+        {
+          "time_seconds": 415,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00415.000.jpg",
+          "observation": "Stable result card 186 / 334."
+        },
+        {
+          "time_seconds": 436,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/sequences/frame-00436.000.jpg",
+          "observation": "Second high-effort shot action."
+        },
+        {
+          "time_seconds": 440,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/sequences/frame-00440.000.jpg",
+          "observation": "Finish/tracer."
+        },
+        {
+          "time_seconds": 449,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/results/frame-00449.000.jpg",
+          "observation": "Stable card 186 / 336."
+        },
+        {
+          "time_seconds": 451,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/results/frame-00451.000.jpg",
+          "observation": "Same stable card confirms value."
+        }
+      ],
+      "limitations": [
+        "These are range examples of claimed on-course effort, not actual course outcomes. Transient rolling digits at 448 seconds are graphic animation, not a separate carry result. No dispersion statistic."
+      ]
+    },
+    {
+      "id": "E10",
+      "span_seconds": [
+        455,
+        558
+      ],
+      "source_url": "https://www.youtube.com/watch?v=_nGVs7YNz_Q&t=455s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his own driver-speed work",
+      "kind": "tutorial_self_demonstration_with_reported_results",
+      "session": "Single driver session, progressively increasing effort",
+      "summary": "Maximum-speed practice uses rocking/long waggles and a moving start. First maximum effort is verbally reported as 189 ball speed and 341 carry. Second displays 190/349. Ruffels acknowledges less strike, direction and spin control. Club speeds are estimates because clubface dots are absent: usual 123\u2013124, course-fast 126\u2013130, maximum about 130\u2013135. Speed and control are trained separately then combined.",
+      "frames": [
+        {
+          "time_seconds": 465,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00465.000.jpg",
+          "observation": "Explains visibly different maximum-speed practice."
+        },
+        {
+          "time_seconds": 475,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00475.000.jpg",
+          "observation": "Rocking/waggle setup."
+        },
+        {
+          "time_seconds": 484,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/sequences/frame-00484.000.jpg",
+          "observation": "Source card recommends pre-shot movement."
+        },
+        {
+          "time_seconds": 488,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/sequences/frame-00488.000.jpg",
+          "observation": "Maximum-effort action."
+        },
+        {
+          "time_seconds": 494,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/results/frame-00494.000.jpg",
+          "observation": "Verbal result discussion without numeric card in inspected frame."
+        },
+        {
+          "time_seconds": 515,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00515.000.jpg",
+          "observation": "Strike/control and estimated club-speed explanation."
+        },
+        {
+          "time_seconds": 536,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/sequences/frame-00536.000.jpg",
+          "observation": "Moving setup before second maximum effort."
+        },
+        {
+          "time_seconds": 540,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/sequences/frame-00540.000.jpg",
+          "observation": "Shot finish with tracer."
+        },
+        {
+          "time_seconds": 549,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/results/frame-00549.000.jpg",
+          "observation": "Stable final card 190 / 349."
+        },
+        {
+          "time_seconds": 551,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/results/frame-00551.000.jpg",
+          "observation": "Stable result repeated."
+        }
+      ],
+      "limitations": [
+        "189/341 is spoken; no stable numeric card verified for that attempt. Club-speed estimates are not instrument measurements. Edited carry values lack launch/spin/environment settings. No measured dispersion or lasting gain."
+      ]
+    },
+    {
+      "id": "E11",
+      "span_seconds": [
+        558,
+        578
+      ],
+      "source_url": "https://www.youtube.com/watch?v=_nGVs7YNz_Q&t=558s",
+      "attribution": "Ryan Ruffels explaining and demonstrating his own driver-speed work",
+      "kind": "tutorial_self_demonstration_with_reported_results",
+      "session": "Single driver session, progressively increasing effort",
+      "summary": "Recap lists bigger turn, longer swing, softer grip and arm/chest connection. This summarizes a practiced sequence, not a reason to send four simultaneous swing thoughts to a learner.",
+      "frames": [
+        {
+          "time_seconds": 565,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00565.000.jpg",
+          "observation": "Recap discussion."
+        },
+        {
+          "time_seconds": 575,
+          "path": ".videos/coaching-knowledge/_nGVs7YNz_Q/detail/frame-00575.000.jpg",
+          "observation": "Four-point recap card."
+        }
+      ],
+      "limitations": [
+        "Source promises of added distance are not a measured user outcome."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "_nGVs7YNz_Q-C01",
+      "title": "Create a fuller speed swing through body turn",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "driver",
+          "speed practice"
+        ],
+        "body": [
+          "torso",
+          "arms",
+          "hands"
+        ],
+        "outcome": [
+          "speed",
+          "distance",
+          "control"
+        ],
+        "concept": [
+          "effort selection",
+          "feel versus measurement"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E04"
+      ],
+      "coaching_finding": "Length created by independent arm drag is the general contrast; Ruffels seeks fuller driver turn.",
+      "coach_reasoning": "Torso and hip rotation provide backswing length while takeaway stays organized.",
+      "intervention": {
+        "cue": "Make the fuller turn with hands, arms and body starting together.",
+        "rehearsal": "A few practice pumps to feel torso and hips turn."
+      },
+      "applicability": [
+        "Driver-speed objective and golfer can use the added turn effectively."
+      ],
+      "unknowns": [
+        "No physical screen or universal turn-angle target."
+      ],
+      "observed_result": "First turn-focused example displays 178 / 299 while warming up.",
+      "selection": {
+        "coaching_focus": "Explore a fuller coordinated turn",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "One focus, at most two compatible cues per user preference. Store full source progression without delivering all four at once.",
+        "reassess": "Compare speed, strike and control with usual swing before adding length."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "_nGVs7YNz_Q-C02",
+      "title": "Test a longer backswing relative to the player's stock swing",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "driver",
+          "speed practice"
+        ],
+        "body": [
+          "torso",
+          "arms",
+          "hands"
+        ],
+        "outcome": [
+          "speed",
+          "distance",
+          "control"
+        ],
+        "concept": [
+          "effort selection",
+          "feel versus measurement"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E05"
+      ],
+      "coaching_finding": "Ruffels normally stops somewhat short of parallel and uses a shorter fairway-finder.",
+      "coach_reasoning": "More time/length is proposed for the higher-speed task.",
+      "intervention": {
+        "cue": "Let the swing become longer through the turn.",
+        "personal_reference": "At least parallel is his own driver-speed reference, not a required position for everyone."
+      },
+      "applicability": [
+        "Speed is the selected task and longer swing does not create a harmful loss of usable contact/control."
+      ],
+      "unknowns": [
+        "No isolated causal test or validated optimal length."
+      ],
+      "observed_result": "Next cumulative example displays 181 / 315.",
+      "selection": {
+        "coaching_focus": "Find usable speed-swing length",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "One focus, at most two compatible cues per user preference. Store full source progression without delivering all four at once.",
+        "reassess": "Compare repeated outcomes rather than declare one longer shot proves the mechanism."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "_nGVs7YNz_Q-C03",
+      "title": "Reduce excessive grip tension while keeping the club supported",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "driver",
+          "speed practice"
+        ],
+        "body": [
+          "torso",
+          "arms",
+          "hands"
+        ],
+        "outcome": [
+          "speed",
+          "distance",
+          "control"
+        ],
+        "concept": [
+          "effort selection",
+          "feel versus measurement"
+        ]
+      },
+      "evidence_ids": [
+        "E02",
+        "E06"
+      ],
+      "coaching_finding": "Trying harder can produce tense forearms and an unnecessarily tight hold.",
+      "coach_reasoning": "Ruffels uses softer hands and moving setup to allow the club to move more freely.",
+      "intervention": {
+        "cue": "Keep hands soft while supporting the club.",
+        "routine": "Small steps or waggles help him avoid a rigid start."
+      },
+      "applicability": [
+        "Observed tension during speed intent and player retains club control."
+      ],
+      "unknowns": [
+        "No numerical grip force or proof that more lag is always beneficial."
+      ],
+      "observed_result": "Third cumulative example displays 184 / 322.",
+      "selection": {
+        "coaching_focus": "Remove unnecessary hand/forearm tension",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "One focus, at most two compatible cues per user preference. Store full source progression without delivering all four at once.",
+        "reassess": "Check grip security, speed and strike rather than seek the loosest possible hold."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "_nGVs7YNz_Q-C04",
+      "title": "Use lead-arm/chest connection as a personal control feel",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "driver",
+          "speed practice"
+        ],
+        "body": [
+          "torso",
+          "arms",
+          "hands"
+        ],
+        "outcome": [
+          "speed",
+          "distance",
+          "control"
+        ],
+        "concept": [
+          "effort selection",
+          "feel versus measurement"
+        ]
+      },
+      "evidence_ids": [
+        "E03",
+        "E07"
+      ],
+      "coaching_finding": "Ruffels reports lead arm leaving chest and hands moving out when he swings hard, making face less stable.",
+      "coach_reasoning": "Connection feel is intended to bring hand path inward and organize delivery at higher speed.",
+      "intervention": {
+        "cue": "Feel the lead upper arm working with the chest.",
+        "exception": "He explicitly permits separation; do not clamp arm to torso throughout swing."
+      },
+      "applicability": [
+        "Similar observed high-effort hand-path/control issue and positive response to trial."
+      ],
+      "unknowns": [
+        "No measured face stability, radius or universal arm-contact requirement."
+      ],
+      "observed_result": "Combined attempt shows 183 / 323, not a ball-speed increase over preceding 184.",
+      "selection": {
+        "coaching_focus": "Keep the faster delivery controllable",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "One focus, at most two compatible cues per user preference. Store full source progression without delivering all four at once.",
+        "reassess": "Assess strike and dispersion, not only speed or whether arm touches chest."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "_nGVs7YNz_Q-C05",
+      "title": "Use controlled high effort only when the course task allows it",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "driver",
+          "speed practice"
+        ],
+        "body": [
+          "torso",
+          "arms",
+          "hands"
+        ],
+        "outcome": [
+          "speed",
+          "distance",
+          "control"
+        ],
+        "concept": [
+          "effort selection",
+          "feel versus measurement"
+        ]
+      },
+      "evidence_ids": [
+        "E09"
+      ],
+      "coaching_finding": "Wide-open hole offers room to use more than stock effort, but maximum effort feels less controllable to Ruffels.",
+      "coach_reasoning": "He chooses an effort ceiling he believes still permits useful strike and direction.",
+      "intervention": {
+        "action": "Select a practiced high-effort swing when landing space and shot objective allow it.",
+        "avoid": "Do not use the maximum practice swing merely because it produced the longest carry."
+      },
+      "applicability": [
+        "A golfer has established a usable effort level and the hole offers enough room for its dispersion."
+      ],
+      "unknowns": [
+        "No measured safe dispersion envelope or actual course test."
+      ],
+      "observed_result": "Range examples labelled course-fast show 186 / 334 and 186 / 336.",
+      "selection": {
+        "coaching_focus": "Choose effort appropriate to the hole",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "One focus, at most two compatible cues per user preference. Store full source progression without delivering all four at once.",
+        "reassess": "Track actual strike and dispersion at each effort level."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "_nGVs7YNz_Q-C06",
+      "title": "Separate maximum-speed practice from on-course control",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "driver",
+          "speed practice"
+        ],
+        "body": [
+          "torso",
+          "arms",
+          "hands"
+        ],
+        "outcome": [
+          "speed",
+          "distance",
+          "control"
+        ],
+        "concept": [
+          "effort selection",
+          "feel versus measurement"
+        ]
+      },
+      "evidence_ids": [
+        "E08",
+        "E10",
+        "E11"
+      ],
+      "coaching_finding": "Familiar effort can limit speed practice; at maximum effort Ruffels accepts poorer strike/direction/spin control.",
+      "coach_reasoning": "Repeated high-intent practice and a moving start are proposed to expand available speed before returning to playable control.",
+      "intervention": {
+        "task": "Use a dedicated speed session with rocking/waggles and a non-static start.",
+        "source_dose": "Source suggests 20\u201330 hard shots a day and describes groups of 10\u201315; not a personalized prescription.",
+        "transfer": "Reintroduce strike and direction targets before using the new effort on course."
+      },
+      "applicability": [
+        "Explicit speed-training objective, suitable practice setting and individual readiness."
+      ],
+      "unknowns": [
+        "No recovery/adaptation data or guarantee of durable gains; club speeds are estimates."
+      ],
+      "observed_result": "First max reported 189 / 341; second displayed 190 / 349. No longitudinal gain demonstrated.",
+      "selection": {
+        "coaching_focus": "Practice higher speed as a separate task",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "One focus, at most two compatible cues per user preference. Store full source progression without delivering all four at once.",
+        "reassess": "Measure repeated speed and then verify strike/dispersion before course transfer."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "id": "M01",
+      "evidence_ids": [
+        "E04"
+      ],
+      "kind": "source_graphic_result",
+      "source_time_seconds": 195,
+      "stage": "turn/warm-up",
+      "ball_speed_value": 178,
+      "ball_speed_unit": "Not labelled on source cards; no unit conversion performed",
+      "carry_yards": 299,
+      "limits": [
+        "Edited source session; no raw instrument export or isolated intervention test."
+      ]
+    },
+    {
+      "id": "M02",
+      "evidence_ids": [
+        "E05"
+      ],
+      "kind": "source_graphic_result",
+      "source_time_seconds": 235,
+      "stage": "added length",
+      "ball_speed_value": 181,
+      "ball_speed_unit": "Not labelled on source cards; no unit conversion performed",
+      "carry_yards": 315,
+      "limits": [
+        "Edited source session; no raw instrument export or isolated intervention test."
+      ]
+    },
+    {
+      "id": "M03",
+      "evidence_ids": [
+        "E06"
+      ],
+      "kind": "source_graphic_result",
+      "source_time_seconds": 285,
+      "stage": "added soft hands",
+      "ball_speed_value": 184,
+      "ball_speed_unit": "Not labelled on source cards; no unit conversion performed",
+      "carry_yards": 322,
+      "limits": [
+        "Edited source session; no raw instrument export or isolated intervention test."
+      ]
+    },
+    {
+      "id": "M04",
+      "evidence_ids": [
+        "E07"
+      ],
+      "kind": "source_graphic_result",
+      "source_time_seconds": 345,
+      "stage": "added connection",
+      "ball_speed_value": 183,
+      "ball_speed_unit": "Not labelled on source cards; no unit conversion performed",
+      "carry_yards": 323,
+      "limits": [
+        "Edited source session; no raw instrument export or isolated intervention test."
+      ]
+    },
+    {
+      "id": "M05",
+      "evidence_ids": [
+        "E09"
+      ],
+      "kind": "source_graphic_result",
+      "source_time_seconds": 415,
+      "stage": "course-fast one",
+      "ball_speed_value": 186,
+      "ball_speed_unit": "Not labelled on source cards; no unit conversion performed",
+      "carry_yards": 334,
+      "limits": [
+        "Edited source session; no raw instrument export or isolated intervention test."
+      ]
+    },
+    {
+      "id": "M06",
+      "evidence_ids": [
+        "E09"
+      ],
+      "kind": "source_graphic_result",
+      "source_time_seconds": 449,
+      "stage": "course-fast two",
+      "ball_speed_value": 186,
+      "ball_speed_unit": "Not labelled on source cards; no unit conversion performed",
+      "carry_yards": 336,
+      "limits": [
+        "Edited source session; no raw instrument export or isolated intervention test."
+      ]
+    },
+    {
+      "id": "M07",
+      "evidence_ids": [
+        "E10"
+      ],
+      "kind": "spoken_result_only",
+      "source_time_seconds": 494,
+      "stage": "maximum one",
+      "ball_speed_value": 189,
+      "ball_speed_unit": "Not labelled on source cards; no unit conversion performed",
+      "carry_yards": 341,
+      "limits": [
+        "Edited source session; no raw instrument export or isolated intervention test."
+      ]
+    },
+    {
+      "id": "M08",
+      "evidence_ids": [
+        "E10"
+      ],
+      "kind": "source_graphic_result",
+      "source_time_seconds": 549,
+      "stage": "maximum two",
+      "ball_speed_value": 190,
+      "ball_speed_unit": "Not labelled on source cards; no unit conversion performed",
+      "carry_yards": 349,
+      "limits": [
+        "Edited source session; no raw instrument export or isolated intervention test."
+      ]
+    },
+    {
+      "id": "M09",
+      "evidence_ids": [
+        "E10"
+      ],
+      "kind": "instructor_estimate",
+      "usual_club_speed": [
+        123,
+        124
+      ],
+      "course_fast_club_speed": [
+        126,
+        130
+      ],
+      "maximum_club_speed": [
+        130,
+        135
+      ],
+      "limits": [
+        "Explicitly estimated; clubface dots absent. Unit not explicitly labelled in captured captions."
+      ]
+    },
+    {
+      "id": "M10",
+      "evidence_ids": [
+        "E08",
+        "E10"
+      ],
+      "kind": "source_practice_dose",
+      "daily_hard_shots": [
+        20,
+        30
+      ],
+      "example_group": [
+        10,
+        15
+      ],
+      "limits": [
+        "Source suggestion/example, not measured adherence or individualized workload."
+      ]
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        226,
+        242
+      ],
+      "issue": "Caption 35 carry resolved to stable on-screen 315."
+    },
+    {
+      "span_seconds": [
+        330,
+        346
+      ],
+      "issue": "General faster-each-step commentary does not match ball speed decreasing from 184 to 183; preserve displayed sequence."
+    },
+    {
+      "span_seconds": [
+        447,
+        452
+      ],
+      "issue": "Rolling card digits at 448 are animation; settled 336 at 449\u2013452 retained."
+    },
+    {
+      "span_seconds": [
+        547,
+        552
+      ],
+      "issue": "Final rolling carry settles at 349; transient digits not separate results."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "NOMY1bzMI28-C05",
+      "current_case": "_nGVs7YNz_Q-C02",
+      "relation": "Longer is conditional on objective and player",
+      "explanation": "Brennan\u2019s optional shorter-turn work contrasts with Ruffels\u2019 longer speed swing. Neither establishes one ideal backswing length."
+    },
+    {
+      "source_case": "JgaKrhspwik-C03",
+      "current_case": "_nGVs7YNz_Q-C03",
+      "relation": "Secure hold and reduced tension need context",
+      "explanation": "Harrington wants hands securely seated with free wrists; Ruffels clarifies soft hands still support the club. Do not equate softness with slipping."
+    },
+    {
+      "source_case": "BcG-r_13z_I-C01",
+      "current_case": "_nGVs7YNz_Q-C03",
+      "relation": "Lag language is not a universal speed diagnosis",
+      "explanation": "Menante\u2019s measured lag/timing pattern differs from Ruffels\u2019 general soft-grip explanation. More lag must not become an automatic target."
+    },
+    {
+      "source_case": "IJSu7440Ick-C11",
+      "current_case": "_nGVs7YNz_Q-C05",
+      "relation": "Athletic intent depends on task",
+      "explanation": "Allen\u2019s guarded intent and Ruffels\u2019 selected course-fast effort both show that intended effort matters; the acceptable dispersion still needs player evidence."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "_nGVs7YNz_Q-C01",
+        "_nGVs7YNz_Q-C02",
+        "_nGVs7YNz_Q-C03",
+        "_nGVs7YNz_Q-C04"
+      ],
+      "relationship": "Cumulative progression, not isolated tests and not four simultaneous user cues."
+    },
+    {
+      "cases": [
+        "_nGVs7YNz_Q-C05",
+        "_nGVs7YNz_Q-C06"
+      ],
+      "relationship": "Controlled course effort differs from maximum practice effort with admitted strike/direction losses."
+    }
+  ],
+  "annotation_opportunities": [
+    "Keep source body-turn circles and parallel reference separate from measured angles.",
+    "Pair each result card with its effort stage; do not count replay frames as new shots.",
+    "Label club-speed estimates and card animation explicitly.",
+    "Show moving setup without prescribing every exaggerated practice movement on course."
+  ],
+  "excluded_material": [
+    "Clothing promotion and branding outro.",
+    "Universal speed/distance promises and mental-limit explanation as established science.",
+    "Claim of a measured individual contribution from each cue."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Own-player tutorial progression with result cards but no isolated test, individualized assessment or longitudinal outcome."
+  },
+  "asset_sha256": {
+    "video": "93162636daf08f55eebeed395c68df02a2bc422d1e00a433ecb80e56a1fbd7ca",
+    "raw_captions": "746d27c0b70550cc391424386f8e6e83cc2349fbdbf09637fa4543f0dd68fe14",
+    "transcript": "6a7c6c669d5eb54427a4c924192649cb03211934e0b1d0249d807ec8e720b1df"
+  }
+}

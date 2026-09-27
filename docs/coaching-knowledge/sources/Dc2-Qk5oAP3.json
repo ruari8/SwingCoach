@@ -1,0 +1,398 @@
+{
+  "version": 1,
+  "source_id": "Dc2-Qk5oAP3",
+  "url": "https://www.instagram.com/p/Dc2-Qk5oAP3/",
+  "title": "Compression-labelled banked-foot preset drill",
+  "publisher": "AndyCap / andyycap",
+  "published": "20260904",
+  "duration_seconds": 51.945011,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "uploader": "AndyCap",
+    "embedded_instructor": "Not named in supplied post or transcribed excerpt",
+    "embedded_interviewer": "Not independently named; post includes Rick Shiels hashtag"
+  },
+  "context": {
+    "format": "Uploader intro/outro surrounding republished lesson excerpt",
+    "handedness": "Right-handed demonstration",
+    "club": "Iron; number unknown",
+    "body_context": "No screen or force measurement",
+    "style": "Exaggerated setup and one demonstration shot"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/Dc2-Qk5oAP3/Dc2-Qk5oAP3.mp4",
+    "raw_captions": ".videos/coaching-knowledge/Dc2-Qk5oAP3/asr-raw.json",
+    "transcript": ".videos/coaching-knowledge/Dc2-Qk5oAP3/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/Dc2-Qk5oAP3/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/Dc2-Qk5oAP3/Dc2-Qk5oAP3.info.json",
+    "overview": ".videos/coaching-knowledge/Dc2-Qk5oAP3/overview/index.json",
+    "detail": ".videos/coaching-knowledge/Dc2-Qk5oAP3/detail/index.json",
+    "movement": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/index.json",
+    "native_preset": ".videos/coaching-knowledge/Dc2-Qk5oAP3/preset-26.png"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 7,
+    "transcript_kind": "Local MLX Whisper ASR, with embedded subtitles and opening label inspected",
+    "audio_independently_transcribed": true,
+    "audio_transcription_note": "Locally generated; independent human speech verification not claimed.",
+    "visual_review_method": "14 portrait overview,32 uncropped detail and 32 cropped movement frames across eight sheets, plus one native preset frame, all inspected. The uncropped detail view was small; movement crop 1440:810:0:880 removes letterboxing while original remains retained. Sampled review, not continuous viewing.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/Dc2-Qk5oAP3/overview/index.json",
+      ".videos/coaching-knowledge/Dc2-Qk5oAP3/detail/index.json",
+      ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/index.json"
+    ],
+    "limitations": [
+      "Reposted excerpt: original lead-in and diagnosis absent.",
+      "Movement crop excludes subtitle region; uncropped samples and ASR preserve text.",
+      "No calibrated foot, pressure or club delivery metrics."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        14
+      ],
+      "source_url": "https://www.instagram.com/p/Dc2-Qk5oAP3/",
+      "attribution": "AndyCap opening label, embedded interviewer and instructor",
+      "kind": "reposted_instructional_demonstration",
+      "session": "Exaggerated forward-weight / banked-trail-foot drill",
+      "summary": "Uploader labels this a compression drill, then embedded host asks for a drill to make an unspecified earlier movement reliable. Instructor endorses practice through drills. The earlier diagnosis/context is not included.",
+      "frames": [
+        {
+          "time_seconds": 0,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/overview/frame-00000.000.jpg",
+          "observation": "Uploader title labels compression drill."
+        },
+        {
+          "time_seconds": 4,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/overview/frame-00004.000.jpg",
+          "observation": "Host asks instructor for a drill."
+        },
+        {
+          "time_seconds": 12,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/overview/frame-00012.000.jpg",
+          "observation": "Instructor introduces drill."
+        }
+      ],
+      "limitations": [
+        "Excerpt omits original lesson lead-in and any assessed student baseline.",
+        "Sampled footage and reported result do not establish universal effectiveness."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        14,
+        31.8
+      ],
+      "source_url": "https://www.instagram.com/p/Dc2-Qk5oAP3/",
+      "attribution": "Instructor in embedded lesson; name not established by this post",
+      "kind": "reposted_instructional_demonstration",
+      "session": "Exaggerated forward-weight / banked-trail-foot drill",
+      "summary": "Instructor widens stance, banks right/trail foot inward, pre-lengthens right leg and feels substantial weight forward. He contrasts normal setup with the exaggerated preset. Source annotation says Tip Four: Exaggerate.",
+      "frames": [
+        {
+          "time_seconds": 17,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/frame-00017.000.jpg",
+          "observation": "Exaggerate annotation over wider stance."
+        },
+        {
+          "time_seconds": 19,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/frame-00019.000.jpg",
+          "observation": "Trail foot banked inward and leg extended sideways."
+        },
+        {
+          "time_seconds": 21,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/frame-00021.000.jpg",
+          "observation": "Instructor points toward right leg."
+        },
+        {
+          "time_seconds": 23,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/frame-00023.000.jpg",
+          "observation": "Normal setup contrast."
+        },
+        {
+          "time_seconds": 26,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/frame-00026.000.jpg",
+          "observation": "Banked-foot preset with more extended trail leg."
+        },
+        {
+          "time_seconds": 26,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/preset-26.png",
+          "observation": "Native uncropped frame confirms foot and leg arrangement plus caption."
+        },
+        {
+          "time_seconds": 29,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/frame-00029.000.jpg",
+          "observation": "Preset before swing."
+        }
+      ],
+      "limitations": [
+        "Excerpt omits original lesson lead-in and any assessed student baseline.",
+        "Sampled footage and reported result do not establish universal effectiveness."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        31.8,
+        40.5
+      ],
+      "source_url": "https://www.instagram.com/p/Dc2-Qk5oAP3/",
+      "attribution": "Instructor in embedded lesson; name not established by this post",
+      "kind": "reposted_instructional_demonstration",
+      "session": "Exaggerated forward-weight / banked-trail-foot drill",
+      "summary": "He hits from the preset, finishes and says he draws every ball and the viewer will too, attributing that to forward weight and banked foot. Edited rear-angle tracer appears. No measured face/path or distribution supports the universal prediction.",
+      "frames": [
+        {
+          "time_seconds": 32.25,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/frame-00032.250.jpg",
+          "observation": "Backswing from preset."
+        },
+        {
+          "time_seconds": 32.5,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/frame-00032.500.jpg",
+          "observation": "Top with wide stance."
+        },
+        {
+          "time_seconds": 32.75,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/frame-00032.750.jpg",
+          "observation": "Delivery from preset."
+        },
+        {
+          "time_seconds": 33,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/frame-00033.000.jpg",
+          "observation": "Follow-through."
+        },
+        {
+          "time_seconds": 33.5,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/frame-00033.500.jpg",
+          "observation": "Rear-angle finish and source tracer."
+        },
+        {
+          "time_seconds": 35,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/frame-00035.000.jpg",
+          "observation": "Reported draw result; no numeric display."
+        },
+        {
+          "time_seconds": 39,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/frame-00039.000.jpg",
+          "observation": "Returns to preset while explaining weight forward."
+        }
+      ],
+      "limitations": [
+        "Excerpt omits original lesson lead-in and any assessed student baseline.",
+        "Sampled footage and reported result do not establish universal effectiveness."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        40.5,
+        51.945011
+      ],
+      "source_url": "https://www.instagram.com/p/Dc2-Qk5oAP3/",
+      "attribution": "Embedded instructor explanation, then AndyCap outro footage",
+      "kind": "reposted_instructional_demonstration",
+      "session": "Exaggerated forward-weight / banked-trail-foot drill",
+      "summary": "Instructor explains that exaggeration teaches the feel and its transfer into the through side, with a short through-motion gesture. Edit then returns to uploader shot/tracer footage. The uploader segment is not a matched retest of the embedded lesson.",
+      "frames": [
+        {
+          "time_seconds": 41,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/frame-00041.000.jpg",
+          "observation": "Through-motion rehearsal."
+        },
+        {
+          "time_seconds": 43,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/frame-00043.000.jpg",
+          "observation": "Instructor gesturing from setup."
+        },
+        {
+          "time_seconds": 44,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/movement/frame-00044.000.jpg",
+          "observation": "Rotated through-side demonstration."
+        },
+        {
+          "time_seconds": 48,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/overview/frame-00048.000.jpg",
+          "observation": "Different setting: uploader finish with pink tracer."
+        },
+        {
+          "time_seconds": 51,
+          "path": ".videos/coaching-knowledge/Dc2-Qk5oAP3/overview/frame-00051.000.jpg",
+          "observation": "Uploader outro with tracer."
+        }
+      ],
+      "limitations": [
+        "Excerpt omits original lesson lead-in and any assessed student baseline.",
+        "Sampled footage and reported result do not establish universal effectiveness."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "Dc2-Qk5oAP3-C01",
+      "title": "Exaggerate forward weight with a banked trail foot to learn the through-side feel",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "setup",
+          "downswing",
+          "impact",
+          "practice"
+        ],
+        "body": [
+          "trail foot",
+          "trail leg",
+          "lead side"
+        ],
+        "outcome": [
+          "compression claim",
+          "draw claim"
+        ],
+        "concept": [
+          "exaggeration",
+          "preset drill",
+          "weight-forward feel",
+          "transfer"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E04"
+      ],
+      "coaching_finding": "Uploader calls this compression training. Embedded excerpt begins after the problem explanation, so no specific initial golfer fault is established.",
+      "coach_reasoning": "Instructor says the preset creates forward-weight/banked-foot feel and teaches how it should translate into the through side. He also attributes a draw to this arrangement, without measurement.",
+      "intervention": {
+        "procedure": [
+          "Widen stance relative to normal setup.",
+          "Bank right/trail foot inward and pre-lengthen the right leg as demonstrated.",
+          "Feel weight forward and hit from the preset."
+        ],
+        "cue": "Feel the forward-weight preset through the shot.",
+        "limits": "These are steps of one exaggerated rehearsal, not a universal address recommendation. Source gives no foot angle, pressure percentage or required stance width."
+      },
+      "applicability": [
+        "A separately established need to learn the demonstrated through-side/forward-weight feel.",
+        "Golfer can comfortably use the preset and actual strike/flight response is useful."
+      ],
+      "unknowns": [
+        "Original lesson source and complete speaker identification; hashtag alone does not identify the instructor.",
+        "Original diagnosis, golfer constraints, club number and prior ball flight.",
+        "Whether preset transfers to normal setup or consistently changes compression/shot shape."
+      ],
+      "observed_result": "One embedded instructor shot with verbal draw claim and source tracer; separate uploader shot montage. No measured before/after or long-term outcome.",
+      "selection": {
+        "coaching_focus": "Learn one through-side feel with a preset",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus and at most two compatible cues; setup procedure is a single task.",
+        "reassess": "Proposed app check: remove exaggerated preset, compare strike and ball flight, and check that the intended through-side motion carries over. Do not promise a draw."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "unmeasured_weight_feel",
+      "evidence_ids": [
+        "E02"
+      ],
+      "value": "A lot of weight forward",
+      "limits": [
+        "No percentage or plate measurement."
+      ]
+    },
+    {
+      "kind": "reported_shot_shape",
+      "evidence_ids": [
+        "E03"
+      ],
+      "value": "Draw, instructor statement",
+      "limits": [
+        "Universal draw prediction unsupported by single example."
+      ]
+    },
+    {
+      "kind": "source_tracer",
+      "evidence_ids": [
+        "E03",
+        "E04"
+      ],
+      "value": "Tracer graphics in separate embedded/uploader shots",
+      "limits": [
+        "Not raw launch data or a matched comparison."
+      ]
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        14,
+        23
+      ],
+      "issue": "ASR splits pre-lengthen into pre-length in. Embedded subtitle at21s reads pre-lengthen and visible right-leg setup supports the intended word."
+    },
+    {
+      "span_seconds": [
+        0,
+        51.945011
+      ],
+      "issue": "Original instructor identity not verified from textual source. Search did not establish a primary original source; no name is inferred from appearance."
+    },
+    {
+      "span_seconds": [
+        33,
+        40.5
+      ],
+      "issue": "Universal draw claim is retained as instructor claim, not adopted as deterministic coaching logic."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "IJSu7440Ick-C07",
+      "current_case": "Dc2-Qk5oAP3-C01",
+      "relation": "Different foot adjustment",
+      "explanation": "Allen\u2019s trail-foot flare changes toe direction. This drill banks the foot inward with a lengthened trail leg; flare, setback and bank are not interchangeable tags."
+    },
+    {
+      "source_case": "IJSu7440Ick-C08",
+      "current_case": "Dc2-Qk5oAP3-C01",
+      "relation": "Different initial pressure context",
+      "explanation": "Allen initially starts more weight right to reduce unstable movement before going left in downswing. This exaggerated drill starts forward to teach a through-side feel. Preserve task and phase rather than merge them into one setup rule."
+    },
+    {
+      "source_case": "vGGIn2IAW-Q-C04",
+      "current_case": "Dc2-Qk5oAP3-C01",
+      "relation": "Transfer must be separately checked",
+      "explanation": "Ruffels supplies an explicit no-aid target block. This excerpt explains transfer but does not show an ordinary-setup retest of the learner."
+    }
+  ],
+  "within_source_distinctions": [],
+  "annotation_opportunities": [
+    "Show normal setup beside the exaggerated preset with the source Exaggerate label.",
+    "Distinguish inward foot banking from toe flare and foot setback.",
+    "Separate source shot tracer, verbal outcome and measured launch data."
+  ],
+  "excluded_material": [
+    "Universal draw guarantee or validated compression gain.",
+    "Pressure percentages, precise foot angles and permanent setup prescription.",
+    "Unverified identity of embedded instructor based on appearance."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Reposted tutorial with missing diagnosis and unsupported universal outcome claim."
+  },
+  "asset_sha256": {
+    "video": "bf5f9b53f4c0c4eb6e834d96d64d15668ac9e0df41ce123b68c9852b4b4b18f9",
+    "raw_captions": "ffb6362b109873276ab0a026c1dd431dc4f2c19bf10780fd7e7def21c18d5ee8",
+    "transcript": "68b1fa5e413623644f6f6f6cac3d966d57b4e991c36f74d979a1bd1fc1fcd3ca"
+  }
+}

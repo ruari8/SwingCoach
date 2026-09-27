@@ -1,0 +1,856 @@
+{
+  "version": 1,
+  "source_id": "vGGIn2IAW-Q",
+  "url": "https://www.youtube.com/watch?v=vGGIn2IAW-Q",
+  "title": "What I\u2019m Working On - Ryan Ruffels",
+  "publisher": "Ryan Ruffels",
+  "published": "20240619",
+  "duration_seconds": 599,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "player_and_instructor": "Ryan Ruffels",
+    "independent_coach": null
+  },
+  "context": {
+    "format": "Personal practice explanation, explicitly about own tendencies rather than general diagnosis",
+    "handedness": "Right-handed",
+    "club": "Pitching wedge in target block; multiple-club routine described",
+    "body_context": "No physical screen",
+    "style": "Two mechanical aid blocks followed by deliberate no-aid transfer"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/vGGIn2IAW-Q/vGGIn2IAW-Q.mp4",
+    "raw_captions": ".videos/coaching-knowledge/vGGIn2IAW-Q/vGGIn2IAW-Q.en-orig.json3",
+    "transcript": ".videos/coaching-knowledge/vGGIn2IAW-Q/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/vGGIn2IAW-Q/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/vGGIn2IAW-Q/vGGIn2IAW-Q.info.json",
+    "overview": ".videos/coaching-knowledge/vGGIn2IAW-Q/overview/index.json",
+    "detail": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/index.json",
+    "sequences": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 248,
+    "transcript_kind": "YouTube en-orig automatic captions",
+    "audio_independently_transcribed": false,
+    "visual_review_method": "20 overview, 52 detail and 36 sequence frames across ten contact sheets, all inspected. Includes aid constraints, intended band release, transfer swings and source practice cards. Sampled review across 9:59, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/vGGIn2IAW-Q/overview/index.json",
+      ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/index.json",
+      ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/index.json"
+    ],
+    "limitations": [
+      "480p edited source; no calibrated shaft/hand-depth or face measurements.",
+      "Quad visible and verbally referenced; raw numeric display not inspected/readable.",
+      "Self-report of tendencies is kept separate from independent diagnosis."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        45,
+        94
+      ],
+      "source_url": "https://www.youtube.com/watch?v=vGGIn2IAW-Q&t=45s",
+      "attribution": "Ryan Ruffels describing his own tendencies and practice",
+      "kind": "self_reported_player_practice",
+      "session": "Range practice with ball aid, band and target-only transfer",
+      "summary": "Ruffels arranges three groups of four balls: first aid, second aid and no aid. He says groups prevent mindlessly scraping balls and keep intention clear. Source card supports organizing balls into blocks.",
+      "frames": [
+        {
+          "time_seconds": 55,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00055.000.jpg",
+          "observation": "Three small ball groups beside device/basket."
+        },
+        {
+          "time_seconds": 65,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00065.000.jpg",
+          "observation": "Organize-balls source card."
+        },
+        {
+          "time_seconds": 75,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00075.000.jpg",
+          "observation": "First aid introduced."
+        },
+        {
+          "time_seconds": 85,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00085.000.jpg",
+          "observation": "Ball aid held up."
+        }
+      ],
+      "limitations": [
+        "Counts describe this practice structure, not validated universal dose."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        94,
+        146
+      ],
+      "source_url": "https://www.youtube.com/watch?v=vGGIn2IAW-Q&t=94s",
+      "attribution": "Ryan Ruffels describing his own tendencies and practice",
+      "kind": "self_reported_player_practice",
+      "session": "Range practice with ball aid, band and target-only transfer",
+      "summary": "His stated tendencies are insufficient upper-body turn, pulling down on shaft for power and a steepening downswing. A ball between arms encourages torso turn with elbows together. From top he feels squeezing the ball makes club shallower. Source card explicitly links his underturn/steepness to this aid.",
+      "frames": [
+        {
+          "time_seconds": 105,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00105.000.jpg",
+          "observation": "Training-aid card and staged tendency demonstration."
+        },
+        {
+          "time_seconds": 115,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00115.000.jpg",
+          "observation": "Steep-shaft contrast."
+        },
+        {
+          "time_seconds": 122,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/frame-00122.000.jpg",
+          "observation": "Top/turn rehearsal."
+        },
+        {
+          "time_seconds": 126,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/frame-00126.000.jpg",
+          "observation": "Forearm/club shallowing demonstration."
+        },
+        {
+          "time_seconds": 134,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/frame-00134.000.jpg",
+          "observation": "Ball between arms in backswing."
+        },
+        {
+          "time_seconds": 138,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/frame-00138.000.jpg",
+          "observation": "Squeeze/downward transition rehearsal."
+        }
+      ],
+      "limitations": [
+        "No measured shaft-plane or torso-angle change. Squeezing is his feel, not a universal cause of shallowing."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        146,
+        215
+      ],
+      "source_url": "https://www.youtube.com/watch?v=vGGIn2IAW-Q&t=146s",
+      "attribution": "Ryan Ruffels describing his own tendencies and practice",
+      "kind": "self_reported_player_practice",
+      "session": "Range practice with ball aid, band and target-only transfer",
+      "summary": "Four ball-aid shots are presented. Ruffels warns that filming an aid swing can lead him to judge its odd appearance; it physically constrains motion, so he uses it to learn a feel and checks appearance after removing it. Slightly laid-off/inside drill positions are tolerated for this purpose.",
+      "frames": [
+        {
+          "time_seconds": 155,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00155.000.jpg",
+          "observation": "Aid-shot finish."
+        },
+        {
+          "time_seconds": 165,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00165.000.jpg",
+          "observation": "Explains appearance versus feel."
+        },
+        {
+          "time_seconds": 175,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00175.000.jpg",
+          "observation": "Address with ball aid."
+        },
+        {
+          "time_seconds": 195,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00195.000.jpg",
+          "observation": "Aid-shot finish."
+        },
+        {
+          "time_seconds": 205,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00205.000.jpg",
+          "observation": "Another finish before switching aids."
+        }
+      ],
+      "limitations": [
+        "Edited shots/rehearsals are not independently counted as a complete trial log. Tolerating a drill exaggeration does not mean accepting the same shape unconditionally in play."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        215,
+        258
+      ],
+      "source_url": "https://www.youtube.com/watch?v=vGGIn2IAW-Q&t=215s",
+      "attribution": "Ryan Ruffels describing his own tendencies and practice",
+      "kind": "self_reported_player_practice",
+      "session": "Range practice with ball aid, band and target-only transfer",
+      "summary": "Purple band under arms is used to promote depth: Ruffels wants hands feeling behind right shoulder rather than right elbow high/in front. Losing band in that phase provides feedback. Source card describes depth as a reason for the band.",
+      "frames": [
+        {
+          "time_seconds": 225,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00225.000.jpg",
+          "observation": "Picks up band."
+        },
+        {
+          "time_seconds": 235,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00235.000.jpg",
+          "observation": "Demonstrates band placement/arm position."
+        },
+        {
+          "time_seconds": 245,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00245.000.jpg",
+          "observation": "Backswing arm-depth reference."
+        },
+        {
+          "time_seconds": 250,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/overview/frame-00250.000.jpg",
+          "observation": "Depth training-aid card."
+        }
+      ],
+      "limitations": [
+        "No calibrated hand-depth measure or ideal behind-shoulder target for all players."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        258,
+        328
+      ],
+      "source_url": "https://www.youtube.com/watch?v=vGGIn2IAW-Q&t=258s",
+      "attribution": "Ryan Ruffels describing his own tendencies and practice",
+      "kind": "self_reported_player_practice",
+      "session": "Range practice with ball aid, band and target-only transfer",
+      "summary": "Second band purpose is lead-arm/chest connection when he rips through at high speed. He wants to retain band through impact or a little beyond, then release it for normal finish. Video shows band leaving and lying behind him. He warns to allow space behind because it is thrown. He reports good feel and more depth after this block.",
+      "frames": [
+        {
+          "time_seconds": 265,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00265.000.jpg",
+          "observation": "Lead-side connection rehearsal."
+        },
+        {
+          "time_seconds": 270,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/frame-00270.000.jpg",
+          "observation": "Band and arm/chest relationship."
+        },
+        {
+          "time_seconds": 278,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/frame-00278.000.jpg",
+          "observation": "Address with band."
+        },
+        {
+          "time_seconds": 280,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/frame-00280.000.jpg",
+          "observation": "Band-shot downswing."
+        },
+        {
+          "time_seconds": 284,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/frame-00284.000.jpg",
+          "observation": "Normal finish as band releases."
+        },
+        {
+          "time_seconds": 288,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/frame-00288.000.jpg",
+          "observation": "Band visible on turf behind player."
+        },
+        {
+          "time_seconds": 305,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00305.000.jpg",
+          "observation": "Clarifies impact-versus-finish retention."
+        },
+        {
+          "time_seconds": 315,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00315.000.jpg",
+          "observation": "Further band-shot finish."
+        }
+      ],
+      "limitations": [
+        "Band release after impact is intended; do not label any release a fault. No measured face stabilization, pressure or causal test."
+      ]
+    },
+    {
+      "id": "E06",
+      "span_seconds": [
+        328,
+        393
+      ],
+      "source_url": "https://www.youtube.com/watch?v=vGGIn2IAW-Q&t=328s",
+      "attribution": "Ryan Ruffels describing his own tendencies and practice",
+      "kind": "self_reported_player_practice",
+      "session": "Range practice with ball aid, band and target-only transfer",
+      "summary": "Ruffels says he can get stuck in drills, whether they feel good or bad, and become too technical in tournaments. Final four balls remove aids, practice swings and his technical rehearsal waggle. He chooses a specific shot and commits attention to target, distinguishing a useful sensation from mechanical swing thoughts.",
+      "frames": [
+        {
+          "time_seconds": 335,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00335.000.jpg",
+          "observation": "Explains drill-dependence problem."
+        },
+        {
+          "time_seconds": 345,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00345.000.jpg",
+          "observation": "Describes no-aid transfer block."
+        },
+        {
+          "time_seconds": 355,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00355.000.jpg",
+          "observation": "Hand gesture during swing-thought distinction."
+        },
+        {
+          "time_seconds": 365,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00365.000.jpg",
+          "observation": "Steps behind ball toward target."
+        },
+        {
+          "time_seconds": 385,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00385.000.jpg",
+          "observation": "Chooses target and shot."
+        }
+      ],
+      "limitations": [
+        "No-waggle is this transfer constraint, not a ban on natural movement or a universal routine. Improved tournament performance is untested."
+      ]
+    },
+    {
+      "id": "E07",
+      "span_seconds": [
+        393,
+        492
+      ],
+      "source_url": "https://www.youtube.com/watch?v=vGGIn2IAW-Q&t=393s",
+      "attribution": "Ryan Ruffels describing his own tendencies and practice",
+      "kind": "self_reported_player_practice",
+      "session": "Range practice with ball aid, band and target-only transfer",
+      "summary": "Four target-only pitching-wedge shots: hold-off fade target about 140 yards, reported 139; low draw toward back-left target, reported solid but outside Quad capture range so no numbers; stock straight target146, reported144 and straight; lower cut target129, reported126 and did not quite cut. He says this block takes longer because each shot needs deliberate selection and a matching sensation.",
+      "frames": [
+        {
+          "time_seconds": 398,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/frame-00398.000.jpg",
+          "observation": "First target-shot address."
+        },
+        {
+          "time_seconds": 402,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/frame-00402.000.jpg",
+          "observation": "Hold-off fade follow-through."
+        },
+        {
+          "time_seconds": 415,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00415.000.jpg",
+          "observation": "Discusses result and transfer."
+        },
+        {
+          "time_seconds": 428,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/frame-00428.000.jpg",
+          "observation": "Low-draw setup."
+        },
+        {
+          "time_seconds": 432,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/frame-00432.000.jpg",
+          "observation": "Low-draw finish."
+        },
+        {
+          "time_seconds": 435,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00435.000.jpg",
+          "observation": "Explains absent Quad reading."
+        },
+        {
+          "time_seconds": 454,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/frame-00454.000.jpg",
+          "observation": "Stock-shot finish."
+        },
+        {
+          "time_seconds": 465,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00465.000.jpg",
+          "observation": "Plans final trajectory."
+        },
+        {
+          "time_seconds": 480,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/frame-00480.000.jpg",
+          "observation": "Final low-cut setup."
+        },
+        {
+          "time_seconds": 484,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/sequences/frame-00484.000.jpg",
+          "observation": "Final shot finish."
+        },
+        {
+          "time_seconds": 490,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/overview/frame-00490.000.jpg",
+          "observation": "Reports final result."
+        }
+      ],
+      "limitations": [
+        "Distances are verbally reported from Quad context, not displayed raw readouts. No number invented for missed capture. Final shot fails intended curve despite close distance. No baseline/control or measured dispersion."
+      ]
+    },
+    {
+      "id": "E08",
+      "span_seconds": [
+        492,
+        561
+      ],
+      "source_url": "https://www.youtube.com/watch?v=vGGIn2IAW-Q&t=492s",
+      "attribution": "Ryan Ruffels describing his own tendencies and practice",
+      "kind": "self_reported_player_practice",
+      "session": "Range practice with ball aid, band and target-only transfer",
+      "summary": "He suggests repeating 12-shot structure across selected clubs, naming pitching wedge, eight, six and five as examples, and taking a couple-minute break after each focused set. Fewer balls can fit a time limit while keeping the break. Recap is turn, enough arm depth and squeezing elbows to shallow, all explicitly his current priorities.",
+      "frames": [
+        {
+          "time_seconds": 495,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00495.000.jpg",
+          "observation": "Explains repeating blocks across clubs."
+        },
+        {
+          "time_seconds": 505,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00505.000.jpg",
+          "observation": "Discusses variable session size."
+        },
+        {
+          "time_seconds": 515,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00515.000.jpg",
+          "observation": "Break between focused sets."
+        },
+        {
+          "time_seconds": 525,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00525.000.jpg",
+          "observation": "Source card recommends practice breaks."
+        },
+        {
+          "time_seconds": 545,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00545.000.jpg",
+          "observation": "Personal-priority checklist."
+        },
+        {
+          "time_seconds": 555,
+          "path": ".videos/coaching-knowledge/vGGIn2IAW-Q/detail/frame-00555.000.jpg",
+          "observation": "Checklist marks turn and depth."
+        }
+      ],
+      "limitations": [
+        "Four-to-six clubs at 12 shots means48\u201372 for one pass; source also mentions some100-shot days without specifying structure. No optimal workload or recovery test."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "vGGIn2IAW-Q-C01",
+      "title": "Use an arm-ball rehearsal for Ruffels' underturn and steepening pattern",
+      "case_type": "self_reported_player_practice_case",
+      "tags": {
+        "phase": [
+          "practice",
+          "backswing",
+          "transition"
+        ],
+        "body": [
+          "torso",
+          "arms",
+          "elbows"
+        ],
+        "outcome": [
+          "delivery",
+          "target execution"
+        ],
+        "concept": [
+          "training aid",
+          "transfer",
+          "practice intention"
+        ]
+      },
+      "evidence_ids": [
+        "E02",
+        "E03"
+      ],
+      "coaching_finding": "Ruffels reports underturning torso, pulling shaft down for power and steepening.",
+      "coach_reasoning": "Ball between arms encourages body turn; squeezing in transition gives him the shallowing feel.",
+      "intervention": {
+        "drill": "Use a ball aid between arms for a short block.",
+        "cue": "Feel the squeeze in transition.",
+        "interpretation": "Judge intended feel during constrained rehearsal; inspect normal swing after removing aid."
+      },
+      "applicability": [
+        "Corresponding pattern established in player and constraint produces useful response."
+      ],
+      "unknowns": [
+        "No measured turn/shaft change, universal squeeze mechanism or independent diagnosis."
+      ],
+      "observed_result": "Four-shot block presented; no quantified aid-versus-normal movement comparison.",
+      "selection": {
+        "coaching_focus": "Learn the selected turn-to-delivery feel",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "One focus with at most two compatible cues. Store separate aid blocks and transfer rather than combine all mechanical thoughts.",
+        "reassess": "Remove aid and assess independent motion and shot result."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "vGGIn2IAW-Q-C02",
+      "title": "Use band feedback to explore deeper arm structure",
+      "case_type": "self_reported_player_practice_case",
+      "tags": {
+        "phase": [
+          "practice",
+          "backswing",
+          "transition"
+        ],
+        "body": [
+          "torso",
+          "arms",
+          "elbows"
+        ],
+        "outcome": [
+          "delivery",
+          "target execution"
+        ],
+        "concept": [
+          "training aid",
+          "transfer",
+          "practice intention"
+        ]
+      },
+      "evidence_ids": [
+        "E04"
+      ],
+      "coaching_finding": "Ruffels says hands/club can get too far in front and right elbow too high in front.",
+      "coach_reasoning": "Band under arms provides feedback while he feels hands deeper behind right shoulder.",
+      "intervention": {
+        "drill": "Band under arms, rehearse desired depth.",
+        "cue": "Feel the arm structure deeper relative to right shoulder."
+      },
+      "applicability": [
+        "Similar verified depth issue; not a player already too deep or stuck behind."
+      ],
+      "unknowns": [
+        "No exact hand-depth target or proof band retention alone establishes good position."
+      ],
+      "observed_result": "Band block demonstrated; player reports more depth and good feel.",
+      "selection": {
+        "coaching_focus": "Find usable backswing depth",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "One focus with at most two compatible cues. Store separate aid blocks and transfer rather than combine all mechanical thoughts.",
+        "reassess": "Verify normal-swing delivery after removing band."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "vGGIn2IAW-Q-C03",
+      "title": "Retain lead-arm connection through impact, then allow the band to go",
+      "case_type": "self_reported_player_practice_case",
+      "tags": {
+        "phase": [
+          "practice",
+          "backswing",
+          "transition"
+        ],
+        "body": [
+          "torso",
+          "arms",
+          "elbows"
+        ],
+        "outcome": [
+          "delivery",
+          "target execution"
+        ],
+        "concept": [
+          "training aid",
+          "transfer",
+          "practice intention"
+        ]
+      },
+      "evidence_ids": [
+        "E05"
+      ],
+      "coaching_finding": "High-speed pulling can separate lead arm from chest by his account.",
+      "coach_reasoning": "Band is intended to reinforce connection during delivery while permitting normal late follow-through.",
+      "intervention": {
+        "cue": "Keep the lead-side connection through delivery.",
+        "release": "Let band go during normal follow-through; do not force it to remain trapped.",
+        "setup": "Leave space behind because the band can be thrown."
+      },
+      "applicability": [
+        "Related connection/control issue and aid can be used with clearance."
+      ],
+      "unknowns": [
+        "No measured stabilization, force or universal retention timestamp."
+      ],
+      "observed_result": "Band visibly released after shot and player reports good feel.",
+      "selection": {
+        "coaching_focus": "Coordinate lead arm and chest through delivery",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "One focus with at most two compatible cues. Store separate aid blocks and transfer rather than combine all mechanical thoughts.",
+        "reassess": "Check transfer and do not classify normal finish release as drill failure."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "vGGIn2IAW-Q-C04",
+      "title": "Remove aids and technical rehearsal for a specific target-shot block",
+      "case_type": "conditional_practice_template",
+      "tags": {
+        "phase": [
+          "practice",
+          "backswing",
+          "transition"
+        ],
+        "body": [
+          "torso",
+          "arms",
+          "elbows"
+        ],
+        "outcome": [
+          "delivery",
+          "target execution"
+        ],
+        "concept": [
+          "training aid",
+          "transfer",
+          "practice intention"
+        ]
+      },
+      "evidence_ids": [
+        "E06",
+        "E07"
+      ],
+      "coaching_finding": "Ruffels gets stuck in drills and attributes some tournament struggles to technical overthinking.",
+      "coach_reasoning": "A no-aid, target-first block rehearses playable intention and tests whether practice transfers.",
+      "intervention": {
+        "task": "Four shots without aids or technical rehearsal waggle; choose flight, target and distance before each.",
+        "attention": "Use a matching shot sensation rather than running a mechanical checklist."
+      },
+      "applicability": [
+        "Technique work has been completed and player needs transfer/attention practice."
+      ],
+      "unknowns": [
+        "No proof of retained improvement or universal ban on waggles/thoughts."
+      ],
+      "observed_result": "Three distances reported near targets; low-draw measurement missing; final cut does not quite cut.",
+      "selection": {
+        "coaching_focus": "Execute one chosen shot",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "One focus with at most two compatible cues. Store separate aid blocks and transfer rather than combine all mechanical thoughts.",
+        "reassess": "Record intended versus actual flight and distance, including misses and missing measurements."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "vGGIn2IAW-Q-C05",
+      "title": "Structure practice into aid, aid and transfer blocks with a break",
+      "case_type": "conditional_practice_template",
+      "tags": {
+        "phase": [
+          "practice",
+          "backswing",
+          "transition"
+        ],
+        "body": [
+          "torso",
+          "arms",
+          "elbows"
+        ],
+        "outcome": [
+          "delivery",
+          "target execution"
+        ],
+        "concept": [
+          "training aid",
+          "transfer",
+          "practice intention"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E08"
+      ],
+      "coaching_finding": "Unstructured ball scraping and endless drills weaken intention and attention.",
+      "coach_reasoning": "Small predefined blocks and a pause give each phase a purpose and reset focus.",
+      "intervention": {
+        "structure": "Four with first aid, four with second, four without aids; break for a couple of minutes, then another selected club.",
+        "adaptation": "Reduce ball count if short on time; retain distinct transfer phase and break.",
+        "scope": "The two chosen aids address Ruffels' priorities; another player needs appropriate tasks."
+      },
+      "applicability": [
+        "Practice session with defined movement and transfer objectives."
+      ],
+      "unknowns": [
+        "No validated optimal count, duration or full specification for100-shot day."
+      ],
+      "observed_result": "One block described/demonstrated; no longitudinal comparison.",
+      "selection": {
+        "coaching_focus": "Complete purposeful practice and transfer",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "One focus with at most two compatible cues. Store separate aid blocks and transfer rather than combine all mechanical thoughts.",
+        "reassess": "Check independent shot outcomes and focus before repeating volume."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "id": "M01",
+      "evidence_ids": [
+        "E07"
+      ],
+      "kind": "spoken_target_and_result",
+      "shot": "hold-off pitching-wedge fade",
+      "target_yards": 140,
+      "reported_yards": 139,
+      "limits": [
+        "No raw display; direction unquantified."
+      ]
+    },
+    {
+      "id": "M02",
+      "evidence_ids": [
+        "E07"
+      ],
+      "kind": "explicitly_missing_measurement",
+      "shot": "low draw to back-left target",
+      "reported_yards": null,
+      "reason": "Player says ball was outside Quad capture area; solid is qualitative feedback."
+    },
+    {
+      "id": "M03",
+      "evidence_ids": [
+        "E07"
+      ],
+      "kind": "spoken_target_and_result",
+      "shot": "stock straight",
+      "target_yards": 146,
+      "reported_yards": 144,
+      "reported_shape": "straight",
+      "limits": [
+        "No raw display or dispersion value."
+      ]
+    },
+    {
+      "id": "M04",
+      "evidence_ids": [
+        "E07"
+      ],
+      "kind": "spoken_target_and_result",
+      "shot": "lower cut",
+      "target_yards": 129,
+      "reported_yards": 126,
+      "reported_shape": "did not quite cut",
+      "limits": [
+        "Do not count proximity to distance as full task success."
+      ]
+    },
+    {
+      "id": "M05",
+      "evidence_ids": [
+        "E01",
+        "E08"
+      ],
+      "kind": "source_practice_structure",
+      "balls_per_stage": 4,
+      "stages": 3,
+      "balls_per_set": 12,
+      "clubs_suggested": [
+        4,
+        6
+      ],
+      "break_minutes_about": 2,
+      "limits": [
+        "Counts and time are suggestions, not validated dose.48\u201372 shots in one described pass; other100-shot days not fully specified."
+      ]
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        45,
+        561
+      ],
+      "issue": "Captions include misspelled aid names and shallow variants. Generic aid function is used; no need to invent a product specification."
+    },
+    {
+      "span_seconds": [
+        492,
+        535
+      ],
+      "issue": "Four-to-six clubs times12 is48\u201372, while source mentions some100-shot days. Preserve variable volume without claiming exact arithmetic agreement."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "_nGVs7YNz_Q-C04",
+      "current_case": "vGGIn2IAW-Q-C03",
+      "relation": "Same player connection feel with explicit release",
+      "explanation": "Ruffels\u2019 later driver-speed video says upper arm does not remain entirely attached. This practice video likewise lets the band release in follow-through; connection is not permanent clamping."
+    },
+    {
+      "source_case": "_nGVs7YNz_Q-C06",
+      "current_case": "vGGIn2IAW-Q-C04",
+      "relation": "Different practice goals use different preparation",
+      "explanation": "No technical waggle in this target-transfer block and moving setup in the later speed session serve different attention/effort tasks. Preserve both contexts."
+    },
+    {
+      "source_case": "iP0sBzIXRtc-C11",
+      "current_case": "vGGIn2IAW-Q-C04",
+      "relation": "Practice-to-play separation",
+      "explanation": "Cowen\u2019s advice to play shots on course and Ruffels\u2019 no-aid block both preserve transfer beyond technical rehearsal."
+    },
+    {
+      "source_case": "IJSu7440Ick-C03",
+      "current_case": "vGGIn2IAW-Q-C05",
+      "relation": "Purposeful repetition rather than ball scraping",
+      "explanation": "Allen\u2019s full-process repetition and Ruffels\u2019 ball blocks both counter mindless rapid hitting, with different specific routines."
+    },
+    {
+      "source_case": "BcG-r_13z_I-C04",
+      "current_case": "vGGIn2IAW-Q-C01",
+      "relation": "Drill performance must be checked for transfer",
+      "explanation": "Menante\u2019s kneeling drill and Ruffels\u2019 arm-ball constraint illustrate why an exaggerated drill shape cannot substitute for normal-swing outcomes."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "vGGIn2IAW-Q-C01",
+        "vGGIn2IAW-Q-C02",
+        "vGGIn2IAW-Q-C03"
+      ],
+      "relationship": "Arm ball and band target personal findings; they are not arbitrary aid recommendations."
+    },
+    {
+      "cases": [
+        "vGGIn2IAW-Q-C03",
+        "vGGIn2IAW-Q-C04"
+      ],
+      "relationship": "Band retention through delivery and removal for target practice are intentional stages."
+    },
+    {
+      "cases": [
+        "vGGIn2IAW-Q-C04",
+        "vGGIn2IAW-Q-C05"
+      ],
+      "relationship": "Transfer takes deliberate time; finishing technical blocks does not complete the routine."
+    }
+  ],
+  "annotation_opportunities": [
+    "Mark actual aid presence and label constrained rehearsal separately from normal swing.",
+    "Track phase of band release without treating all releases as failures.",
+    "Pair each no-aid shot with target and actual outcome; preserve missing Quad measurement.",
+    "Display personal finding before showing drill rather than implying all golfers need more depth."
+  ],
+  "excluded_material": [
+    "Clothing promotion and current product purchase advice.",
+    "Claims of validated universal shallowing through elbow squeeze.",
+    "Claims that this session proves better tournament scores.",
+    "Invented measurement for low draw outside Quad capture range."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Personal practice account with subjective diagnosis and spoken results; no independent movement comparison or longitudinal transfer."
+  },
+  "asset_sha256": {
+    "video": "3b77ecb1ef0c546bd1bc113b27eca52da9946e018f3723dae0d52462e55ad477",
+    "raw_captions": "02ebd315a9edac653aba40118d1cd79f51bfcb1e7819fab3e122e91baeeafaf5",
+    "transcript": "59f6c57e12df2666bd7f7f022aba14a0e587003f386a1132c7947576d42a3fc1"
+  }
+}

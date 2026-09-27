@@ -1,0 +1,524 @@
+{
+  "version": 1,
+  "source_id": "DVI2JDpDC5Z",
+  "url": "https://www.instagram.com/p/DVI2JDpDC5Z/",
+  "title": "Ryan backswing review: takeaway and top-position priority",
+  "publisher": "Dom Caminiti / domcaminitigolf",
+  "published": "20260224",
+  "duration_seconds": 134.3,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "coach": "Dom Caminiti, uploader",
+    "student": "Ryan, named in voiceover"
+  },
+  "context": {
+    "format": "Down-the-line student footage with narrated annotations",
+    "handedness": "Right-handed",
+    "club": "Iron; number unknown",
+    "body_context": "No physical screen",
+    "style": "Upstream explanation and two sequential rehearsal instructions"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/DVI2JDpDC5Z/DVI2JDpDC5Z.mp4",
+    "raw_captions": ".videos/coaching-knowledge/DVI2JDpDC5Z/asr-raw.json",
+    "transcript": ".videos/coaching-knowledge/DVI2JDpDC5Z/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/DVI2JDpDC5Z/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/DVI2JDpDC5Z/DVI2JDpDC5Z.info.json",
+    "overview": ".videos/coaching-knowledge/DVI2JDpDC5Z/overview/index.json",
+    "detail": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 26,
+    "transcript_kind": "Local MLX Whisper ASR with visual annotation inspection",
+    "audio_independently_transcribed": true,
+    "visual_review_method": "14 overview and 42 detail frames across six portrait sheets inspected. All main fault annotations, prop illustrations and desired-flight graphic reviewed. Sampled frames, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/DVI2JDpDC5Z/overview/index.json",
+      ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/index.json"
+    ],
+    "limitations": [
+      "No physical stick or wall demonstration.",
+      "No measured ball flight or post-instruction swing.",
+      "Desired annotations must not be confused with actual student motion."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        25
+      ],
+      "source_url": "https://www.instagram.com/p/DVI2JDpDC5Z/",
+      "attribution": "Dom Caminiti, uploader voiceover",
+      "kind": "annotated_student_video_review",
+      "session": "Ryan backswing priority",
+      "summary": "Coach speculates that Ryan has tried fixing over-the-top downswing, then selects backswing instead. Identifies hands moving out, clubhead inside hands and shaft pointing outside ball halfway back. Prior failed coaching history is conjecture, not student report.",
+      "frames": [
+        {
+          "time_seconds": 1,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00001.000.jpg",
+          "observation": "Original shaft reference at setup."
+        },
+        {
+          "time_seconds": 4,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00004.000.jpg",
+          "observation": "Steep delivery preview."
+        },
+        {
+          "time_seconds": 15,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00015.000.jpg",
+          "observation": "Hand/club relationship with crossing lines."
+        },
+        {
+          "time_seconds": 18,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00018.000.jpg",
+          "observation": "Inside club and outward hands comparison."
+        },
+        {
+          "time_seconds": 22,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00022.000.jpg",
+          "observation": "Orange shaft extension points outside ball."
+        }
+      ],
+      "limitations": [
+        "Drawings over original footage illustrate interpretation or desired changes; not a post-intervention retest."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        25,
+        47
+      ],
+      "source_url": "https://www.instagram.com/p/DVI2JDpDC5Z/",
+      "attribution": "Dom Caminiti, uploader voiceover",
+      "kind": "annotated_student_video_review",
+      "session": "Ryan backswing priority",
+      "summary": "Coach describes hands lifting into a long backswing, lead arm above shoulders and hands over toes. Green lines depict desired lead arm matching shoulder plane and hands over heels. Desired lines do not show that student has achieved the change.",
+      "frames": [
+        {
+          "time_seconds": 28,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00028.000.jpg",
+          "observation": "Hands lift toward top."
+        },
+        {
+          "time_seconds": 32,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00032.000.jpg",
+          "observation": "Arrow along lifted arm direction."
+        },
+        {
+          "time_seconds": 36,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00036.000.jpg",
+          "observation": "Original top position."
+        },
+        {
+          "time_seconds": 40,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00040.000.jpg",
+          "observation": "Desired shoulder/lead-arm reference."
+        },
+        {
+          "time_seconds": 44,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00044.000.jpg",
+          "observation": "Desired heel-depth vertical reference."
+        }
+      ],
+      "limitations": [
+        "Drawings over original footage illustrate interpretation or desired changes; not a post-intervention retest."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        47,
+        66
+      ],
+      "source_url": "https://www.instagram.com/p/DVI2JDpDC5Z/",
+      "attribution": "Dom Caminiti, uploader voiceover",
+      "kind": "annotated_student_video_review",
+      "session": "Ryan backswing priority",
+      "summary": "Coach connects high hand position and direct hand movement toward ball to steep delivery, then club released outside hands and rotation to a left start with slice. No launch monitor or traced observed flight is provided. Every-day inevitability is rhetoric, not a demonstrated universal.",
+      "frames": [
+        {
+          "time_seconds": 50,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00050.000.jpg",
+          "observation": "Original top-to-ball versus setup-plane lines."
+        },
+        {
+          "time_seconds": 53,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00053.000.jpg",
+          "observation": "Delivery relative to drawn lines."
+        },
+        {
+          "time_seconds": 55,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00055.000.jpg",
+          "observation": "Later delivery."
+        },
+        {
+          "time_seconds": 57,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00057.000.jpg",
+          "observation": "Club approaching ball."
+        },
+        {
+          "time_seconds": 60,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00060.000.jpg",
+          "observation": "Original follow-through."
+        }
+      ],
+      "limitations": [
+        "Drawings over original footage illustrate interpretation or desired changes; not a post-intervention retest."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        66,
+        101
+      ],
+      "source_url": "https://www.instagram.com/p/DVI2JDpDC5Z/",
+      "attribution": "Dom Caminiti, uploader voiceover",
+      "kind": "annotated_student_video_review",
+      "session": "Ryan backswing priority",
+      "summary": "First change is hands inside with hip/body turn, feeling toward trail pocket. Instructs placing a stick about two feet behind golfer so it covers hands from down-the-line: hands inside stick, clubhead outside. Says this should make halfway-back shaft point inside ball. Only drawings on original footage illustrate stick and intended direction; no installed stick drill is performed.",
+      "frames": [
+        {
+          "time_seconds": 74,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00074.000.jpg",
+          "observation": "Green arrow toward trail-pocket region."
+        },
+        {
+          "time_seconds": 81,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00081.000.jpg",
+          "observation": "Orange arrow emphasizes inward-hand feel."
+        },
+        {
+          "time_seconds": 86,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00086.000.jpg",
+          "observation": "Yellow vertical line illustrates stick alignment."
+        },
+        {
+          "time_seconds": 89,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00089.000.jpg",
+          "observation": "Mark indicates intended hand side."
+        },
+        {
+          "time_seconds": 92,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00092.000.jpg",
+          "observation": "Crosses compare original wrong sides."
+        },
+        {
+          "time_seconds": 94,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00094.000.jpg",
+          "observation": "Original takeaway replay under stick illustration."
+        },
+        {
+          "time_seconds": 97,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00097.000.jpg",
+          "observation": "Yellow line illustrates desired steeper backswing shaft."
+        }
+      ],
+      "limitations": [
+        "Drawings over original footage illustrate interpretation or desired changes; not a post-intervention retest."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        101,
+        120
+      ],
+      "source_url": "https://www.instagram.com/p/DVI2JDpDC5Z/",
+      "attribution": "Dom Caminiti, uploader voiceover",
+      "kind": "annotated_student_video_review",
+      "session": "Ryan backswing priority",
+      "summary": "Second instruction is wall rehearsal: at top, back of trail arm, trail hand and shaft against a wall, intended to put lead arm on shoulder plane and hands over heels. A drawn wall line and directional arrows illustrate instruction on original student footage. No real wall rehearsal is shown.",
+      "frames": [
+        {
+          "time_seconds": 104,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00104.000.jpg",
+          "observation": "Wall reference begins behind golfer."
+        },
+        {
+          "time_seconds": 106,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00106.000.jpg",
+          "observation": "Extended yellow vertical wall reference."
+        },
+        {
+          "time_seconds": 110,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00110.000.jpg",
+          "observation": "Arrow from original high hands toward wall."
+        },
+        {
+          "time_seconds": 114,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00114.000.jpg",
+          "observation": "Desired shoulder-plane line."
+        },
+        {
+          "time_seconds": 117,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00117.000.jpg",
+          "observation": "Heel-depth reference."
+        }
+      ],
+      "limitations": [
+        "Drawings over original footage illustrate interpretation or desired changes; not a post-intervention retest."
+      ]
+    },
+    {
+      "id": "E06",
+      "span_seconds": [
+        120,
+        129
+      ],
+      "source_url": "https://www.instagram.com/p/DVI2JDpDC5Z/",
+      "attribution": "Dom Caminiti, uploader voiceover",
+      "kind": "annotated_student_video_review",
+      "session": "Ryan backswing priority",
+      "summary": "Coach predicts shallower downswing and stock draw from backswing changes. Dashed curve is an illustrative desired shot shape, not measured ball flight. No student response, drill attempt or later swing is supplied.",
+      "frames": [
+        {
+          "time_seconds": 120,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00120.000.jpg",
+          "observation": "Original downswing and green line."
+        },
+        {
+          "time_seconds": 123,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00123.000.jpg",
+          "observation": "Comparison of drawn planes."
+        },
+        {
+          "time_seconds": 125,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00125.000.jpg",
+          "observation": "Dashed desired draw graphic."
+        },
+        {
+          "time_seconds": 128,
+          "path": ".videos/coaching-knowledge/DVI2JDpDC5Z/detail/frame-00128.000.jpg",
+          "observation": "Original downswing replay."
+        }
+      ],
+      "limitations": [
+        "Drawings over original footage illustrate interpretation or desired changes; not a post-intervention retest."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "DVI2JDpDC5Z-C01",
+      "title": "Address hands-out, club-inside takeaway before prescribing a downswing fix",
+      "case_type": "individual_video_review_no_drill_attempt_or_retest",
+      "tags": {
+        "phase": [
+          "takeaway",
+          "P2",
+          "P3",
+          "transition"
+        ],
+        "body": [
+          "hands",
+          "club",
+          "torso"
+        ],
+        "outcome": [
+          "steep delivery",
+          "slice"
+        ],
+        "concept": [
+          "upstream cause hypothesis",
+          "hand depth",
+          "stick drill"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E04"
+      ],
+      "coaching_finding": "Coach identifies an outward-hand, inside-club takeaway leading to flat halfway-back shaft, then lifting and steep delivery.",
+      "coach_reasoning": "He argues that changing the earlier sequence is necessary before a downswing fix will work. This is his causal hypothesis for Ryan, not a universal slice diagnosis.",
+      "intervention": {
+        "cue": "Hands feel toward trail pocket with body turn.",
+        "drill": "Place stick about two feet behind, covering hands from down-the-line view; rehearse hands inside and clubhead outside stick.",
+        "intended_change": "Change takeaway relationship and halfway-back shaft orientation; source provides no repetitions."
+      },
+      "applicability": [
+        "Observe the early sequence as well as downswing steepness; a slice label alone is insufficient.",
+        "Use suitable camera geometry to interpret hand/club sides.",
+        "Do not make the club itself roll inside while using the inward-hand cue."
+      ],
+      "unknowns": [
+        "Actual face/path and strike measurements.",
+        "Whether setup, grip or another cause contributes.",
+        "Exact physical placement/height of stick beyond spoken description; no prop demonstration."
+      ],
+      "observed_result": "Instructions and annotation only; no drill performance or improved shot.",
+      "selection": {
+        "coaching_focus": "One takeaway relationship",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "Coach orders takeaway before top-position work; user preference is one focus with at most two compatible cues.",
+        "reassess": "Proposed app check: review takeaway and downstream delivery after rehearsal, using real shot outcomes and no added top-position thought initially."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "DVI2JDpDC5Z-C02",
+      "title": "Use wall rehearsal for the high, long top position after takeaway work",
+      "case_type": "individual_video_review_no_drill_attempt_or_retest",
+      "tags": {
+        "phase": [
+          "P4",
+          "transition"
+        ],
+        "body": [
+          "trail arm",
+          "hands",
+          "shaft"
+        ],
+        "outcome": [
+          "steep delivery",
+          "backswing length"
+        ],
+        "concept": [
+          "wall rehearsal",
+          "hand depth",
+          "sequencing"
+        ]
+      },
+      "evidence_ids": [
+        "E02",
+        "E03",
+        "E05",
+        "E06"
+      ],
+      "coaching_finding": "Coach describes lead arm above shoulder plane and hands over toes at long top.",
+      "coach_reasoning": "He predicts a deeper, shoulder-matched top will allow the same general hand intent to produce a shallower delivery.",
+      "intervention": {
+        "cue": "Rehearse top with back of trail arm, trail hand and shaft against wall.",
+        "intended_change": "Lead arm near shoulder plane and hands above heels in source view.",
+        "sequence": "Coach presents this after takeaway instruction; no range, repetitions or measured position threshold."
+      },
+      "applicability": [
+        "Confirm top remains a relevant problem after takeaway changes.",
+        "Individual space and mobility must permit a comfortable rehearsal; no physical screen is supplied.",
+        "Do not infer every upright or long backswing requires this change."
+      ],
+      "unknowns": [
+        "Wall distance and complete setup not demonstrated.",
+        "Whether desired position is achievable or useful for Ryan.",
+        "Actual post-change ball flight."
+      ],
+      "observed_result": "Expected draw is drawn/predicted, not an observed result.",
+      "selection": {
+        "coaching_focus": "One top-position rehearsal after takeaway reassessment",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "Coach orders takeaway before top-position work; user preference is one focus with at most two compatible cues.",
+        "reassess": "Proposed app check: reassess top and delivery with aid-free swing; do not infer success from matching the drawn line alone."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "spoken_prop_distance",
+      "value": "Stick about two feet behind golfer, aligned over hands in down-the-line view",
+      "evidence_ids": [
+        "E04"
+      ],
+      "limits": [
+        "No installed prop or calibrated distance shown."
+      ]
+    },
+    {
+      "kind": "2d_annotation",
+      "value": "Actual/desired shaft direction, lead-arm plane, hands over toes versus heels, illustrative wall and desired draw",
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E04",
+        "E05",
+        "E06"
+      ],
+      "limits": [
+        "No angular calibration, 3D capture, launch monitor or measured shot curve."
+      ]
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        0,
+        15
+      ],
+      "issue": "Prior unsuccessful downswing-fix history is introduced as probable, not established fact."
+    },
+    {
+      "span_seconds": [
+        47,
+        66
+      ],
+      "issue": "Absolute steepness prediction is a coach assertion; no population evidence."
+    },
+    {
+      "span_seconds": [
+        82,
+        120
+      ],
+      "issue": "Stick and wall setup are described and drawn but not performed; avoid inventing exact prop placement from artwork."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "DcqwwGio81y-C01",
+      "current_case": "DVI2JDpDC5Z-C02",
+      "relation": "Different treatment of top-position appearances",
+      "explanation": "Moore accepts Cameron's across-the-line position because he judges face and delivery effective. Dom selects Ryan's high top in a different preceding and subsequent sequence. Neither record supports a universal top-position template."
+    },
+    {
+      "source_case": "Dc-kqu1qKgW-C01",
+      "current_case": "DVI2JDpDC5Z-C01",
+      "relation": "Preserve timing of inward movement and rotation",
+      "explanation": "Clapp distinguishes too-early inside club rotation from needed later forearm rotation. Dom asks hands inside while club stays outside, so the cue must not become rolling the whole club inside."
+    },
+    {
+      "source_case": "HQNKUS_BSGY-C06",
+      "current_case": "DVI2JDpDC5Z-C01",
+      "relation": "Reassess after upstream change",
+      "explanation": "Chris reassesses before adding downswing work. Ryan's review likewise selects backswing first, but lacks the actual retest that would confirm its effect."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "DVI2JDpDC5Z-C01",
+        "DVI2JDpDC5Z-C02"
+      ],
+      "relationship": "Sequential backswing tasks: takeaway first, then assess whether top-position rehearsal remains necessary. Do not present as a stack of simultaneous swing thoughts."
+    }
+  ],
+  "annotation_opportunities": [
+    "Explicitly label observed position versus drawn desired position.",
+    "Animate hands and clubhead on opposite sides of illustrated stick, only after validating source geometry.",
+    "Pair earlier takeaway evidence with later steep delivery without presenting causal hypothesis as measurement.",
+    "Mark dashed draw as intended outcome."
+  ],
+  "excluded_material": [
+    "Assessment solicitation after 129 seconds.",
+    "Unmeasured draw claimed as achieved.",
+    "Automatic slices-to-wall-drill mapping."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Annotated source reasoning extracted; no student drill execution, outcome retest or independent causal validation."
+  },
+  "asset_sha256": {
+    "video": "847f04f75a331bdafda6e8ceef305f0629240c587468bfa63d0483a0fd64a355",
+    "raw_captions": "bb7ca8d961f3d7dd6b92c3862a90ab54455e78a7da0e3766554f91130526341f",
+    "transcript": "c2e794599668354b0748806966b5ab001403c75fbe7098eadabe29703c6b3d94"
+  }
+}

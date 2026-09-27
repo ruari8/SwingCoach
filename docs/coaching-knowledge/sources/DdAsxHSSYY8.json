@@ -1,0 +1,352 @@
+{
+  "version": 1,
+  "source_id": "DdAsxHSSYY8",
+  "url": "https://www.instagram.com/p/DdAsxHSSYY8/",
+  "title": "Chicken-wing contrast and shirt-fold drill",
+  "publisher": "Ace Hong / mcgolf_hongheetaek",
+  "published": "20260908",
+  "duration_seconds": 10.733333,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "instructor_and_demonstrator": "Ace Hong, per uploader metadata",
+    "student": null
+  },
+  "context": {
+    "format": "Short annotated visual tutorial with multilingual description",
+    "handedness": "Right-handed demonstration",
+    "club": "Driver",
+    "body_context": "No physical screen",
+    "style": "Red/green contrast and tactile setup close-up"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/DdAsxHSSYY8/DdAsxHSSYY8.mp4",
+    "raw_captions": ".videos/coaching-knowledge/DdAsxHSSYY8/on-screen-transcript.json",
+    "transcript": ".videos/coaching-knowledge/DdAsxHSSYY8/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/DdAsxHSSYY8/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/DdAsxHSSYY8/DdAsxHSSYY8.info.json",
+    "raw_audio_asr": ".videos/coaching-knowledge/DdAsxHSSYY8/asr-raw.json",
+    "audio_transcript": ".videos/coaching-knowledge/DdAsxHSSYY8/asr-transcript.json",
+    "audio_provenance": ".videos/coaching-knowledge/DdAsxHSSYY8/asr-provenance.json",
+    "english_asr_attempt": ".videos/coaching-knowledge/DdAsxHSSYY8/english-asr-attempt/asr-raw.json",
+    "overview": ".videos/coaching-knowledge/DdAsxHSSYY8/overview/index.json",
+    "detail": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/index.json",
+    "shirt_closeup": ".videos/coaching-knowledge/DdAsxHSSYY8/shirt-5.25.png"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 1,
+    "transcript_kind": "Persistent on-screen title; creator description read separately; no reliable spoken coaching",
+    "audio_independently_transcribed": true,
+    "audio_transcription_note": "Forced-English and auto-language ASR each returned a short non-coaching fragment. Preserve attempts without treating them as instruction.",
+    "visual_review_method": "12 overview and 31 detail frames across four portrait sheets plus one native-size shirt close-up, all inspected. Includes red/green change, shirt setup and delivery sequence. Sampled review, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/DdAsxHSSYY8/overview/index.json",
+      ".videos/coaching-knowledge/DdAsxHSSYY8/detail/index.json"
+    ],
+    "limitations": [
+      "Interpretation of shirt contact comes from visual demonstration, not spoken procedure.",
+      "Edited views are not a controlled before/after comparison.",
+      "No exact impact timing, arm angles or pressure measurements."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        2.9
+      ],
+      "source_url": "https://www.instagram.com/p/DdAsxHSSYY8/",
+      "attribution": "Ace Hong / mcgolf_hongheetaek: visual demonstration, colored overlays and accompanying multilingual post including English",
+      "kind": "annotated_tutorial_demonstration",
+      "session": "Lead-armpit/chicken-wing contrast and shirt-fold rehearsal",
+      "summary": "Opening swing stops in an exaggerated lead-arm separation/bend. Red overlay highlights the left upper-arm region, followed by green overlay as the arm is brought closer and continued through. Post English text targets left armpit opening associated with a chicken wing. Red/green are source judgments, not measured angles.",
+      "frames": [
+        {
+          "time_seconds": 0.75,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00000.750.jpg",
+          "observation": "Opening post-impact position highlighted red at lead upper arm."
+        },
+        {
+          "time_seconds": 1.5,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00001.500.jpg",
+          "observation": "Close red-highlighted separated/bent lead arm."
+        },
+        {
+          "time_seconds": 1.75,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00001.750.jpg",
+          "observation": "Green highlight appears over changed lead-arm position."
+        },
+        {
+          "time_seconds": 2.5,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00002.500.jpg",
+          "observation": "Closer arm relationship remains highlighted green."
+        },
+        {
+          "time_seconds": 2.75,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00002.750.jpg",
+          "observation": "Arms continue forward/up through the demonstrated release."
+        }
+      ],
+      "limitations": [
+        "Edited demonstrator contrasts; no assessed student or measured natural-swing baseline."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        2.9,
+        4.4
+      ],
+      "source_url": "https://www.instagram.com/p/DdAsxHSSYY8/",
+      "attribution": "Ace Hong / mcgolf_hongheetaek: visual demonstration, colored overlays and accompanying multilingual post including English",
+      "kind": "annotated_tutorial_demonstration",
+      "session": "Lead-armpit/chicken-wing contrast and shirt-fold rehearsal",
+      "summary": "Rear/target-facing angle shows a shot into a full finish. This is an additional demonstration angle, without evidence that it is a matched before/after trial or that the shirt drill has yet been used.",
+      "frames": [
+        {
+          "time_seconds": 3,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/overview/frame-00003.000.jpg",
+          "observation": "Rear-angle delivery."
+        },
+        {
+          "time_seconds": 3.5,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00003.500.jpg",
+          "observation": "Rear-angle finish."
+        },
+        {
+          "time_seconds": 4.25,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00004.250.jpg",
+          "observation": "Held finish; no measurement overlay."
+        }
+      ],
+      "limitations": [
+        "Edited demonstrator contrasts; no assessed student or measured natural-swing baseline."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        4.4,
+        6.4
+      ],
+      "source_url": "https://www.instagram.com/p/DdAsxHSSYY8/",
+      "attribution": "Ace Hong / mcgolf_hongheetaek: visual demonstration, colored overlays and accompanying multilingual post including English",
+      "kind": "annotated_tutorial_demonstration",
+      "session": "Lead-armpit/chicken-wing contrast and shirt-fold rehearsal",
+      "summary": "Close-up shows right hand gathering a fold of shirt from the left chest toward the left armpit, then lowering left upper arm against it. This is the demonstrated tactile setup; no separate ball/towel training aid is visible. The subsequent address retains gathered fabric.",
+      "frames": [
+        {
+          "time_seconds": 4.5,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00004.500.jpg",
+          "observation": "Right hand reaches to shirt at left chest."
+        },
+        {
+          "time_seconds": 5.25,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00005.250.jpg",
+          "observation": "Fabric pinched near left armpit."
+        },
+        {
+          "time_seconds": 5.25,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/shirt-5.25.png",
+          "observation": "Native-size close-up confirms shirt fabric being gathered, not a separate training aid."
+        },
+        {
+          "time_seconds": 5.5,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00005.500.jpg",
+          "observation": "Fabric brought into left armpit area."
+        },
+        {
+          "time_seconds": 5.75,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00005.750.jpg",
+          "observation": "Lead arm brought against gathered shirt."
+        },
+        {
+          "time_seconds": 6.25,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00006.250.jpg",
+          "observation": "Address with fabric gathered near lead upper arm."
+        }
+      ],
+      "limitations": [
+        "Edited demonstrator contrasts; no assessed student or measured natural-swing baseline."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        6.4,
+        10.733333
+      ],
+      "source_url": "https://www.instagram.com/p/DdAsxHSSYY8/",
+      "attribution": "Ace Hong / mcgolf_hongheetaek: visual demonstration, colored overlays and accompanying multilingual post including English",
+      "kind": "annotated_tutorial_demonstration",
+      "session": "Lead-armpit/chicken-wing contrast and shirt-fold rehearsal",
+      "summary": "Demonstrator makes a backswing and delivery, with a close crop emphasizing the shirt/left upper-arm region through early follow-through, then another full finish. Visual teaching suggests using shirt contact to feel lead-arm connection, but exact retention/release point and clamping force are not verbally specified.",
+      "frames": [
+        {
+          "time_seconds": 6.75,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00006.750.jpg",
+          "observation": "Backswing after shirt setup."
+        },
+        {
+          "time_seconds": 7.5,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00007.500.jpg",
+          "observation": "Top before delivery."
+        },
+        {
+          "time_seconds": 8.25,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00008.250.jpg",
+          "observation": "Close delivery view of shirt and lead arm."
+        },
+        {
+          "time_seconds": 8.75,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00008.750.jpg",
+          "observation": "Lead-arm/chest area during through motion."
+        },
+        {
+          "time_seconds": 9.25,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00009.250.jpg",
+          "observation": "Later close through position."
+        },
+        {
+          "time_seconds": 9.75,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00009.750.jpg",
+          "observation": "Wide follow-through."
+        },
+        {
+          "time_seconds": 10.25,
+          "path": ".videos/coaching-knowledge/DdAsxHSSYY8/detail/frame-00010.250.jpg",
+          "observation": "Completed finish."
+        }
+      ],
+      "limitations": [
+        "Edited demonstrator contrasts; no assessed student or measured natural-swing baseline."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "DdAsxHSSYY8-C01",
+      "title": "Use a gathered shirt fold as feedback for lead-arm connection",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "impact",
+          "early follow-through",
+          "practice"
+        ],
+        "body": [
+          "lead arm",
+          "lead elbow",
+          "left armpit",
+          "chest"
+        ],
+        "outcome": [
+          "chicken wing",
+          "arm connection"
+        ],
+        "concept": [
+          "tactile feedback",
+          "shirt drill",
+          "annotated contrast"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E04"
+      ],
+      "coaching_finding": "Creator targets left armpit opening associated with chicken wing. The clip stages a red/green comparison rather than diagnosing a named student.",
+      "coach_reasoning": "Post links the opening armpit to the unwanted pattern. Visual interpretation: gathered shirt supplies a contact feel for bringing lead upper arm closer through delivery. Further cause, force and eligibility explanation are absent.",
+      "intervention": {
+        "drill": "Gather a fold of shirt near left chest into left armpit, lower the arm against it, and rehearse the shown swing.",
+        "cue": "Feel the shirt contact through delivery.",
+        "cue_origin": "Concise model phrasing of the demonstrated task; not a spoken quote.",
+        "limits": "No exact hold/release phase is given. Do not infer permanent clamping throughout the swing or a straight-elbow requirement at every phase."
+      },
+      "applicability": [
+        "A corresponding unwanted lead-arm separation pattern established in the golfer, with benefit from this contact rehearsal.",
+        "Requires a separate check that the arm pattern is an actionable priority rather than a compensation or functional variation."
+      ],
+      "unknowns": [
+        "Cause of the golfer's pattern, ball flight and physical-screen context.",
+        "Precise fabric retention/release timing, contact force and practice dose.",
+        "Measured lead-arm change and transfer to ordinary swings."
+      ],
+      "observed_result": "Source shows staged contrast, shirt setup, rehearsal/shot footage and full finishes. No instrumented or longitudinal outcome.",
+      "selection": {
+        "coaching_focus": "Use one tactile cue for lead-arm connection",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus constraint; concise cue is a proposed presentation of the visual task.",
+        "reassess": "Proposed check: remove fabric constraint and compare delivery, comfortable finish and actual strike. The source supplies no controlled transfer test."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "source_color_annotation",
+      "evidence_ids": [
+        "E01"
+      ],
+      "value": "Red/green lead-upper-arm highlighting",
+      "limits": [
+        "Categorical source illustration, not calibrated movement measurement."
+      ]
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        4.4,
+        10.733333
+      ],
+      "issue": "The visual drill gathers shirt fabric, but the source does not specify exact release timing or retained pressure. Retain this gap rather than turning it into a permanent-clamp rule."
+    },
+    {
+      "span_seconds": [
+        0,
+        10.733333
+      ],
+      "issue": "English post text is available alongside Korean/Japanese/Chinese. No model translation is needed for the stated target; audio fragment is not coaching evidence."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "vGGIn2IAW-Q-C03",
+      "current_case": "DdAsxHSSYY8-C01",
+      "relation": "Related tactile connection idea with different release detail",
+      "explanation": "Ruffels explicitly lets the band release after delivery for a full finish. Hong shows shirt contact and a finish but supplies no precise release instruction; do not fill that gap with permanent clamping."
+    },
+    {
+      "source_case": "_nGVs7YNz_Q-C04",
+      "current_case": "DdAsxHSSYY8-C01",
+      "relation": "Related upper-arm/chest feel, different eligibility",
+      "explanation": "Ruffels uses upper-arm connection for control during speed work. Hong targets an illustrated chicken-wing pattern. Similar contact language does not prove the same cause or prescribe the same amount."
+    }
+  ],
+  "within_source_distinctions": [],
+  "annotation_opportunities": [
+    "Preserve source red/green labels alongside exact frames and mark them as source judgments.",
+    "Show the shirt-gathering close-up to explain the physical task.",
+    "Label proposed cue separately from verbatim source text."
+  ],
+  "excluded_material": [
+    "Independent diagnosis of the demonstrator's natural swing.",
+    "Claim of improved distance, strike or scores.",
+    "Invented cloth retention timing, force percentage or universal elbow angle."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Visual tutorial with minimal text; no diagnosis, calibrated outcome or stated release timing."
+  },
+  "asset_sha256": {
+    "video": "28ecf4f2e77399d79f6cdb100bf7d65fc62f6373beb91deaaca0c6d790d373bf",
+    "raw_captions": "1a10a51b200a5d319c6839e45fd4323e2a8f9182ae6b3195e2837fe8e85543b3",
+    "transcript": "1a10a51b200a5d319c6839e45fd4323e2a8f9182ae6b3195e2837fe8e85543b3"
+  }
+}

@@ -1,0 +1,1130 @@
+{
+  "version": 1,
+  "source_id": "p_HZJ2u0TIo",
+  "url": "https://www.youtube.com/watch?v=p_HZJ2u0TIo",
+  "title": "HOW TO CLEAR YOUR HIPS/PELVIS IN THE GOLF SWING | Paddy's Golf Tip #24 | Padraig Harrington",
+  "publisher": "Padraig Harrington",
+  "published": "20220217",
+  "duration_seconds": 1053,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "instructor": "Padraig Harrington",
+    "student": null
+  },
+  "context": {
+    "handedness": "right-handed demonstrations",
+    "format": "General instructional tutorial; no assessed student",
+    "tasks": [
+      "Relaxed setup",
+      "Trail-hip turn",
+      "Pelvic tilt/transition",
+      "Lead-leg extension",
+      "Connected hip/torso lead",
+      "Staggered and throwing rehearsals"
+    ],
+    "body_context": "No physical screen, diagnosis or body-handicap score.",
+    "style": "Feel-led self-demonstration with explicit exclusions and distinctions between rehearsal and actual swing"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/p_HZJ2u0TIo/p_HZJ2u0TIo.mp4",
+    "raw_captions": ".videos/coaching-knowledge/p_HZJ2u0TIo/p_HZJ2u0TIo.en-orig.json3",
+    "transcript": ".videos/coaching-knowledge/p_HZJ2u0TIo/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/p_HZJ2u0TIo/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/p_HZJ2u0TIo/p_HZJ2u0TIo.info.json",
+    "overview": ".videos/coaching-knowledge/p_HZJ2u0TIo/overview/index.json",
+    "detail": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/index.json",
+    "sequences": ".videos/coaching-knowledge/p_HZJ2u0TIo/sequences/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 407,
+    "transcript_kind": "Full YouTube en-orig automatic captions, 35 reading-index blocks",
+    "audio_independently_transcribed": false,
+    "visual_review_method": "36 overview frames, 78 detail frames and 36 rehearsal/finish/throw sequence frames; all 13 contact sheets inspected. Sampled inspection across 17:33, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/p_HZJ2u0TIo/overview/index.json",
+      ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/index.json",
+      ".videos/coaching-knowledge/p_HZJ2u0TIo/sequences/index.json"
+    ],
+    "limitations": [
+      "480p source; no calibrated multi-camera synchronization.",
+      "Single instructor deliberately demonstrates both desired and undesired movements. Do not label staged wrong positions as his natural swing fault.",
+      "No instrumented metrics, student retest, physical screen or longitudinal outcome."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        60
+      ],
+      "source_url": "https://www.youtube.com/watch?v=p_HZJ2u0TIo&t=0s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Single-instructor outdoor tutorial, not an assessed student lesson",
+      "summary": "Harrington introduces a movement topic he has struggled with himself and explicitly tells viewers whose hips already function well not to change them on account of this video.",
+      "frames": [
+        {
+          "time_seconds": 10,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/overview/frame-00010.000.jpg",
+          "observation": "Harrington introduces his own experience with hip movement."
+        }
+      ],
+      "limitations": [
+        "General source instruction; no student diagnosis, measured causal test or independent biomechanical validation."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        55,
+        112
+      ],
+      "source_url": "https://www.youtube.com/watch?v=p_HZJ2u0TIo&t=55s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Single-instructor outdoor tutorial, not an assessed student lesson",
+      "summary": "Setup demonstration contrasts relaxed posture with exaggerated knee bend, butt-out/arched back and tucked-under positions. His desired setup is neither forced arch nor forced tuck. Strong injury and power-loss claims accompany the examples but are not independently established.",
+      "frames": [
+        {
+          "time_seconds": 65,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00065.000.jpg",
+          "observation": "Side-view setup demonstration."
+        },
+        {
+          "time_seconds": 70,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/overview/frame-00070.000.jpg",
+          "observation": "Coach points toward hip/posture area."
+        },
+        {
+          "time_seconds": 95,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00095.000.jpg",
+          "observation": "Side-view knee/posture contrast."
+        },
+        {
+          "time_seconds": 100,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/overview/frame-00100.000.jpg",
+          "observation": "Front view with hands on pelvis."
+        }
+      ],
+      "limitations": [
+        "Do not translate do not bend knees into locking knees straight. The visible intended position is relaxed. Injury predictions are source claims, not diagnoses."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        108,
+        168
+      ],
+      "source_url": "https://www.youtube.com/watch?v=p_HZJ2u0TIo&t=108s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Single-instructor outdoor tutorial, not an assessed student lesson",
+      "summary": "Lifting the lead leg in a throwing motion forces balance on trail leg. Harrington recommends step/Happy-Gilmore-type practice to make motion athletic. He then describes an initial one-piece takeaway with little hip/foot motion before addressing later pelvis turn.",
+      "frames": [
+        {
+          "time_seconds": 120,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00120.000.jpg",
+          "observation": "Lead leg lifted during throwing analogy."
+        },
+        {
+          "time_seconds": 130,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/overview/frame-00130.000.jpg",
+          "observation": "Single-leg balance/throw rehearsal."
+        },
+        {
+          "time_seconds": 150,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00150.000.jpg",
+          "observation": "Club takeaway demonstration."
+        },
+        {
+          "time_seconds": 165,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00165.000.jpg",
+          "observation": "Address and early takeaway reference."
+        }
+      ],
+      "limitations": [
+        "General source instruction; no student diagnosis, measured causal test or independent biomechanical validation."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        165,
+        248
+      ],
+      "source_url": "https://www.youtube.com/watch?v=p_HZJ2u0TIo&t=165s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Single-instructor outdoor tutorial, not an assessed student lesson",
+      "summary": "A small initial bump is allowed but not required. After that, Harrington demonstrates turning into the right hip crease, using fingers at the front crease to feel it close. Trail foot remains planted rather than rolling outward, and pelvis moves back behind rather than drifting outward.",
+      "frames": [
+        {
+          "time_seconds": 180,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00180.000.jpg",
+          "observation": "Fingers indicate trail hip crease."
+        },
+        {
+          "time_seconds": 182,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/sequences/frame-00182.000.jpg",
+          "observation": "Close-crease demonstration with fingers."
+        },
+        {
+          "time_seconds": 188,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/sequences/frame-00188.000.jpg",
+          "observation": "Backswing rehearsal while monitoring hip area."
+        },
+        {
+          "time_seconds": 215,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00215.000.jpg",
+          "observation": "Front-view turn into trail side."
+        },
+        {
+          "time_seconds": 245,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00245.000.jpg",
+          "observation": "Side view shows the pelvis moving behind."
+        }
+      ],
+      "limitations": [
+        "Pinch describes skin/crease closing under fingers, not a request to create joint pain. Internal rotation and pressure are source descriptions, not measured joint angles or force."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        248,
+        345
+      ],
+      "source_url": "https://www.youtube.com/watch?v=p_HZJ2u0TIo&t=248s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Single-instructor outdoor tutorial, not an assessed student lesson",
+      "summary": "Harrington prefers relaxed trail knee over ankle in the down-the-line view rather than deliberately maintaining excessive bend. He allows straightening if overall function remains good but prefers some flex. Trail hip rises relative to lead hip as pelvis tilts in backswing.",
+      "frames": [
+        {
+          "time_seconds": 260,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00260.000.jpg",
+          "observation": "Side-view crease and knee reference."
+        },
+        {
+          "time_seconds": 285,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00285.000.jpg",
+          "observation": "Relaxed stance before knee comparison."
+        },
+        {
+          "time_seconds": 300,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00300.000.jpg",
+          "observation": "Demonstrated excessive knee-flex position."
+        },
+        {
+          "time_seconds": 315,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00315.000.jpg",
+          "observation": "Side-view hand gesture indicating relative height."
+        },
+        {
+          "time_seconds": 330,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00330.000.jpg",
+          "observation": "Front view of tilted pelvis."
+        }
+      ],
+      "limitations": [
+        "No calibrated knee or pelvis angles. Straight trail leg is allowed conditionally, not required or recommended for every golfer."
+      ]
+    },
+    {
+      "id": "E06",
+      "span_seconds": [
+        340,
+        407
+      ],
+      "source_url": "https://www.youtube.com/watch?v=p_HZJ2u0TIo&t=340s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Single-instructor outdoor tutorial, not an assessed student lesson",
+      "summary": "Source proposes that too-level hips in backswing can make a player raise/thrust pelvis while trying to shift left. Higher trail hip is presented as making the lateral transition easier. He rehearses a leftward bump while back initially remains to target.",
+      "frames": [
+        {
+          "time_seconds": 345,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00345.000.jpg",
+          "observation": "Pelvis-height explanation."
+        },
+        {
+          "time_seconds": 370,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/overview/frame-00370.000.jpg",
+          "observation": "Arm/hip reference for tilt."
+        },
+        {
+          "time_seconds": 390,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00390.000.jpg",
+          "observation": "Club held across pelvis to show tilt."
+        },
+        {
+          "time_seconds": 405,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00405.000.jpg",
+          "observation": "Leftward-shift rehearsal with hip reference."
+        }
+      ],
+      "limitations": [
+        "This is Harrington's proposed mechanism, not a universal cause of early extension. Brief transition cue does not mean holding torso back throughout downswing."
+      ]
+    },
+    {
+      "id": "E07",
+      "span_seconds": [
+        407,
+        491
+      ],
+      "source_url": "https://www.youtube.com/watch?v=p_HZJ2u0TIo&t=407s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Single-instructor outdoor tutorial, not an assessed student lesson",
+      "summary": "Anecdote about Nicklaus foot-rolling practice introduces rolling inward in transition/down rather than immediately pushing the trail hip toward ball. Harrington wants right glute/pelvis moving under left. A high trail heel can coexist with this if knee moves across rather than toward ball; Justin Thomas is mentioned, but the visible example is Harrington's reenactment.",
+      "frames": [
+        {
+          "time_seconds": 430,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/overview/frame-00430.000.jpg",
+          "observation": "Feet prepared for rolling demonstration."
+        },
+        {
+          "time_seconds": 435,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00435.000.jpg",
+          "observation": "Closer side view of foot/knee action."
+        },
+        {
+          "time_seconds": 446,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/sequences/frame-00446.000.jpg",
+          "observation": "Close frontal lower-body view during rolling rehearsal."
+        },
+        {
+          "time_seconds": 450,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00450.000.jpg",
+          "observation": "Trail foot rolled inward during pelvis movement."
+        },
+        {
+          "time_seconds": 465,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00465.000.jpg",
+          "observation": "Close view with club across pelvis and trail heel lifted."
+        }
+      ],
+      "limitations": [
+        "Historical claims not independently checked. Heel height alone cannot classify good or bad movement. Foot-roll instruction is downswing practice; earlier planted-foot cue refers to backswing."
+      ]
+    },
+    {
+      "id": "E08",
+      "span_seconds": [
+        490,
+        602
+      ],
+      "source_url": "https://www.youtube.com/watch?v=p_HZJ2u0TIo&t=490s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Single-instructor outdoor tutorial, not an assessed student lesson",
+      "summary": "Right-under-left pelvis action is linked to closing the left hip crease, feeling left glute engaged and allowing left glute to move back. He demonstrates from front, side and rear, distinguishing muscular sensation from visible positions.",
+      "frames": [
+        {
+          "time_seconds": 510,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00510.000.jpg",
+          "observation": "Coach points at lead hip crease."
+        },
+        {
+          "time_seconds": 525,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00525.000.jpg",
+          "observation": "Front view of trail-knee-under rehearsal."
+        },
+        {
+          "time_seconds": 540,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00540.000.jpg",
+          "observation": "Left crease/glute engagement demonstration."
+        },
+        {
+          "time_seconds": 555,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00555.000.jpg",
+          "observation": "Side view of lead-side movement."
+        },
+        {
+          "time_seconds": 600,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00600.000.jpg",
+          "observation": "Rear view with hands indicating glute/pelvis action."
+        }
+      ],
+      "limitations": [
+        "No measured muscle activation or pressure distribution. Feeling a glute working does not prove a particular force or diagnosis."
+      ]
+    },
+    {
+      "id": "E09",
+      "span_seconds": [
+        600,
+        704
+      ],
+      "source_url": "https://www.youtube.com/watch?v=p_HZJ2u0TIo&t=600s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Single-instructor outdoor tutorial, not an assessed student lesson",
+      "summary": "Harrington warns against independently straightening lead knee merely to copy a powerful player's impact image. He demonstrates body extension upward while maintaining connected lead-side tension as the source of observed lead-leg straightening. Slow rehearsal can still show flex.",
+      "frames": [
+        {
+          "time_seconds": 615,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00615.000.jpg",
+          "observation": "Coach introduces isolated leg-straightening distinction."
+        },
+        {
+          "time_seconds": 630,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00630.000.jpg",
+          "observation": "Side-view contrast rehearsal."
+        },
+        {
+          "time_seconds": 660,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00660.000.jpg",
+          "observation": "Bent-lead-leg rehearsal with pressure/connection explanation."
+        },
+        {
+          "time_seconds": 675,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00675.000.jpg",
+          "observation": "Body rises while turning through."
+        },
+        {
+          "time_seconds": 690,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00690.000.jpg",
+          "observation": "Close view of connected lead-side action."
+        }
+      ],
+      "limitations": [
+        "Body-up is a coaching feel here, not a measured ground-force intervention. Strong injury claims are not clinical findings. Do not require a locked knee at impact."
+      ]
+    },
+    {
+      "id": "E10",
+      "span_seconds": [
+        704,
+        838
+      ],
+      "source_url": "https://www.youtube.com/watch?v=p_HZJ2u0TIo&t=704s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Single-instructor outdoor tutorial, not an assessed student lesson",
+      "summary": "He objects to hip separation when understood as hips spinning independently. Hips should lead and pull torso, not move rigidly together or disconnect. Cog and elastic-band analogies explain connected stretch across body into arms, which he relates to speed, face organization and shallowing.",
+      "frames": [
+        {
+          "time_seconds": 720,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00720.000.jpg",
+          "observation": "Hands illustrate relation between upper/lower body."
+        },
+        {
+          "time_seconds": 750,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00750.000.jpg",
+          "observation": "Demonstration of hips leading without rigidly moving everything together."
+        },
+        {
+          "time_seconds": 765,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00765.000.jpg",
+          "observation": "Pelvis and torso connection gesture."
+        },
+        {
+          "time_seconds": 780,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00780.000.jpg",
+          "observation": "Hands trace stretch across trunk."
+        },
+        {
+          "time_seconds": 825,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00825.000.jpg",
+          "observation": "Repeated explanation of connected pulling."
+        }
+      ],
+      "limitations": [
+        "This is a wording/feel distinction, not a denial that measurable hip-shoulder separation exists. No angular separation, torque, velocity or causal shallowing measurement."
+      ]
+    },
+    {
+      "id": "E11",
+      "span_seconds": [
+        838,
+        919
+      ],
+      "source_url": "https://www.youtube.com/watch?v=p_HZJ2u0TIo&t=838s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Single-instructor outdoor tutorial, not an assessed student lesson",
+      "summary": "Staggered rehearsal draws the right foot back and moves the right knee/glute under the left side, closing lead hip crease. Foot rolls inward in practice; a heel lift may occur in full play once the desired direction is established. Suggested as a simple rehearsal that can be done without shots.",
+      "frames": [
+        {
+          "time_seconds": 844,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/sequences/frame-00844.000.jpg",
+          "observation": "Normal setup before right-foot setback."
+        },
+        {
+          "time_seconds": 850,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/sequences/frame-00850.000.jpg",
+          "observation": "Right foot back and knee moving behind/under in rehearsal."
+        },
+        {
+          "time_seconds": 852,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/sequences/frame-00852.000.jpg",
+          "observation": "Turn-through in staggered stance."
+        },
+        {
+          "time_seconds": 855,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00855.000.jpg",
+          "observation": "Hip-under movement in staggered setup."
+        },
+        {
+          "time_seconds": 900,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00900.000.jpg",
+          "observation": "Repeated rehearsal with hand on hip."
+        },
+        {
+          "time_seconds": 910,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/overview/frame-00910.000.jpg",
+          "observation": "Close hip crease focus during drill."
+        }
+      ],
+      "limitations": [
+        "No exact foot offset or repetition dosage. Deliberate drill shape is not the normal full-swing template."
+      ]
+    },
+    {
+      "id": "E12",
+      "span_seconds": [
+        918,
+        1008
+      ],
+      "source_url": "https://www.youtube.com/watch?v=p_HZJ2u0TIo&t=918s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Single-instructor outdoor tutorial, not an assessed student lesson",
+      "summary": "Harrington uses a seven-iron for full-swing demonstrations, keeping trail leg relaxed and describing turn into crease, bump left and body extension. Finish is described with knees together and chest high/wide/left. One attempt is explicitly called thin; other attempts feel good to him.",
+      "frames": [
+        {
+          "time_seconds": 925,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00925.000.jpg",
+          "observation": "Close lower-body view before a seven-iron attempt."
+        },
+        {
+          "time_seconds": 930,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00930.000.jpg",
+          "observation": "Finish after first visible shot sequence."
+        },
+        {
+          "time_seconds": 935,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/sequences/frame-00935.000.jpg",
+          "observation": "Deliberate finish comparison, chest lowered."
+        },
+        {
+          "time_seconds": 937,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/sequences/frame-00937.000.jpg",
+          "observation": "Deliberate expanded-chest finish comparison."
+        },
+        {
+          "time_seconds": 960,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00960.000.jpg",
+          "observation": "Seven-iron setup/rehearsal."
+        },
+        {
+          "time_seconds": 980,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-00980.000.jpg",
+          "observation": "Shot finish near the thin-shot comment."
+        },
+        {
+          "time_seconds": 1000,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/overview/frame-01000.000.jpg",
+          "observation": "Later shot finish."
+        }
+      ],
+      "limitations": [
+        "No launch/strike measurement or before/after student test. A finish checkpoint alone cannot prove preceding hip action. Staged finish comparisons are not new ball strikes."
+      ]
+    },
+    {
+      "id": "E13",
+      "span_seconds": [
+        1008,
+        1053
+      ],
+      "source_url": "https://www.youtube.com/watch?v=p_HZJ2u0TIo&t=1008s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Single-instructor outdoor tutorial, not an assessed student lesson",
+      "summary": "Tennis and stone-skimming analogies lead to a ball-throw drill: right-handed player holds ball in right fingers and throws about two yards forward on intended line. He mimes the throwing movement and golf swing as a way to organize hips, torso and wrists.",
+      "frames": [
+        {
+          "time_seconds": 1020,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-01020.000.jpg",
+          "observation": "Sidearm/stone-skimming throwing rehearsal."
+        },
+        {
+          "time_seconds": 1035,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-01035.000.jpg",
+          "observation": "Throw-delivery mime."
+        },
+        {
+          "time_seconds": 1040,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/detail/frame-01040.000.jpg",
+          "observation": "Right-arm throwing motion loaded."
+        },
+        {
+          "time_seconds": 1042,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/sequences/frame-01042.000.jpg",
+          "observation": "Follow-through in throwing/swing analogy."
+        },
+        {
+          "time_seconds": 1046,
+          "path": ".videos/coaching-knowledge/p_HZJ2u0TIo/sequences/frame-01046.000.jpg",
+          "observation": "Final club rehearsal."
+        }
+      ],
+      "limitations": [
+        "Approximate two-yard target is instruction, not measured outcome. No ball-throw transfer study or proof it fixes every movement component."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "p_HZJ2u0TIo-C01",
+      "title": "Withhold hip changes when function is already good",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "assessment"
+        ],
+        "body": [
+          "pelvis"
+        ],
+        "outcome": [
+          "contact",
+          "power"
+        ],
+        "concept": [
+          "hip movement",
+          "feel versus measured motion"
+        ]
+      },
+      "evidence_ids": [
+        "E01"
+      ],
+      "coaching_finding": "Tutorial explicitly excludes viewers whose hips already work well.",
+      "coach_reasoning": "New information alone is not evidence that the golfer needs a change.",
+      "intervention": {
+        "action": "Do not prescribe a hip change without a relevant performance/movement problem."
+      },
+      "applicability": [
+        "No relevant demonstrated problem or adverse performance evidence."
+      ],
+      "unknowns": [
+        "Tutorial supplies no validated test for good function."
+      ],
+      "observed_result": "Instructor demonstration only; no matched student before/after outcome. Seven-iron examples include a self-reported thin strike.",
+      "selection": {
+        "coaching_focus": "Preserve effective movement",
+        "max_simultaneous_cues": 0,
+        "policy_origin": "User preference: one focus with no more than two compatible cues; tutorial sequence is not delivered all at once.",
+        "reassess": "Establish a concrete problem before selecting a drill."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "p_HZJ2u0TIo-C02",
+      "title": "Start from relaxed posture rather than forced setup extremes",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "setup"
+        ],
+        "body": [
+          "knees",
+          "pelvis",
+          "trunk"
+        ],
+        "outcome": [
+          "contact",
+          "power"
+        ],
+        "concept": [
+          "hip movement",
+          "feel versus measured motion"
+        ]
+      },
+      "evidence_ids": [
+        "E02"
+      ],
+      "coaching_finding": "Demonstrated deep knee bend, forced butt-out arch or tuck are presented as unhelpful starting patterns.",
+      "coach_reasoning": "Harrington wants balance and free motion without deliberately forcing a joint position.",
+      "intervention": {
+        "cue": "Stand in a relaxed golf posture.",
+        "avoid": "Do not turn no knee bend wording into locked knees; the demonstration permits natural flex."
+      },
+      "applicability": [
+        "A corresponding forced setup pattern is actually observed and a relaxed trial helps."
+      ],
+      "unknowns": [
+        "No calibrated setup angles, clinical assessment or power measurement."
+      ],
+      "observed_result": "Instructor demonstration only; no matched student before/after outcome. Seven-iron examples include a self-reported thin strike.",
+      "selection": {
+        "coaching_focus": "Reduce unnecessary setup tension",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus with no more than two compatible cues; tutorial sequence is not delivered all at once.",
+        "reassess": "Compare balance, movement and contact rather than copy exact body angles."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "p_HZJ2u0TIo-C03",
+      "title": "Turn into the trail hip crease with a supported foot",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "backswing"
+        ],
+        "body": [
+          "trail hip",
+          "trail knee",
+          "trail foot"
+        ],
+        "outcome": [
+          "contact",
+          "power"
+        ],
+        "concept": [
+          "hip movement",
+          "feel versus measured motion"
+        ]
+      },
+      "evidence_ids": [
+        "E03",
+        "E04",
+        "E05",
+        "E06"
+      ],
+      "coaching_finding": "General example of pelvis drifting/loosening outward or excessive maintained trail-knee bend instead of turning into the trail side.",
+      "coach_reasoning": "Closing the trail hip crease brings pelvis behind and permits trail hip to rise. Harrington links that position to an easier transition left.",
+      "intervention": {
+        "primary_cue": "Turn into the right hip crease and feel it close under your fingers.",
+        "visual_checks": [
+          "Trail foot remains supported during backswing",
+          "Down-the-line knee roughly over ankle",
+          "Trail hip rises relative to lead"
+        ],
+        "exceptions": "A small initial bump is allowed. Trail knee may straighten if function remains good; some flex is preferred."
+      },
+      "applicability": [
+        "Right-handed tutorial pattern and observed backswing issue; validate the trial in the actual player."
+      ],
+      "unknowns": [
+        "No internal-rotation angle, pressure measurement or proof that flat hips cause the user's early extension."
+      ],
+      "observed_result": "Instructor demonstration only; no matched student before/after outcome. Seven-iron examples include a self-reported thin strike.",
+      "selection": {
+        "coaching_focus": "Turn into the supported trail side",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus with no more than two compatible cues; tutorial sequence is not delivered all at once.",
+        "reassess": "Check whether the pelvis actually turns behind rather than drifting or moving toward the ball."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "p_HZJ2u0TIo-C04",
+      "title": "Rehearse trail pelvis moving under lead side through transition",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "transition",
+          "downswing"
+        ],
+        "body": [
+          "pelvis",
+          "lead hip",
+          "trail knee",
+          "trail foot"
+        ],
+        "outcome": [
+          "contact",
+          "power"
+        ],
+        "concept": [
+          "hip movement",
+          "feel versus measured motion"
+        ]
+      },
+      "evidence_ids": [
+        "E06",
+        "E07",
+        "E08"
+      ],
+      "coaching_finding": "Demonstrated forward trail-hip move can be confused with a useful heel lift.",
+      "coach_reasoning": "Harrington wants a transition left followed by right pelvis under left, left crease closing and left glute moving back. A raised heel can accompany that; heel height is not the deciding evidence.",
+      "intervention": {
+        "cue": "Roll through so the right glute feels under the left.",
+        "practice": "Begin with inward foot roll, then allow natural heel rise when the direction is established.",
+        "timing": "Back initially stays to target during the bump, then connected torso movement follows."
+      },
+      "applicability": [
+        "Relevant hip-direction issue identified; distinguish backswing from downswing instruction."
+      ],
+      "unknowns": [
+        "No measured force, muscle activation or universal knee/hip path."
+      ],
+      "observed_result": "Instructor demonstration only; no matched student before/after outcome. Seven-iron examples include a self-reported thin strike.",
+      "selection": {
+        "coaching_focus": "Move through the lead side with the intended pelvis direction",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus with no more than two compatible cues; tutorial sequence is not delivered all at once.",
+        "reassess": "Use more than one view; heel height alone is insufficient."
+      },
+      "alternative_case_ids": [
+        "p_HZJ2u0TIo-C07",
+        "p_HZJ2u0TIo-C08"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "p_HZJ2u0TIo-C05",
+      "title": "Let lead-leg straightening follow connected body extension",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "downswing",
+          "impact",
+          "follow-through"
+        ],
+        "body": [
+          "lead knee",
+          "lead hip",
+          "trunk"
+        ],
+        "outcome": [
+          "contact",
+          "power"
+        ],
+        "concept": [
+          "hip movement",
+          "feel versus measured motion"
+        ]
+      },
+      "evidence_ids": [
+        "E08",
+        "E09",
+        "E12"
+      ],
+      "coaching_finding": "General mistake is deliberately straightening lead knee in isolation to reproduce an impact position.",
+      "coach_reasoning": "Source presents upward body extension with connected lead-side tension as the movement that makes the leg straighten, rather than knee straightening being the independent goal.",
+      "intervention": {
+        "cue": "Keep the lead-side connection as the body extends up.",
+        "not_selected": "Forcing a straight lead knee from the top or demanding a locked impact knee."
+      },
+      "applicability": [
+        "Observed isolated knee-straightening strategy or confusion about cause versus outcome."
+      ],
+      "unknowns": [
+        "No ground-force direction/magnitude, precise timing or joint-load measurement."
+      ],
+      "observed_result": "Instructor demonstration only; no matched student before/after outcome. Seven-iron examples include a self-reported thin strike.",
+      "selection": {
+        "coaching_focus": "Organize the movement that produces the position",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus with no more than two compatible cues; tutorial sequence is not delivered all at once.",
+        "reassess": "Check contact and whole movement; a straight-leg photo is not proof of improvement."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "p_HZJ2u0TIo-C06",
+      "title": "Let hips lead while pulling the torso along",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "transition",
+          "downswing"
+        ],
+        "body": [
+          "pelvis",
+          "trunk",
+          "arms"
+        ],
+        "outcome": [
+          "contact",
+          "power"
+        ],
+        "concept": [
+          "hip movement",
+          "feel versus measured motion"
+        ]
+      },
+      "evidence_ids": [
+        "E10"
+      ],
+      "coaching_finding": "General misunderstanding of separation as hips spinning without a connected upper-body response.",
+      "coach_reasoning": "Harrington wants sequential but connected action. He contrasts loose independent hips with hips/torso moving together rigidly; neither describes his intended lead-and-pull feel.",
+      "intervention": {
+        "cue": "Let the hips lead and pull the torso.",
+        "feel": "An elastic connection across trunk, like a band being stretched and pulling on the next segment."
+      },
+      "applicability": [
+        "An actual disconnection/intent problem, not merely a visible or measured separation angle."
+      ],
+      "unknowns": [
+        "No prescribed separation angle, measured energy transfer or proof of causal face/shallowing change."
+      ],
+      "observed_result": "Instructor demonstration only; no matched student before/after outcome. Seven-iron examples include a self-reported thin strike.",
+      "selection": {
+        "coaching_focus": "Keep the lead connected to the next segment",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus with no more than two compatible cues; tutorial sequence is not delivered all at once.",
+        "reassess": "Compare whether the cue changes actual trunk/arm delivery and shot result."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "p_HZJ2u0TIo-C07",
+      "title": "Use a trail-foot-back rehearsal to feel pelvis-under movement",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "practice",
+          "downswing"
+        ],
+        "body": [
+          "feet",
+          "knees",
+          "pelvis"
+        ],
+        "outcome": [
+          "contact",
+          "power"
+        ],
+        "concept": [
+          "hip movement",
+          "feel versus measured motion"
+        ]
+      },
+      "evidence_ids": [
+        "E11"
+      ],
+      "coaching_finding": "Need for a simple way to experience the lead-side crease/glute action described in C04.",
+      "coach_reasoning": "Staggered stance makes the trail knee and pelvis moving underneath easier to rehearse without a ball.",
+      "intervention": {
+        "setup": "Draw right foot back from normal stance.",
+        "cue": "Move right knee/glute under while left crease closes.",
+        "role": "Alternative rehearsal for one focus, not a new permanent stance requirement."
+      },
+      "applicability": [
+        "Same selected pelvis-direction focus; test response before prescribing."
+      ],
+      "unknowns": [
+        "No exact setback distance, dose or outcome evidence."
+      ],
+      "observed_result": "Instructor demonstration only; no matched student before/after outcome. Seven-iron examples include a self-reported thin strike.",
+      "selection": {
+        "coaching_focus": "Feel the lead-side crease close during the turn",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus with no more than two compatible cues; tutorial sequence is not delivered all at once.",
+        "reassess": "Return to normal stance and verify transfer before adding instructions."
+      },
+      "alternative_case_ids": [
+        "p_HZJ2u0TIo-C04",
+        "p_HZJ2u0TIo-C08"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "p_HZJ2u0TIo-C08",
+      "title": "Use a throwing task as an alternate movement feel",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "practice",
+          "whole swing"
+        ],
+        "body": [
+          "whole body"
+        ],
+        "outcome": [
+          "contact",
+          "power"
+        ],
+        "concept": [
+          "hip movement",
+          "feel versus measured motion"
+        ]
+      },
+      "evidence_ids": [
+        "E03",
+        "E13"
+      ],
+      "coaching_finding": "Static golf instructions may feel less coordinated than a familiar athletic action.",
+      "coach_reasoning": "Harrington proposes stepping/throwing/stone-skimming to organize balance, turn and extension together.",
+      "intervention": {
+        "task": "For a right-handed player, hold ball in right fingers and throw roughly two yards ahead along intended line, then rehearse the related swing feel.",
+        "cue": "Make the familiar throwing action."
+      },
+      "applicability": [
+        "Player can use the task and it demonstrably helps the selected movement."
+      ],
+      "unknowns": [
+        "No evidence the analogy suits all players or automatically fixes hips, torso and wrists."
+      ],
+      "observed_result": "Instructor demonstration only; no matched student before/after outcome. Seven-iron examples include a self-reported thin strike.",
+      "selection": {
+        "coaching_focus": "Find a usable whole-movement feel",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus with no more than two compatible cues; tutorial sequence is not delivered all at once.",
+        "reassess": "Check golf transfer rather than assume a good throw proves a good swing."
+      },
+      "alternative_case_ids": [
+        "p_HZJ2u0TIo-C07"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "id": "M01",
+      "evidence_ids": [
+        "E05",
+        "E06"
+      ],
+      "kind": "general_coaching_reference",
+      "description": "Source mentions starting pelvis level or perhaps one/two degrees down in some professionals; no value measured in this video.",
+      "limits": [
+        "No app threshold or exact target inferred."
+      ]
+    },
+    {
+      "id": "M02",
+      "evidence_ids": [
+        "E12"
+      ],
+      "kind": "demonstration_result",
+      "description": "Seven-iron examples; one shot called thin, others described positively. No launch values or measured improvement."
+    },
+    {
+      "id": "M03",
+      "evidence_ids": [
+        "E13"
+      ],
+      "kind": "instruction_distance",
+      "values": {
+        "throw_target_yards_about": 2
+      },
+      "limits": [
+        "A drill target, not result or biomechanical threshold."
+      ]
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "NOMY1bzMI28-C04",
+      "current_case": "p_HZJ2u0TIo-C01",
+      "relation": "Non-intervention when function is good",
+      "explanation": "Brennan assessment and Harrington tutorial both resist changing a functional pattern simply because it looks different."
+    },
+    {
+      "source_case": "BcG-r_13z_I-C01",
+      "current_case": "p_HZJ2u0TIo-C06",
+      "relation": "Connected sequencing language requires context",
+      "explanation": "Menante needs trunk to catch up with pelvis rather than leave trunk behind. Harrington warns against independent hip spinning and asks for connected pull. Neither supports holding the trunk back throughout downswing."
+    },
+    {
+      "source_case": "IJSu7440Ick-C08",
+      "current_case": "p_HZJ2u0TIo-C03",
+      "relation": "Optional bump is not required for a player who cannot stabilize it",
+      "explanation": "Harrington allows an initial bump; Allen source starts more trail-loaded to reduce a difficult shift. Store options and conditions rather than mandate a bump."
+    },
+    {
+      "source_case": "BcG-r_13z_I-C07",
+      "current_case": "p_HZJ2u0TIo-C07",
+      "relation": "Similar stance drill, different explicit intent",
+      "explanation": "Menante foot setback aims at relative trunk/pelvis timing; Harrington uses setback for pelvis-under and lead-crease feel. Match reasoning as well as drill shape."
+    },
+    {
+      "source_case": "IJSu7440Ick-C04",
+      "current_case": "p_HZJ2u0TIo-C04",
+      "relation": "Do not infer early extension from a generic proposed cause",
+      "explanation": "Allen's initially suspected early extension was not supported by captured 3D. Harrington's general hip-tilt explanation must not overwrite direct evidence."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "p_HZJ2u0TIo-C03",
+        "p_HZJ2u0TIo-C04"
+      ],
+      "relationship": "Planted trail foot in backswing and inward roll in downswing refer to different phases."
+    },
+    {
+      "cases": [
+        "p_HZJ2u0TIo-C03",
+        "p_HZJ2u0TIo-C05"
+      ],
+      "relationship": "Trail-knee straightening allowed in backswing differs from forcing lead-knee straightening in downswing."
+    },
+    {
+      "cases": [
+        "p_HZJ2u0TIo-C04",
+        "p_HZJ2u0TIo-C06"
+      ],
+      "relationship": "Brief back-to-target during left bump does not mean torso remains behind independently; connected pull follows."
+    },
+    {
+      "cases": [
+        "p_HZJ2u0TIo-C04",
+        "p_HZJ2u0TIo-C07",
+        "p_HZJ2u0TIo-C08"
+      ],
+      "relationship": "Several ways to learn one movement; select one, do not stack all cues."
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        55,
+        112
+      ],
+      "issue": "Do not bend knees wording is contextualized by relaxed visible stance, not interpreted as locked knees."
+    },
+    {
+      "span_seconds": [
+        180,
+        602
+      ],
+      "issue": "Pinch/squeeze denotes crease closing and muscle feel; not joint pain or literal glute contact."
+    },
+    {
+      "span_seconds": [
+        704,
+        838
+      ],
+      "issue": "Criticism of separation concerns disconnected intention, not the existence of measurable pelvis/thorax angular difference."
+    }
+  ],
+  "annotation_opportunities": [
+    "Distinguish staged wrong examples, slow correct rehearsal and actual shot.",
+    "Label trail-hip crease and relative pelvis tilt visually without pretending to measure internal joint rotation.",
+    "Pair front/side explanations of knee travel and heel rise.",
+    "Keep lead-leg extension outcome separate from isolated knee action cue.",
+    "Show staggered drill beside normal-stance transfer; do not normalize exaggerated drill pose as ideal swing."
+  ],
+  "excluded_material": [
+    "Branding, tournament montage and current career/biography text not needed for coaching case.",
+    "Unverified historical claims about other players' practice.",
+    "Broad injury predictions, exact power-causation claims and universal outcome guarantees."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "General source-backed templates. No student diagnosis/retest or independent applicability validation."
+  },
+  "asset_sha256": {
+    "video": "b1a59fe1a835015966ce29944a1104337e6cb8d35f22c472e64e831029f6f39b",
+    "raw_captions": "1f3d17f0992e22fc0abc963fb6da07ebb184ef2c79f7da68c3f0fcddb1939f26",
+    "transcript": "52a504c3560ba01f2097ce7cc21f299e37b62257f5f3a61d8471013869e8e8ba"
+  }
+}

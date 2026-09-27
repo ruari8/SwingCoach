@@ -1,0 +1,316 @@
+{
+  "version": 1,
+  "source_id": "Dcljq_yCRGl",
+  "url": "https://www.instagram.com/p/Dcljq_yCRGl/",
+  "title": "Coca-Cola tempo mnemonic",
+  "publisher": "Emily / golfingwithemily",
+  "published": "20260828",
+  "duration_seconds": 12.052993,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "uploader": "Emily",
+    "audio_speaker": "Attributed as Nelly by source text; original interview not verified"
+  },
+  "context": {
+    "format": "Creator swing footage with reused explanatory audio",
+    "handedness": "Right-handed demonstration",
+    "club": "Wood/driver-shaped club; exact model not established",
+    "body_context": "No physical screen",
+    "style": "Simple rhythm cue"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/Dcljq_yCRGl/Dcljq_yCRGl.mp4",
+    "raw_captions": ".videos/coaching-knowledge/Dcljq_yCRGl/asr-raw.json",
+    "transcript": ".videos/coaching-knowledge/Dcljq_yCRGl/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/Dcljq_yCRGl/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/Dcljq_yCRGl/Dcljq_yCRGl.info.json",
+    "overview": ".videos/coaching-knowledge/Dcljq_yCRGl/overview/index.json",
+    "detail": ".videos/coaching-knowledge/Dcljq_yCRGl/detail/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 2,
+    "transcript_kind": "Local MLX Whisper ASR; persistent topic overlay and creator description inspected",
+    "audio_independently_transcribed": true,
+    "audio_transcription_note": "ASR phrase timings are estimated and are not swing measurements.",
+    "visual_review_method": "13 overview and 16 detail frames across four portrait sheets, all inspected. Quarter-second samples around two swing passages; setup and final finish also inspected. Not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/Dcljq_yCRGl/overview/index.json",
+      ".videos/coaching-knowledge/Dcljq_yCRGl/detail/index.json"
+    ],
+    "limitations": [
+      "Edited overlay of voice and swing does not establish natural tempo timing.",
+      "No reported flight or measured outcome.",
+      "First passage may be rehearsal; distinct ball strikes not verified."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        5.28
+      ],
+      "source_url": "https://www.instagram.com/p/Dcljq_yCRGl/",
+      "attribution": "Emily / golfingwithemily visual post; reused tempo audio attributed to Nelly by uploader text",
+      "kind": "tempo_audio_with_uploader_demonstration",
+      "session": "Coca-Cola rhythm mnemonic",
+      "summary": "Audio speaker says tempo was strongly emphasized in learning and that her father used a simple phrase. Creator description calls it Nelly's Coca Cola drill and overlay says Nelly's tempo. Video shows golfer collecting a ball and preparing.",
+      "frames": [
+        {
+          "time_seconds": 0,
+          "path": ".videos/coaching-knowledge/Dcljq_yCRGl/overview/frame-00000.000.jpg",
+          "observation": "Nelly's tempo title over ball collection."
+        },
+        {
+          "time_seconds": 3,
+          "path": ".videos/coaching-knowledge/Dcljq_yCRGl/overview/frame-00003.000.jpg",
+          "observation": "Golfer prepares for swing."
+        },
+        {
+          "time_seconds": 4.5,
+          "path": ".videos/coaching-knowledge/Dcljq_yCRGl/detail/frame-00004.500.jpg",
+          "observation": "Address/rehearsal preparation."
+        }
+      ],
+      "limitations": [
+        "Reused audio and edited visual demonstration; no measured timing or baseline comparison."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        5.28,
+        8.42
+      ],
+      "source_url": "https://www.instagram.com/p/Dcljq_yCRGl/",
+      "attribution": "Emily / golfingwithemily visual post; reused tempo audio attributed to Nelly by uploader text",
+      "kind": "tempo_audio_with_uploader_demonstration",
+      "session": "Coca-Cola rhythm mnemonic",
+      "summary": "Audio repeats Coca, Cola twice. Visuals show a swing passage into a follow-through, then another setup/backswing and delivery. The edit loosely pairs verbal rhythm with motion; it does not specify a metronome tempo or numerical backswing-to-downswing ratio.",
+      "frames": [
+        {
+          "time_seconds": 5.5,
+          "path": ".videos/coaching-knowledge/Dcljq_yCRGl/detail/frame-00005.500.jpg",
+          "observation": "Setup during first Coca."
+        },
+        {
+          "time_seconds": 5.75,
+          "path": ".videos/coaching-knowledge/Dcljq_yCRGl/detail/frame-00005.750.jpg",
+          "observation": "Takeaway/early backswing."
+        },
+        {
+          "time_seconds": 6.25,
+          "path": ".videos/coaching-knowledge/Dcljq_yCRGl/detail/frame-00006.250.jpg",
+          "observation": "Raised club near top."
+        },
+        {
+          "time_seconds": 6.5,
+          "path": ".videos/coaching-knowledge/Dcljq_yCRGl/detail/frame-00006.500.jpg",
+          "observation": "Through motion during first Cola."
+        },
+        {
+          "time_seconds": 6.75,
+          "path": ".videos/coaching-knowledge/Dcljq_yCRGl/detail/frame-00006.750.jpg",
+          "observation": "First follow-through."
+        },
+        {
+          "time_seconds": 7.25,
+          "path": ".videos/coaching-knowledge/Dcljq_yCRGl/detail/frame-00007.250.jpg",
+          "observation": "Setup for next swing passage."
+        },
+        {
+          "time_seconds": 7.75,
+          "path": ".videos/coaching-knowledge/Dcljq_yCRGl/detail/frame-00007.750.jpg",
+          "observation": "Second backswing."
+        },
+        {
+          "time_seconds": 8.25,
+          "path": ".videos/coaching-knowledge/Dcljq_yCRGl/detail/frame-00008.250.jpg",
+          "observation": "Second through motion near second Cola."
+        }
+      ],
+      "limitations": [
+        "Reused audio and edited visual demonstration; no measured timing or baseline comparison."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        8.42,
+        12.052993
+      ],
+      "source_url": "https://www.instagram.com/p/Dcljq_yCRGl/",
+      "attribution": "Emily / golfingwithemily visual post; reused tempo audio attributed to Nelly by uploader text",
+      "kind": "tempo_audio_with_uploader_demonstration",
+      "session": "Coca-Cola rhythm mnemonic",
+      "summary": "Audio calls the cue simple and important; golfer holds finish. No distance, direction, strike or improvement measurement is given. Two swing passages should not be counted as two successful shots: first may be rehearsal and the clip is edited.",
+      "frames": [
+        {
+          "time_seconds": 8.75,
+          "path": ".videos/coaching-knowledge/Dcljq_yCRGl/detail/frame-00008.750.jpg",
+          "observation": "Held finish."
+        },
+        {
+          "time_seconds": 9.5,
+          "path": ".videos/coaching-knowledge/Dcljq_yCRGl/detail/frame-00009.500.jpg",
+          "observation": "Finish continues."
+        },
+        {
+          "time_seconds": 10.5,
+          "path": ".videos/coaching-knowledge/Dcljq_yCRGl/detail/frame-00010.500.jpg",
+          "observation": "Final position with no result graphic."
+        },
+        {
+          "time_seconds": 11.75,
+          "path": ".videos/coaching-knowledge/Dcljq_yCRGl/overview/frame-00011.750.jpg",
+          "observation": "End of held finish."
+        }
+      ],
+      "limitations": [
+        "Reused audio and edited visual demonstration; no measured timing or baseline comparison."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "Dcljq_yCRGl-C01",
+      "title": "Use a short spoken phrase as a tempo cue",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "whole swing",
+          "backswing",
+          "downswing"
+        ],
+        "body": [
+          "whole swing"
+        ],
+        "outcome": [
+          "tempo",
+          "rhythm"
+        ],
+        "concept": [
+          "verbal mnemonic",
+          "attention cue",
+          "simple feel"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03"
+      ],
+      "coaching_finding": "Source discusses tempo as a learned priority, without diagnosing rushed timing or another fault in the demonstrator.",
+      "coach_reasoning": "Audio speaker says a simple familiar phrase helped encode rhythm during learning. No force or kinematic explanation is provided.",
+      "intervention": {
+        "cue": "Coca-Cola.",
+        "application": "Use the short phrase as a rhythm reminder during rehearsal; the video pairs its two parts with swing motion.",
+        "limits": "The source does not prescribe fixed seconds, a ratio, exact phase boundary or syllable-to-impact timing. Any precise mapping would be an additional design choice."
+      },
+      "applicability": [
+        "Golfer benefits from a simple rhythm cue and can test it without adding several mechanical thoughts.",
+        "A tempo task is appropriate to the golfer's current priority; the source offers no diagnostic threshold."
+      ],
+      "unknowns": [
+        "Original audio interview and complete attribution beyond uploader's Nelly reference.",
+        "Natural-versus-edited playback timing and whether first passage is a rehearsal or shot.",
+        "Ideal individual tempo, retention and actual strike/flight response."
+      ],
+      "observed_result": "Illustrative swing passages and held finish; no measured before/after or scoring evidence.",
+      "selection": {
+        "coaching_focus": "One rhythm phrase",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus preference; select a single rhythm cue rather than stack technical instructions.",
+        "reassess": "Proposed app check: compare comfort, repeatability and real strike outcomes with and without phrase. Measure timing only from suitable unedited capture."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "estimated_audio_word_timing",
+      "evidence_ids": [
+        "E02"
+      ],
+      "words": [
+        {
+          "word": "coca",
+          "start": 5.28,
+          "end": 5.96
+        },
+        {
+          "word": "cola",
+          "start": 6.18,
+          "end": 6.8
+        },
+        {
+          "word": "coca",
+          "start": 6.84,
+          "end": 7.58
+        },
+        {
+          "word": "cola",
+          "start": 7.78,
+          "end": 8.26
+        }
+      ],
+      "limits": [
+        "ASR estimates for source alignment, not an ideal rhythm or backswing/downswing ratio."
+      ]
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        0,
+        12.052993
+      ],
+      "issue": "Original audio attribution rests on creator text, not independent identification of voice or face."
+    },
+    {
+      "span_seconds": [
+        5.28,
+        8.42
+      ],
+      "issue": "Two visual swing passages are shown; source does not establish whether both are shots or whether footage timing is unmodified."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "DcriXkulItf-C01",
+      "current_case": "Dcljq_yCRGl-C01",
+      "relation": "Alternative simple rhythm/attention cue",
+      "explanation": "Patience/later-power and the Coca-Cola mnemonic are different possible attention cues. Select one for the golfer; do not infer they encode an identical mechanical timing change."
+    },
+    {
+      "source_case": "vGGIn2IAW-Q-C04",
+      "current_case": "Dcljq_yCRGl-C01",
+      "relation": "Simple feel must still transfer to target execution",
+      "explanation": "Ruffels distinguishes useful sensation from technical overload in target practice. A rhythm phrase can be tested as one sensation, but this montage supplies no target-transfer evidence."
+    }
+  ],
+  "within_source_distinctions": [],
+  "annotation_opportunities": [
+    "Align the original phrase audio with source motion for illustration, explicitly avoiding an ideal-timing claim.",
+    "Label rehearsal versus actual shot only when ball/impact evidence supports it.",
+    "Offer a single short rhythm cue with a later outcome check."
+  ],
+  "excluded_material": [
+    "A prescribed3:1 ratio, exact BPM or universal swing duration.",
+    "Guaranteed improved tempo, strike or scoring.",
+    "Two visually successful swings counted as measured improvement."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Mnemonic illustrated by edited footage; no diagnosis, unedited timing validation or outcome comparison."
+  },
+  "asset_sha256": {
+    "video": "9ec7e37f8b4e8bc3c1ee18382564f3caf01127aec8b7e6ece472accb0350bb87",
+    "raw_captions": "e67a87fb58453974cd45984638d5de89ac0f5133d200a9f8b67bf79c0df5a03b",
+    "transcript": "502e9b844dee309588bedc7ce7ab519832d60690e3b60bc0570d2e3e2e50bd90"
+  }
+}

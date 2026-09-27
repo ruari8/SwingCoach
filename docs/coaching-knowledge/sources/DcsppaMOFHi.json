@@ -1,0 +1,528 @@
+{
+  "version": 1,
+  "source_id": "DcsppaMOFHi",
+  "url": "https://www.instagram.com/p/DcsppaMOFHi/",
+  "title": "Earlier-release compilation: feel, claims and transfer limits",
+  "publisher": "Gary McGrane / garymcgranegolf",
+  "published": "20260831",
+  "duration_seconds": 85.01,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "uploader": "Gary McGrane",
+    "credited_instructor": "P\u00e1draig Harrington; superspeedgolf credited for footage",
+    "other_speakers": "Not named in supplied description/excerpts; no identity inferred from appearance"
+  },
+  "context": {
+    "format": "Black-and-white compilation of four instructional excerpts and a practice montage",
+    "handedness": "Right-handed demonstrations where visible",
+    "club": "Driver/release context, some demonstrations without club",
+    "body_context": "No physical screen",
+    "style": "Strong simple release claim, with one explicit feel-versus-actual-timing qualification"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/DcsppaMOFHi/DcsppaMOFHi.mp4",
+    "raw_captions": ".videos/coaching-knowledge/DcsppaMOFHi/asr-raw.json",
+    "transcript": ".videos/coaching-knowledge/DcsppaMOFHi/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/DcsppaMOFHi/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/DcsppaMOFHi/DcsppaMOFHi.info.json",
+    "overview": ".videos/coaching-knowledge/DcsppaMOFHi/overview/index.json",
+    "detail": ".videos/coaching-knowledge/DcsppaMOFHi/detail/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 33,
+    "transcript_kind": "Local MLX Whisper ASR with inspected embedded text; creator description read separately",
+    "audio_independently_transcribed": true,
+    "audio_transcription_note": "ASR tail repetition preserved raw but excluded from coaching claims.",
+    "visual_review_method": "18 overview and 58 detail frames across seven portrait sheets, all inspected. Covers Harrington gestures, other release demonstrations, manual wrist contrast and ending practice montage. Sampled review, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/DcsppaMOFHi/overview/index.json",
+      ".videos/coaching-knowledge/DcsppaMOFHi/detail/index.json"
+    ],
+    "limitations": [
+      "Compilation removes context and does not establish agreement on a single biomechanical definition of release.",
+      "No reliable measured swing change or ball-flight outcome.",
+      "Raw ASR repeats wrist-going phrase in late montage; these fragments do not support new coaching claims."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        19
+      ],
+      "source_url": "https://www.instagram.com/p/DcsppaMOFHi/",
+      "attribution": "P\u00e1draig Harrington excerpt; creator explicitly credits Harrington footage to superspeedgolf",
+      "kind": "compiled_instructional_excerpt",
+      "session": "Earlier release feel and selected explanatory examples",
+      "summary": "Harrington says that with the top of backswing in good order, the listener should feel hands firing/releasing immediately. He says the release will not literally happen that early but the feel is needed. He reassures the listener they are athletic enough not to cast. The premise and feel-versus-motion distinction must remain attached to the cue.",
+      "frames": [
+        {
+          "time_seconds": 2,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00002.000.jpg",
+          "observation": "Top-of-backswing rehearsal."
+        },
+        {
+          "time_seconds": 4,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00004.000.jpg",
+          "observation": "Hands/club moving through release rehearsal."
+        },
+        {
+          "time_seconds": 6,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00006.000.jpg",
+          "observation": "Further downward/release example."
+        },
+        {
+          "time_seconds": 13,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00013.000.jpg",
+          "observation": "Right-hand action gesture."
+        },
+        {
+          "time_seconds": 17,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00017.000.jpg",
+          "observation": "Gesture while explaining perceived release timing."
+        }
+      ],
+      "limitations": [
+        "Compiled excerpt with original surrounding context absent.",
+        "No measured causal test or matched baseline/retest."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        19,
+        25.8
+      ],
+      "source_url": "https://www.instagram.com/p/DcsppaMOFHi/",
+      "attribution": "P\u00e1draig Harrington excerpt",
+      "kind": "compiled_instructional_excerpt",
+      "session": "Earlier release feel and selected explanatory examples",
+      "summary": "Harrington claims the listener will not hook and says harder release makes a hook less likely. This is reassurance in the excerpt, not a demonstrated ball-flight law or measured outcome.",
+      "frames": [
+        {
+          "time_seconds": 19,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00019.000.jpg",
+          "observation": "Instructor gesturing as no-hook claim begins."
+        },
+        {
+          "time_seconds": 22,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00022.000.jpg",
+          "observation": "Continues release explanation."
+        },
+        {
+          "time_seconds": 24,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00024.000.jpg",
+          "observation": "Hand gesture during harder-release claim."
+        }
+      ],
+      "limitations": [
+        "Compiled excerpt with original surrounding context absent.",
+        "No measured causal test or matched baseline/retest."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        25.8,
+        34.5
+      ],
+      "source_url": "https://www.instagram.com/p/DcsppaMOFHi/",
+      "attribution": "Unnamed participants in a separate outdoor driver-release excerpt",
+      "kind": "compiled_instructional_excerpt",
+      "session": "Earlier release feel and selected explanatory examples",
+      "summary": "Separate outdoor instruction asks whether earlier means earlier release; response specifies right hand earlier, with one-arm release gestures and a feel demonstration. Names and full diagnosis are not given in this repost.",
+      "frames": [
+        {
+          "time_seconds": 26,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00026.000.jpg",
+          "observation": "Two participants under source title about driver release."
+        },
+        {
+          "time_seconds": 28,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00028.000.jpg",
+          "observation": "Right-hand/club demonstration."
+        },
+        {
+          "time_seconds": 31,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00031.000.jpg",
+          "observation": "Alternate angle of release gesture."
+        },
+        {
+          "time_seconds": 33,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00033.000.jpg",
+          "observation": "Participant repeats arm movement."
+        }
+      ],
+      "limitations": [
+        "Compiled excerpt with original surrounding context absent.",
+        "No measured causal test or matched baseline/retest."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        34.5,
+        39.5
+      ],
+      "source_url": "https://www.instagram.com/p/DcsppaMOFHi/",
+      "attribution": "Unnamed archival speaker; original full source not identified",
+      "kind": "compiled_instructional_excerpt",
+      "session": "Earlier release feel and selected explanatory examples",
+      "summary": "Brief archival speaker says it is impossible to release too soon from the top of downswing. The compilation presents this as supporting testimony; no demonstration or individual context accompanies this sentence.",
+      "frames": [
+        {
+          "time_seconds": 36,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00036.000.jpg",
+          "observation": "Archival talking-head segment with impossible subtitle."
+        },
+        {
+          "time_seconds": 38,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00038.000.jpg",
+          "observation": "Subtitle references downswing."
+        },
+        {
+          "time_seconds": 39,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00039.000.jpg",
+          "observation": "End of too-soon statement."
+        }
+      ],
+      "limitations": [
+        "Compiled excerpt with original surrounding context absent.",
+        "No measured causal test or matched baseline/retest."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        39.5,
+        51.5
+      ],
+      "source_url": "https://www.instagram.com/p/DcsppaMOFHi/",
+      "attribution": "Unnamed instructor and learner in a separate indoor manual-guidance excerpt",
+      "kind": "compiled_instructional_excerpt",
+      "session": "Earlier release feel and selected explanatory examples",
+      "summary": "Another instructor manually guides a learner's forearm/wrist through a release comparison. He says movement or force needs to stop so the handle can go forward and turn over through; continued applied force keeps the wrist going the other way and leaves face open. The exact referent of it and force direction are not sufficiently defined to encode a biomechanical stop rule.",
+      "frames": [
+        {
+          "time_seconds": 40.5,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00040.500.jpg",
+          "observation": "Close view of supported forearm."
+        },
+        {
+          "time_seconds": 42,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00042.000.jpg",
+          "observation": "Instructor guides learner's extended arm toward delivery."
+        },
+        {
+          "time_seconds": 43,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00043.000.jpg",
+          "observation": "Held forearm/wrist position as stop is said."
+        },
+        {
+          "time_seconds": 44,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00044.000.jpg",
+          "observation": "Wrist/hand allowed to change orientation."
+        },
+        {
+          "time_seconds": 47,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00047.000.jpg",
+          "observation": "Contrasting continued-guidance motion."
+        },
+        {
+          "time_seconds": 49,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00049.000.jpg",
+          "observation": "Alternative wrist orientation."
+        },
+        {
+          "time_seconds": 51,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00051.000.jpg",
+          "observation": "Face-open explanation ends."
+        }
+      ],
+      "limitations": [
+        "Compiled excerpt with original surrounding context absent.",
+        "No measured causal test or matched baseline/retest."
+      ]
+    },
+    {
+      "id": "E06",
+      "span_seconds": [
+        50,
+        85.01
+      ],
+      "source_url": "https://www.instagram.com/p/DcsppaMOFHi/",
+      "attribution": "Gary McGrane compilation and personal account in accompanying creator description; montage identities not independently established",
+      "kind": "compiled_instructional_excerpt",
+      "session": "Earlier release feel and selected explanatory examples",
+      "summary": "Video ends with several practice swing/shot clips. Creator description says he has worked on the idea for years and still struggles to bring it to the course. Montage is illustration of practice, with no measured improvement or confirmed chronology. Repeated ASR fragments in the tail are not treated as new instructions.",
+      "frames": [
+        {
+          "time_seconds": 52,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00052.000.jpg",
+          "observation": "Outdoor rehearsal/shot montage begins."
+        },
+        {
+          "time_seconds": 56,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00056.000.jpg",
+          "observation": "Outdoor top position."
+        },
+        {
+          "time_seconds": 62,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00062.000.jpg",
+          "observation": "Covered-range setup."
+        },
+        {
+          "time_seconds": 66,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00066.000.jpg",
+          "observation": "Covered-range finish."
+        },
+        {
+          "time_seconds": 72,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00072.000.jpg",
+          "observation": "Different rehearsal angle."
+        },
+        {
+          "time_seconds": 78,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00078.000.jpg",
+          "observation": "Another setup in montage."
+        },
+        {
+          "time_seconds": 84.5,
+          "path": ".videos/coaching-knowledge/DcsppaMOFHi/detail/frame-00084.500.jpg",
+          "observation": "Final finish."
+        }
+      ],
+      "limitations": [
+        "Compiled excerpt with original surrounding context absent.",
+        "No measured causal test or matched baseline/retest."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "tags": {
+        "phase": [
+          "top",
+          "transition",
+          "downswing",
+          "release"
+        ],
+        "body": [
+          "hands",
+          "wrists",
+          "forearms"
+        ],
+        "outcome": [
+          "release timing",
+          "face-control claim",
+          "speed claim"
+        ],
+        "concept": [
+          "feel versus real",
+          "held lag",
+          "instructional compilation",
+          "transfer"
+        ]
+      },
+      "applicability": [
+        "Separately establish whether golfer is holding off release and whether top/delivery conditions fit.",
+        "Do not retrieve a universal earlier-release cue for every casting or open-face observation."
+      ],
+      "unknowns": [
+        "Original full contexts and diagnoses for included excerpts.",
+        "Actual hand/club/force timings and definitions of release across speakers.",
+        "Measured speed, face/path, hook frequency or transfer to play."
+      ],
+      "observed_result": "Rehearsals, manual guidance and practice montage; no controlled outcome. Creator explicitly reports ongoing course-transfer difficulty.",
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated",
+      "id": "DcsppaMOFHi-C01",
+      "title": "Use an earlier-release feel when holding off release is the established problem",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E04",
+        "E06"
+      ],
+      "coaching_finding": "Creator criticizes holding angle/lag too long; Harrington excerpt presumes good top position and an athletic listener. No current student diagnosis is shown for this compilation.",
+      "coach_reasoning": "An exaggerated intention to release from the top may counter holding off; Harrington explicitly says the physical event will not happen exactly as early as the feel.",
+      "intervention": {
+        "cue": "Feel the hands release sooner from the top.",
+        "scope": "Treat as a conditional sensation to test, not a command to throw clubhead past hands immediately.",
+        "source_claim_limits": "No-cast, no-hook and impossible-too-early statements remain source assertions; they are not adopted as guarantees."
+      },
+      "selection": {
+        "coaching_focus": "One earlier-release sensation",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus constraint. Eligibility and reassessment are proposed app rules, not a validated diagnostic test in this compilation.",
+        "reassess": "Check actual delivery and ball flight after the cue, then test on-course transfer; stop escalating the feel if strike or direction worsens."
+      }
+    },
+    {
+      "tags": {
+        "phase": [
+          "top",
+          "transition",
+          "downswing",
+          "release"
+        ],
+        "body": [
+          "hands",
+          "wrists",
+          "forearms"
+        ],
+        "outcome": [
+          "release timing",
+          "face-control claim",
+          "speed claim"
+        ],
+        "concept": [
+          "feel versus real",
+          "held lag",
+          "instructional compilation",
+          "transfer"
+        ]
+      },
+      "applicability": [
+        "Separately establish whether golfer is holding off release and whether top/delivery conditions fit.",
+        "Do not retrieve a universal earlier-release cue for every casting or open-face observation."
+      ],
+      "unknowns": [
+        "Original full contexts and diagnoses for included excerpts.",
+        "Actual hand/club/force timings and definitions of release across speakers.",
+        "Measured speed, face/path, hook frequency or transfer to play."
+      ],
+      "observed_result": "Rehearsals, manual guidance and practice montage; no controlled outcome. Creator explicitly reports ongoing course-transfer difficulty.",
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated",
+      "id": "DcsppaMOFHi-C02",
+      "title": "Preserve the manual force/turnover explanation without converting it into a stop command",
+      "case_type": "mechanism_explanation_not_standalone_prescription",
+      "evidence_ids": [
+        "E05",
+        "E06"
+      ],
+      "coaching_finding": "Indoor excerpt contrasts a held/continued-force wrist motion with an allowed turnover motion, associating the former with open face.",
+      "coach_reasoning": "Speaker links sustained force application to wrist behavior; exact vector, segment and stop timing are not defined in this clip.",
+      "intervention": {
+        "demonstration": "Instructor supports/guides learner forearm and contrasts two wrist/hand paths.",
+        "use": "Explanatory reference with source frames; do not prescribe stopping arms, body or handle from this incomplete statement."
+      },
+      "selection": {
+        "coaching_focus": "Clarify source explanation of release",
+        "max_simultaneous_cues": 0,
+        "policy_origin": "Explanatory knowledge only; insufficient specificity for a standalone movement cue.",
+        "reassess": "Resolve original source context and identify the referenced segment/force before implementing quantitative coaching logic."
+      }
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "unmeasured_universal_claims",
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E04"
+      ],
+      "value": "Will not cast/hook; cannot release too early",
+      "limits": [
+        "Source claims, not validated predictions."
+      ]
+    },
+    {
+      "kind": "creator_reported_transfer_limit",
+      "evidence_ids": [
+        "E06"
+      ],
+      "value": "Years of work; still struggles on course",
+      "limits": [
+        "Self-report; no dates, comparative scores or measured retention."
+      ]
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        39.5,
+        51.5
+      ],
+      "issue": "It needs to stop has an ambiguous biomechanical referent. Preserve verbatim meaning in raw transcript and visible manual comparison; no invented whole-body/arm stopping rule."
+    },
+    {
+      "span_seconds": [
+        72,
+        85.01
+      ],
+      "issue": "ASR repeats a previous wrist phrase in implausibly short segments over montage. Repetitions are not treated as independently supported narration."
+    },
+    {
+      "span_seconds": [
+        0,
+        13
+      ],
+      "issue": "Opening authority claim about combined major wins is promotional framing; titles/counts and identities of all four speakers are not verified."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "BcG-r_13z_I-C01",
+      "current_case": "DcsppaMOFHi-C01",
+      "relation": "Counterexample to a universal earlier-arms cue",
+      "explanation": "Menante\u2019s TPI case has extreme lag but arms already early relative to trunk; the conventional casting explanation was rejected. This compilation cannot justify earlier hands from a lag appearance alone."
+    },
+    {
+      "source_case": "iP0sBzIXRtc-C06",
+      "current_case": "DcsppaMOFHi-C01",
+      "relation": "Release instruction must remain coordinated with body motion",
+      "explanation": "Cowen adjusts Danny\u2019s motion when body outpaces arm and when calm becomes deceleration. These cases preserve matching/timing, while this compilation supplies a broad earlier-release feel."
+    },
+    {
+      "source_case": "iP0sBzIXRtc-C09",
+      "current_case": "DcsppaMOFHi-C02",
+      "relation": "Avoid turning explanation into handle dragging",
+      "explanation": "Danny\u2019s excessive shaft-lean/handle-drag interpretation produced right-start issues. The ambiguous handle-forward language here should not become a universal maximize-lean cue."
+    },
+    {
+      "source_case": "vGGIn2IAW-Q-C04",
+      "current_case": "DcsppaMOFHi-C01",
+      "relation": "Practice-to-course transfer remains a separate requirement",
+      "explanation": "Ruffels deliberately removes technical aids/thoughts for target work. McGrane\u2019s post acknowledges that understanding and practising a feel for years has not guaranteed on-course transfer."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "DcsppaMOFHi-C01",
+        "DcsppaMOFHi-C02"
+      ],
+      "relationship": "Earlier-release feel is a conditional task; the force/stop passage is incomplete mechanism explanation. Do not stack an ambiguous stopping instruction onto the release cue."
+    }
+  ],
+  "annotation_opportunities": [
+    "Show feel-versus-real qualification beside the earlier-release cue.",
+    "Keep each speaker/excerpt separately attributed; compilation agreement is not independent validation.",
+    "Pair manual guidance with original wording and mark undefined mechanical referents.",
+    "Record source self-reported transfer difficulty alongside practice footage."
+  ],
+  "excluded_material": [
+    "Universal prohibition on holding angle in every context.",
+    "Guaranteed no-hook/no-cast result or verified speed gain.",
+    "Stopping the whole body or arms based on an ambiguous pronoun.",
+    "Promotional major-count claim as scientific evidence."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Compilation with missing diagnoses, strong unsupported universals and ambiguous force explanation; useful conditional feel and transfer caveat retained."
+  },
+  "asset_sha256": {
+    "video": "9487434079336280f25a65d82483f6fa86c089e81725c789521f25c9d35282c4",
+    "raw_captions": "eb13f31753065c1f63625b211cc61ada0b4e343ad57537565bd44298aa0402b4",
+    "transcript": "59aad9469f39020fc35fea6a167441fe300729d96b86346ef5428a274d3c2267"
+  }
+}

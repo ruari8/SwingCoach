@@ -1,0 +1,889 @@
+{
+  "version": 1,
+  "source_id": "1dF_irGY6YM",
+  "url": "https://www.youtube.com/watch?v=1dF_irGY6YM",
+  "title": "How to control your irons with Tommy Fleetwood",
+  "publisher": "Golf.com",
+  "published": "20260629",
+  "duration_seconds": 572,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "coach": "Tommy Fleetwood",
+    "golfer": "Host of Pros Teaching Joes; name not independently established",
+    "attribution_basis": "Title, introduction and speaker turns"
+  },
+  "context": {
+    "handedness": "right",
+    "club": "7 iron",
+    "task": "Intentional trajectory control in a practice bay",
+    "body_context": "Fleetwood reports his own side-bend history. No TPI screen, body handicap, force or mobility assessment.",
+    "style": "Setup experiments, ball-width visual references, demonstrations, simple feels and immediate shot results"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/1dF_irGY6YM/1dF_irGY6YM.mp4",
+    "raw_captions": ".videos/coaching-knowledge/1dF_irGY6YM/1dF_irGY6YM.en-orig.json3",
+    "transcript": ".videos/coaching-knowledge/1dF_irGY6YM/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/1dF_irGY6YM/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/1dF_irGY6YM/1dF_irGY6YM.info.json",
+    "overview": ".videos/coaching-knowledge/1dF_irGY6YM/overview/index.json",
+    "detail": ".videos/coaching-knowledge/1dF_irGY6YM/detail/index.json",
+    "results": ".videos/coaching-knowledge/1dF_irGY6YM/results/index.json",
+    "high_retest": ".videos/coaching-knowledge/1dF_irGY6YM/high-retest/index.json",
+    "high_result": ".videos/coaching-knowledge/1dF_irGY6YM/high-result/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 326,
+    "transcript_kind": "YouTube en-orig automatic captions; no silent correction of uncertain technical wording",
+    "audio_independently_transcribed": false,
+    "visual_review_method": "29 overview, 44 detail, 40 result/rehearsal and 12 high-shot context/result frames. All 13 contact sheets inspected; timestamps can repeat. Sampled review, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/1dF_irGY6YM/overview/index.json",
+      ".videos/coaching-knowledge/1dF_irGY6YM/detail/index.json",
+      ".videos/coaching-knowledge/1dF_irGY6YM/results/index.json",
+      ".videos/coaching-knowledge/1dF_irGY6YM/high-retest/index.json",
+      ".videos/coaching-knowledge/1dF_irGY6YM/high-result/index.json"
+    ],
+    "limitations": [
+      "480p edited source; contact and ball flight are not independently instrumented.",
+      "Split views and graphics do not provide a raw device dataset.",
+      "No quantified P-position or club/body-angle assessment."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        35,
+        78
+      ],
+      "source_url": "https://www.youtube.com/watch?v=1dF_irGY6YM&t=35s",
+      "attribution": "Tommy Fleetwood and host; measurements attributed to source graphics",
+      "kind": "instruction_and_demonstration",
+      "session": "trajectory_lesson",
+      "summary": "The task is high, low and stock shots with a seven iron. Fleetwood starts from stock setup. His own preference for forward ball position is tied to his reported history of struggling with side bend; this is individual context, not a diagnosis of the host.",
+      "frames": [
+        {
+          "time_seconds": 62,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00062.000.jpg",
+          "observation": "Both participants look toward the address area during the stock-setup explanation."
+        }
+      ],
+      "limitations": [
+        "Qualitative instruction; no calibrated body or club kinematics."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        78,
+        99
+      ],
+      "source_url": "https://www.youtube.com/watch?v=1dF_irGY6YM&t=78s",
+      "attribution": "Tommy Fleetwood and host; measurements attributed to source graphics",
+      "kind": "attempt_and_displayed_result",
+      "session": "trajectory_lesson",
+      "summary": "Host calls the stock attempt thin. Source overlay reports apex 60 ft and carry 132 yd. The joke about flighting a thin shot is not a prescription to deliberately mishit.",
+      "frames": [
+        {
+          "time_seconds": 88,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/results/frame-00088.000.jpg",
+          "observation": "After-shot graphic reads APEX 60 FT and CARRY 132 YDS."
+        }
+      ],
+      "limitations": [
+        "Qualitative instruction; no calibrated body or club kinematics."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        100,
+        125
+      ],
+      "source_url": "https://www.youtube.com/watch?v=1dF_irGY6YM&t=100s",
+      "attribution": "Tommy Fleetwood and host; measurements attributed to source graphics",
+      "kind": "instruction_and_demonstration",
+      "session": "trajectory_lesson",
+      "summary": "Fleetwood lays out ball references and changes the body position around a stationary ball. Moving the body one ball backward makes the ball relatively forward in the stance for a higher shot.",
+      "frames": [
+        {
+          "time_seconds": 105,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00105.000.jpg",
+          "observation": "Fleetwood places balls on the mat."
+        },
+        {
+          "time_seconds": 111,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00111.000.jpg",
+          "observation": "Close view shows the row of balls as a ball-width setup reference."
+        },
+        {
+          "time_seconds": 117,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00117.000.jpg",
+          "observation": "Fleetwood points toward the golfer's setup."
+        }
+      ],
+      "limitations": [
+        "Qualitative instruction; no calibrated body or club kinematics."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        125,
+        145
+      ],
+      "source_url": "https://www.youtube.com/watch?v=1dF_irGY6YM&t=125s",
+      "attribution": "Tommy Fleetwood and host; measurements attributed to source graphics",
+      "kind": "attempts_and_displayed_results",
+      "session": "trajectory_lesson",
+      "summary": "First higher-flight attempt is called thin and displays 45 ft apex / 139 yd carry. After a cue to turn onto it, the repeat is praised as high and displays 110 ft / 154 yd. Preserve failed and successful attempts separately.",
+      "frames": [
+        {
+          "time_seconds": 130,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00130.000.jpg",
+          "observation": "Graphic reads APEX 45 FT and CARRY 139 YDS."
+        },
+        {
+          "time_seconds": 138,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00138.000.jpg",
+          "observation": "Repeat-shot graphic reads APEX 110 FT and CARRY 154 YDS."
+        }
+      ],
+      "limitations": [
+        "Qualitative instruction; no calibrated body or club kinematics."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        145,
+        178
+      ],
+      "source_url": "https://www.youtube.com/watch?v=1dF_irGY6YM&t=145s",
+      "attribution": "Tommy Fleetwood and host; measurements attributed to source graphics",
+      "kind": "instruction_and_demonstration",
+      "session": "trajectory_lesson",
+      "summary": "Another ball forward is offered as a further height experiment. Fleetwood describes changing setup around the ball, with examples such as clearing a tree, downwind conditions and a front pin.",
+      "frames": [
+        {
+          "time_seconds": 151,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00151.000.jpg",
+          "observation": "Fleetwood explains while the host faces him."
+        }
+      ],
+      "limitations": [
+        "Qualitative instruction; no calibrated body or club kinematics."
+      ]
+    },
+    {
+      "id": "E06",
+      "span_seconds": [
+        178,
+        259
+      ],
+      "source_url": "https://www.youtube.com/watch?v=1dF_irGY6YM&t=178s",
+      "attribution": "Tommy Fleetwood and host; measurements attributed to source graphics",
+      "kind": "instruction_and_demonstration",
+      "session": "trajectory_lesson",
+      "summary": "Asked about clearing a tree, Fleetwood prioritises strike. After moving the ball forward he suggests contact may require more weight left or turning onto it, in tentative language. The later high attempt is praised and displays 107 ft apex / 159 yd carry.",
+      "frames": [
+        {
+          "time_seconds": 222,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00222.000.jpg",
+          "observation": "Close view shows the ball reference row and feet during the contact discussion."
+        },
+        {
+          "time_seconds": 257,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/high-result/frame-00257.000.jpg",
+          "observation": "Split-view shot result reads APEX 107 FT and CARRY 159 YDS."
+        }
+      ],
+      "limitations": [
+        "Weight/pressure is suggested verbally, not measured. The second successful high shot is not higher than the earlier 110 ft example."
+      ]
+    },
+    {
+      "id": "E07",
+      "span_seconds": [
+        259,
+        280
+      ],
+      "source_url": "https://www.youtube.com/watch?v=1dF_irGY6YM&t=259s",
+      "attribution": "Tommy Fleetwood and host; measurements attributed to source graphics",
+      "kind": "instruction_and_demonstration",
+      "session": "trajectory_lesson",
+      "summary": "For a lower trajectory Fleetwood reverses the setup movement, putting the ball relatively farther back. He recommends starting with this setup change.",
+      "frames": [
+        {
+          "time_seconds": 262,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00262.000.jpg",
+          "observation": "Fleetwood holds the club at address while explaining the opposite setup direction."
+        },
+        {
+          "time_seconds": 260,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/high-result/frame-00260.000.jpg",
+          "observation": "Close view shows ball references and his feet."
+        }
+      ],
+      "limitations": [
+        "Qualitative instruction; no calibrated body or club kinematics."
+      ]
+    },
+    {
+      "id": "E08",
+      "span_seconds": [
+        294,
+        333
+      ],
+      "source_url": "https://www.youtube.com/watch?v=1dF_irGY6YM&t=294s",
+      "attribution": "Tommy Fleetwood and host; measurements attributed to source graphics",
+      "kind": "retrospective_reasoning_and_rehearsal",
+      "session": "trajectory_lesson",
+      "summary": "Fleetwood recalls an earlier period of very inside, flippy, rolling swings. His old coach Tom used windmill swings connecting chest and arms with an abbreviated finish; Fleetwood says he hit it better and took the exercise onto the course.",
+      "frames": [
+        {
+          "time_seconds": 314,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/results/frame-00314.000.jpg",
+          "observation": "Arms spread as Fleetwood starts the demonstration."
+        },
+        {
+          "time_seconds": 316,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/results/frame-00316.000.jpg",
+          "observation": "Arms move down with torso movement."
+        },
+        {
+          "time_seconds": 318,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/results/frame-00318.000.jpg",
+          "observation": "Torso and arms turn to an abbreviated finishing gesture."
+        },
+        {
+          "time_seconds": 320,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/results/frame-00320.000.jpg",
+          "observation": "Fleetwood returns from the demonstration."
+        }
+      ],
+      "limitations": [
+        "Original poor swings and historical improvement are reported, not shown as matched before/after evidence. No exact connectedness or arm-radius threshold."
+      ]
+    },
+    {
+      "id": "E09",
+      "span_seconds": [
+        333,
+        378
+      ],
+      "source_url": "https://www.youtube.com/watch?v=1dF_irGY6YM&t=333s",
+      "attribution": "Tommy Fleetwood and host; measurements attributed to source graphics",
+      "kind": "interpretation_and_exception",
+      "session": "trajectory_lesson",
+      "summary": "Fleetwood distinguishes the late finish after the ball has gone from an intention to use shorter swings that can change arrival at impact. He cites different shot-flight swing lengths and notes his own stock finish is already short.",
+      "frames": [
+        {
+          "time_seconds": 351,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00351.000.jpg",
+          "observation": "Fleetwood raises his arms to illustrate a higher finish."
+        },
+        {
+          "time_seconds": 367,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00367.000.jpg",
+          "observation": "Discussion continues after contrasting swing/finish lengths."
+        }
+      ],
+      "limitations": [
+        "Qualitative instruction; no calibrated body or club kinematics."
+      ]
+    },
+    {
+      "id": "E10",
+      "span_seconds": [
+        379,
+        417
+      ],
+      "source_url": "https://www.youtube.com/watch?v=1dF_irGY6YM&t=379s",
+      "attribution": "Tommy Fleetwood and host; measurements attributed to source graphics",
+      "kind": "attempt_and_explanation",
+      "session": "trajectory_lesson",
+      "summary": "Host hits with the ball farther back while trying to keep the swing otherwise the same. Source displays apex 52 ft / carry 164 yd and describes it as lower than stock. Fleetwood explains reduced loft with a hypothetical 60-degree club becoming 57 degrees, and estimates extra distance; this is not a measured loft change of this seven iron.",
+      "frames": [
+        {
+          "time_seconds": 387,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00387.000.jpg",
+          "observation": "Host at address in split views."
+        },
+        {
+          "time_seconds": 394,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/results/frame-00394.000.jpg",
+          "observation": "After-shot overlay reads APEX 52 FT and CARRY 164 YDS."
+        }
+      ],
+      "limitations": [
+        "The stock comparator was thin; carry differences do not isolate ball position. The 60/57-degree example and 3-4 yards are illustrations, not a transferable calibration."
+      ]
+    },
+    {
+      "id": "E11",
+      "span_seconds": [
+        417,
+        484
+      ],
+      "source_url": "https://www.youtube.com/watch?v=1dF_irGY6YM&t=417s",
+      "attribution": "Tommy Fleetwood and host; measurements attributed to source graphics",
+      "kind": "alternative_and_mixed_result",
+      "session": "trajectory_lesson",
+      "summary": "For a low shot in wind, Fleetwood starts with setup, then suggests slower pace and a long backswing to short follow-through feel, similar to a punched or chipped shot. He also mentions a shorter-swing alternative. The attempted shot displays apex 45 ft / carry 156 yd; they say flight is down but it missed left.",
+      "frames": [
+        {
+          "time_seconds": 454,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00454.000.jpg",
+          "observation": "Fleetwood gestures a low abbreviated through motion."
+        },
+        {
+          "time_seconds": 466,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00466.000.jpg",
+          "observation": "Fleetwood gestures the swing-length idea."
+        },
+        {
+          "time_seconds": 476,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/results/frame-00476.000.jpg",
+          "observation": "Host shown during the attempt in two views."
+        },
+        {
+          "time_seconds": 478,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/results/frame-00478.000.jpg",
+          "observation": "Overlay reads APEX 45 FT and CARRY 156 YDS."
+        }
+      ],
+      "limitations": [
+        "Wind scenario is hypothetical. The 70-yard pitch comparison is a feel, not a prescribed carry for this seven iron. Do not claim directional success."
+      ]
+    },
+    {
+      "id": "E12",
+      "span_seconds": [
+        484,
+        535
+      ],
+      "source_url": "https://www.youtube.com/watch?v=1dF_irGY6YM&t=484s",
+      "attribution": "Tommy Fleetwood and host; measurements attributed to source graphics",
+      "kind": "instruction_and_demonstration",
+      "session": "trajectory_lesson",
+      "summary": "For a stinger, Fleetwood moves ball position farther back while trying to retain the grip location, then uses a feel of right hip, right shoulder and right ear staying high through the ball, covering it with a short follow-through. Auto-caption wording around 510 seconds is unclear; preserve the visible setup geometry without silently substituting a technical term.",
+      "frames": [
+        {
+          "time_seconds": 500,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00500.000.jpg",
+          "observation": "Close view of ball references, feet and shaft during rearward ball-position demonstration."
+        },
+        {
+          "time_seconds": 514,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00514.000.jpg",
+          "observation": "Shaft and ball-position relationship visible at address."
+        },
+        {
+          "time_seconds": 521,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00521.000.jpg",
+          "observation": "Fleetwood points toward his right shoulder while explaining the high trail-side feel."
+        },
+        {
+          "time_seconds": 528,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00528.000.jpg",
+          "observation": "Low side view of demonstration, with upper body outside frame."
+        },
+        {
+          "time_seconds": 531,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/results/frame-00531.000.jpg",
+          "observation": "Close view of clubhead behind the ball and shaft angled toward the hands."
+        }
+      ],
+      "limitations": [
+        "Right-sided cue is for a right-handed player. No measured ear, hip or shoulder height through impact. The caption phrase a lot of shuffling remains uncertain."
+      ]
+    },
+    {
+      "id": "E13",
+      "span_seconds": [
+        535,
+        551
+      ],
+      "source_url": "https://www.youtube.com/watch?v=1dF_irGY6YM&t=535s",
+      "attribution": "Tommy Fleetwood and host; measurements attributed to source graphics",
+      "kind": "attempt_and_displayed_result",
+      "session": "trajectory_lesson",
+      "summary": "Host attempts the stinger and is praised. On-screen result reports apex 23 ft and carry 145 yd. No numerical lateral dispersion or shot-shape measurement is shown.",
+      "frames": [
+        {
+          "time_seconds": 536,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/results/frame-00536.000.jpg",
+          "observation": "Host at address in two views."
+        },
+        {
+          "time_seconds": 538,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/results/frame-00538.000.jpg",
+          "observation": "Host after impact in two views."
+        },
+        {
+          "time_seconds": 540,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/results/frame-00540.000.jpg",
+          "observation": "Graphic reads APEX 23 FT and CARRY 145 YDS."
+        }
+      ],
+      "limitations": [
+        "Qualitative instruction; no calibrated body or club kinematics."
+      ]
+    },
+    {
+      "id": "E14",
+      "span_seconds": [
+        551,
+        565
+      ],
+      "source_url": "https://www.youtube.com/watch?v=1dF_irGY6YM&t=551s",
+      "attribution": "Tommy Fleetwood and host; measurements attributed to source graphics",
+      "kind": "pedagogy_and_priority",
+      "session": "trajectory_lesson",
+      "summary": "Closing advice is to use setup as much as possible before experimenting with additional feels. Praise at the end does not erase the earlier thin shots or left miss.",
+      "frames": [
+        {
+          "time_seconds": 558,
+          "path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00558.000.jpg",
+          "observation": "Participants finish the lesson beside the hitting area."
+        }
+      ],
+      "limitations": [
+        "Qualitative instruction; no calibrated body or club kinematics."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "1dF_irGY6YM-C01",
+      "title": "Change iron trajectory through relative ball position",
+      "tags": {
+        "phase": [
+          "setup"
+        ],
+        "body": [
+          "feet",
+          "ball_position"
+        ],
+        "outcome": [
+          "trajectory",
+          "carry"
+        ],
+        "concept": [
+          "shot_intent",
+          "setup_experiment"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E04",
+        "E05",
+        "E07",
+        "E10",
+        "E14"
+      ],
+      "coaching_finding": "Host wants high/stock/low seven-iron options rather than a general swing-fault correction.",
+      "coach_reasoning": "Fleetwood starts with a structured stock setup, then changes ball location relative to the body for the desired flight.",
+      "intervention": {
+        "action": "Keep a visible ball reference and move the body around it in ball-width increments.",
+        "high": "Ball relatively forward.",
+        "low": "Ball relatively back.",
+        "sequence": "Test one setup change and strike before adding movement feels."
+      },
+      "applicability": [
+        "Known handedness, club and desired trajectory.",
+        "Establish a usable stock strike first; the source's stock example was thin."
+      ],
+      "unknowns": [
+        "No universal ball position, loft-angle change or yardage per ball-width established.",
+        "Fleetwood's personal forward preference and side-bend history do not diagnose the host."
+      ],
+      "observed_result": "Displayed stock 60 ft/132 yd was thin; first high attempt 45/139 also thin; retry 110/154, later high 107/159; low attempt 52/164. These are individual edited shots.",
+      "selection": {
+        "coaching_focus": "One setup change for the requested flight",
+        "max_simultaneous_cues": 2,
+        "policy_origin": "App presentation limit from user; source provides several options. Present one experiment before adding a second compatible cue.",
+        "reassess": "Check contact first, then apex/launch, carry and direction; return to contact work if strike deteriorates."
+      },
+      "alternative_case_ids": [
+        "1dF_irGY6YM-C02",
+        "1dF_irGY6YM-C04",
+        "1dF_irGY6YM-C05"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "1dF_irGY6YM-C02",
+      "title": "Re-establish contact after changing trajectory setup",
+      "tags": {
+        "phase": [
+          "setup",
+          "impact"
+        ],
+        "body": [
+          "body_turn",
+          "lead_side"
+        ],
+        "outcome": [
+          "strike",
+          "trajectory"
+        ],
+        "concept": [
+          "progression_gate"
+        ]
+      },
+      "evidence_ids": [
+        "E02",
+        "E04",
+        "E06"
+      ],
+      "coaching_finding": "Thinking about height can distract the golfer from contact; the first higher-flight attempt was thin.",
+      "coach_reasoning": "Fleetwood makes strike the first check after any change and tentatively connects forward ball position to getting onto the ball.",
+      "intervention": {
+        "primary": "Prioritise a clean strike in the new setup.",
+        "conditional_cue": "Turn onto it; Fleetwood also discusses more weight left as an alternative contact adjustment."
+      },
+      "applicability": [
+        "Contact worsens after a ball-position experiment.",
+        "A high-shot task with forward ball position, not a generic instruction to move pressure left."
+      ],
+      "unknowns": [
+        "Thin contact is golfer-reported; impact-face location not measured.",
+        "No force plates, lead-pressure target or body-screen diagnosis."
+      ],
+      "observed_result": "Thin 45 ft/139 yd attempt followed by praised 110/154 retry after turn-onto-it cue; later 107/159 high shot. No proof of retention.",
+      "selection": {
+        "coaching_focus": "Restore contact before further trajectory changes",
+        "max_simultaneous_cues": 2,
+        "policy_origin": "App presentation limit from user; source provides several options. Present one experiment before adding a second compatible cue.",
+        "reassess": "Compare strike with the preceding attempt; then check requested height and target direction."
+      },
+      "alternative_case_ids": [
+        "1dF_irGY6YM-C01"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "1dF_irGY6YM-C03",
+      "title": "Connected windmill rehearsal and the meaning of a short finish",
+      "tags": {
+        "phase": [
+          "backswing",
+          "downswing",
+          "follow_through"
+        ],
+        "body": [
+          "chest",
+          "arms",
+          "club"
+        ],
+        "outcome": [
+          "strike",
+          "club_control"
+        ],
+        "concept": [
+          "personal_history",
+          "rehearsal",
+          "feel_vs_motion"
+        ]
+      },
+      "evidence_ids": [
+        "E08",
+        "E09"
+      ],
+      "coaching_finding": "Fleetwood reports a past inside, flippy, rolling pattern. This is retrospective, not a diagnosis of the host.",
+      "coach_reasoning": "He links connected chest/arm windmill swings to learning club position and better striking, while distinguishing a late finish pose from swing intentions that change impact.",
+      "intervention": {
+        "drill": "Rehearse chest and arms moving together into an abbreviated finish, as demonstrated.",
+        "transfer": "He reports practising it on course.",
+        "boundary": "A photograph of the final pose alone is not evidence of an impact fault or its cure."
+      },
+      "applicability": [
+        "A supported matching inside/rolling pattern with relevant context, or deliberate skill practice.",
+        "Interpret as Fleetwood's successful personal exercise, not an ideal finish for everyone."
+      ],
+      "unknowns": [
+        "No original bad swing, club-path measurement, historical before/after comparison or repetition dose.",
+        "Connectedness has no quantitative threshold in this source."
+      ],
+      "observed_result": "Fleetwood reports long-term personal benefit; current footage shows demonstration, not a measured host treatment trial.",
+      "selection": {
+        "coaching_focus": "One connected chest/arm rehearsal",
+        "max_simultaneous_cues": 2,
+        "policy_origin": "App presentation limit from user; source provides several options. Present one experiment before adding a second compatible cue.",
+        "reassess": "Recheck strike and delivery; do not reward resemblance to the final pose alone."
+      },
+      "alternative_case_ids": [
+        "1dF_irGY6YM-C04"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "1dF_irGY6YM-C04",
+      "title": "Low wind shot through setup and pace, with alternative swing-length feels",
+      "tags": {
+        "phase": [
+          "setup",
+          "backswing",
+          "follow_through"
+        ],
+        "body": [
+          "ball_position",
+          "arms",
+          "club"
+        ],
+        "outcome": [
+          "trajectory",
+          "direction"
+        ],
+        "concept": [
+          "wind",
+          "alternative_feels"
+        ]
+      },
+      "evidence_ids": [
+        "E10",
+        "E11",
+        "E14"
+      ],
+      "coaching_finding": "Golfer wants a low seven-iron shot for a hypothetical windy links situation.",
+      "coach_reasoning": "Fleetwood does as much as possible with setup, then reduces pace; a long-back/short-through feel or a shorter swing are alternatives.",
+      "intervention": {
+        "sequence": "First try rearward relative ball position. If more flight reduction is needed, try slower pace with one swing-length feel.",
+        "feel": "Long backswing to short follow-through, like a punched/chipped shot.",
+        "alternative": "Shorter swing is separately mentioned; do not combine every option."
+      },
+      "applicability": [
+        "Low-flight shot is desired and stock contact is adequate.",
+        "Judge height and target direction separately."
+      ],
+      "unknowns": [
+        "Actual wind, spin and delivery loft unavailable.",
+        "A 70-yard-pitch image does not establish carry, speed or backswing-length targets."
+      ],
+      "observed_result": "Displayed apex 45 ft and carry 156 yd. Height was praised, but the source explicitly records a left miss.",
+      "selection": {
+        "coaching_focus": "One low-flight experiment",
+        "max_simultaneous_cues": 2,
+        "policy_origin": "App presentation limit from user; source provides several options. Present one experiment before adding a second compatible cue.",
+        "reassess": "Retain useful height change only if strike, carry and direction fit the shot; do not call a low left miss complete success."
+      },
+      "alternative_case_ids": [
+        "1dF_irGY6YM-C01",
+        "1dF_irGY6YM-C05"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "1dF_irGY6YM-C05",
+      "title": "Stinger setup and high trail-side feel",
+      "tags": {
+        "phase": [
+          "setup",
+          "impact",
+          "follow_through"
+        ],
+        "body": [
+          "ball_position",
+          "hands",
+          "trail_hip",
+          "trail_shoulder"
+        ],
+        "outcome": [
+          "very_low_trajectory"
+        ],
+        "concept": [
+          "specialty_shot",
+          "feel_vs_measurement"
+        ]
+      },
+      "evidence_ids": [
+        "E12",
+        "E13",
+        "E14"
+      ],
+      "coaching_finding": "Host asks for the lowest possible seven-iron stinger.",
+      "coach_reasoning": "Rearward ball position with retained grip location changes address geometry; Fleetwood adds a covering/high-trail-side feel and short-through intention.",
+      "intervention": {
+        "setup": "Move ball relatively farther back while retaining grip location.",
+        "feel": "For this right-hander, right hip/shoulder/ear feel high through the ball; short follow-through supports the same low-flight task.",
+        "staging": "Practise setup first, then at most one movement feel."
+      },
+      "applicability": [
+        "Deliberate very-low trajectory request, adequate contact, known handedness.",
+        "Treat as a specialty shot, not an automatic correction for early extension or a general impact ideal."
+      ],
+      "unknowns": [
+        "Unclear automatic-caption phrase near 510 seconds.",
+        "No measured body-height or shaft-lean angle; no numeric lateral outcome."
+      ],
+      "observed_result": "Displayed apex 23 ft, carry 145 yd; verbal praise. Single attempt does not prove consistency.",
+      "selection": {
+        "coaching_focus": "One stinger setup experiment",
+        "max_simultaneous_cues": 2,
+        "policy_origin": "App presentation limit from user; source provides several options. Present one experiment before adding a second compatible cue.",
+        "reassess": "Check contact, low flight, useful carry and direction before repeating or escalating."
+      },
+      "alternative_case_ids": [
+        "1dF_irGY6YM-C01",
+        "1dF_irGY6YM-C04"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "evidence_id": "E02",
+      "time_seconds": 88,
+      "frame_path": ".videos/coaching-knowledge/1dF_irGY6YM/results/frame-00088.000.jpg",
+      "attempt": "stock attempt, reported thin",
+      "values": {
+        "apex_ft": 60,
+        "carry_yd": 132
+      },
+      "provenance": "Readable on-screen source result graphic, visually transcribed.",
+      "limitations": [
+        "No raw launch-monitor export, calibration, shot ID, spin or dispersion. Values describe this shot, not a model threshold."
+      ]
+    },
+    {
+      "evidence_id": "E04",
+      "time_seconds": 130,
+      "frame_path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00130.000.jpg",
+      "attempt": "first high attempt, reported thin",
+      "values": {
+        "apex_ft": 45,
+        "carry_yd": 139
+      },
+      "provenance": "Readable on-screen source result graphic, visually transcribed.",
+      "limitations": [
+        "No raw launch-monitor export, calibration, shot ID, spin or dispersion. Values describe this shot, not a model threshold."
+      ]
+    },
+    {
+      "evidence_id": "E04",
+      "time_seconds": 138,
+      "frame_path": ".videos/coaching-knowledge/1dF_irGY6YM/detail/frame-00138.000.jpg",
+      "attempt": "high retry, praised",
+      "values": {
+        "apex_ft": 110,
+        "carry_yd": 154
+      },
+      "provenance": "Readable on-screen source result graphic, visually transcribed.",
+      "limitations": [
+        "No raw launch-monitor export, calibration, shot ID, spin or dispersion. Values describe this shot, not a model threshold."
+      ]
+    },
+    {
+      "evidence_id": "E06",
+      "time_seconds": 257,
+      "frame_path": ".videos/coaching-knowledge/1dF_irGY6YM/high-result/frame-00257.000.jpg",
+      "attempt": "later high attempt, praised",
+      "values": {
+        "apex_ft": 107,
+        "carry_yd": 159
+      },
+      "provenance": "Readable on-screen source result graphic, visually transcribed.",
+      "limitations": [
+        "No raw launch-monitor export, calibration, shot ID, spin or dispersion. Values describe this shot, not a model threshold."
+      ]
+    },
+    {
+      "evidence_id": "E10",
+      "time_seconds": 394,
+      "frame_path": ".videos/coaching-knowledge/1dF_irGY6YM/results/frame-00394.000.jpg",
+      "attempt": "lower setup attempt",
+      "values": {
+        "apex_ft": 52,
+        "carry_yd": 164
+      },
+      "provenance": "Readable on-screen source result graphic, visually transcribed.",
+      "limitations": [
+        "No raw launch-monitor export, calibration, shot ID, spin or dispersion. Values describe this shot, not a model threshold."
+      ]
+    },
+    {
+      "evidence_id": "E11",
+      "time_seconds": 478,
+      "frame_path": ".videos/coaching-knowledge/1dF_irGY6YM/results/frame-00478.000.jpg",
+      "attempt": "wind-flight attempt, reported left miss",
+      "values": {
+        "apex_ft": 45,
+        "carry_yd": 156
+      },
+      "provenance": "Readable on-screen source result graphic, visually transcribed.",
+      "limitations": [
+        "No raw launch-monitor export, calibration, shot ID, spin or dispersion. Values describe this shot, not a model threshold."
+      ]
+    },
+    {
+      "evidence_id": "E13",
+      "time_seconds": 540,
+      "frame_path": ".videos/coaching-knowledge/1dF_irGY6YM/results/frame-00540.000.jpg",
+      "attempt": "stinger attempt, praised",
+      "values": {
+        "apex_ft": 23,
+        "carry_yd": 145
+      },
+      "provenance": "Readable on-screen source result graphic, visually transcribed.",
+      "limitations": [
+        "No raw launch-monitor export, calibration, shot ID, spin or dispersion. Values describe this shot, not a model threshold."
+      ]
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "HQNKUS_BSGY-C02",
+      "current_case": "1dF_irGY6YM-C01",
+      "relation": "Task-specific setup exception",
+      "explanation": "Earlier lesson uses a repeatable stock foot routine. This source intentionally varies relative ball position to change flight; retain shot intent rather than enforce the stock routine on every shot."
+    },
+    {
+      "source_case": "G3QNDLEo2Gw-C08",
+      "current_case": "1dF_irGY6YM-C01",
+      "relation": "Related principle in a different shot family",
+      "explanation": "Both use setup to change trajectory. Pitching and seven-iron flighting have different tasks and contact conditions; do not copy numeric examples or feels automatically."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "1dF_irGY6YM-C01",
+        "1dF_irGY6YM-C02"
+      ],
+      "relationship": "Setup advice is conditional on preserving contact; thin attempts can reverse the intended height outcome."
+    },
+    {
+      "cases": [
+        "1dF_irGY6YM-C03",
+        "1dF_irGY6YM-C04"
+      ],
+      "relationship": "A historical connected rehearsal and a deliberate low-flight swing-length feel have different reasons despite sharing abbreviated finish language."
+    }
+  ],
+  "annotation_opportunities": [
+    "Label ball position relative to feet and the source ball-width reference, with shot intent shown.",
+    "Present separate cards for each displayed apex/carry result, keeping thin and left-miss labels.",
+    "Use windmill demonstration sequence to explain the rehearsal; do not measure causation from final pose.",
+    "Label high trail-side wording as a feel, not a target coordinate."
+  ],
+  "excluded_material": [
+    "Opening promotional montage duplicates later material.",
+    "Jokes about thinning and final blanket praise are not independent prescriptions or proof."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Source-grounded extraction; future use needs matching observations and shot intent. Independent validation not performed."
+  },
+  "asset_sha256": {
+    "video": "8ade8cbeaac2c91e1f17698e8d139f97fb7c44cb59a78f9573abc88376c4b9f1",
+    "raw_captions": "294e631ed552e14c777f956fd4a78deab1be8e25d344c70bc09ab6eed3b08a6b",
+    "transcript": "108a8b05aed6059e929a31ca0444bfe5b5e71b42faacab3c7cbafc519b365429"
+  }
+}

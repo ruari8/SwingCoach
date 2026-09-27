@@ -1,0 +1,910 @@
+{
+  "version": 1,
+  "source_id": "JgaKrhspwik",
+  "url": "https://www.youtube.com/watch?v=JgaKrhspwik",
+  "title": "Grip and Set Up | Padraig Harrington",
+  "publisher": "Padraig Harrington",
+  "published": "20260901",
+  "duration_seconds": 751,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "instructor": "Padraig Harrington",
+    "student": null
+  },
+  "context": {
+    "handedness": "right-handed demonstrations",
+    "format": "General tutorial, eighth tip in ten-lesson series",
+    "body_context": "No physical screen; individual limitations mentioned generally.",
+    "tasks": [
+      "Lead-hand grip",
+      "Trail-hand grip",
+      "Grip-change learning",
+      "Dynamic setup",
+      "Head and neck freedom"
+    ]
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/JgaKrhspwik/JgaKrhspwik.mp4",
+    "raw_captions": ".videos/coaching-knowledge/JgaKrhspwik/JgaKrhspwik.en-orig.json3",
+    "transcript": ".videos/coaching-knowledge/JgaKrhspwik/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/JgaKrhspwik/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/JgaKrhspwik/JgaKrhspwik.info.json",
+    "overview": ".videos/coaching-knowledge/JgaKrhspwik/overview/index.json",
+    "detail": ".videos/coaching-knowledge/JgaKrhspwik/detail/index.json",
+    "sequences": ".videos/coaching-knowledge/JgaKrhspwik/sequences/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 365,
+    "transcript_kind": "Full YouTube en-orig automatic captions",
+    "audio_independently_transcribed": false,
+    "visual_review_method": "26 overview, 64 detail and 24 targeted frames across 11 contact sheets, all inspected. Sampled review across 12:31, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/JgaKrhspwik/overview/index.json",
+      ".videos/coaching-knowledge/JgaKrhspwik/detail/index.json",
+      ".videos/coaching-knowledge/JgaKrhspwik/sequences/index.json"
+    ],
+    "limitations": [
+      "480p sampled evidence; no instrumented grip or wrist measurement.",
+      "Instructor deliberately stages undesired positions; these are not diagnoses of his natural swing.",
+      "Opening grip example repeats later footage and is not an independent result."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        60,
+        122
+      ],
+      "source_url": "https://www.youtube.com/watch?v=JgaKrhspwik&t=60s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Instructor tutorial, no assessed student",
+      "summary": "Harrington prioritizes a functional grip and warns that generic advice may not suit an unusual grip. His discussion of holding the club against its outward pull concerns a secure hold, not solely strong hand orientation.",
+      "frames": [
+        {
+          "time_seconds": 100,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/overview/frame-00100.000.jpg",
+          "observation": "Instructor introduces grip."
+        },
+        {
+          "time_seconds": 115,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00115.000.jpg",
+          "observation": "Club held one-handed during explanation."
+        }
+      ],
+      "limitations": [
+        "No numerical grip-force target. General claim that online instruction assumes a good grip is source opinion, not a rule about every video."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        122,
+        179
+      ],
+      "source_url": "https://www.youtube.com/watch?v=JgaKrhspwik&t=122s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Instructor tutorial, no assessed student",
+      "summary": "A basket of golf balls substitutes for a heavy handle. He contrasts fingers-first lifting with placing the handle high in the palm, which he demonstrates with altered arm and body position.",
+      "frames": [
+        {
+          "time_seconds": 135,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00135.000.jpg",
+          "observation": "Coach lifts basket by its handle."
+        },
+        {
+          "time_seconds": 155,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00155.000.jpg",
+          "observation": "Close view of handle/hand comparison."
+        },
+        {
+          "time_seconds": 165,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00165.000.jpg",
+          "observation": "Gloved hand lifts basket beside body."
+        }
+      ],
+      "limitations": [
+        "The basket demonstrates his analogy; no load, joint angle or grip-force measurement."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        177,
+        229
+      ],
+      "source_url": "https://www.youtube.com/watch?v=JgaKrhspwik&t=177s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Instructor tutorial, no assessed student",
+      "summary": "Lead-hand functional test: grip in fingers and lift club toward horizontal while elbow can straighten. He contrasts a palm placement that encourages elbow bending. About two and a half visible knuckles is his preference, but functional lifting matters more to him and strong/weak orientations can work.",
+      "frames": [
+        {
+          "time_seconds": 178,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/sequences/frame-00178.000.jpg",
+          "observation": "Lead-hand club lifting demonstration."
+        },
+        {
+          "time_seconds": 180,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/sequences/frame-00180.000.jpg",
+          "observation": "Coach gestures at lead-hand/arm position."
+        },
+        {
+          "time_seconds": 184,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/sequences/frame-00184.000.jpg",
+          "observation": "Club lifted with lead arm extended."
+        },
+        {
+          "time_seconds": 195,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00195.000.jpg",
+          "observation": "Arm and club referenced during explanation."
+        },
+        {
+          "time_seconds": 225,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00225.000.jpg",
+          "observation": "Close view of lead forearm/hand gesture."
+        }
+      ],
+      "limitations": [
+        "Knuckle count is a preference, not a universal diagnosis. No evidence that grip alone explains every bent lead elbow."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        227,
+        307
+      ],
+      "source_url": "https://www.youtube.com/watch?v=JgaKrhspwik&t=227s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Instructor tutorial, no assessed student",
+      "summary": "He describes gripping from a naturally hanging hand beside the body, then demonstrates gripping the raised club in front before lowering it. Ground-first gripping is contrasted with a high-hand/high-handle position. He wants a usable arm-shaft angle and a hammering hinge with arm extension.",
+      "frames": [
+        {
+          "time_seconds": 235,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00235.000.jpg",
+          "observation": "Club held beside naturally hanging lead arm."
+        },
+        {
+          "time_seconds": 242,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/sequences/frame-00242.000.jpg",
+          "observation": "Club raised in front for gripping."
+        },
+        {
+          "time_seconds": 250,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/sequences/frame-00250.000.jpg",
+          "observation": "Raised club held in both hands."
+        },
+        {
+          "time_seconds": 254,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/sequences/frame-00254.000.jpg",
+          "observation": "Closer view of lowered hand/shaft relationship."
+        },
+        {
+          "time_seconds": 265,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00265.000.jpg",
+          "observation": "Ground-first grip contrast."
+        },
+        {
+          "time_seconds": 275,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00275.000.jpg",
+          "observation": "High-hand setup contrast."
+        },
+        {
+          "time_seconds": 295,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00295.000.jpg",
+          "observation": "One-handed hinge/hammering explanation."
+        }
+      ],
+      "limitations": [
+        "No calibrated wrist angle. Slice and compensation predictions are source claims, not measured ball flight or a universal ground-first outcome. Caption wording near hammering is unclear; no anatomical label inferred."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        307,
+        374
+      ],
+      "source_url": "https://www.youtube.com/watch?v=JgaKrhspwik&t=307s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Instructor tutorial, no assessed student",
+      "summary": "Trail-hand fingers go on first, then the padded area beneath thumb seats over lead thumb, then thumb closes. Harrington accepts overlap, interlock or ten-finger/baseball grips and uses overlap himself. Hands should stay seated together while wrist/club motion remains available.",
+      "frames": [
+        {
+          "time_seconds": 312,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/sequences/frame-00312.000.jpg",
+          "observation": "Trail hand approaches club."
+        },
+        {
+          "time_seconds": 316,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/sequences/frame-00316.000.jpg",
+          "observation": "Close view of trail fingers near lead hand."
+        },
+        {
+          "time_seconds": 324,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/sequences/frame-00324.000.jpg",
+          "observation": "Coach displays trail palm/thumb pad."
+        },
+        {
+          "time_seconds": 328,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/sequences/frame-00328.000.jpg",
+          "observation": "Trail hand seats around lead thumb."
+        },
+        {
+          "time_seconds": 332,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/sequences/frame-00332.000.jpg",
+          "observation": "Both hands together on grip."
+        },
+        {
+          "time_seconds": 345,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00345.000.jpg",
+          "observation": "Club moved while hands remain together."
+        },
+        {
+          "time_seconds": 365,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00365.000.jpg",
+          "observation": "Hand/club movement demonstration."
+        }
+      ],
+      "limitations": [
+        "Hands remaining seated does not mean locking wrists or maximizing muscular tension. No dynamic slip sensor or quantified pressure. Grip styles are alternatives."
+      ]
+    },
+    {
+      "id": "E06",
+      "span_seconds": [
+        370,
+        430
+      ],
+      "source_url": "https://www.youtube.com/watch?v=JgaKrhspwik&t=370s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Instructor tutorial, no assessed student",
+      "summary": "Grip molds are suggested as optional learning aids. For changing an established grip, he proposes handling the club at home and practicing chips/short shots without full-shot pressure. Replacing the rubber grip may create a new feel. He links grip to release and plane.",
+      "frames": [
+        {
+          "time_seconds": 375,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00375.000.jpg",
+          "observation": "Club manipulation during learning-aid discussion."
+        },
+        {
+          "time_seconds": 395,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00395.000.jpg",
+          "observation": "Instructor discusses practice."
+        },
+        {
+          "time_seconds": 415,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00415.000.jpg",
+          "observation": "Instructor describes low-pressure learning."
+        },
+        {
+          "time_seconds": 425,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00425.000.jpg",
+          "observation": "Club and arm gesture during release explanation."
+        }
+      ],
+      "limitations": [
+        "No learning timeline, proven improvement rate or product evaluation. Broad release/plane benefits are source reasoning, not measured outcomes."
+      ]
+    },
+    {
+      "id": "E07",
+      "span_seconds": [
+        428,
+        480
+      ],
+      "source_url": "https://www.youtube.com/watch?v=JgaKrhspwik&t=428s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Instructor tutorial, no assessed student",
+      "summary": "Small movements while entering address are intended to settle natural knee flex and hanging arms. He contrasts this with excessive knee bend, butt-out arch and rigid posture, seeking a relaxed athletic setup.",
+      "frames": [
+        {
+          "time_seconds": 435,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00435.000.jpg",
+          "observation": "Hands/club settle toward address."
+        },
+        {
+          "time_seconds": 445,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00445.000.jpg",
+          "observation": "Address demonstration."
+        },
+        {
+          "time_seconds": 455,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00455.000.jpg",
+          "observation": "Knee-flex/posture comparison."
+        },
+        {
+          "time_seconds": 465,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00465.000.jpg",
+          "observation": "Relaxed address reference."
+        },
+        {
+          "time_seconds": 475,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00475.000.jpg",
+          "observation": "Club moving at address."
+        }
+      ],
+      "limitations": [
+        "General source instruction demonstrated by instructor; no student diagnosis or measured causal test."
+      ]
+    },
+    {
+      "id": "E08",
+      "span_seconds": [
+        480,
+        577
+      ],
+      "source_url": "https://www.youtube.com/watch?v=JgaKrhspwik&t=480s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Instructor tutorial, no assessed student",
+      "summary": "Harrington shows his routine and hits a shot. He recommends keeping feet and club moving before starting, generally two or three waggles, rather than becoming static or spending too long over the ball. Foot movement is intended to help find balance; he does not prescribe a toes-versus-heels percentage.",
+      "frames": [
+        {
+          "time_seconds": 495,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00495.000.jpg",
+          "observation": "Pre-shot club movement."
+        },
+        {
+          "time_seconds": 498,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/sequences/frame-00498.000.jpg",
+          "observation": "Finish after demonstration shot."
+        },
+        {
+          "time_seconds": 500,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/sequences/frame-00500.000.jpg",
+          "observation": "Coach comes out of finish."
+        },
+        {
+          "time_seconds": 505,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00505.000.jpg",
+          "observation": "Static setup contrast."
+        },
+        {
+          "time_seconds": 515,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00515.000.jpg",
+          "observation": "Repeated address comparison."
+        },
+        {
+          "time_seconds": 545,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00545.000.jpg",
+          "observation": "Feet/posture demonstration."
+        },
+        {
+          "time_seconds": 565,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00565.000.jpg",
+          "observation": "Exaggerated posture contrast."
+        }
+      ],
+      "limitations": [
+        "Routine count is his practical suggestion, not a validated timing threshold. Feet moving before takeaway is not a demand to shuffle during the shot. No measured shot result or pressure distribution."
+      ]
+    },
+    {
+      "id": "E09",
+      "span_seconds": [
+        577,
+        658
+      ],
+      "source_url": "https://www.youtube.com/watch?v=JgaKrhspwik&t=577s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Instructor tutorial, no assessed student",
+      "summary": "He rejects deliberately locking the head down or putting chin on chest. He also explicitly does not ask for holding the head up. A relaxed neck and naturally floating head should leave room to turn, adapted to individual movement limitations. A second shot demonstrates the routine.",
+      "frames": [
+        {
+          "time_seconds": 585,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00585.000.jpg",
+          "observation": "Head-position explanation."
+        },
+        {
+          "time_seconds": 605,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00605.000.jpg",
+          "observation": "Hand at neck/chin during posture contrast."
+        },
+        {
+          "time_seconds": 615,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00615.000.jpg",
+          "observation": "Head-down/shoulder-room demonstration."
+        },
+        {
+          "time_seconds": 625,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00625.000.jpg",
+          "observation": "Coach gestures near neck."
+        },
+        {
+          "time_seconds": 644,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/sequences/frame-00644.000.jpg",
+          "observation": "Address before second shot."
+        },
+        {
+          "time_seconds": 645,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/sequences/frame-00645.000.jpg",
+          "observation": "Club and body moving through shot."
+        },
+        {
+          "time_seconds": 646,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/sequences/frame-00646.000.jpg",
+          "observation": "Follow-through."
+        }
+      ],
+      "limitations": [
+        "No clinical assessment or exact head-motion tolerance. This is not a diagnosis of early extension or an instruction to lift the head abruptly. Shot has no measured result."
+      ]
+    },
+    {
+      "id": "E10",
+      "span_seconds": [
+        658,
+        729
+      ],
+      "source_url": "https://www.youtube.com/watch?v=JgaKrhspwik&t=658s",
+      "attribution": "Padraig Harrington, speaking and demonstrating",
+      "kind": "general_tutorial_demonstration",
+      "session": "Instructor tutorial, no assessed student",
+      "summary": "Recap repeats lead-hand lift, trail-hand seating, available wrist movement and relaxed setup. Captions mention rough swings or consecutive balls with the same grip to check twisting, but the wording includes an ambiguous negation. Predicted consistency/power gains are prospective claims.",
+      "frames": [
+        {
+          "time_seconds": 675,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00675.000.jpg",
+          "observation": "Instructor repeats grip explanation."
+        },
+        {
+          "time_seconds": 685,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00685.000.jpg",
+          "observation": "Both hands seated while club raised."
+        },
+        {
+          "time_seconds": 695,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00695.000.jpg",
+          "observation": "Instructor gestures during retention discussion."
+        },
+        {
+          "time_seconds": 705,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00705.000.jpg",
+          "observation": "Explanation continues without a rough-swing demonstration."
+        },
+        {
+          "time_seconds": 715,
+          "path": ".videos/coaching-knowledge/JgaKrhspwik/detail/frame-00715.000.jpg",
+          "observation": "Closing setup explanation."
+        }
+      ],
+      "limitations": [
+        "Automatic caption says Another bad way where context may mean not a bad way; not independently audio-verified. Do not promote the rough/consecutive-ball suggestion as a confirmed drill. No demonstrated retest or longitudinal improvement."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "JgaKrhspwik-C01",
+      "title": "Check lead-hand grip function before enforcing knuckle count",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "grip",
+          "setup"
+        ],
+        "body": [
+          "lead hand",
+          "lead elbow",
+          "wrist"
+        ],
+        "outcome": [
+          "contact",
+          "movement freedom"
+        ],
+        "concept": [
+          "grip and setup",
+          "functional check",
+          "conditional instruction"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03"
+      ],
+      "coaching_finding": "General example of club high in palm with difficulty lifting it while lead elbow straightens.",
+      "coach_reasoning": "Harrington uses fingers-first lifting to explain a secure grip that allows release. Hand orientation can vary; a visual knuckle count alone does not settle function.",
+      "intervention": {
+        "task": "Hold club in lead fingers and test lifting it toward horizontal with elbow able to straighten.",
+        "preference": "About two and a half visible knuckles is his preference, not a universal target.",
+        "withhold": "Do not infer that every unusual grip or bent elbow requires this change."
+      },
+      "applicability": [
+        "Grip placement and functional difficulty are observable, or a beginner is learning the hold.",
+        "Account for existing grip before selecting other release instructions."
+      ],
+      "unknowns": [
+        "No dynamic grip pressure, causal ball-flight diagnosis or individual physical assessment."
+      ],
+      "observed_result": "Instructor demonstration only. No assessed student or matched before/after measurement.",
+      "selection": {
+        "coaching_focus": "Establish a functional lead-hand hold",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Substeps describe a drill, not simultaneous swing thoughts.",
+        "reassess": "Compare secure control and free movement, then short-shot response."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "JgaKrhspwik-C02",
+      "title": "Form the grip before grounding the club",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "grip",
+          "setup"
+        ],
+        "body": [
+          "hands",
+          "wrists"
+        ],
+        "outcome": [
+          "contact",
+          "movement freedom"
+        ],
+        "concept": [
+          "grip and setup",
+          "functional check",
+          "conditional instruction"
+        ]
+      },
+      "evidence_ids": [
+        "E04"
+      ],
+      "coaching_finding": "Ground-first gripping is deliberately shown producing a high-hand/palm-heavy hold.",
+      "coach_reasoning": "Forming the grip with club raised or at the naturally hanging side helps retain the intended hand/shaft relationship when lowered.",
+      "intervention": {
+        "task": "Grip the club raised in front, then lower to address.",
+        "alternative": "Grip from the naturally hanging lead hand beside the body.",
+        "not_a_target": "No exact wrist angle or forced handle height."
+      },
+      "applicability": [
+        "The player actually reproduces the high-hand/palm-placement problem and a raised-club trial changes it."
+      ],
+      "unknowns": [
+        "No evidence that all golfers who grip on the ground slice or require a change."
+      ],
+      "observed_result": "Instructor demonstration only. No assessed student or matched before/after measurement.",
+      "selection": {
+        "coaching_focus": "Make the intended grip easier to repeat",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Substeps describe a drill, not simultaneous swing thoughts.",
+        "reassess": "Compare resulting hand placement and functional lift with the player's usual setup."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "JgaKrhspwik-C03",
+      "title": "Seat the trail hand while preserving wrist movement",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "grip",
+          "setup",
+          "practice"
+        ],
+        "body": [
+          "trail hand",
+          "lead thumb",
+          "wrists"
+        ],
+        "outcome": [
+          "contact",
+          "movement freedom"
+        ],
+        "concept": [
+          "grip and setup",
+          "functional check",
+          "conditional instruction"
+        ]
+      },
+      "evidence_ids": [
+        "E05",
+        "E10"
+      ],
+      "coaching_finding": "General problem is hands separating/slipping or a hold that prevents the demonstrated club motion.",
+      "coach_reasoning": "Fingers-first placement and trail pad over lead thumb are intended to keep hands together while wrists remain mobile.",
+      "intervention": {
+        "task": "Place trail fingers, seat pad over lead thumb, then close thumb; move club to check hands stay seated.",
+        "options": [
+          "overlap",
+          "interlock",
+          "ten-finger/baseball"
+        ],
+        "avoid": "Do not interpret secure as immobile wrists or a command for maximum grip force."
+      },
+      "applicability": [
+        "Observed insecure seating or beginner grip learning; test the player's comfortable grip style."
+      ],
+      "unknowns": [
+        "No force target, measured slip or confirmed rough-swing drill because caption negation is unresolved."
+      ],
+      "observed_result": "Instructor demonstration only. No assessed student or matched before/after measurement.",
+      "selection": {
+        "coaching_focus": "Keep the hold secure through free wrist movement",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Substeps describe a drill, not simultaneous swing thoughts.",
+        "reassess": "Check whether hands retain relationship and whether short-shot contact remains usable."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "JgaKrhspwik-C04",
+      "title": "Learn a grip change with low-pressure short practice",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "practice"
+        ],
+        "body": [
+          "hands"
+        ],
+        "outcome": [
+          "contact",
+          "movement freedom"
+        ],
+        "concept": [
+          "grip and setup",
+          "functional check",
+          "conditional instruction"
+        ]
+      },
+      "evidence_ids": [
+        "E06"
+      ],
+      "coaching_finding": "An established grip can feel difficult to change immediately in full shots.",
+      "coach_reasoning": "Familiar handling and short shots provide a setting to learn a different hold before full-swing pressure.",
+      "intervention": {
+        "practice": "Rehearse the hold at home, then chip/short-shot practice.",
+        "optional_aids": "A grip mold or changed rubber grip can provide a physical reference or new feel."
+      },
+      "applicability": [
+        "A grip change has already been selected for a reason; do not change a functional grip just to use an aid."
+      ],
+      "unknowns": [
+        "No duration, dose, measured learning rate or guarantee that a change is needed."
+      ],
+      "observed_result": "Instructor demonstration only. No assessed student or matched before/after measurement.",
+      "selection": {
+        "coaching_focus": "Become comfortable with the selected grip",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Substeps describe a drill, not simultaneous swing thoughts.",
+        "reassess": "Check repeatability and short-shot response before moving to full shots."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "JgaKrhspwik-C05",
+      "title": "Use a brief moving routine to settle relaxed posture",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "setup",
+          "routine"
+        ],
+        "body": [
+          "feet",
+          "knees",
+          "trunk",
+          "arms"
+        ],
+        "outcome": [
+          "contact",
+          "movement freedom"
+        ],
+        "concept": [
+          "grip and setup",
+          "functional check",
+          "conditional instruction"
+        ]
+      },
+      "evidence_ids": [
+        "E07",
+        "E08"
+      ],
+      "coaching_finding": "Staged examples show excessive knee bend, forced arch and a static address.",
+      "coach_reasoning": "Harrington expects small foot/club movements to settle balance and natural flex, making the swing easier to start.",
+      "intervention": {
+        "cue": "Keep the setup relaxed and moving into the start.",
+        "routine": "Use a brief routine, typically two or three waggles in this source.",
+        "avoid": "Do not force upright angles, locked knees or a specific toes/heels pressure split."
+      },
+      "applicability": [
+        "Observed rigidity or prolonged static address, with a trial showing better movement or comfort."
+      ],
+      "unknowns": [
+        "No force measurements, prescribed posture angles or demonstrated student improvement."
+      ],
+      "observed_result": "Instructor demonstration only. No assessed student or matched before/after measurement.",
+      "selection": {
+        "coaching_focus": "Start from a relaxed athletic address",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Substeps describe a drill, not simultaneous swing thoughts.",
+        "reassess": "Check repeatable setup and shot response while retaining intentional alignment and target selection."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "JgaKrhspwik-C06",
+      "title": "Let the head move naturally with room for the shoulders",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "setup",
+          "backswing"
+        ],
+        "body": [
+          "head",
+          "neck",
+          "shoulders"
+        ],
+        "outcome": [
+          "contact",
+          "movement freedom"
+        ],
+        "concept": [
+          "grip and setup",
+          "functional check",
+          "conditional instruction"
+        ]
+      },
+      "evidence_ids": [
+        "E09",
+        "E10"
+      ],
+      "coaching_finding": "Staged chin-on-chest/head-locked-down position restricts the instructor's turning demonstration.",
+      "coach_reasoning": "A relaxed neck and natural head movement are intended to leave shoulder room and accommodate individual limitations.",
+      "intervention": {
+        "cue": "Relax the neck and let the head float as you turn.",
+        "avoid": "Neither lock the head down nor deliberately hold it high."
+      },
+      "applicability": [
+        "The golfer is deliberately fixing the head or crowding chin toward chest and a relaxed trial helps."
+      ],
+      "unknowns": [
+        "No clinical screen, motion threshold or evidence that arbitrary head lifting improves contact."
+      ],
+      "observed_result": "Instructor demonstration only. No assessed student or matched before/after measurement.",
+      "selection": {
+        "coaching_focus": "Remove unnecessary head/neck fixation",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Substeps describe a drill, not simultaneous swing thoughts.",
+        "reassess": "Check turning freedom and contact without forcing a particular head path."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "id": "M01",
+      "evidence_ids": [
+        "E03"
+      ],
+      "kind": "instructor_preference",
+      "description": "About two and a half knuckles, explicitly subordinate to the functional grip check; no universal threshold."
+    },
+    {
+      "id": "M02",
+      "evidence_ids": [
+        "E08"
+      ],
+      "kind": "routine_suggestion",
+      "description": "Two or three waggles; not a validated timing requirement."
+    },
+    {
+      "id": "M03",
+      "evidence_ids": [
+        "E08",
+        "E09"
+      ],
+      "kind": "demonstration_only",
+      "description": "Two visible shot demonstrations; no launch-monitor figures, grip-force values or measured improvement."
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        293,
+        307
+      ],
+      "issue": "Hammering/hinge caption contains unclear terminology; retain physical demonstration without inventing an anatomical label."
+    },
+    {
+      "span_seconds": [
+        688,
+        708
+      ],
+      "issue": "Rough/consecutive-ball practice sentence contains ambiguous negation. Preserve original transcript, withhold as confirmed actionable drill until audio checked."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "HQNKUS_BSGY-C05",
+      "current_case": "JgaKrhspwik-C01",
+      "relation": "Grip context conditions release advice",
+      "explanation": "Both preserve grip context before general release instruction. Harrington provides a tutorial check, not a new diagnosis of Jerome."
+    },
+    {
+      "source_case": "G3QNDLEo2Gw-C04",
+      "current_case": "JgaKrhspwik-C03",
+      "relation": "Secure trail hand with mobile wrists",
+      "explanation": "Harrington demonstrates hand seating that can contextualize the lesson's secure trail-hand cue; neither establishes a numeric grip-force target."
+    },
+    {
+      "source_case": "p_HZJ2u0TIo-C02",
+      "current_case": "JgaKrhspwik-C05",
+      "relation": "Same instructor elaborates relaxed setup",
+      "explanation": "Natural knee flex and moving feet clarify that relaxed setup does not mean locked knees."
+    },
+    {
+      "source_case": "IJSu7440Ick-C03",
+      "current_case": "JgaKrhspwik-C05",
+      "relation": "Complete routine can include dynamic address",
+      "explanation": "Allen's alignment/setup process and Harrington's moving address concern compatible stages. A brief routine should still establish target and alignment."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "JgaKrhspwik-C01",
+        "JgaKrhspwik-C03"
+      ],
+      "relationship": "Strong hold means secure control; strong/weak orientation is a separate grip property."
+    },
+    {
+      "cases": [
+        "JgaKrhspwik-C01",
+        "JgaKrhspwik-C02",
+        "JgaKrhspwik-C04"
+      ],
+      "relationship": "Functional check, setup method and learning progression can support one grip focus without becoming three swing thoughts."
+    },
+    {
+      "cases": [
+        "JgaKrhspwik-C03",
+        "JgaKrhspwik-C05",
+        "JgaKrhspwik-C06"
+      ],
+      "relationship": "Secure hands coexist with mobile wrists and relaxed body/neck; do not equate secure with rigid."
+    }
+  ],
+  "annotation_opportunities": [
+    "Show close hand-seating sequence with fingers, pad and thumb identified.",
+    "Compare raised-club grip with staged ground-first high-hand example, without claiming a calibrated wrist angle.",
+    "Mark demonstration, deliberate contrast, rehearsal and actual shot separately.",
+    "Show natural head/neck example beside chin-on-chest contrast; do not draw an absolute fixed-head line."
+  ],
+  "excluded_material": [
+    "Opening repeated teaser as an independent coaching outcome.",
+    "Montage, subscription requests and promotional claims.",
+    "Current product-price recommendation from grip-mold mention.",
+    "Universal promises about slicing, power and future consistency."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Source-backed tutorial templates; no student assessment, calibrated retest or independent applicability validation."
+  },
+  "asset_sha256": {
+    "video": "67911763a5b3a45e5a68e1ea1e1fd774e68d763baddf11ec9309b238ba77332e",
+    "raw_captions": "b9602cc9bd61d529d68d88e3c230ffd5734adb3a278b7c1da917f0936526f4c1",
+    "transcript": "1ce033400bfa2f071e1fa7f55ae3ccf2d59add6be4c1d2d0a9cf16f138c9f839"
+  }
+}

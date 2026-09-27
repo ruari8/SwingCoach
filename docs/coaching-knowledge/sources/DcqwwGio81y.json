@@ -1,0 +1,583 @@
+{
+  "version": 1,
+  "source_id": "DcqwwGio81y",
+  "url": "https://www.instagram.com/p/DcqwwGio81y/",
+  "title": "Cameron swing review and trail-hip bump drill",
+  "publisher": "Teagan Moore / teaganmooregolf",
+  "published": "20260830",
+  "duration_seconds": 172.733333,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "coach": "Teagan Moore, uploader",
+    "student": "Cameron, named in speech"
+  },
+  "context": {
+    "format": "Annotated student down-the-line and face-on review, then indoor coach drill demonstration",
+    "handedness": "Right-handed",
+    "club": "Iron; exact number not established",
+    "body_context": "No physical screen",
+    "style": "Technical visual explanation with one selected correction"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/DcqwwGio81y/DcqwwGio81y.mp4",
+    "raw_captions": ".videos/coaching-knowledge/DcqwwGio81y/asr-raw.json",
+    "transcript": ".videos/coaching-knowledge/DcqwwGio81y/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/DcqwwGio81y/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/DcqwwGio81y/DcqwwGio81y.info.json",
+    "overview": ".videos/coaching-knowledge/DcqwwGio81y/overview/index.json",
+    "detail": ".videos/coaching-knowledge/DcqwwGio81y/detail/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 58,
+    "transcript_kind": "Local MLX Whisper ASR with annotated video and post description comparison",
+    "audio_independently_transcribed": true,
+    "visual_review_method": "18 overview and 64 detail frames across eight portrait sheets inspected. Includes all annotated checkpoints, face-on comparison and repeated prop sequence. Sampled review, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/DcqwwGio81y/overview/index.json",
+      ".videos/coaching-knowledge/DcqwwGio81y/detail/index.json"
+    ],
+    "limitations": [
+      "2D source drawing does not establish 3D geometry.",
+      "Student has no recorded post-drill retest.",
+      "Coach causal claims are preserved as claims."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        29
+      ],
+      "source_url": "https://www.instagram.com/p/DcqwwGio81y/",
+      "attribution": "Teagan Moore",
+      "kind": "annotated_student_review_and_coach_demonstration",
+      "session": "Cameron swing review",
+      "summary": "Coach rates Cameron 9/10, praises posture, natural arm hang and shaft toward belt buckle. The takeaway looks slightly under the drawn plane, which he attributes to the camera being too close. He does not select a takeaway correction.",
+      "frames": [
+        {
+          "time_seconds": 12,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00012.000.jpg",
+          "observation": "Red posture and leg reference lines."
+        },
+        {
+          "time_seconds": 16,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00016.000.jpg",
+          "observation": "Address and arm hang."
+        },
+        {
+          "time_seconds": 22,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00022.000.jpg",
+          "observation": "Red shaft-plane reference."
+        },
+        {
+          "time_seconds": 25,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00025.000.jpg",
+          "observation": "Circle highlights apparently lower club."
+        },
+        {
+          "time_seconds": 27,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00027.000.jpg",
+          "observation": "Caption identifies camera angle as explanation."
+        }
+      ],
+      "limitations": [
+        "Coach interpretation of 2D video; no instrument measurements or paired retest."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        29,
+        66
+      ],
+      "source_url": "https://www.instagram.com/p/DcqwwGio81y/",
+      "attribution": "Teagan Moore",
+      "kind": "annotated_student_review_and_coach_demonstration",
+      "session": "Cameron swing review",
+      "summary": "Coach praises retained space, halfway-back shaft pointing inside ball, hands near lower bicep, lead arm matching shoulders and hands over heels at top. Slightly across-the-line shaft is attributed to lead-wrist extension with strong lead grip; he accepts it because face matches lead arm. The 99% touring-professional claim is not substantiated.",
+      "frames": [
+        {
+          "time_seconds": 36,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00036.000.jpg",
+          "observation": "Halfway-back shaft reference inside ball."
+        },
+        {
+          "time_seconds": 39,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00039.000.jpg",
+          "observation": "Hands relative to bicep."
+        },
+        {
+          "time_seconds": 46,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00046.000.jpg",
+          "observation": "Lead-arm and shoulder reference."
+        },
+        {
+          "time_seconds": 48,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00048.000.jpg",
+          "observation": "Vertical hands-to-heels line."
+        },
+        {
+          "time_seconds": 52,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00052.000.jpg",
+          "observation": "Ball-to-butt-end red line."
+        },
+        {
+          "time_seconds": 55,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00055.000.jpg",
+          "observation": "Arrow marks across-the-line club."
+        },
+        {
+          "time_seconds": 62,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00062.000.jpg",
+          "observation": "Lead forearm reference."
+        },
+        {
+          "time_seconds": 65,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00065.000.jpg",
+          "observation": "Face alignment reference near top."
+        }
+      ],
+      "limitations": [
+        "Coach interpretation of 2D video; no instrument measurements or paired retest."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        66,
+        96
+      ],
+      "source_url": "https://www.instagram.com/p/DcqwwGio81y/",
+      "attribution": "Teagan Moore",
+      "kind": "annotated_student_review_and_coach_demonstration",
+      "session": "Cameron swing review",
+      "summary": "Coach describes hands descending along red ball-to-butt line while shaft shallows to green original plane, then praises impact, hands following turn, face control and balanced toe-tap finish. These are retained strengths, not extra prescribed changes.",
+      "frames": [
+        {
+          "time_seconds": 72,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00072.000.jpg",
+          "observation": "Red hand-path and green original-plane references."
+        },
+        {
+          "time_seconds": 76,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00076.000.jpg",
+          "observation": "Hands descend near red reference."
+        },
+        {
+          "time_seconds": 78,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00078.000.jpg",
+          "observation": "Shaft approaches green reference."
+        },
+        {
+          "time_seconds": 82,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00082.000.jpg",
+          "observation": "Impact view."
+        },
+        {
+          "time_seconds": 85,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00085.000.jpg",
+          "observation": "Through-swing view."
+        },
+        {
+          "time_seconds": 92,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00092.000.jpg",
+          "observation": "Green shaft line through ears at finish."
+        },
+        {
+          "time_seconds": 95,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00095.000.jpg",
+          "observation": "Arrow highlights trail toe finish."
+        }
+      ],
+      "limitations": [
+        "Coach interpretation of 2D video; no instrument measurements or paired retest."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        96,
+        122
+      ],
+      "source_url": "https://www.instagram.com/p/DcqwwGio81y/",
+      "attribution": "Teagan Moore",
+      "kind": "annotated_student_review_and_coach_demonstration",
+      "session": "Cameron swing review",
+      "summary": "In face-on view coach identifies sternum ahead of belt buckle at top, calls for sternum behind pelvis instead, then uses head circle to explain falling back while hips move far forward and hands flip. This is his causal interpretation. No face angle or 3D trunk/pelvis motion is measured.",
+      "frames": [
+        {
+          "time_seconds": 102,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00102.000.jpg",
+          "observation": "Face-on top position."
+        },
+        {
+          "time_seconds": 106,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00106.000.jpg",
+          "observation": "Red sternum-to-belt reference angled targetward."
+        },
+        {
+          "time_seconds": 112,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00112.000.jpg",
+          "observation": "Same top-position reference."
+        },
+        {
+          "time_seconds": 114,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00114.000.jpg",
+          "observation": "Head circle at top."
+        },
+        {
+          "time_seconds": 118,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00118.000.jpg",
+          "observation": "Downswing compared with head reference."
+        },
+        {
+          "time_seconds": 121,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00121.000.jpg",
+          "observation": "Through-swing relative to head circle."
+        }
+      ],
+      "limitations": [
+        "Coach interpretation of 2D video; no instrument measurements or paired retest."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        123,
+        146
+      ],
+      "source_url": "https://www.instagram.com/p/DcqwwGio81y/",
+      "attribution": "Teagan Moore",
+      "kind": "annotated_student_review_and_coach_demonstration",
+      "session": "Cameron swing review",
+      "summary": "Coach places padded stick about an inch outside his right/trail hip. First bump toward it to feel more weight trail side; then turn so a gap opens between hip and stick. Repeats the sequence. Initial bump is toward trail-side prop, not a targetward lunge.",
+      "frames": [
+        {
+          "time_seconds": 126,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00126.000.jpg",
+          "observation": "Stick outside trail hip at address."
+        },
+        {
+          "time_seconds": 129,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00129.000.jpg",
+          "observation": "Small initial trail-side bump/rehearsal."
+        },
+        {
+          "time_seconds": 132,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00132.000.jpg",
+          "observation": "Hip near prop."
+        },
+        {
+          "time_seconds": 134,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00134.000.jpg",
+          "observation": "Red arrows identify trail-side loading feel."
+        },
+        {
+          "time_seconds": 138,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00138.000.jpg",
+          "observation": "Turned top with visible gap to prop."
+        },
+        {
+          "time_seconds": 142,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00142.000.jpg",
+          "observation": "Repeated top and gap."
+        },
+        {
+          "time_seconds": 146,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00146.000.jpg",
+          "observation": "Red torso/pelvis line illustrates intended tilt."
+        }
+      ],
+      "limitations": [
+        "About one inch is source setup instruction, not calibrated image measurement. Weight transfer is a spoken feel, not measured pressure."
+      ]
+    },
+    {
+      "id": "E06",
+      "span_seconds": [
+        146,
+        167
+      ],
+      "source_url": "https://www.instagram.com/p/DcqwwGio81y/",
+      "attribution": "Teagan Moore",
+      "kind": "annotated_student_review_and_coach_demonstration",
+      "session": "Cameron swing review",
+      "summary": "Coach contrasts his head-behind-ball top with student moving forward then rerouting back, and demonstrates turning through without a large fall-back. Predicts better face control. Only coach rehearsals are shown; there is no Cameron drill attempt or subsequent outcome.",
+      "frames": [
+        {
+          "time_seconds": 148,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00148.000.jpg",
+          "observation": "Coach held top."
+        },
+        {
+          "time_seconds": 152,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00152.000.jpg",
+          "observation": "Head circles illustrate position contrast."
+        },
+        {
+          "time_seconds": 154,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00154.000.jpg",
+          "observation": "Arrow depicts rerouting head back."
+        },
+        {
+          "time_seconds": 159,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00159.000.jpg",
+          "observation": "Coach begins turning through."
+        },
+        {
+          "time_seconds": 162,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00162.000.jpg",
+          "observation": "Through rehearsal."
+        },
+        {
+          "time_seconds": 164,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00164.000.jpg",
+          "observation": "Follow-through rehearsal."
+        },
+        {
+          "time_seconds": 166,
+          "path": ".videos/coaching-knowledge/DcqwwGio81y/detail/frame-00166.000.jpg",
+          "observation": "Repeated delivery motion."
+        }
+      ],
+      "limitations": [
+        "Coach interpretation of 2D video; no instrument measurements or paired retest."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "DcqwwGio81y-C01",
+      "title": "Preserve effective structure despite an unusual-looking club position",
+      "tags": {
+        "phase": [
+          "setup",
+          "takeaway",
+          "P4",
+          "downswing",
+          "finish"
+        ],
+        "body": [
+          "lead wrist",
+          "grip",
+          "hands",
+          "club"
+        ],
+        "outcome": [
+          "avoid unnecessary changes",
+          "face control"
+        ],
+        "concept": [
+          "camera perspective",
+          "functional match",
+          "withhold correction"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03"
+      ],
+      "coaching_finding": "Coach finds an effective overall down-the-line pattern. Apparent under-plane takeaway and slightly across-the-line shaft are not selected as faults.",
+      "coach_reasoning": "He attributes first appearance to camera proximity and second to strong lead grip with wrist extension, while judging the clubface aligned with lead arm and delivery effective.",
+      "intervention": {
+        "action": "Withhold a separate takeaway, grip or top-position correction.",
+        "preserve": "Retain current movement while addressing the face-on priority."
+      },
+      "applicability": [
+        "Comparable views and evidence that the apparent deviation is compatible with useful delivery.",
+        "Do not apply merely because another golfer is across the line; check face, delivery, camera and actual outcomes."
+      ],
+      "unknowns": [
+        "Objective clubface orientation, strike and ball-flight dispersion.",
+        "Independent confirmation of perspective explanation."
+      ],
+      "observed_result": "Coach describes existing swing as good; no before/after test of leaving it unchanged.",
+      "selection": {
+        "coaching_focus": "Avoid cosmetic changes to a functioning pattern",
+        "max_simultaneous_cues": 0,
+        "policy_origin": "Coach explicitly accepts the position and selects a different priority.",
+        "reassess": "Proposed app check: retain observation until suitable views and shot evidence justify a correction."
+      },
+      "case_type": "individual_video_review_with_coach_demo_no_student_retest",
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "DcqwwGio81y-C02",
+      "title": "Trail-hip bump then turn away from a stick for the face-on fall-back pattern",
+      "tags": {
+        "phase": [
+          "backswing",
+          "P4",
+          "transition",
+          "impact"
+        ],
+        "body": [
+          "pelvis",
+          "sternum",
+          "head",
+          "trail hip"
+        ],
+        "outcome": [
+          "pivot",
+          "face control"
+        ],
+        "concept": [
+          "reverse spine tilt",
+          "falling back",
+          "hip bump",
+          "conditional drill"
+        ]
+      },
+      "evidence_ids": [
+        "E04",
+        "E05",
+        "E06"
+      ],
+      "coaching_finding": "Coach identifies sternum targetward of belt at top, followed by head falling back and large pelvis movement forward, with a claimed hand flip.",
+      "coach_reasoning": "He links the initial torso/pelvis relationship to a compensating fall-back and predicts that turning behind ball will reduce rerouting and improve face control.",
+      "intervention": {
+        "setup": "Place a padded alignment stick about one inch outside right/trail hip.",
+        "cue": "Bump gently toward the stick, then turn to create a gap.",
+        "intended_change": "Reach top with sternum behind belt and turn through without a large backward head movement.",
+        "dose": "No repetitions or practice dose specified."
+      },
+      "applicability": [
+        "Face-on evidence supports the specific top-position and subsequent fall-back sequence, not merely a generic getting-stuck label.",
+        "Use same handedness interpretation or explicitly mirror for left-handed golfer.",
+        "More trail-side weight is an early backswing feel in this sequence; not an instruction to remain back through impact."
+      ],
+      "unknowns": [
+        "Physical-screen context and cause beyond 2D interpretation.",
+        "Pressure distribution, trunk angles, face angle, launch and dispersion.",
+        "Whether Cameron can execute drill and retain it without the prop."
+      ],
+      "observed_result": "Coach demonstrates rehearsals only. Better face control is predicted, not a measured result.",
+      "selection": {
+        "coaching_focus": "Backswing pivot using one bump-and-turn sequence",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "Coach selects one upgrade; user preference limits competing swing thoughts.",
+        "reassess": "Proposed app check: compare suitable face-on captures and strike/flight before and after rehearsal, then verify an aid-free swing. Withhold if observation does not match or change worsens outcome."
+      },
+      "case_type": "individual_video_review_with_coach_demo_no_student_retest",
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "subjective_rating",
+      "value": "9/10",
+      "evidence_ids": [
+        "E01"
+      ],
+      "limits": [
+        "Coach opinion, not a validated swing score."
+      ]
+    },
+    {
+      "kind": "unsupported_population_claim",
+      "value": "99% of touring professionals",
+      "evidence_ids": [
+        "E02"
+      ],
+      "limits": [
+        "No dataset or measurement definition supplied; excluded from decision thresholds."
+      ]
+    },
+    {
+      "kind": "prop_setup_instruction",
+      "value": "About one inch outside trail hip",
+      "evidence_ids": [
+        "E05"
+      ],
+      "limits": [
+        "No calibrated distance in images."
+      ]
+    },
+    {
+      "kind": "drawn_2d_references",
+      "value": "Posture, shaft plane, hand path, face/forearm, sternum/belt and head circles",
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E04",
+        "E06"
+      ],
+      "limits": [
+        "Illustrative overlays, not instrumented metrics."
+      ]
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        80,
+        122
+      ],
+      "issue": "Coach praises face control in down-the-line view then predicts a flip from face-on sequence. Preserve both statements; no objective face measurement resolves their relationship."
+    },
+    {
+      "span_seconds": [
+        123,
+        146
+      ],
+      "issue": "Spoken hips-forward top relationship must not be confused with the first trail-side bump toward the prop."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "p_HZJ2u0TIo-C01",
+      "current_case": "DcqwwGio81y-C01",
+      "relation": "Preserve functioning differences",
+      "explanation": "Harrington also cautions against changing a working pattern for appearance. Moore gives a specific accepted grip/wrist/clubface example."
+    },
+    {
+      "source_case": "IJSu7440Ick-C04",
+      "current_case": "DcqwwGio81y-C02",
+      "relation": "Do not conflate visual labels",
+      "explanation": "Josh Allen assessment rejects apparent early extension using 3D evidence. Moore uses a face-on torso/pelvis and head sequence. Similar language about standing up or falling back cannot replace the required observation."
+    },
+    {
+      "source_case": "p_HZJ2u0TIo-C03",
+      "current_case": "DcqwwGio81y-C02",
+      "relation": "Related trail-hip tutorial, distinct applicability",
+      "explanation": "Harrington describes turning into trail hip with a small optional bump. Moore prescribes a specific bump-then-gap drill to Cameron; the optional general pattern is not a universal mandatory bump."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "DcqwwGio81y-C01",
+        "DcqwwGio81y-C02"
+      ],
+      "relationship": "Retained down-the-line strengths and selected face-on correction are parts of one review, not competing drills."
+    }
+  ],
+  "annotation_opportunities": [
+    "Show camera perspective caveat beside takeaway line.",
+    "Pair face-on top sternum/belt reference with later head movement.",
+    "Show stick contact followed by gap as a short sequence, not a single ideal pose.",
+    "Label coach demonstration separately from student result."
+  ],
+  "excluded_material": [
+    "Review solicitation at 167 seconds onward.",
+    "Universal ideal hand path or population thresholds inferred from this review.",
+    "Improved Cameron outcomes that were not shown."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Source checked against speech and annotated frames; applicability and outcomes require individual evidence."
+  },
+  "asset_sha256": {
+    "video": "c79d76793b71574d75593173239216d4ce3bdd0ba9462f71bfdfea894661a0ce",
+    "raw_captions": "c2850b0318726040afdbeb461fda7a6b4eef78d5396d5c5770979792fb28ac12",
+    "transcript": "63db334b1864234e5ec48db033e93fc705d7e3102b18013cf757e5aa43b395f9"
+  }
+}

@@ -1,0 +1,1632 @@
+{
+  "version": 1,
+  "source_id": "BcG-r_13z_I",
+  "url": "https://www.youtube.com/watch?v=BcG-r_13z_I",
+  "title": "The Tour Pro Whose Trainer Is ChatGPT (And Why His \"Flaw\" Is Actually His Superpower)",
+  "publisher": "TPI - Titleist Performance Institute",
+  "published": "20260730",
+  "duration_seconds": 4579,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "golfer": "Dylan Menante",
+    "coach": "Greg Rose",
+    "others": "Other TPI/equipment participants retained by role; no identification based only on appearance."
+  },
+  "context": {
+    "handedness": "right",
+    "level": "Tour player",
+    "tasks": [
+      "Driver lag/timing and speed",
+      "Iron left miss",
+      "Physical and power screen",
+      "Gym task corrections",
+      "Cue transfer and teach-back"
+    ],
+    "body_context": "Recent lower-back concern and in-person physical screening are source context. No body-handicap score or app-actionable clinical diagnosis.",
+    "style": "Detailed instrument-led explanation followed by constrained drills, player-specific feels and contrasts"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/BcG-r_13z_I/BcG-r_13z_I.mp4",
+    "raw_captions": ".videos/coaching-knowledge/BcG-r_13z_I/BcG-r_13z_I.en-orig.json3",
+    "transcript": ".videos/coaching-knowledge/BcG-r_13z_I/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/BcG-r_13z_I/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/BcG-r_13z_I/BcG-r_13z_I.info.json",
+    "overview": ".videos/coaching-knowledge/BcG-r_13z_I/overview/index.json",
+    "detail": ".videos/coaching-knowledge/BcG-r_13z_I/detail/index.json",
+    "graphs_sequences": ".videos/coaching-knowledge/BcG-r_13z_I/graphs-sequences/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 2505,
+    "transcript_kind": "Full YouTube en-orig automatic captions, with 30-second reading index",
+    "audio_independently_transcribed": false,
+    "visual_review_method": "77 overview frames, 118 detail frames and 40 graph/sequence frames. All 21 contact sheets inspected across the 76:19 source. Sampled visual inspection, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/BcG-r_13z_I/overview/index.json",
+      ".videos/coaching-knowledge/BcG-r_13z_I/detail/index.json",
+      ".videos/coaching-knowledge/BcG-r_13z_I/graphs-sequences/index.json"
+    ],
+    "limitations": [
+      "480p source, small filmed monitors and editorial cropping limit some numbers.",
+      "Edited replays are not a chronological shot-by-shot measurement log.",
+      "Automatic captions can confuse technical terms and numbers.",
+      "No raw force/3D/launch export or longitudinal outcome."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        30,
+        600
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=30s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "player_context",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Menante describes his father as his coach, self-directed training aided by ChatGPT, a wish for more speed, recent lower-back trouble and a belief that excessive lag is a fault. Rose asks whether reducing lag has ever actually improved performance; no demonstrated improvement is established. Later dialogue clarifies driver usually misses right, irons left/two-way.",
+      "frames": [
+        {
+          "time_seconds": 210,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/overview/frame-00210.000.jpg",
+          "observation": "Player and coaches discuss goals."
+        },
+        {
+          "time_seconds": 330,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/overview/frame-00330.000.jpg",
+          "observation": "Interview continues with player explaining his swing concern."
+        }
+      ],
+      "limitations": [
+        "Initial broad left-miss wording is refined by club later. Back history is reported context, not a diagnosis."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        610,
+        1030
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=610s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "physical_screen",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Physical screening distinguishes an already arched starting posture from inability to tilt farther forward. Left trunk rotation feels harder but is reported to travel farther than right. Wrist mobility is not unusually large despite visible lag; Rose asks about grip retention rather than concluding he lets go. Left loaded hip and right ankle findings are minor context, not the main power explanation.",
+      "frames": [
+        {
+          "time_seconds": 650,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-00650.000.jpg",
+          "observation": "Posture and pelvic-tilt assessment."
+        },
+        {
+          "time_seconds": 750,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-00750.000.jpg",
+          "observation": "Supine hip comparison."
+        },
+        {
+          "time_seconds": 795,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-00795.000.jpg",
+          "observation": "Trunk rotation assessed with a bar."
+        },
+        {
+          "time_seconds": 880,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-00880.000.jpg",
+          "observation": "Wrist range examined."
+        },
+        {
+          "time_seconds": 925,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-00925.000.jpg",
+          "observation": "Wall arm-raise assessment."
+        },
+        {
+          "time_seconds": 960,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-00960.000.jpg",
+          "observation": "Loaded rotation with foot placement controlled."
+        }
+      ],
+      "limitations": [
+        "No formal diagnostic report, exact trunk angles or causal physical-to-swing test. Feeling resistance is not itself proof of reduced range."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        1030,
+        1295
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=1030s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "capacity_assessment",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Strength checks use estimated ability to complete eight repetitions, including 55 dumbbells and estimated cable values 42 left/47 right. Jump and seated throws follow. Rose judges lower-body power relatively good but upper-body/core power low despite reasonable strength, and proposes a tested, targeted programme with a trainer.",
+      "frames": [
+        {
+          "time_seconds": 1090,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-01090.000.jpg",
+          "observation": "Cable strength assessment."
+        },
+        {
+          "time_seconds": 1130,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-01130.000.jpg",
+          "observation": "Further cable test with coach assistance."
+        },
+        {
+          "time_seconds": 1180,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-01180.000.jpg",
+          "observation": "Jump assessment in lab."
+        },
+        {
+          "time_seconds": 1200,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-01200.000.jpg",
+          "observation": "Seated medicine-ball chest-pass setup."
+        },
+        {
+          "time_seconds": 1220,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-01220.000.jpg",
+          "observation": "Throw assessment continues."
+        }
+      ],
+      "limitations": [
+        "Do not label estimated repetitions as measured eight-repetition maxima. Caption 174 is ambiguous, and grip 42/44 has no verified units. No raw test report."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        1310,
+        1765
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=1310s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "baseline_and_problem_definition",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Instrumented swings and replay establish an extreme lag appearance. Player mentions outside takeaway/trail-arm position and dislikes the driver image. Driver miss is clarified as usually right and iron miss as left/two-way. The player has not established a better-performing reduced-lag swing.",
+      "frames": [
+        {
+          "time_seconds": 1370,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-01370.000.jpg",
+          "observation": "Lab review while player wears tracking equipment."
+        },
+        {
+          "time_seconds": 1570,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-01570.000.jpg",
+          "observation": "Iron swing replay on screen."
+        },
+        {
+          "time_seconds": 1690,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-01690.000.jpg",
+          "observation": "Driver replay used to discuss lag."
+        }
+      ],
+      "limitations": [
+        "Source explanation; not independently validated biomechanics."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        1765,
+        1870
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=1765s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "explicit_hypothesis",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Rose states a hypothesis before data review: lag/release may compensate for limited body power. He distinguishes hip-to-shoulder, trunk-to-arm and arm-to-club contributions and wants another source of power before removing the existing contribution.",
+      "frames": [
+        {
+          "time_seconds": 1820,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-01820.000.jpg",
+          "observation": "Coach gestures between body segments while describing power contributions."
+        }
+      ],
+      "limitations": [
+        "Mechanical analogies are coaching explanations, not measured energy partition."
+      ]
+    },
+    {
+      "id": "E06",
+      "span_seconds": [
+        1950,
+        2040
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=1950s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "instrument_evidence",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Kinetic review praises force generation and sequence. Readable graph at 1982s has Lateral/Rock/Twist/Jump peak order 1/2/3/4 and maxima 22/21/19/216. Dialogue reports vertical force 229 percent body weight and explains dependence of absolute force on player mass.",
+      "frames": [
+        {
+          "time_seconds": 1975,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-01975.000.jpg",
+          "observation": "Force plots visible during review."
+        },
+        {
+          "time_seconds": 1982,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/graphs-sequences/frame-01982.000.jpg",
+          "observation": "Kinetic sequence table reads maxima 22,21,19,216; jump graph is labelled percent body weight."
+        }
+      ],
+      "limitations": [
+        "Spoken 229 differs from displayed 216. Trial identity is unavailable; do not silently reconcile or assume matched shots. Other channels do not necessarily share units."
+      ]
+    },
+    {
+      "id": "E07",
+      "span_seconds": [
+        2040,
+        2255
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=2040s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "instrument_and_club_comparison",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Kinematic review reports club angular velocity 2537 degrees per second. Cropped graphic shows pelvis/trunk/lead-arm order 1/3/2 and speeds 506/709/1079. Rose identifies arms peaking before trunk with driver; iron order is better despite its larger directional problem.",
+      "frames": [
+        {
+          "time_seconds": 2074,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/graphs-sequences/frame-02074.000.jpg",
+          "observation": "Cropped peak angular velocity sequence shows pelvis/trunk/lead-arm order 1/3/2."
+        },
+        {
+          "time_seconds": 2078,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/graphs-sequences/frame-02078.000.jpg",
+          "observation": "Same cropped table shows 506/709/1079 for the three body segments."
+        },
+        {
+          "time_seconds": 2190,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-02190.000.jpg",
+          "observation": "Coach and player discuss the sequence."
+        }
+      ],
+      "limitations": [
+        "Club columns are cropped in these graphic frames. Club 2537 retained as spoken reading. Peak order alone does not identify a cause."
+      ]
+    },
+    {
+      "id": "E08",
+      "span_seconds": [
+        2255,
+        2520
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=2255s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "differential_reasoning",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Rose first associates this sequence with casting but rejects that usual explanation because Menante shows extreme lag. Player reports keeping his chest still to cover the ball. Kneeling rehearsal is difficult. Rose instead explains early arm drop with a late trunk, and wants trunk rotation relative to pelvis. Separation is described as 61 degrees at the top and 20 at impact.",
+      "frames": [
+        {
+          "time_seconds": 2300,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-02300.000.jpg",
+          "observation": "Coach explains why the usual casting interpretation does not fit."
+        },
+        {
+          "time_seconds": 2370,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-02370.000.jpg",
+          "observation": "Player discusses difficulty getting the club in front."
+        },
+        {
+          "time_seconds": 2410,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-02410.000.jpg",
+          "observation": "Kneeling rehearsal and explanation."
+        },
+        {
+          "time_seconds": 2480,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-02480.000.jpg",
+          "observation": "Half-kneeling rotational-throw movement is proposed."
+        }
+      ],
+      "limitations": [
+        "Separation values are spoken and no raw angular definitions are provided. Do not adopt zero separation as a universal target."
+      ]
+    },
+    {
+      "id": "E09",
+      "span_seconds": [
+        2520,
+        2775
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=2520s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "priority_and_tradeoff",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Rose recommends improving trunk/upper-body power with a trainer, keeping lag as a useful contribution, and testing trunk rotation before direct hand changes. He predicts longer-term improvement and warns that removing lag now could lose speed. He connects a more open trunk to reducing this player's iron left miss.",
+      "frames": [
+        {
+          "time_seconds": 2570,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-02570.000.jpg",
+          "observation": "Coach discusses training and trunk priority."
+        },
+        {
+          "time_seconds": 2660,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-02660.000.jpg",
+          "observation": "Player and coach discuss retaining lag."
+        },
+        {
+          "time_seconds": 2730,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-02730.000.jpg",
+          "observation": "Rotation and clubface explanation."
+        }
+      ],
+      "limitations": [
+        "Future power/speed gains and back-health hopes are not observed results. The face/path explanation is source-specific and cannot guarantee elimination of left misses."
+      ]
+    },
+    {
+      "id": "E10",
+      "span_seconds": [
+        2775,
+        2920
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=2775s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "drill_and_immediate_review",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Kneeling driver shots use a teed ball and both knees on a towel. Rose explains that the constraint encourages trunk rotation relative to the lower body while still using ground support. Replay is judged to show less extreme lag and earlier release without asking the player to cast. Rose reports reduced left exit tendency.",
+      "frames": [
+        {
+          "time_seconds": 2810,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-02810.000.jpg",
+          "observation": "Both knees on towel beside teed driver ball."
+        },
+        {
+          "time_seconds": 2820,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-02820.000.jpg",
+          "observation": "Kneeling driver address."
+        },
+        {
+          "time_seconds": 2830,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-02830.000.jpg",
+          "observation": "Kneeling swing follow-through."
+        },
+        {
+          "time_seconds": 2860,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-02860.000.jpg",
+          "observation": "Monitor replay of the kneeling swing."
+        }
+      ],
+      "limitations": [
+        "No matched post-drill launch or 3D numbers. Sampled address, finish and replay do not measure continuous sequencing."
+      ]
+    },
+    {
+      "id": "E11",
+      "span_seconds": [
+        2880,
+        3060
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=2880s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "pedagogy_and_failed_transfer",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Rose describes a two-step coaching process: first demonstrate that a drill changes its intended target using video or measurement, then find the player's own repeatable feel and transfer it to standing. Menante initially feels lower abs, cannot reproduce it standing, returns to kneeling and reports the sensation fading.",
+      "frames": [
+        {
+          "time_seconds": 2930,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-02930.000.jpg",
+          "observation": "Kneeling drill repeated to identify a sensation."
+        },
+        {
+          "time_seconds": 2950,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-02950.000.jpg",
+          "observation": "Kneeling follow-through."
+        },
+        {
+          "time_seconds": 2980,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-02980.000.jpg",
+          "observation": "Standing rehearsal transfer."
+        },
+        {
+          "time_seconds": 3010,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03010.000.jpg",
+          "observation": "Player returns to kneeling."
+        }
+      ],
+      "limitations": [
+        "Source explanation; not independently validated biomechanics."
+      ]
+    },
+    {
+      "id": "E12",
+      "span_seconds": [
+        3060,
+        3240
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=3060s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "cue_search",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "An arm cue and a left-leg-forward rehearsal do not resolve the transfer. Returning to kneeling and attempting a cut produces a repeatable shoulders-pulled-left feel. Rose then tries combining that with right-arm straightening. He explains exaggerated opposite-direction practice as a feel, not a normal-swing target.",
+      "frames": [
+        {
+          "time_seconds": 3070,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03070.000.jpg",
+          "observation": "Standing trial before another return to kneeling."
+        },
+        {
+          "time_seconds": 3100,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03100.000.jpg",
+          "observation": "Kneeling drill repeated."
+        },
+        {
+          "time_seconds": 3130,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03130.000.jpg",
+          "observation": "Kneeling cut-feel trial."
+        },
+        {
+          "time_seconds": 3180,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03180.000.jpg",
+          "observation": "Kneeling follow-through before standing transfer."
+        },
+        {
+          "time_seconds": 3210,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03210.000.jpg",
+          "observation": "Player and coach work on the selected feel."
+        }
+      ],
+      "limitations": [
+        "Caption wording alternates arm collapsing/straightening. Preserve trial chronology; only the explicitly combined later cues form the two-cue option."
+      ]
+    },
+    {
+      "id": "E13",
+      "span_seconds": [
+        3240,
+        3335
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=3240s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "partial_result_and_practice_design",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Standing replay shows less extreme lag early in the downswing but persistent late hold near impact. Coach explicitly says the kneeling drill helped the bottom whereas standing has mainly helped the top. He recommends a row of seven to ten teed kneeling shots, moving along the row, then standing with the same trunk-turn feel.",
+      "frames": [
+        {
+          "time_seconds": 3248,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/graphs-sequences/frame-03248.000.jpg",
+          "observation": "Standing delivery replay on monitor."
+        },
+        {
+          "time_seconds": 3272,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/graphs-sequences/frame-03272.000.jpg",
+          "observation": "Standing early downswing replay."
+        },
+        {
+          "time_seconds": 3276,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/graphs-sequences/frame-03276.000.jpg",
+          "observation": "Later delivery replay."
+        },
+        {
+          "time_seconds": 3284,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/graphs-sequences/frame-03284.000.jpg",
+          "observation": "Kneeling and standing replay shown side by side."
+        },
+        {
+          "time_seconds": 3300,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03300.000.jpg",
+          "observation": "Coach explains repeated kneeling shots and transfer."
+        }
+      ],
+      "limitations": [
+        "Seven to ten repetitions are the source prescription, not proof of required dosage. No retention test."
+      ]
+    },
+    {
+      "id": "E14",
+      "span_seconds": [
+        3335,
+        3455
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=3335s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "expectation_setting",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Rose revisits the speed tradeoff. Six-to-twelve-month gains and doubling power in two years are goals/expectations; he cautions that the swing change could initially cost a mile or two per hour. Menante accepts a longer-term approach.",
+      "frames": [
+        {
+          "time_seconds": 3380,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03380.000.jpg",
+          "observation": "Discussion of future power gains."
+        },
+        {
+          "time_seconds": 3430,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03430.000.jpg",
+          "observation": "Player accepts the possible near-term speed tradeoff."
+        }
+      ],
+      "limitations": [
+        "No longitudinal measurement or proven future speed increase."
+      ]
+    },
+    {
+      "id": "E15",
+      "span_seconds": [
+        3455,
+        3655
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=3455s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "club_specific_retest",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Iron trials test turning the trunk left while trying a draw/hook and then a small cut. Rose judges the left miss reduced even with a hook intent. Player says the cut requires feeling the club more in front. These are player/coach reports with visible attempts, not quantified dispersion.",
+      "frames": [
+        {
+          "time_seconds": 3490,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03490.000.jpg",
+          "observation": "Iron address for trial."
+        },
+        {
+          "time_seconds": 3520,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03520.000.jpg",
+          "observation": "Iron shot finish."
+        },
+        {
+          "time_seconds": 3580,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03580.000.jpg",
+          "observation": "Coach demonstrates a contrast."
+        },
+        {
+          "time_seconds": 3610,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03610.000.jpg",
+          "observation": "Another iron follow-through."
+        },
+        {
+          "time_seconds": 3640,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03640.000.jpg",
+          "observation": "Iron delivery during trial."
+        }
+      ],
+      "limitations": [
+        "Source explanation; not independently validated biomechanics."
+      ]
+    },
+    {
+      "id": "E16",
+      "span_seconds": [
+        3630,
+        3795
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=3630s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "alternate_drill_and_teachback",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Rose stresses trunk rotation relative to pelvis: rotating both together does not change their separation. He asks for the right foot about one and a half inches back to slow the lower body and let trunk rotation catch up. Player already uses this stance to get arms in front; Rose changes the intent to trunk-led positioning. Later clarification identifies early arm drop, not lag alone.",
+      "frames": [
+        {
+          "time_seconds": 3670,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03670.000.jpg",
+          "observation": "Coach watches the standing trial."
+        },
+        {
+          "time_seconds": 3700,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03700.000.jpg",
+          "observation": "Stance and rotation discussion."
+        },
+        {
+          "time_seconds": 3730,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03730.000.jpg",
+          "observation": "Follow-through after the stance adjustment."
+        },
+        {
+          "time_seconds": 3760,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03760.000.jpg",
+          "observation": "Address and explanation of arm/trunk relationship."
+        }
+      ],
+      "limitations": [
+        "Foot offset is spoken; no calibrated image measurement. Claimed pelvic slowing is not measured in the outdoor trial."
+      ]
+    },
+    {
+      "id": "E17",
+      "span_seconds": [
+        3795,
+        3895
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=3795s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "contrast_test",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Coach consolidates kneeling-to-standing practice. Menante attempts a large hook while turning the trunk; Rose praises the limited left result. They then deliberately return to the old trunk-still pattern and the left miss returns according to dialogue.",
+      "frames": [
+        {
+          "time_seconds": 3820,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03820.000.jpg",
+          "observation": "Coach requests an exaggerated hook test."
+        },
+        {
+          "time_seconds": 3850,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03850.000.jpg",
+          "observation": "Old-pattern comparison discussed."
+        },
+        {
+          "time_seconds": 3880,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03880.000.jpg",
+          "observation": "On-range conclusion."
+        }
+      ],
+      "limitations": [
+        "Edited demonstration with no ball-flight export. Deliberate contrast does not establish retained or universal control."
+      ]
+    },
+    {
+      "id": "E18",
+      "span_seconds": [
+        3895,
+        4020
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=3895s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "exercise_correction",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "First overhead medicine-ball slam shows chest and arms moving down together according to Rose. He points out rebound-to-face risk with a different ball. No-ball rehearsal teaches squatting as arms rise, then legs driving upward as arms deliver down; start tall with ball low.",
+      "frames": [
+        {
+          "time_seconds": 3940,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-03940.000.jpg",
+          "observation": "Initial overhead slam with ball above head."
+        },
+        {
+          "time_seconds": 3994,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/graphs-sequences/frame-03994.000.jpg",
+          "observation": "Player and coach rehearse arms rising while squatting."
+        },
+        {
+          "time_seconds": 3998,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/graphs-sequences/frame-03998.000.jpg",
+          "observation": "No-ball coordination rehearsal repeated."
+        },
+        {
+          "time_seconds": 4000,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-04000.000.jpg",
+          "observation": "Movement rehearsal continues."
+        }
+      ],
+      "limitations": [
+        "Retain the source equipment/rebound condition. No exact ball mass, load, programme dose or force measurement."
+      ]
+    },
+    {
+      "id": "E19",
+      "span_seconds": [
+        4020,
+        4090
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=4020s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "subjective_force_cue",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Slam coaching asks for push from balls of feet rather than toes and a small backward jump. Player reports right-side dominance; Rose asks for a doubled left-side feel and corrects the expected rotation direction.",
+      "frames": [
+        {
+          "time_seconds": 4040,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-04040.000.jpg",
+          "observation": "Player retrieves the ball between attempts."
+        },
+        {
+          "time_seconds": 4080,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-04080.000.jpg",
+          "observation": "Overhead position during corrected slam practice."
+        }
+      ],
+      "limitations": [
+        "Two-times-left is a feel, not a measured force ratio or a general prescription."
+      ]
+    },
+    {
+      "id": "E20",
+      "span_seconds": [
+        4080,
+        4215
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=4080s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "exercise_and_feedback",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Half-kneeling medicine-ball bounce uses left knee down and right foot forward. Ball starts over the shoulder and is bounced toward/over the coach. Initial lower-body wobble leads to a stable-base correction; aim is trunk rotation left around pelvis with arms delivered in front.",
+      "frames": [
+        {
+          "time_seconds": 4100,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-04100.000.jpg",
+          "observation": "Half-kneeling setup, left knee down and right foot forward."
+        },
+        {
+          "time_seconds": 4120,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-04120.000.jpg",
+          "observation": "Ball raised above shoulder in half-kneeling stance."
+        },
+        {
+          "time_seconds": 4134,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/graphs-sequences/frame-04134.000.jpg",
+          "observation": "Player follows through toward receiving coach."
+        },
+        {
+          "time_seconds": 4142,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/graphs-sequences/frame-04142.000.jpg",
+          "observation": "Ball above shoulder before another throw."
+        },
+        {
+          "time_seconds": 4160,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-04160.000.jpg",
+          "observation": "Rear view of half-kneeling throw setup."
+        }
+      ],
+      "limitations": [
+        "No measured trunk speed improvement; stable-base assessment is coach observation. No general exercise clearance from this demonstration."
+      ]
+    },
+    {
+      "id": "E21",
+      "span_seconds": [
+        4200,
+        4395
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=4200s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "training_specificity",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Training interview finds little deliberate trunk-rotation work. Cable press in split stance pairs one arm pushing with the other elbow pulling back, braced/tucked pelvis and trunk rotation. Opposite side is demonstrated with left arm/left foot forward. Rose wants workouts aligned with the swing change.",
+      "frames": [
+        {
+          "time_seconds": 4300,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-04300.000.jpg",
+          "observation": "Cable push with opposite elbow moving back."
+        },
+        {
+          "time_seconds": 4316,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/graphs-sequences/frame-04316.000.jpg",
+          "observation": "Coach points to abdomen for bracing cue."
+        },
+        {
+          "time_seconds": 4320,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-04320.000.jpg",
+          "observation": "Split-stance cable press."
+        },
+        {
+          "time_seconds": 4360,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-04360.000.jpg",
+          "observation": "Opposite-side cable setup."
+        }
+      ],
+      "limitations": [
+        "No exact loads, sets or progression. The source's strong anti-bench wording is a priority for this player, not a general prohibition on bench training."
+      ]
+    },
+    {
+      "id": "E22",
+      "span_seconds": [
+        4395,
+        4570
+      ],
+      "source_url": "https://www.youtube.com/watch?v=BcG-r_13z_I&t=4395s",
+      "attribution": "Greg Rose with Dylan Menante; other participants retained by role where uncertain",
+      "kind": "teachback_and_coordination",
+      "session": "TPI assessment with edited interview, lab, range and gym footage",
+      "summary": "Rose asks Menante to explain the plan back to his father. Player identifies trunk rotation and power, then says pelvis slow/stopping; Rose corrects the explanation to arms firing early and interrupting trunk action. Team coordination and future speed/back-health hopes close the lesson.",
+      "frames": [
+        {
+          "time_seconds": 4450,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-04450.000.jpg",
+          "observation": "Player explains what he learned."
+        },
+        {
+          "time_seconds": 4470,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-04470.000.jpg",
+          "observation": "Player continues teach-back."
+        },
+        {
+          "time_seconds": 4490,
+          "path": ".videos/coaching-knowledge/BcG-r_13z_I/detail/frame-04490.000.jpg",
+          "observation": "Coach corrects arm/trunk timing explanation."
+        }
+      ],
+      "limitations": [
+        "Closing back-health and speed expectations are not medical or longitudinal outcomes."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "BcG-r_13z_I-C01",
+      "title": "Preserve useful lag while investigating the actual timing problem",
+      "tags": {
+        "phase": [
+          "downswing"
+        ],
+        "body": [
+          "trunk",
+          "arms"
+        ],
+        "outcome": [
+          "power",
+          "direction"
+        ],
+        "concept": [
+          "differential diagnosis",
+          "non-intervention",
+          "compensation"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E04",
+        "E05",
+        "E06",
+        "E07",
+        "E08",
+        "E09",
+        "E14"
+      ],
+      "coaching_finding": "Player blames extreme lag; data and interview lead Rose to identify early arm drop with late trunk action, alongside limited upper/core power.",
+      "coach_reasoning": "Good force sequence and relatively high club angular speed suggest useful compensation. The usual casting interpretation of arms-before-trunk peaks conflicts with the video, so Rose investigates intent and relative segment motion before selecting a cause.",
+      "intervention": {
+        "action": "Withhold direct lag-removal instruction; investigate trunk timing and available power first.",
+        "not_selected": "An automatic casting drill based only on peak order or a prettier swing image."
+      },
+      "applicability": [
+        "Evidence of this specific extreme-lag/early-arm/late-trunk pattern; retain club-specific miss context.",
+        "Power claims need actual testing; phone footage alone cannot supply them."
+      ],
+      "unknowns": [
+        "No raw matched kinematic/force trials or proof of causal power partition.",
+        "No measured improvement after directly removing lag."
+      ],
+      "observed_result": "Source revises the initial fault framing and chooses trunk work. No immediate speed gain established.",
+      "selection": {
+        "coaching_focus": "Find what the pattern contributes before removing it",
+        "max_simultaneous_cues": 0,
+        "policy_origin": "User preference: one focus, no more than two compatible cues. Stored alternatives are not a combined prescription.",
+        "reassess": "Compare movement, contact, direction and speed after a candidate intervention."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "BcG-r_13z_I-C02",
+      "title": "Separate perceived tightness from measured movement capacity",
+      "tags": {
+        "phase": [
+          "setup",
+          "physical screening"
+        ],
+        "body": [
+          "trunk",
+          "hips",
+          "ankles",
+          "wrists"
+        ],
+        "outcome": [
+          "power",
+          "direction"
+        ],
+        "concept": [
+          "body context",
+          "feel versus measurement"
+        ]
+      },
+      "evidence_ids": [
+        "E02"
+      ],
+      "coaching_finding": "Left trunk rotation feels harder although Rose says measured rotation is farther left; wrist mobility is not extreme despite extreme lag.",
+      "coach_reasoning": "Player sensation, available motion and motion used in the swing answer different questions. Minor screen findings are context, not sufficient explanation of the performance issue.",
+      "intervention": {
+        "action": "Retain the screen and player report separately; do not diagnose a mobility deficit from the swing image.",
+        "check": "Grip retention is a question raised by the coach, not an observed failure."
+      },
+      "applicability": [
+        "In-person screening findings or explicit player reports available."
+      ],
+      "unknowns": [
+        "No exact trunk angles or body-handicap score.",
+        "No clinical diagnosis or proof the screen finding caused the swing."
+      ],
+      "observed_result": "Screen narrows the investigation toward power and swing use; no physical-treatment outcome.",
+      "selection": {
+        "coaching_focus": "Clarify what was actually tested",
+        "max_simultaneous_cues": 0,
+        "policy_origin": "User preference: one focus, no more than two compatible cues. Stored alternatives are not a combined prescription.",
+        "reassess": "Use appropriate assessment to resolve mobility questions rather than infer them from lag."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "BcG-r_13z_I-C03",
+      "title": "Target assessed upper-body and core power with a coordinated programme",
+      "tags": {
+        "phase": [
+          "physical training"
+        ],
+        "body": [
+          "trunk",
+          "arms"
+        ],
+        "outcome": [
+          "power",
+          "direction"
+        ],
+        "concept": [
+          "capacity versus skill",
+          "longitudinal testing"
+        ]
+      },
+      "evidence_ids": [
+        "E03",
+        "E09",
+        "E14",
+        "E21",
+        "E22"
+      ],
+      "coaching_finding": "Rose judges upper/core power lower than needed while strength and lower-body contribution are relatively better; self-training lacks regular assessment and rotational work.",
+      "coach_reasoning": "Training should address the tested limitation and support the swing intent. Adding usable power is the proposed route to reducing dependence on the existing lag contribution.",
+      "intervention": {
+        "action": "Coordinate a trainer-led power programme around assessed needs and trunk rotation.",
+        "source_examples": [
+          "Overhead slam correction C08",
+          "Half-kneeling rotational throw C09",
+          "Cable push/pull C10"
+        ],
+        "timeframe": "Six to twelve months for hoped-for speed gains; doubling power in two years is an aspirational goal, not a promise."
+      },
+      "applicability": [
+        "Comparable measured capacity limitation, goals and access to suitable training support.",
+        "Exercise selection must be individual; the demonstration is not a complete programme."
+      ],
+      "unknowns": [
+        "Exact throw value/units unclear; loads and progression not supplied.",
+        "No follow-up speed, injury or performance dataset."
+      ],
+      "observed_result": "Programme direction agreed; future gains untested. Source warns swing change could initially lose speed.",
+      "selection": {
+        "coaching_focus": "Develop the assessed missing capacity",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, no more than two compatible cues. Stored alternatives are not a combined prescription.",
+        "reassess": "Retest using the same protocol and track golf performance over time."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "BcG-r_13z_I-C04",
+      "title": "Use kneeling driver shots to test trunk-led delivery",
+      "tags": {
+        "phase": [
+          "downswing"
+        ],
+        "body": [
+          "trunk",
+          "arms"
+        ],
+        "outcome": [
+          "power",
+          "direction"
+        ],
+        "concept": [
+          "constraint drill",
+          "verify intervention"
+        ]
+      },
+      "evidence_ids": [
+        "E08",
+        "E10",
+        "E11"
+      ],
+      "coaching_finding": "Menante struggles to deliver the club in front from a kneeling rehearsal and normally leaves trunk behind while arms drop.",
+      "coach_reasoning": "Constrained lower-body motion makes relative trunk rotation necessary for this task. Rose first verifies the intended change on replay, then asks for a usable feel.",
+      "intervention": {
+        "drill": "Both knees on towel, driver and teed ball; hit and inspect the resulting movement.",
+        "intent": "Trunk rotates around the supported lower body; do not consciously remove lag.",
+        "verbal_cue": "Find what it feels like for the trunk to turn around the lower body."
+      },
+      "applicability": [
+        "This demonstrated pattern and ability to use the kneeling setup.",
+        "Verify the drill actually changes the intended action in the individual."
+      ],
+      "unknowns": [
+        "No measured post-drill angular speeds, launch data or retained transfer."
+      ],
+      "observed_result": "Rose sees reduced extreme lag and earlier release in kneeling replay; player did not intentionally cast. Left-exit improvement is reported qualitatively.",
+      "selection": {
+        "coaching_focus": "Trunk turns before the arms dominate",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, no more than two compatible cues. Stored alternatives are not a combined prescription.",
+        "reassess": "Review the drill before prescribing more repetitions, then test standing transfer."
+      },
+      "alternative_case_ids": [
+        "BcG-r_13z_I-C07"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "BcG-r_13z_I-C05",
+      "title": "Recover a lost feel and distinguish drill success from standing transfer",
+      "tags": {
+        "phase": [
+          "downswing"
+        ],
+        "body": [
+          "trunk",
+          "arms"
+        ],
+        "outcome": [
+          "power",
+          "direction"
+        ],
+        "concept": [
+          "motor learning",
+          "failed transfer",
+          "partial improvement"
+        ]
+      },
+      "evidence_ids": [
+        "E11",
+        "E12",
+        "E13",
+        "E14",
+        "E17"
+      ],
+      "coaching_finding": "Lower-ab feel appears on knees, fades and does not reproduce standing. First standing trial looks unchanged; later replay improves early lag but retains late hold.",
+      "coach_reasoning": "A sensation is useful only if the player can reproduce it and it changes the target. Rose returns to the drill, changes the task to a kneeling cut, and retests a shoulders-left feel.",
+      "intervention": {
+        "primary_cue": "Shoulders feel pulled left through the downswing.",
+        "optional_compatible_cue": "Right arm straightening, tried only with the selected shoulder-turn feel.",
+        "practice": "Source suggests seven to ten teed balls in a row from knees, moving along them, then standing with the same feel.",
+        "failed_or_abandoned_trials": [
+          "Initial lower-ab cue lost in standing",
+          "Arm-only trial unchanged",
+          "Left-leg-forward rehearsal did not restore the desired feel"
+        ]
+      },
+      "applicability": [
+        "C04 drill demonstrably changes the intended movement, but transfer is incomplete.",
+        "Exaggerated feel must be checked against actual motion and ball result."
+      ],
+      "unknowns": [
+        "No retention evidence; no proof that seven to ten is an optimal dose."
+      ],
+      "observed_result": "Partial standing improvement only. Source explicitly says kneeling helped late release more than standing.",
+      "selection": {
+        "coaching_focus": "Carry one reproducible trunk-turn feel into standing",
+        "max_simultaneous_cues": 2,
+        "policy_origin": "User preference: one focus, no more than two compatible cues. Stored alternatives are not a combined prescription.",
+        "reassess": "If feel or effect disappears, return to the drill or test another cue; recheck early and late downswing separately."
+      },
+      "alternative_case_ids": [
+        "BcG-r_13z_I-C07"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "BcG-r_13z_I-C06",
+      "title": "Test the iron left miss with trunk-turn and contrasting shot intents",
+      "tags": {
+        "phase": [
+          "downswing"
+        ],
+        "body": [
+          "trunk",
+          "arms"
+        ],
+        "outcome": [
+          "power",
+          "direction"
+        ],
+        "concept": [
+          "contrast test",
+          "club-specific applicability"
+        ]
+      },
+      "evidence_ids": [
+        "E15",
+        "E16",
+        "E17"
+      ],
+      "coaching_finding": "Iron left/two-way miss accompanies player-described under/in-front difficulty and Rose-observed late trunk. Driver has a different reported miss.",
+      "coach_reasoning": "Rose predicts more trunk rotation relative to pelvis will alter delivery and reduce the iron left miss, then tests this with hook/draw and cut intent plus return to the old pattern.",
+      "intervention": {
+        "cue": "Keep the trunk turning left relative to the pelvis.",
+        "test": "Attempt a draw/hook with that feel, then a small cut; compare with the familiar trunk-still pattern.",
+        "interpretation": "The player feels a large slice even when the coach judges the resulting shot acceptable."
+      },
+      "applicability": [
+        "This player-specific delivery pattern and iron miss; advanced contrast task shown with a skilled player.",
+        "Do not infer that every left miss requires more rotation."
+      ],
+      "unknowns": [
+        "No measured face/path or dispersion; source ballflight claims are not universal laws."
+      ],
+      "observed_result": "Coach reports reduced left miss with the new intent and return of left miss with old pattern. No measured magnitude or retention.",
+      "selection": {
+        "coaching_focus": "Trunk leads the iron delivery",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, no more than two compatible cues. Stored alternatives are not a combined prescription.",
+        "reassess": "Check actual contact and direction alongside movement; do not judge the feel by its name alone."
+      },
+      "alternative_case_ids": [
+        "BcG-r_13z_I-C07"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "BcG-r_13z_I-C07",
+      "title": "Use a small trail-foot setback as an alternate trunk-timing constraint",
+      "tags": {
+        "phase": [
+          "setup",
+          "downswing"
+        ],
+        "body": [
+          "trunk",
+          "arms"
+        ],
+        "outcome": [
+          "power",
+          "direction"
+        ],
+        "concept": [
+          "alternate constraint",
+          "intent correction"
+        ]
+      },
+      "evidence_ids": [
+        "E16"
+      ],
+      "coaching_finding": "Player already uses a right-foot-back drill to get arms in front but does not use it with deliberate trunk rotation.",
+      "coach_reasoning": "Rose wants trunk motion relative to pelvis and proposes slowing the lower body enough for trunk to catch up. Moving both segments faster together would not address the stated separation issue.",
+      "intervention": {
+        "setup": "For this right-handed player, move right foot back about one and a half inches.",
+        "cue": "Get the club in front by turning the trunk.",
+        "role": "Alternative constraint supporting the same focus, not an extra independent swing change."
+      },
+      "applicability": [
+        "Same late-trunk pattern; stance change must be checked rather than assumed effective."
+      ],
+      "unknowns": [
+        "Foot distance is spoken; pelvic slowing and sequence change not measured in the trial."
+      ],
+      "observed_result": "Player finds the stance familiar and coach praises ball striking; no quantified outcome.",
+      "selection": {
+        "coaching_focus": "Relative trunk-to-pelvis rotation",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, no more than two compatible cues. Stored alternatives are not a combined prescription.",
+        "reassess": "Compare normal stance and constrained trial before keeping it."
+      },
+      "alternative_case_ids": [
+        "BcG-r_13z_I-C04",
+        "BcG-r_13z_I-C05"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "BcG-r_13z_I-C08",
+      "title": "Correct overhead-slam coordination before loading the pattern",
+      "tags": {
+        "phase": [
+          "physical training"
+        ],
+        "body": [
+          "legs",
+          "trunk",
+          "arms"
+        ],
+        "outcome": [
+          "power",
+          "direction"
+        ],
+        "concept": [
+          "exercise technique",
+          "subjective force cue"
+        ]
+      },
+      "evidence_ids": [
+        "E18",
+        "E19"
+      ],
+      "coaching_finding": "Coach sees chest descend with arms in initial slam; player later reports pushing more from right side.",
+      "coach_reasoning": "Rose wants leg drive upward to accompany arm delivery downward, then refines foot pressure sensation. The task exposes a coordination problem related to his training aim.",
+      "intervention": {
+        "procedure": "Begin without ball: start tall, raise arms while squatting, then drive upward with legs as arms come down. Reintroduce suitable ball after rehearsal.",
+        "primary_cue": "Legs drive up as arms deliver down.",
+        "later_options": [
+          "Use balls of feet rather than toes",
+          "Small backward jump",
+          "More left-side push feel after right dominance is reported"
+        ],
+        "source_equipment_condition": "Coach explicitly warns a rebounding ball can strike the face with the initial technique."
+      },
+      "applicability": [
+        "Observed initial slam pattern; suitable equipment and training supervision/context.",
+        "Later cues are alternatives/refinements, not all delivered together."
+      ],
+      "unknowns": [
+        "No measured force ratio. Two-times-left is a subjective exaggeration.",
+        "No exact load, sets, progression or transfer measurement."
+      ],
+      "observed_result": "Corrected rehearsals and throws shown; no quantified power improvement.",
+      "selection": {
+        "coaching_focus": "Coordinate legs and arms in the slam",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, no more than two compatible cues. Stored alternatives are not a combined prescription.",
+        "reassess": "Inspect the exercise itself before adding load or more cues."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "BcG-r_13z_I-C09",
+      "title": "Stabilize the base during half-kneeling rotational throws",
+      "tags": {
+        "phase": [
+          "physical training"
+        ],
+        "body": [
+          "pelvis",
+          "trunk",
+          "arms"
+        ],
+        "outcome": [
+          "power",
+          "direction"
+        ],
+        "concept": [
+          "exercise feedback",
+          "stable base"
+        ]
+      },
+      "evidence_ids": [
+        "E20"
+      ],
+      "coaching_finding": "Initial half-kneeling throws show lower-body wobble according to Rose; desired movement is trunk rotating around lower body.",
+      "coach_reasoning": "A stable base constrains compensation and makes the trunk deliver arms in front. This mirrors the intended swing change more closely than arms dropping beside the pocket.",
+      "intervention": {
+        "setup": "Left knee down, right foot forward; ball over shoulder with space and a suitable receiving/bounce target.",
+        "task": "Rotate and bounce the ball toward/over the receiving coach.",
+        "cue": "Keep the lower body stable as the trunk turns left."
+      },
+      "applicability": [
+        "Same assessed training aim and demonstrated ability to use this setup."
+      ],
+      "unknowns": [
+        "No ball mass or training dose; no measured power gain or proof of swing transfer."
+      ],
+      "observed_result": "Coach corrects wobble and praises later attempts; player reports the desired feel.",
+      "selection": {
+        "coaching_focus": "Turn the trunk around a stable base",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, no more than two compatible cues. Stored alternatives are not a combined prescription.",
+        "reassess": "Check base control and trunk action before progressing."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "BcG-r_13z_I-C10",
+      "title": "Make cable work practise the intended trunk rotation",
+      "tags": {
+        "phase": [
+          "physical training"
+        ],
+        "body": [
+          "trunk",
+          "arms"
+        ],
+        "outcome": [
+          "power",
+          "direction"
+        ],
+        "concept": [
+          "training specificity"
+        ]
+      },
+      "evidence_ids": [
+        "E21"
+      ],
+      "coaching_finding": "Player reports arm/leg strength work with little deliberate trunk rotation.",
+      "coach_reasoning": "Rose wants gym movement to support trunk-led delivery. An immobilized trunk with arm-only movement does not practise the selected rotational task.",
+      "intervention": {
+        "procedure": "Split-stance cable press: pushing arm extends while opposite elbow pulls back; brace/tuck the pelvis and rotate trunk. Repeat opposite side as demonstrated.",
+        "primary_cue": "Push one arm forward as the other elbow goes back.",
+        "optional_compatible_cue": "Maintain the abdominal brace.",
+        "scope": "The bench criticism describes this player's training priority; do not encode a universal ban."
+      },
+      "applicability": [
+        "Assessed need for this rotational training task and suitable cable setup."
+      ],
+      "unknowns": [
+        "No exact loads, repetitions or programme progression.",
+        "Exercise mechanics do not prove a golf swing cause or cure."
+      ],
+      "observed_result": "Bilateral demonstrations and corrections shown; no follow-up outcome.",
+      "selection": {
+        "coaching_focus": "Rotate while controlling the base",
+        "max_simultaneous_cues": 2,
+        "policy_origin": "User preference: one focus, no more than two compatible cues. Stored alternatives are not a combined prescription.",
+        "reassess": "Check movement and support before increasing resistance."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "BcG-r_13z_I-C11",
+      "title": "Use teach-back to catch a mistaken explanation before practice",
+      "tags": {
+        "phase": [
+          "learning",
+          "practice planning"
+        ],
+        "body": [
+          "trunk",
+          "arms"
+        ],
+        "outcome": [
+          "power",
+          "direction"
+        ],
+        "concept": [
+          "teach-back",
+          "team coordination"
+        ]
+      },
+      "evidence_ids": [
+        "E16",
+        "E22"
+      ],
+      "coaching_finding": "Player correctly remembers trunk rotation and power but then describes pelvis slow/stopping; coach corrects the arm/trunk relationship.",
+      "coach_reasoning": "Remembering the headline is insufficient if the player has reconstructed the mechanism incorrectly. Rose asks what he will tell his father and restates the selected focus.",
+      "intervention": {
+        "prompt": "Explain what you learned and what you will work on.",
+        "correction": "The source identifies arms dropping/firing before trunk rotation; lag itself is retained as useful.",
+        "handoff": "Align the swing coach and trainer around the same priorities."
+      },
+      "applicability": [
+        "After a detailed lesson, especially when the player likes technical explanations."
+      ],
+      "unknowns": [
+        "No later check of understanding, adherence or performance."
+      ],
+      "observed_result": "Misunderstanding is exposed and corrected on camera.",
+      "selection": {
+        "coaching_focus": "Confirm the player understands the selected action",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, no more than two compatible cues. Stored alternatives are not a combined prescription.",
+        "reassess": "Ask for explanation and demonstration again after correction."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "id": "M01",
+      "evidence_ids": [
+        "E01"
+      ],
+      "kind": "spoken_baseline",
+      "values": {
+        "driver_club_head_speed_mph": 116
+      },
+      "limits": [
+        "Reported context, not a matched pre/post trial; tour norms not adopted."
+      ]
+    },
+    {
+      "id": "M02",
+      "evidence_ids": [
+        "E03"
+      ],
+      "kind": "estimated_strength_and_ambiguous_power_readings",
+      "values": {
+        "dumbbell_load_spoken": 55,
+        "cable_estimate_left": 42,
+        "cable_estimate_right": 47,
+        "grip_spoken_right": 42,
+        "grip_spoken_left": 44
+      },
+      "limits": [
+        "Units not independently established. Repetition capacity estimated. Caption 174 during throwing remains unresolved and is not parsed into 17.4 or 174 feet."
+      ]
+    },
+    {
+      "id": "M03",
+      "evidence_ids": [
+        "E06"
+      ],
+      "kind": "readable_source_graph",
+      "frame": ".videos/coaching-knowledge/BcG-r_13z_I/graphs-sequences/frame-01982.000.jpg",
+      "columns": [
+        "Lateral",
+        "Rock",
+        "Twist",
+        "Jump"
+      ],
+      "peak_order": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_displayed": [
+        22,
+        21,
+        19,
+        216
+      ],
+      "spoken_vertical_percent_body_weight": 229,
+      "limits": [
+        "Jump graph labelled percent body weight. Other units not assumed identical. Spoken/displayed discrepancy unresolved; no matched trial IDs."
+      ]
+    },
+    {
+      "id": "M04",
+      "evidence_ids": [
+        "E07"
+      ],
+      "kind": "readable_cropped_graph_and_spoken_club_value",
+      "frame": ".videos/coaching-knowledge/BcG-r_13z_I/graphs-sequences/frame-02078.000.jpg",
+      "columns": [
+        "Pelvis",
+        "Trunk",
+        "Lead Arm"
+      ],
+      "order_displayed": [
+        1,
+        3,
+        2
+      ],
+      "max_angular_velocity_deg_per_s": [
+        506,
+        709,
+        1079
+      ],
+      "club_angular_velocity_deg_per_s_spoken": 2537,
+      "limits": [
+        "Cropped right columns prevent full table transcription. Ordering label is partly cropped; source dialogue describes speed peaks. Angular club speed is distinct from linear clubhead mph."
+      ]
+    },
+    {
+      "id": "M05",
+      "evidence_ids": [
+        "E08"
+      ],
+      "kind": "spoken_separation_readings",
+      "values": {
+        "top_separation_deg": 61,
+        "impact_separation_deg": 20
+      },
+      "limits": [
+        "No raw segment definitions, coordinates or matched export. Source later advocates near-zero separation; not adopted as an app-wide target."
+      ]
+    },
+    {
+      "id": "M06",
+      "evidence_ids": [
+        "E13",
+        "E16",
+        "E19"
+      ],
+      "kind": "instruction_values_not_outcome_measurements",
+      "values": {
+        "kneeling_repetitions_range": [
+          7,
+          10
+        ],
+        "trail_foot_setback_inches_about": 1.5,
+        "left_push_feel_multiplier": 2
+      },
+      "limits": [
+        "Preserve context: practice example, spoken setup distance, subjective effort cue. None is a validated threshold."
+      ]
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "NOMY1bzMI28-C03",
+      "current_case": "BcG-r_13z_I-C03",
+      "relation": "Different capacity finding changes priority",
+      "explanation": "Brennan already had high general power; Menante is directed to upper/core power development. Do not prescribe power work from a swing appearance alone."
+    },
+    {
+      "source_case": "NOMY1bzMI28-C04",
+      "current_case": "BcG-r_13z_I-C01",
+      "relation": "Preserve functional pattern despite disliked appearance",
+      "explanation": "Both players dislike visible features that the source considers useful or acceptable after investigation."
+    },
+    {
+      "source_case": "NOMY1bzMI28-C12",
+      "current_case": "BcG-r_13z_I-C11",
+      "relation": "Teach-back catches a changed reference or mechanism",
+      "explanation": "Brennan confuses ball versus stance reference; Menante confuses pelvis and arm/trunk timing. Store the correction."
+    },
+    {
+      "source_case": "G3QNDLEo2Gw-C07",
+      "current_case": "BcG-r_13z_I-C06",
+      "relation": "Task changes the meaning of arm-first advice",
+      "explanation": "Earlier arms-first finesse pitching is task-specific. Menante full-swing arm drop with late trunk is a different condition; do not flatten these into conflicting universal rules."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "BcG-r_13z_I-C04",
+        "BcG-r_13z_I-C05"
+      ],
+      "relationship": "Successful kneeling demonstration and partial standing transfer are separate outcomes."
+    },
+    {
+      "cases": [
+        "BcG-r_13z_I-C01",
+        "BcG-r_13z_I-C06"
+      ],
+      "relationship": "Driver usually misses right, irons left/two-way; iron retest does not prove driver direction fixed."
+    },
+    {
+      "cases": [
+        "BcG-r_13z_I-C04",
+        "BcG-r_13z_I-C07"
+      ],
+      "relationship": "Alternate constraints for one trunk focus; not cumulative instructions."
+    },
+    {
+      "cases": [
+        "BcG-r_13z_I-C03",
+        "BcG-r_13z_I-C08",
+        "BcG-r_13z_I-C09",
+        "BcG-r_13z_I-C10"
+      ],
+      "relationship": "Training examples inform a programme; they do not constitute a fully dosed programme or four simultaneous swing cues."
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        1190,
+        1230
+      ],
+      "issue": "Caption 174 during throwing has unresolved decimal/units; later 17 horsepower is metaphorical."
+    },
+    {
+      "span_seconds": [
+        1950,
+        2040
+      ],
+      "issue": "Spoken vertical 229 percent body weight differs from displayed jump maximum 216."
+    },
+    {
+      "span_seconds": [
+        3060,
+        3190
+      ],
+      "issue": "Arm-cue wording changes during unsuccessful and revised attempts; do not merge into one instruction."
+    },
+    {
+      "span_seconds": [
+        4440,
+        4500
+      ],
+      "issue": "Player teach-back says pelvis slow/stopping; coach corrects to early arms and interrupted trunk action."
+    }
+  ],
+  "annotation_opportunities": [
+    "Pair driver and iron baseline with distinct reported misses.",
+    "Mark visible arm drop and trunk orientation checkpoints as visual estimates, not measured peak speeds.",
+    "Pair kneeling and standing replay early and near impact to show incomplete transfer.",
+    "Attach source graph values and limitations without inventing phone-derived force or angular velocity.",
+    "Separate deliberate old-pattern contrasts and exaggerated rehearsals from natural baseline swings."
+  ],
+  "excluded_material": [
+    "Promotional opening/closing and career claims unrelated to a coaching decision.",
+    "Broad tour averages, mechanical analogies and claims that rotation always prevents left misses are not universal app rules.",
+    "Unverified clinical conclusions, future back-health benefits and promised speed gains.",
+    "Automatic inference that self-training with AI is always ineffective; source criticism concerns this player's untested programme."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Source evidence and conditional cases extracted. Correctness and applicability to another golfer have not been independently established."
+  },
+  "asset_sha256": {
+    "video": "c45571aefa700260ae9776fe5de96eeed9ddbf158a7c6679ce4706c464f2a2cc",
+    "raw_captions": "f191ab063673001ab88a22c4c7c9b05806aff4bac405daaf3d5ad5eed1e66617",
+    "transcript": "a5984eb4a0509735d161500af661fc1f98b113365b2f1b81898832eb3c8bdbe6"
+  }
+}

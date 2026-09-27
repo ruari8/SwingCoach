@@ -1,0 +1,1655 @@
+{
+  "version": 1,
+  "source_id": "iP0sBzIXRtc",
+  "url": "https://www.youtube.com/watch?v=iP0sBzIXRtc",
+  "title": "Worlds #1 Coach Shares Right Arm Secrets With Me - Live Golf Lesson",
+  "publisher": "Danny Maude",
+  "published": "20230722",
+  "duration_seconds": 2218,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "coach": "Pete Cowen",
+    "student": "Danny Maude"
+  },
+  "context": {
+    "handedness": "Right-handed coach and player",
+    "format": "Live outdoor iron lesson with edited replays and separate instructor examples",
+    "club": "Seven-iron explicitly mentioned for mini-shot task; no distinct driver test despite broad introductory claim.",
+    "body_context": "No physical screen or body-handicap assessment.",
+    "conditions": "Wind discussed; no measured wind strength. Turf lie affects one learning attempt.",
+    "style": "Manual guidance, subjective pressure language, teach-back and repeated changes after imperfect attempts"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/iP0sBzIXRtc/iP0sBzIXRtc.mp4",
+    "raw_captions": ".videos/coaching-knowledge/iP0sBzIXRtc/iP0sBzIXRtc.en-orig.json3",
+    "transcript": ".videos/coaching-knowledge/iP0sBzIXRtc/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/iP0sBzIXRtc/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/iP0sBzIXRtc/iP0sBzIXRtc.info.json",
+    "overview": ".videos/coaching-knowledge/iP0sBzIXRtc/overview/index.json",
+    "detail": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/index.json",
+    "sequences": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 1036,
+    "transcript_kind": "Full YouTube en-orig automatic captions",
+    "audio_independently_transcribed": false,
+    "visual_review_method": "56 overview, 108 detail and 64 targeted frames across 20 contact sheets, all inspected. Includes split-view manual guidance, shot sequences and source-added tracers. Sampled review across 36:58, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/iP0sBzIXRtc/overview/index.json",
+      ".videos/coaching-knowledge/iP0sBzIXRtc/detail/index.json",
+      ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/index.json"
+    ],
+    "limitations": [
+      "480p footage with edits, replay and different camera views; not calibrated 3D.",
+      "Strike sound is discussed in captions but was not independently audited as audio.",
+      "Source-added tracer is illustrative flight evidence with unknown method; no numeric launch/force values.",
+      "Guided movement and instructor demonstration must not be counted as independent player success."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        28,
+        156
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=28s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "lesson_instruction_and_retest",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "Cowen asks what Danny works on and how he understands his swing. Danny reports good coordination but excessive handle drag, much lag and late release with weak flight control. Cowen calls the initial shot too high and loopy. Danny describes trying shoulder loading and lower flight.",
+      "frames": [
+        {
+          "time_seconds": 45,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00045.000.jpg",
+          "observation": "Danny rehearses before baseline conversation."
+        },
+        {
+          "time_seconds": 85,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00085.000.jpg",
+          "observation": "Danny explains his current pattern."
+        },
+        {
+          "time_seconds": 105,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00105.000.jpg",
+          "observation": "Danny describes flight-control difficulty."
+        },
+        {
+          "time_seconds": 125,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00125.000.jpg",
+          "observation": "Danny demonstrates his existing delivery idea."
+        }
+      ],
+      "limitations": [
+        "Baseline flight is verbally assessed; no launch or dynamic-loft value. Self-reported lag is not a quantified kinematic finding."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        156,
+        257
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=156s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "lesson_instruction_and_retest",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "Cowen links delivery to loading and uses approximate 45-degree shaft/arm relationships as a simple model, contrasting separated arms near 90 degrees. He wants right arm down and shaft organized between arms, continuing across body through finish. He describes shaft/face pressure rather than a passive hold-off.",
+      "frames": [
+        {
+          "time_seconds": 165,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00165.000.jpg",
+          "observation": "Coach introduces schematic direction/angle explanation."
+        },
+        {
+          "time_seconds": 205,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00205.000.jpg",
+          "observation": "Backswing shaft/arm demonstration."
+        },
+        {
+          "time_seconds": 210,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/overview/frame-00210.000.jpg",
+          "observation": "Coach demonstrates at top while Danny watches."
+        },
+        {
+          "time_seconds": 225,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00225.000.jpg",
+          "observation": "Delivery reference."
+        },
+        {
+          "time_seconds": 245,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00245.000.jpg",
+          "observation": "Through-swing reference."
+        }
+      ],
+      "limitations": [
+        "Approximate verbal angles have no calibrated 3D reference frame. Do not turn all occurrences of 45 degrees into the same app metric or universal swing template."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        253,
+        487
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=253s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "lesson_instruction_and_retest",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "Cross-handed rehearsal is introduced to place right arm and elbow in front. Cowen describes spinning the right arm/forearm down without losing right-wrist pressure while body turns, with butt returning toward body. He contrasts left-side pulling that leaves club behind. Correct delivery is relative to intended draw/fade.",
+      "frames": [
+        {
+          "time_seconds": 265,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00265.000.jpg",
+          "observation": "Coach shows reversed-hand rehearsal."
+        },
+        {
+          "time_seconds": 325,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00325.000.jpg",
+          "observation": "Wrist/forearm movement demonstration."
+        },
+        {
+          "time_seconds": 365,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00365.000.jpg",
+          "observation": "Split views of right-side motion."
+        },
+        {
+          "time_seconds": 405,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00405.000.jpg",
+          "observation": "Split-view partial-swing demonstration."
+        },
+        {
+          "time_seconds": 425,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00425.000.jpg",
+          "observation": "Explicit replay label; not a new attempt."
+        },
+        {
+          "time_seconds": 445,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00445.000.jpg",
+          "observation": "Coach supports elbow while demonstrating forearm action."
+        },
+        {
+          "time_seconds": 465,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00465.000.jpg",
+          "observation": "Split-view delivery-through example."
+        }
+      ],
+      "limitations": [
+        "Pressure is source coaching language; no hand force, shaft stress or ball-compression sensor. Spin is not converted to a single measured anatomical rotation. Brief replays are not additional trials."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        487,
+        635
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=487s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "lesson_instruction_and_retest",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "Danny rehearses left-hand-below-right with body motion while Cowen physically guides the arm/club. Danny reports tight/stable right shoulder but initially does not know what follows. Cowen asks what he sees/feels, then guides forearm down, wrist retained and body opening. The butt coming inward contrasts Danny's habitual forward drag.",
+      "frames": [
+        {
+          "time_seconds": 525,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00525.000.jpg",
+          "observation": "Danny begins reversed-hand rehearsal."
+        },
+        {
+          "time_seconds": 530,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-00530.000.jpg",
+          "observation": "Coach guides top position in split view."
+        },
+        {
+          "time_seconds": 536,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-00536.000.jpg",
+          "observation": "Guided arm position."
+        },
+        {
+          "time_seconds": 542,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-00542.000.jpg",
+          "observation": "Coach guides club/arms down in front."
+        },
+        {
+          "time_seconds": 548,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-00548.000.jpg",
+          "observation": "Split-view follow-through rehearsal."
+        },
+        {
+          "time_seconds": 585,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00585.000.jpg",
+          "observation": "Danny and coach revisit shoulder/arm position."
+        },
+        {
+          "time_seconds": 605,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00605.000.jpg",
+          "observation": "Guided delivery in two views."
+        }
+      ],
+      "limitations": [
+        "Reported tightness denotes the lesson's loaded/stable sensation; not a request for pain or a physical-screen result. Hand-guided rehearsal is not independent execution."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        635,
+        846
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=635s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "lesson_instruction_and_retest",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "Return to normal grip and mini swings with hands only just above hip height. Cowen holds elbow and guides forearm down while asking Danny to retain wrist pressure. One dominant movement intention is used rather than consciously controlling vertical, lateral and rotation separately. The first small shot is called more penetrating.",
+      "frames": [
+        {
+          "time_seconds": 654,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-00654.000.jpg",
+          "observation": "Danny returns to small normal-grip rehearsal."
+        },
+        {
+          "time_seconds": 662,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-00662.000.jpg",
+          "observation": "Short backswing before manual guidance."
+        },
+        {
+          "time_seconds": 670,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-00670.000.jpg",
+          "observation": "Coach supports elbow/forearm during guided movement."
+        },
+        {
+          "time_seconds": 678,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-00678.000.jpg",
+          "observation": "Delivery/through position in split view."
+        },
+        {
+          "time_seconds": 765,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00765.000.jpg",
+          "observation": "Danny rehearses the forearm task."
+        },
+        {
+          "time_seconds": 825,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00825.000.jpg",
+          "observation": "Mini-shot setup."
+        },
+        {
+          "time_seconds": 836,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-00836.000.jpg",
+          "observation": "Partial shot movement."
+        },
+        {
+          "time_seconds": 845,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00845.000.jpg",
+          "observation": "Finish replay/reference after the penetrating-flight comment."
+        }
+      ],
+      "limitations": [
+        "No launch-monitor measurement or independently listened strike comparison. Coach's vertical-in-charge explanation is a feel strategy, not proof of a universal movement sequence."
+      ]
+    },
+    {
+      "id": "E06",
+      "span_seconds": [
+        846,
+        1006
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=846s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "lesson_instruction_and_retest",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "Cowen relates faster right-arm action to body opening in harmony, using short/long throws as an analogy. He returns to cross-handed body loading before speed. Danny feels whole right side pressing down. Cowen warns about left-side pull and popping up.",
+      "frames": [
+        {
+          "time_seconds": 865,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00865.000.jpg",
+          "observation": "Throwing-distance analogy."
+        },
+        {
+          "time_seconds": 905,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00905.000.jpg",
+          "observation": "Coach corrects Danny's hand/forearm interpretation."
+        },
+        {
+          "time_seconds": 945,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00945.000.jpg",
+          "observation": "Danny prepares loading rehearsal."
+        },
+        {
+          "time_seconds": 965,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00965.000.jpg",
+          "observation": "Coach manually guides renewed loaded position."
+        },
+        {
+          "time_seconds": 985,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-00985.000.jpg",
+          "observation": "Player reports the altered sensation."
+        }
+      ],
+      "limitations": [
+        "Claims about the only cause of popping up and proportions of tour manipulators are not accepted as universal facts. Do not infer that faster arm action suits all sequencing problems."
+      ]
+    },
+    {
+      "id": "E07",
+      "span_seconds": [
+        1006,
+        1078
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=1006s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "lesson_instruction_and_retest",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "Trajectory discussion: more shaft ahead is proposed for lower flight; less address lean, forward ball position and more cut intent are discussed for height. Cowen qualifies moving ball forward because the right side must remain organized rather than moving the player out of position.",
+      "frames": [
+        {
+          "time_seconds": 1025,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01025.000.jpg",
+          "observation": "Coach demonstrates shaft/setup adjustment."
+        },
+        {
+          "time_seconds": 1045,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01045.000.jpg",
+          "observation": "Club/hand reference during height discussion."
+        },
+        {
+          "time_seconds": 1065,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01065.000.jpg",
+          "observation": "Right-side delivery demonstration."
+        }
+      ],
+      "limitations": [
+        "Discussion, not controlled high/low shot test. No ball-position distance, loft or height value."
+      ]
+    },
+    {
+      "id": "E08",
+      "span_seconds": [
+        1078,
+        1241
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=1078s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "lesson_instruction_and_retest",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "Right-side or both-shoulders-down feels can support the same task depending on player perception. Cowen proposes a seven-iron mini shot, grip down and imagine a low bullet into strong wind, around 90\u2013100 yards. Danny's attempt is praised for sound/compression, while wind movement is acknowledged. Loading demonstration is repeated.",
+      "frames": [
+        {
+          "time_seconds": 1085,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01085.000.jpg",
+          "observation": "Coach demonstrates right-side feel."
+        },
+        {
+          "time_seconds": 1105,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01105.000.jpg",
+          "observation": "Shoulder-pressure explanation."
+        },
+        {
+          "time_seconds": 1145,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01145.000.jpg",
+          "observation": "Low-flight task described."
+        },
+        {
+          "time_seconds": 1165,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01165.000.jpg",
+          "observation": "Danny at address for low mini shot."
+        },
+        {
+          "time_seconds": 1170,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/overview/frame-01170.000.jpg",
+          "observation": "Shot finish with source-added tracer."
+        },
+        {
+          "time_seconds": 1205,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01205.000.jpg",
+          "observation": "Coach repeats organized loading."
+        },
+        {
+          "time_seconds": 1225,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01225.000.jpg",
+          "observation": "Split-view delivery demonstration."
+        }
+      ],
+      "limitations": [
+        "90\u2013100 yards is suggested task distance. Force-nine wind is imagery, not a weather observation. Tracer provenance/scale unverified; no measured compression or spin."
+      ]
+    },
+    {
+      "id": "E09",
+      "span_seconds": [
+        1241,
+        1376
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=1241s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "lesson_instruction_and_retest",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "Cowen says to learn the feel before large shots. Danny's next shot goes left. Cowen attributes it to wrist release and failure to continue body rotation/pressure through finish. A roundabout analogy explains why stopping the center destabilizes the outside. Danny recognizes stopping and flicking.",
+      "frames": [
+        {
+          "time_seconds": 1265,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01265.000.jpg",
+          "observation": "Learn-the-feel conversation."
+        },
+        {
+          "time_seconds": 1288,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-01288.000.jpg",
+          "observation": "Partial swing rehearsal."
+        },
+        {
+          "time_seconds": 1292,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-01292.000.jpg",
+          "observation": "Shot finish and tracer."
+        },
+        {
+          "time_seconds": 1294,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-01294.000.jpg",
+          "observation": "End of left-shot sequence."
+        },
+        {
+          "time_seconds": 1305,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01305.000.jpg",
+          "observation": "Coach commentary paired with player replay."
+        },
+        {
+          "time_seconds": 1325,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01325.000.jpg",
+          "observation": "Roundabout analogy."
+        },
+        {
+          "time_seconds": 1345,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01345.000.jpg",
+          "observation": "Coach demonstrates continuing movement."
+        }
+      ],
+      "limitations": [
+        "A left shot alone does not diagnose this cause. This is Cowen's interpretation of this attempt; no wrist/torso velocity measurement."
+      ]
+    },
+    {
+      "id": "E10",
+      "span_seconds": [
+        1376,
+        1440
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=1376s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "lesson_instruction_and_retest",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "Next attempt is thin. Cowen says Danny outpaced the arm action with his body. He asks for a calmer/slower matched motion while still continuing through, rather than independently accelerating body or arm.",
+      "frames": [
+        {
+          "time_seconds": 1378,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-01378.000.jpg",
+          "observation": "Address immediately before attempt."
+        },
+        {
+          "time_seconds": 1380,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-01380.000.jpg",
+          "observation": "Shot finish and tracer."
+        },
+        {
+          "time_seconds": 1385,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01385.000.jpg",
+          "observation": "Coach approaches after thin attempt."
+        },
+        {
+          "time_seconds": 1405,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01405.000.jpg",
+          "observation": "Coach demonstrates small downward action."
+        },
+        {
+          "time_seconds": 1425,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01425.000.jpg",
+          "observation": "Calmer-motion instruction."
+        }
+      ],
+      "limitations": [
+        "Thin strike is player/coach report; no strike-location or segment-speed values. Calmer does not mean decelerating through impact."
+      ]
+    },
+    {
+      "id": "E11",
+      "span_seconds": [
+        1440,
+        1563
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=1440s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "lesson_instruction_and_retest",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "Calmer attempt still turns too much because Cowen says Danny slows through impact and then picks up afterward. Cowen changes the task to a three-quarter shot with continuing arm pressure and a fade-like hold-off finish. Danny asks whether visualizing a fade helps; next result is called a pressure fade. Both distinguish the current full-swing impact from a prior short-game lesson despite shared face-control feel.",
+      "frames": [
+        {
+          "time_seconds": 1442,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-01442.000.jpg",
+          "observation": "Calmer shot in progress."
+        },
+        {
+          "time_seconds": 1445,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01445.000.jpg",
+          "observation": "Tracer/finish before deceleration discussion."
+        },
+        {
+          "time_seconds": 1465,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01465.000.jpg",
+          "observation": "Coach demonstrates hold-off finish."
+        },
+        {
+          "time_seconds": 1485,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01485.000.jpg",
+          "observation": "Danny rehearses task."
+        },
+        {
+          "time_seconds": 1492,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-01492.000.jpg",
+          "observation": "Next shot action."
+        },
+        {
+          "time_seconds": 1505,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01505.000.jpg",
+          "observation": "Post-shot discussion."
+        },
+        {
+          "time_seconds": 1545,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01545.000.jpg",
+          "observation": "Inserted prior short-game footage, a different session."
+        }
+      ],
+      "limitations": [
+        "Hold-off describes feel and continued motion, not freezing the body. No measured fade axis, efficiency or before/after spin. Prior short-game insert is not another trial here."
+      ]
+    },
+    {
+      "id": "E12",
+      "span_seconds": [
+        1563,
+        1731
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=1563s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "lesson_instruction_and_retest",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "Cowen again has Danny support the elbow and feel forearm action without hand manipulation. A later shot is criticized as throwing the club and stopping wrist-pressure action. A poor lie then prompts picking; they choose a more solid lie and repeat the short task. Better response follows, and low-flight visualization helps Danny reconnect with it.",
+      "frames": [
+        {
+          "time_seconds": 1565,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01565.000.jpg",
+          "observation": "Danny rehearses through motion."
+        },
+        {
+          "time_seconds": 1585,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01585.000.jpg",
+          "observation": "Coach guides elbow/hand relationship."
+        },
+        {
+          "time_seconds": 1605,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01605.000.jpg",
+          "observation": "Danny resets after rehearsal."
+        },
+        {
+          "time_seconds": 1625,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01625.000.jpg",
+          "observation": "Attempt near thrown-club feedback."
+        },
+        {
+          "time_seconds": 1645,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01645.000.jpg",
+          "observation": "Coach discusses delivery."
+        },
+        {
+          "time_seconds": 1665,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01665.000.jpg",
+          "observation": "Danny at address during lie discussion."
+        },
+        {
+          "time_seconds": 1685,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01685.000.jpg",
+          "observation": "Short rehearsal."
+        },
+        {
+          "time_seconds": 1705,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01705.000.jpg",
+          "observation": "Shot/tracer near improved response."
+        }
+      ],
+      "limitations": [
+        "Lie quality and throwing diagnosis are spoken observations; images do not independently establish turf depth or wrist kinetics. A bad-lie failure should not automatically cause a new global swing diagnosis."
+      ]
+    },
+    {
+      "id": "E13",
+      "span_seconds": [
+        1731,
+        1812
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=1731s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "lesson_instruction_and_retest",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "Trying to turn down, Danny casts and Cowen points to a deeper divot. Cowen shortens the swing further and re-guides forearm pressure down/in front while retaining the elbow/wrist relationship. Danny reports a different delayed sensation and later attempt is judged better.",
+      "frames": [
+        {
+          "time_seconds": 1732,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-01732.000.jpg",
+          "observation": "Setup for cast/deep-divot attempt."
+        },
+        {
+          "time_seconds": 1734,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-01734.000.jpg",
+          "observation": "Finish and tracer."
+        },
+        {
+          "time_seconds": 1738,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-01738.000.jpg",
+          "observation": "Coach bends toward strike/divot area."
+        },
+        {
+          "time_seconds": 1745,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01745.000.jpg",
+          "observation": "Danny rehearses after the feedback."
+        },
+        {
+          "time_seconds": 1765,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01765.000.jpg",
+          "observation": "Shorter-shot preparation."
+        },
+        {
+          "time_seconds": 1770,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/overview/frame-01770.000.jpg",
+          "observation": "Manual guidance returns attention to forearm."
+        },
+        {
+          "time_seconds": 1785,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01785.000.jpg",
+          "observation": "Later short attempt at address."
+        }
+      ],
+      "limitations": [
+        "Deep divot is relative spoken feedback, not measured depth or proof all deep divots imply casting. Delayed sensation is player-specific, not a new universal hold-lag instruction."
+      ]
+    },
+    {
+      "id": "E14",
+      "span_seconds": [
+        1812,
+        1961
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=1812s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "lesson_instruction_and_retest",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "Cowen repeats loading as prerequisite. When Danny tries to preserve shaft angle, he drives handle forward; Cowen rejects a right-starting shot as excess lean with open face. Return to a small wind-chip intent produces a praised shot. Another matched attempt is also praised and Danny reports good feel.",
+      "frames": [
+        {
+          "time_seconds": 1845,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01845.000.jpg",
+          "observation": "Danny rehearses delivery."
+        },
+        {
+          "time_seconds": 1868,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-01868.000.jpg",
+          "observation": "Address before right-start attempt."
+        },
+        {
+          "time_seconds": 1872,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-01872.000.jpg",
+          "observation": "Shot action and tracer."
+        },
+        {
+          "time_seconds": 1885,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01885.000.jpg",
+          "observation": "Coach demonstrates correction."
+        },
+        {
+          "time_seconds": 1905,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01905.000.jpg",
+          "observation": "Danny prepares small wind-chip task."
+        },
+        {
+          "time_seconds": 1925,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01925.000.jpg",
+          "observation": "Danny reports greater control from simpler task."
+        },
+        {
+          "time_seconds": 1946,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-01946.000.jpg",
+          "observation": "Later shot after matching cue."
+        }
+      ],
+      "limitations": [
+        "Right start does not independently identify shaft lean or face-to-path. Coach diagnosis here has no instrument values. Maintain wrist pressure must not become push handle forward."
+      ]
+    },
+    {
+      "id": "E15",
+      "span_seconds": [
+        1961,
+        2037
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=1961s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "lesson_instruction_and_retest",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "Danny asks how to transfer this to the course and how long it takes. Cowen expects gradual improvement and some return to old habits. During a round he says play shots rather than turn it into a practice session; the new low-pressure shot can become an additional option.",
+      "frames": [
+        {
+          "time_seconds": 1965,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01965.000.jpg",
+          "observation": "Danny asks about practice-to-course transfer."
+        },
+        {
+          "time_seconds": 1985,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-01985.000.jpg",
+          "observation": "Transfer discussion."
+        },
+        {
+          "time_seconds": 2005,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-02005.000.jpg",
+          "observation": "Coach discusses gradual improvement."
+        },
+        {
+          "time_seconds": 2025,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-02025.000.jpg",
+          "observation": "Coach answers older-golfer question."
+        }
+      ],
+      "limitations": [
+        "No promised timeline, measured retention or handicap outcome. Injury-prevention guarantees in source are not validated."
+      ]
+    },
+    {
+      "id": "E16",
+      "span_seconds": [
+        2037,
+        2127
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=2037s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "lesson_instruction_and_retest",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "Cowen answers older-golfer applicability by demonstrating mini shots himself. He calls one strike poor, then improves it by his report after using more right-forearm action and moving through. He describes the better shot as about 130 yards. Inside delivery is contrasted with being stuck underneath.",
+      "frames": [
+        {
+          "time_seconds": 2048,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-02048.000.jpg",
+          "observation": "Coach rehearses short motion."
+        },
+        {
+          "time_seconds": 2052,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-02052.000.jpg",
+          "observation": "Coach addresses before first shot."
+        },
+        {
+          "time_seconds": 2054,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-02054.000.jpg",
+          "observation": "First shot follow-through."
+        },
+        {
+          "time_seconds": 2062,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-02062.000.jpg",
+          "observation": "Second mini-shot setup."
+        },
+        {
+          "time_seconds": 2064,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-02064.000.jpg",
+          "observation": "Second shot with tracer."
+        },
+        {
+          "time_seconds": 2085,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-02085.000.jpg",
+          "observation": "Coach explains forearm adjustment."
+        },
+        {
+          "time_seconds": 2125,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-02125.000.jpg",
+          "observation": "Delivery-direction demonstration."
+        }
+      ],
+      "limitations": [
+        "Coach's own example is not an assessed older student. About 130 yards is verbal, not a visible measured readout. Age alone does not establish suitability."
+      ]
+    },
+    {
+      "id": "E17",
+      "span_seconds": [
+        2127,
+        2191
+      ],
+      "source_url": "https://www.youtube.com/watch?v=iP0sBzIXRtc&t=2127s",
+      "attribution": "Pete Cowen coaching Danny Maude",
+      "kind": "conditional_tutorial_and_instructor_shot_shape_demonstration",
+      "session": "Outdoor iron lesson; general and hypothetical demonstrations labelled separately",
+      "summary": "For a hypothetical slicer, Cowen proposes earlier right-arm-down action that can shift delivery and produce a draw. He demonstrates a draw intent and then an across-ball fade intent. This is a shot-shape branch distinct from Danny's unwanted throwing/flicking.",
+      "frames": [
+        {
+          "time_seconds": 2145,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-02145.000.jpg",
+          "observation": "Danny asks about slicers."
+        },
+        {
+          "time_seconds": 2158,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-02158.000.jpg",
+          "observation": "Coach demonstrates earlier arm-down setup."
+        },
+        {
+          "time_seconds": 2165,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/detail/frame-02165.000.jpg",
+          "observation": "Coach at address for shot-shape example."
+        },
+        {
+          "time_seconds": 2170,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/overview/frame-02170.000.jpg",
+          "observation": "Club motion in draw demonstration."
+        },
+        {
+          "time_seconds": 2176,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-02176.000.jpg",
+          "observation": "Preparation for later across-ball example."
+        },
+        {
+          "time_seconds": 2180,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-02180.000.jpg",
+          "observation": "Shot finish/tracer."
+        },
+        {
+          "time_seconds": 2182,
+          "path": ".videos/coaching-knowledge/iP0sBzIXRtc/sequences/frame-02182.000.jpg",
+          "observation": "Coach turns after fade demonstration."
+        }
+      ],
+      "limitations": [
+        "Hypothetical slicer, no diagnosed slicer or measured path/face. Same word throw has different context; do not substitute it for Danny's task without matching conditions."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "iP0sBzIXRtc-C01",
+      "title": "Establish delivery problem before chasing a swing shape",
+      "case_type": "assessed_lesson_case",
+      "tags": {
+        "phase": [
+          "assessment",
+          "backswing",
+          "delivery"
+        ],
+        "body": [
+          "right arm",
+          "shoulder",
+          "hands"
+        ],
+        "outcome": [
+          "contact",
+          "trajectory",
+          "start line"
+        ],
+        "concept": [
+          "delivery",
+          "forearm pressure",
+          "body-arm coordination"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03"
+      ],
+      "coaching_finding": "Danny reports handle drag and late release; initial shot judged high/loopy and difficult to control.",
+      "coach_reasoning": "Cowen traces his proposed delivery problem to how the right arm/shoulder load, with delivery matched to shot intent.",
+      "intervention": {
+        "action": "Establish intended flight, current misses and player's existing fix before selecting the right-side task.",
+        "reference": "Approximate 45-degree examples illustrate organization, not mandatory measured angles."
+      },
+      "applicability": [
+        "Actual flight-control complaint and corresponding delivery observations."
+      ],
+      "unknowns": [
+        "No measured lag, dynamic loft or full baseline distribution."
+      ],
+      "observed_result": "Baseline complaint and example established; no quantified improvement yet.",
+      "selection": {
+        "coaching_focus": "Identify the relevant delivery problem",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. These cases are successive adjustments or alternatives, not one instruction bundle.",
+        "reassess": "Check shot intent and more than one attempt before assigning a cause."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "iP0sBzIXRtc-C02",
+      "title": "Use cross-handed rehearsal and teach-back to learn loading",
+      "case_type": "assessed_lesson_case",
+      "tags": {
+        "phase": [
+          "practice",
+          "backswing",
+          "transition"
+        ],
+        "body": [
+          "right shoulder",
+          "elbow",
+          "forearm"
+        ],
+        "outcome": [
+          "contact",
+          "trajectory",
+          "start line"
+        ],
+        "concept": [
+          "delivery",
+          "forearm pressure",
+          "body-arm coordination"
+        ]
+      },
+      "evidence_ids": [
+        "E03",
+        "E04",
+        "E06"
+      ],
+      "coaching_finding": "Danny can feel a stable shoulder but initially does not know how to continue the motion.",
+      "coach_reasoning": "Reversed hands constrain the rehearsal; manual guidance connects the intended loading to elbow/forearm delivery and body opening.",
+      "intervention": {
+        "drill": "For this right-handed player, rehearse left hand below right with body movement; feel right arm organized, then guided forearm-down delivery.",
+        "teaching": "Ask what the golfer sees and feels, then clarify the missing part before normal-grip shots."
+      },
+      "applicability": [
+        "Selected right-arm loading focus and player needs a concrete sensation."
+      ],
+      "unknowns": [
+        "No proof of independent execution from a manually guided position. Tightness is not a pain target."
+      ],
+      "observed_result": "Danny reports a different stable sensation; normal-grip transfer still needs repeated correction.",
+      "selection": {
+        "coaching_focus": "Learn the intended loading and delivery feel",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. These cases are successive adjustments or alternatives, not one instruction bundle.",
+        "reassess": "Rehearse independently, then check a small normal-grip shot."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "iP0sBzIXRtc-C03",
+      "title": "Build normal-grip mini shots with matched forearm and body motion",
+      "case_type": "assessed_lesson_case",
+      "tags": {
+        "phase": [
+          "practice",
+          "downswing",
+          "impact"
+        ],
+        "body": [
+          "right forearm",
+          "wrist",
+          "trunk"
+        ],
+        "outcome": [
+          "contact",
+          "trajectory",
+          "start line"
+        ],
+        "concept": [
+          "delivery",
+          "forearm pressure",
+          "body-arm coordination"
+        ]
+      },
+      "evidence_ids": [
+        "E05",
+        "E06"
+      ],
+      "coaching_finding": "Full swing is too much to coordinate while learning unfamiliar right-side delivery.",
+      "coach_reasoning": "Cowen uses a small task to retain wrist relationship while forearm turns down and body continues, avoiding separate thoughts for every body dimension.",
+      "intervention": {
+        "task": "Hands just above hip height, feel right forearm turn down while the body moves through.",
+        "avoid": "Do not throw the wrist angles away, freeze the body or drive handle straight forward."
+      },
+      "applicability": [
+        "Loading/rehearsal understood and player can attempt a small shot."
+      ],
+      "unknowns": [
+        "Pressure and spin are source terms without quantified force or a single anatomical axis."
+      ],
+      "observed_result": "Initial small shot called more penetrating; later misses show inconsistent execution.",
+      "selection": {
+        "coaching_focus": "Match right-arm delivery with the turn",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. These cases are successive adjustments or alternatives, not one instruction bundle.",
+        "reassess": "Use contact and flight to decide whether to keep, slow or simplify the task."
+      },
+      "alternative_case_ids": [
+        "iP0sBzIXRtc-C04"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "iP0sBzIXRtc-C04",
+      "title": "Use a low wind-shot intent when mechanical cues lose the feel",
+      "case_type": "assessed_lesson_case",
+      "tags": {
+        "phase": [
+          "practice",
+          "impact"
+        ],
+        "body": [
+          "whole movement"
+        ],
+        "outcome": [
+          "contact",
+          "trajectory",
+          "start line"
+        ],
+        "concept": [
+          "delivery",
+          "forearm pressure",
+          "body-arm coordination"
+        ]
+      },
+      "evidence_ids": [
+        "E08",
+        "E14"
+      ],
+      "coaching_finding": "Danny responds well when asked for a short low shot; larger or more mechanical attempts bring back manipulation.",
+      "coach_reasoning": "A familiar flight task can organize delivery without separate instructions for each joint.",
+      "intervention": {
+        "task": "Grip down on seven-iron and imagine a small low bullet into strong wind.",
+        "distance_context": "Cowen suggests about 90\u2013100 yards for this lesson, not a universal requirement."
+      },
+      "applicability": [
+        "Relevant low-flight practice intent and demonstrated positive player response."
+      ],
+      "unknowns": [
+        "No measured carry, launch or spin; imagined wind is not actual wind strength."
+      ],
+      "observed_result": "Mini shot praised for sound/flight; return to wind-chip task later praised after right-starting miss.",
+      "selection": {
+        "coaching_focus": "Produce a controlled low mini shot",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. These cases are successive adjustments or alternatives, not one instruction bundle.",
+        "reassess": "Check actual contact/start line; do not judge only whether ball is low."
+      },
+      "alternative_case_ids": [
+        "iP0sBzIXRtc-C03",
+        "iP0sBzIXRtc-C09"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "iP0sBzIXRtc-C05",
+      "title": "After left flight and flicking, continue the movement through finish",
+      "case_type": "assessed_lesson_case",
+      "tags": {
+        "phase": [
+          "impact",
+          "follow-through"
+        ],
+        "body": [
+          "wrist",
+          "forearm",
+          "trunk"
+        ],
+        "outcome": [
+          "contact",
+          "trajectory",
+          "start line"
+        ],
+        "concept": [
+          "delivery",
+          "forearm pressure",
+          "body-arm coordination"
+        ]
+      },
+      "evidence_ids": [
+        "E09",
+        "E12"
+      ],
+      "coaching_finding": "Cowen attributes a left shot to Danny releasing wrist pressure and stopping body rotation; later throwing/stopping recurs.",
+      "coach_reasoning": "Continuing center/body motion is his means of supporting arm/club delivery through the strike.",
+      "intervention": {
+        "cue": "Keep the pressure-and-turn task moving through to the finish.",
+        "demonstration": "Use guided elbow/forearm rehearsal if the wrist-only interpretation returns."
+      },
+      "applicability": [
+        "Same execution error observed during this task, not merely any left shot."
+      ],
+      "unknowns": [
+        "No measured wrist or torso speed. Ball flight alone cannot establish stall/flick."
+      ],
+      "observed_result": "Danny recognizes stopping/flicking, but next attempt becomes thin and needs a different adjustment.",
+      "selection": {
+        "coaching_focus": "Continue the coordinated movement",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. These cases are successive adjustments or alternatives, not one instruction bundle.",
+        "reassess": "If body starts outrunning arm, switch to the matching adjustment rather than demand still more turn."
+      },
+      "alternative_case_ids": [
+        "iP0sBzIXRtc-C06",
+        "iP0sBzIXRtc-C07"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "iP0sBzIXRtc-C06",
+      "title": "When body outruns the arm, make the motion calmer and matched",
+      "case_type": "assessed_lesson_case",
+      "tags": {
+        "phase": [
+          "downswing",
+          "impact"
+        ],
+        "body": [
+          "forearm",
+          "trunk"
+        ],
+        "outcome": [
+          "contact",
+          "trajectory",
+          "start line"
+        ],
+        "concept": [
+          "delivery",
+          "forearm pressure",
+          "body-arm coordination"
+        ]
+      },
+      "evidence_ids": [
+        "E10",
+        "E11"
+      ],
+      "coaching_finding": "Thin attempt after stronger turning intent is attributed to body outpacing right-arm action.",
+      "coach_reasoning": "Cowen reduces pace to restore coordination; he does not want independent body acceleration.",
+      "intervention": {
+        "cue": "Make a calmer matched motion through to the finish.",
+        "avoid": "Calm does not mean slowing through impact and then restarting."
+      },
+      "applicability": [
+        "Observed timing mismatch after applying prior cue."
+      ],
+      "unknowns": [
+        "No segment-speed measurement or proof all thin shots share this cause."
+      ],
+      "observed_result": "Calmer attempt still has unwanted curve; coach identifies slowing at impact and changes the task again.",
+      "selection": {
+        "coaching_focus": "Match arm and body pace",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. These cases are successive adjustments or alternatives, not one instruction bundle.",
+        "reassess": "Monitor strike and whether calm intent becomes deceleration."
+      },
+      "alternative_case_ids": [
+        "iP0sBzIXRtc-C07"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "iP0sBzIXRtc-C07",
+      "title": "Use a fade-like finish when calm motion still stalls and slings",
+      "case_type": "assessed_lesson_case",
+      "tags": {
+        "phase": [
+          "impact",
+          "follow-through"
+        ],
+        "body": [
+          "forearm",
+          "arms",
+          "trunk"
+        ],
+        "outcome": [
+          "contact",
+          "trajectory",
+          "start line"
+        ],
+        "concept": [
+          "delivery",
+          "forearm pressure",
+          "body-arm coordination"
+        ]
+      },
+      "evidence_ids": [
+        "E11"
+      ],
+      "coaching_finding": "Calmer swing slows through impact, then speeds up after, according to Cowen; ball turns too much.",
+      "coach_reasoning": "Fade/hold-off imagery is used to continue arm pressure through a three-quarter finish.",
+      "intervention": {
+        "cue": "Finish the small shot like a fade.",
+        "meaning": "Continue the motion with the perceived hold-off; do not freeze wrists/body in a posed finish."
+      },
+      "applicability": [
+        "Same excessive-turnover/stall response and player can use fade imagery."
+      ],
+      "unknowns": [
+        "No measured fade curvature or proof finish pose establishes preceding delivery."
+      ],
+      "observed_result": "Next shot called a pressure fade; Danny reports different feel.",
+      "selection": {
+        "coaching_focus": "Maintain delivery through a fade-like finish",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. These cases are successive adjustments or alternatives, not one instruction bundle.",
+        "reassess": "Check resulting flight and movement rather than copy only the final position."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "iP0sBzIXRtc-C08",
+      "title": "Shorten the task when turning down becomes casting",
+      "case_type": "assessed_lesson_case",
+      "tags": {
+        "phase": [
+          "practice",
+          "downswing",
+          "impact"
+        ],
+        "body": [
+          "elbow",
+          "forearm",
+          "wrist"
+        ],
+        "outcome": [
+          "contact",
+          "trajectory",
+          "start line"
+        ],
+        "concept": [
+          "delivery",
+          "forearm pressure",
+          "body-arm coordination"
+        ]
+      },
+      "evidence_ids": [
+        "E12",
+        "E13"
+      ],
+      "coaching_finding": "Danny loses angles while trying to turn down; coach points to a deeper divot. A poor lie also prompted picking earlier.",
+      "coach_reasoning": "Return to a shorter movement and guided forearm sensation reduces the temptation to throw the club or manufacture contact.",
+      "intervention": {
+        "task": "Use an even shorter swing and rehearse forearm down/in front while retaining the wrist/elbow relationship.",
+        "context": "Choose a solid lie for learning if an awkward lie causes picking."
+      },
+      "applicability": [
+        "Corresponding execution error identified in trial; distinguish lie effects from persistent pattern."
+      ],
+      "unknowns": [
+        "No divot-depth measurement, universal casting diagnosis or generic delay-release prescription."
+      ],
+      "observed_result": "Later small attempt called better; Danny reports a delayed feeling specific to his old throwing habit.",
+      "selection": {
+        "coaching_focus": "Recover the intended small delivery task",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. These cases are successive adjustments or alternatives, not one instruction bundle.",
+        "reassess": "Verify turf contact and face/start line; do not keep shortening without useful response."
+      },
+      "alternative_case_ids": [
+        "iP0sBzIXRtc-C04"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "iP0sBzIXRtc-C09",
+      "title": "Reject handle driving as a substitute for retained wrist pressure",
+      "case_type": "assessed_lesson_case",
+      "tags": {
+        "phase": [
+          "downswing",
+          "impact"
+        ],
+        "body": [
+          "hands",
+          "forearm",
+          "clubface"
+        ],
+        "outcome": [
+          "contact",
+          "trajectory",
+          "start line"
+        ],
+        "concept": [
+          "delivery",
+          "forearm pressure",
+          "body-arm coordination"
+        ]
+      },
+      "evidence_ids": [
+        "E14"
+      ],
+      "coaching_finding": "A shaft-angle cue produces forward handle drag and a right-starting shot; Cowen interprets excess lean with open face.",
+      "coach_reasoning": "Maintaining the delivery relationship is different from pushing handle forward while leaving face open.",
+      "intervention": {
+        "task": "Return to the small wind-chip intent and forearm-down action.",
+        "avoid": "Do not maximize shaft lean or hold lag as the goal."
+      },
+      "applicability": [
+        "Observed handle-driving interpretation and corresponding source-style trial evidence."
+      ],
+      "unknowns": [
+        "Right start alone cannot identify face/path or shaft lean. No measured angles."
+      ],
+      "observed_result": "Wind-chip reset praised; later matched attempt praised and Danny reports good feel.",
+      "selection": {
+        "coaching_focus": "Deliver the face with the arm task",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. These cases are successive adjustments or alternatives, not one instruction bundle.",
+        "reassess": "Check start line and contact as well as apparent shaft lean."
+      },
+      "alternative_case_ids": [
+        "iP0sBzIXRtc-C04"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "iP0sBzIXRtc-C10",
+      "title": "Adjust height only while retaining the selected delivery",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "setup",
+          "trajectory"
+        ],
+        "body": [
+          "hands",
+          "right side"
+        ],
+        "outcome": [
+          "contact",
+          "trajectory",
+          "start line"
+        ],
+        "concept": [
+          "delivery",
+          "forearm pressure",
+          "body-arm coordination"
+        ]
+      },
+      "evidence_ids": [
+        "E07"
+      ],
+      "coaching_finding": "Danny asks how to raise flight after lower-flight instruction.",
+      "coach_reasoning": "Cowen discusses address lean and ball position as options but warns that forward placement can disturb right-side organization.",
+      "intervention": {
+        "options": "For lower flight, more shaft ahead; for higher flight, less address lean and potentially forward ball/cut intent.",
+        "condition": "Retain the selected right-side delivery and verify the resulting shot."
+      },
+      "applicability": [
+        "Intentional trajectory change after usable contact/delivery established."
+      ],
+      "unknowns": [
+        "No tested height comparison, precise setup change or universal ball-position rule."
+      ],
+      "observed_result": "Verbal demonstration only; no controlled trajectory outcome.",
+      "selection": {
+        "coaching_focus": "Change trajectory without losing delivery",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. These cases are successive adjustments or alternatives, not one instruction bundle.",
+        "reassess": "Check contact and flight after one setup adjustment."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "iP0sBzIXRtc-C11",
+      "title": "Build the skill gradually and play shots on the course",
+      "case_type": "assessed_lesson_case",
+      "tags": {
+        "phase": [
+          "practice",
+          "on course"
+        ],
+        "body": [
+          "whole movement"
+        ],
+        "outcome": [
+          "contact",
+          "trajectory",
+          "start line"
+        ],
+        "concept": [
+          "delivery",
+          "forearm pressure",
+          "body-arm coordination"
+        ]
+      },
+      "evidence_ids": [
+        "E15",
+        "E16"
+      ],
+      "coaching_finding": "Danny asks about learning time and transferring technical work into play.",
+      "coach_reasoning": "Cowen expects gradual improvement and old-pattern recurrence; rounds should remain shot play while practice builds the task.",
+      "intervention": {
+        "practice": "Continue small repetitions and use the new low shot as an option.",
+        "on_course": "Play the shot rather than carry the entire drill sequence into every swing."
+      },
+      "applicability": [
+        "Player is still learning the task and needs practice-to-play separation."
+      ],
+      "unknowns": [
+        "No exact learning timeline, retention test or handicap outcome. Coach mini-shot example does not establish suitability for all older golfers."
+      ],
+      "observed_result": "Advice and coach self-demonstration; longitudinal transfer untested.",
+      "selection": {
+        "coaching_focus": "Use one playable shot intention",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. These cases are successive adjustments or alternatives, not one instruction bundle.",
+        "reassess": "Track future practice and round outcomes before claiming durable improvement."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "iP0sBzIXRtc-C12",
+      "title": "Keep the hypothetical slicer throwing cue separate from Danny's correction",
+      "case_type": "conditional_tutorial_template_not_assessed_student",
+      "tags": {
+        "phase": [
+          "downswing",
+          "shot shaping"
+        ],
+        "body": [
+          "right arm"
+        ],
+        "outcome": [
+          "contact",
+          "trajectory",
+          "start line"
+        ],
+        "concept": [
+          "delivery",
+          "forearm pressure",
+          "body-arm coordination"
+        ]
+      },
+      "evidence_ids": [
+        "E17"
+      ],
+      "coaching_finding": "Danny asks how this applies to slicers although he describes himself as a natural drawer.",
+      "coach_reasoning": "Cowen proposes earlier right-arm-down delivery for a slicer and demonstrates draw versus across-ball fade intentions.",
+      "intervention": {
+        "task": "Conditional demonstration: earlier right-arm-down action for draw intent, altered delivery across the ball for fade.",
+        "selection": "Only consider after actual slicer evidence and shot intent are established."
+      },
+      "applicability": [
+        "Hypothetical slicer branch; not the diagnosis assigned to Danny."
+      ],
+      "unknowns": [
+        "No assessed slicer, measured path/face or transfer evidence. Throw wording must not overwrite corrections for Danny's casting/flicking."
+      ],
+      "observed_result": "Coach shot-shape examples with tracers and verbal labels; no student retest.",
+      "selection": {
+        "coaching_focus": "Match delivery to the intended shot shape",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. These cases are successive adjustments or alternatives, not one instruction bundle.",
+        "reassess": "Verify actual start/curve and movement before adopting the feel."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "id": "M01",
+      "evidence_ids": [
+        "E02"
+      ],
+      "kind": "schematic_coaching_reference",
+      "description": "Repeated approximate 45-degree shaft/arm examples and contrast near 90 degrees; coordinate frames differ and no measured thresholds are provided."
+    },
+    {
+      "id": "M02",
+      "evidence_ids": [
+        "E08"
+      ],
+      "kind": "practice_target",
+      "values": {
+        "mini_shot_yards_about": [
+          90,
+          100
+        ]
+      },
+      "limits": [
+        "Target range for seven-iron drill, not measured carry."
+      ]
+    },
+    {
+      "id": "M03",
+      "evidence_ids": [
+        "E16"
+      ],
+      "kind": "spoken_result",
+      "values": {
+        "coach_mini_shot_yards_about": 130
+      },
+      "limits": [
+        "Verbal estimate without visible readout; coach example, not Danny before/after."
+      ]
+    },
+    {
+      "id": "M04",
+      "evidence_ids": [
+        "E05",
+        "E08",
+        "E09",
+        "E10",
+        "E11",
+        "E13",
+        "E14",
+        "E17"
+      ],
+      "kind": "qualitative_shot_feedback",
+      "description": "Penetrating/low, left, thin, fade, deeper divot and right-start reports, plus tracers. No numerical launch, spin, force, face/path or segment-speed values."
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        0,
+        2218
+      ],
+      "issue": "Automatic captions contain Cowan for Cowen, cack-handed variants, risk for wrist and other errors. Interpretation uses local context and visuals; no independently corrected full audio transcript."
+    },
+    {
+      "span_seconds": [
+        253,
+        487
+      ],
+      "issue": "Spin down, rotate, pressure and leaving hand alone are source movement/feel terms. Do not assign a single anatomical axis or pretend wrist angle is mechanically fixed throughout swing."
+    },
+    {
+      "span_seconds": [
+        2127,
+        2191
+      ],
+      "issue": "Throw right arm down in hypothetical slicer branch differs from throwing club/wrist in Danny's failed attempts."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "BcG-r_13z_I-C01",
+      "current_case": "iP0sBzIXRtc-C03",
+      "relation": "Do not generalize arm-speed cue across opposite sequencing needs",
+      "explanation": "Cowen asks Danny for right-arm delivery matched with body; Menante's measured early arms/late trunk call for a different emphasis. Similar lag language does not imply the same cause."
+    },
+    {
+      "source_case": "HQNKUS_BSGY-C03",
+      "current_case": "iP0sBzIXRtc-C02",
+      "relation": "Same drill family with explicit intent retained",
+      "explanation": "Reverse-hand rehearsal appears in Jerome's lesson for backswing structure; here it teaches right-side loading and delivery. Drill resemblance alone is insufficient for matching."
+    },
+    {
+      "source_case": "1dF_irGY6YM-C04",
+      "current_case": "iP0sBzIXRtc-C04",
+      "relation": "Low-shot task with player-specific options",
+      "explanation": "Both use low-flight intent, but Fleetwood's tested speed/swing-length alternatives should not be collapsed into Cowen's forearm instruction."
+    },
+    {
+      "source_case": "p_HZJ2u0TIo-C06",
+      "current_case": "iP0sBzIXRtc-C03",
+      "relation": "Different movement feels aim at coordination",
+      "explanation": "Harrington describes hips pulling torso; Cowen gives right-side-down emphasis and warns about left-side pulling. Preserve differing explanations and player conditions rather than assert equivalence."
+    },
+    {
+      "source_case": "IJSu7440Ick-C09",
+      "current_case": "iP0sBzIXRtc-C09",
+      "relation": "Face-delivery feel follows context",
+      "explanation": "Allen receives release guidance after upstream work; Danny must distinguish face delivery from handle drag. Neither supports applying a generic release cue from ball curve alone."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "iP0sBzIXRtc-C05",
+        "iP0sBzIXRtc-C06",
+        "iP0sBzIXRtc-C07"
+      ],
+      "relationship": "Successive retests change the prescription: keep turning, then match pace after thin strike, then use fade finish after deceleration. Do not prescribe all simultaneously."
+    },
+    {
+      "cases": [
+        "iP0sBzIXRtc-C03",
+        "iP0sBzIXRtc-C08",
+        "iP0sBzIXRtc-C09"
+      ],
+      "relationship": "Retained wrist pressure is neither casting nor maximizing shaft lean. Both misinterpretations occur and are corrected."
+    },
+    {
+      "cases": [
+        "iP0sBzIXRtc-C08",
+        "iP0sBzIXRtc-C12"
+      ],
+      "relationship": "Danny's unwanted throwing and the hypothetical slicer's earlier arm-down feel belong to different conditions."
+    },
+    {
+      "cases": [
+        "iP0sBzIXRtc-C02",
+        "iP0sBzIXRtc-C03",
+        "iP0sBzIXRtc-C11"
+      ],
+      "relationship": "Guided rehearsal, independent short shot and course transfer are different evidence stages."
+    }
+  ],
+  "annotation_opportunities": [
+    "Pair source split-view elbow/forearm guidance with exact accompanying words and label as manual rehearsal.",
+    "Show left/ thin/right-start attempts alongside the coach's different explanations and subsequent task changes.",
+    "Keep source tracer separate from measured launch data and label replays.",
+    "Mark wrist-retention cue versus actual handle-driving interpretation.",
+    "Preserve instructor draw/fade examples as hypothetical branch, not Danny's retest."
+  ],
+  "excluded_material": [
+    "Unverified world-number-one ranking and universal works-for-every-golfer promotion.",
+    "Unverified injury-prevention guarantees and single-cause explanations for popping up.",
+    "Unverified percentages of professional manipulators and historical Hogan quotation as scientific evidence.",
+    "Inserted tour-player and prior short-game clips as independent current lesson trials.",
+    "Driver improvement claim without distinct driver demonstration/retest."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Detailed source-backed lesson with conditional adjustments but no independent causal validation, measured launch/kinematics or longitudinal transfer."
+  },
+  "asset_sha256": {
+    "video": "0e0457bdcf217672a7cc7ba7f803976df2b0bde805a6d29db4b305b130e516fa",
+    "raw_captions": "6389106e936e1d5a39948f749f62c9eaa0fa83b889ed0c4c0c2ba432e753b28e",
+    "transcript": "2f24211379ca73c71fde02cfeee04ca333637cc521ab4ab6729e9184afde05f2"
+  }
+}

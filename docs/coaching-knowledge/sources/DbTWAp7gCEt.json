@@ -1,0 +1,419 @@
+{
+  "version": 1,
+  "source_id": "DbTWAp7gCEt",
+  "url": "https://www.instagram.com/p/DbTWAp7gCEt/",
+  "title": "Mohammad: keep the cut or choose an optional draw change",
+  "publisher": "Teagan Moore / teaganmooregolf",
+  "published": "20260727",
+  "duration_seconds": 100.752993,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "coach": "Teagan Moore",
+    "student": "Mohammad in source title overlay; ASR spells Mohamed"
+  },
+  "context": {
+    "format": "Annotated swing review",
+    "handedness": "Right-handed",
+    "body_context": "No physical screening supplied",
+    "club": "Iron, exact number unknown"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/DbTWAp7gCEt/DbTWAp7gCEt.mp4",
+    "raw_captions": ".videos/coaching-knowledge/DbTWAp7gCEt/asr-raw.json",
+    "transcript": ".videos/coaching-knowledge/DbTWAp7gCEt/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/DbTWAp7gCEt/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/DbTWAp7gCEt/DbTWAp7gCEt.info.json",
+    "overview": ".videos/coaching-knowledge/DbTWAp7gCEt/overview/index.json",
+    "detail": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 33,
+    "transcript_kind": "Local MLX Whisper ASR with visual inspection",
+    "audio_independently_transcribed": true,
+    "visual_review_method": "10 overview and 28 detail frames across four portrait sheets inspected; takeaway, top match, conditional annotations and original shot reviewed.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/DbTWAp7gCEt/overview/index.json",
+      ".videos/coaching-knowledge/DbTWAp7gCEt/detail/index.json"
+    ],
+    "limitations": [
+      "Sampled frames, not continuous playback.",
+      "Coach reasoning is attributed, not independently validated."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        0,
+        31
+      ],
+      "source_url": "https://www.instagram.com/p/DbTWAp7gCEt/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Mohammad: keep the cut or choose an optional draw change",
+      "summary": "Coach calls swing simple and efficient and reports plus handicap. Praises takeaway on plane, face matching spine, halfway-back shaft toward ball and hip turn inferred from visible space between knees. These are qualitative judgments.",
+      "frames": [
+        {
+          "time_seconds": 12,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00012.000.jpg",
+          "observation": "Original shaft reference."
+        },
+        {
+          "time_seconds": 17,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00017.000.jpg",
+          "observation": "Face/spine comparison."
+        },
+        {
+          "time_seconds": 22,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00022.000.jpg",
+          "observation": "Halfway-back shaft reference."
+        },
+        {
+          "time_seconds": 25,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00025.000.jpg",
+          "observation": "Hip region circled."
+        },
+        {
+          "time_seconds": 28,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00028.000.jpg",
+          "observation": "Arrow toward visible knee gap."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        31,
+        61
+      ],
+      "source_url": "https://www.instagram.com/p/DbTWAp7gCEt/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Mohammad: keep the cut or choose an optional draw change",
+      "summary": "Top has hands over middle of feet and lead arm above shoulder plane, but lead-wrist flexion makes face stronger than arm. Coach calls this a useful match, citing tour players as examples of possible cut-oriented patterns rather than demonstrating them.",
+      "frames": [
+        {
+          "time_seconds": 36,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00036.000.jpg",
+          "observation": "Actual high top."
+        },
+        {
+          "time_seconds": 39,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00039.000.jpg",
+          "observation": "Lead-arm line."
+        },
+        {
+          "time_seconds": 43,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00043.000.jpg",
+          "observation": "Wrist/forearm reference."
+        },
+        {
+          "time_seconds": 46,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00046.000.jpg",
+          "observation": "Clubface reference."
+        },
+        {
+          "time_seconds": 50,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00050.000.jpg",
+          "observation": "Top circled."
+        },
+        {
+          "time_seconds": 60,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00060.000.jpg",
+          "observation": "Illustrative motion arrow."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        61,
+        74
+      ],
+      "source_url": "https://www.instagram.com/p/DbTWAp7gCEt/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Mohammad: keep the cut or choose an optional draw change",
+      "summary": "Explicit branch: keep exact position for a cut preference; only if golfer wants stock draws, work on lead-arm depth and hands more over heels. Drawn target lines illustrate optional change, not achieved new position.",
+      "frames": [
+        {
+          "time_seconds": 63,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00063.000.jpg",
+          "observation": "Original top retained for cut branch."
+        },
+        {
+          "time_seconds": 67,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00067.000.jpg",
+          "observation": "Reference for optional draw branch."
+        },
+        {
+          "time_seconds": 70,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00070.000.jpg",
+          "observation": "Desired lead-arm depth line."
+        },
+        {
+          "time_seconds": 73,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00073.000.jpg",
+          "observation": "Heel-depth vertical reference."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        74,
+        94
+      ],
+      "source_url": "https://www.instagram.com/p/DbTWAp7gCEt/",
+      "attribution": "Teagan Moore / teaganmooregolf",
+      "kind": "annotated_coaching_review",
+      "session": "Mohammad: keep the cut or choose an optional draw change",
+      "summary": "Coach praises original shallowing, straight initial direction, hands exiting left with face control and starting toward middle green despite right pin. Original shot shown, but no measured trajectory, landing or dispersion. Plus-one handicap is stated by coach.",
+      "frames": [
+        {
+          "time_seconds": 75,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00075.000.jpg",
+          "observation": "Original delivery."
+        },
+        {
+          "time_seconds": 77,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00077.000.jpg",
+          "observation": "Approaching impact."
+        },
+        {
+          "time_seconds": 79,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00079.000.jpg",
+          "observation": "Through shot and divot."
+        },
+        {
+          "time_seconds": 84,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00084.000.jpg",
+          "observation": "Hands exiting with turn."
+        },
+        {
+          "time_seconds": 87,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00087.000.jpg",
+          "observation": "Arrow points toward right flag area."
+        },
+        {
+          "time_seconds": 90,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00090.000.jpg",
+          "observation": "Original finish and target annotation."
+        },
+        {
+          "time_seconds": 93,
+          "path": ".videos/coaching-knowledge/DbTWAp7gCEt/detail/frame-00093.000.jpg",
+          "observation": "Finish."
+        }
+      ],
+      "limitations": [
+        "2D annotated footage; no independent causal validation."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "DbTWAp7gCEt-C01",
+      "title": "Keep high hands and stronger face when the cut pattern works",
+      "case_type": "individual_video_review_with_no_verified_student_retest",
+      "tags": {
+        "phase": [
+          "P4",
+          "downswing"
+        ],
+        "body": [
+          "lead wrist",
+          "lead arm",
+          "clubface"
+        ],
+        "outcome": [
+          "shot preference",
+          "functional match",
+          "withhold correction"
+        ],
+        "concept": [
+          "shot preference",
+          "functional match",
+          "withhold correction"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E04"
+      ],
+      "coaching_finding": "Coach sees high hands and lead arm above shoulders with flexed lead wrist and stronger face, plus effective original delivery.",
+      "coach_reasoning": "He treats positions as compatible with good golf and explicitly permits them for a cut-oriented player.",
+      "intervention": {
+        "action": "Retain current top position if the golfer wants the cut pattern and outcomes support it."
+      },
+      "applicability": [
+        "Golfer prefers cut and demonstrates useful delivery and results.",
+        "Do not infer shot shape from wrist pose alone."
+      ],
+      "unknowns": [
+        "Actual measured face/path and distribution of shots.",
+        "Independent handicap verification."
+      ],
+      "observed_result": "Original shot and coach approval; no correction trial.",
+      "selection": {
+        "coaching_focus": "Preserve effective preferred shot",
+        "max_simultaneous_cues": 0,
+        "policy_origin": "User one-focus preference; retain source sequencing and avoid simultaneous competing thoughts.",
+        "reassess": "Proposed app check: ask shot preference and review real outcomes before proposing cosmetic top changes."
+      },
+      "alternative_case_ids": [
+        "DbTWAp7gCEt-C02"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "DbTWAp7gCEt-C02",
+      "title": "Consider more depth only for an explicit draw goal",
+      "case_type": "individual_video_review_with_no_verified_student_retest",
+      "tags": {
+        "phase": [
+          "backswing",
+          "P4"
+        ],
+        "body": [
+          "lead arm",
+          "hands"
+        ],
+        "outcome": [
+          "optional technique change",
+          "draw intention"
+        ],
+        "concept": [
+          "optional technique change",
+          "draw intention"
+        ]
+      },
+      "evidence_ids": [
+        "E02",
+        "E03"
+      ],
+      "coaching_finding": "Same accepted high top becomes optional change candidate only under a different shot goal.",
+      "coach_reasoning": "Coach proposes deeper lead arm and hands nearer heels to pursue a stock draw.",
+      "intervention": {
+        "action": "Work on lead-arm depth and hands more over heels.",
+        "limits": "No drill, dose, grip change or exact position tolerance supplied."
+      },
+      "applicability": [
+        "User explicitly wants to change preferred shape to draw.",
+        "Recheck face and delivery after change; depth alone does not guarantee draw."
+      ],
+      "unknowns": [
+        "Specific teaching procedure and actual response."
+      ],
+      "observed_result": "Hypothetical option only; no draw attempt shown.",
+      "selection": {
+        "coaching_focus": "Optional backswing depth for chosen shape",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User one-focus preference; retain source sequencing and avoid simultaneous competing thoughts.",
+        "reassess": "Proposed app check: test actual start line and curvature with same club, while retaining the original cut as a valid option."
+      },
+      "alternative_case_ids": [
+        "DbTWAp7gCEt-C01"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "kind": "coach_report",
+      "value": "Plus-one handicap",
+      "evidence_ids": [
+        "E04"
+      ],
+      "limits": [
+        "Not independently verified and not calculated from swing appearance."
+      ]
+    },
+    {
+      "kind": "qualitative_reference",
+      "value": "Face relative to spine/lead arm, hand depth, knee gap and target direction",
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E04"
+      ],
+      "limits": [
+        "No calibrated 3D angles, force or shot-tracking measurements. Knee gap alone is not quantified hip rotation."
+      ]
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        74,
+        80
+      ],
+      "issue": "ASR shadow/scarf ball are wording errors in context of shallowing and golf ball; original ASR retained. No numerical claim depends on correction."
+    },
+    {
+      "span_seconds": [
+        100,
+        100.752993
+      ],
+      "issue": "Closing repeated Bye ASR ignored as noncoaching."
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "DVI2JDpDC5Z-C02",
+      "current_case": "DbTWAp7gCEt-C01",
+      "relation": "High top is not sufficient diagnosis",
+      "explanation": "Ryan's high top is selected for change in a steep slice sequence. Mohammad's high top is accepted with stronger face and effective preferred cut. Face, delivery and goal are required to distinguish cases."
+    },
+    {
+      "source_case": "DcqwwGio81y-C01",
+      "current_case": "DbTWAp7gCEt-C01",
+      "relation": "Withhold cosmetic correction",
+      "explanation": "Both reviews preserve a nonstandard appearance because the coach judges its accompanying conditions functional."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "DbTWAp7gCEt-C01",
+        "DbTWAp7gCEt-C02"
+      ],
+      "relationship": "Mutually exclusive goal branches: retain preferred cut versus consider a deliberate draw change."
+    }
+  ],
+  "annotation_opportunities": [
+    "Show observed top separately from optional desired-depth lines.",
+    "Place player shot intention beside recommendation.",
+    "Distinguish right-pin annotation from measured landing."
+  ],
+  "excluded_material": [
+    "Universal high-hands fault rule.",
+    "Named tour-player comparison treated as dataset evidence.",
+    "Guaranteed draw from depth alone.",
+    "Review solicitation after 94 seconds."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Source extraction preserves evidence and conditions; a source match and response check are still needed for another golfer."
+  },
+  "asset_sha256": {
+    "video": "1b409ed2a2ebb12ffa7cceea9958dbb0d45ee729a06303ac4fd359a4e390b778",
+    "raw_captions": "6f11777d1833173e0cf2f2eb36904e255cedafee9718325f63e52ff4cd695e49",
+    "transcript": "865aba9de15fe3e6ca465e93b706f5b861f6ca22a3ee61c913f1e36aaf08cf73"
+  }
+}

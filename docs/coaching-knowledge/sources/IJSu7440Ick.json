@@ -1,0 +1,2189 @@
+{
+  "version": 1,
+  "source_id": "IJSu7440Ick",
+  "url": "https://www.youtube.com/watch?v=IJSu7440Ick",
+  "title": "Josh Allen\u2019s TPI Assessment: Inside the Swing of the NFL Superstar",
+  "publisher": "TPI - Titleist Performance Institute",
+  "published": "20251029",
+  "duration_seconds": 5379,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "golfer": "Josh Allen",
+    "coach": "Greg Rose",
+    "existing_coach": "Jamie Mulligan, consulted by phone",
+    "other_roles": "Equipment fitter joins later; unverified caption spelling not adopted as identity"
+  },
+  "context": {
+    "handedness": "right",
+    "level": "Elite athlete and recreational golfer; no handicap established",
+    "tasks": [
+      "Alignment/ball position",
+      "Driver and long-iron contact/direction",
+      "Physical and power screen",
+      "Kinetic and kinematic sequence",
+      "Adaptive backswing work",
+      "Physical homework and learning"
+    ],
+    "body_context": "In-person right-side restrictions are source findings; no body-handicap score or clinical diagnosis. Phone footage alone cannot establish them.",
+    "style": "Technical explanation, hypotheses revised by data, player-specific cues and repeated retests"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/IJSu7440Ick/IJSu7440Ick.mp4",
+    "raw_captions": ".videos/coaching-knowledge/IJSu7440Ick/IJSu7440Ick.en-orig.json3",
+    "transcript": ".videos/coaching-knowledge/IJSu7440Ick/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/IJSu7440Ick/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/IJSu7440Ick/IJSu7440Ick.info.json",
+    "overview": ".videos/coaching-knowledge/IJSu7440Ick/overview/index.json",
+    "detail": ".videos/coaching-knowledge/IJSu7440Ick/detail/index.json",
+    "graphs_sequences": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/index.json",
+    "native_graphs": ".videos/coaching-knowledge/IJSu7440Ick/native-graphs/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 3075,
+    "transcript_kind": "Full YouTube en-orig automatic captions, 180 reading-index blocks",
+    "audio_independently_transcribed": false,
+    "visual_review_method": "91 requested overview frames including one duplicate end timestamp, 179 detail frames, 58 graph/sequence frames and four native graph exports. All 28 contact sheets and four native graph exports inspected. Sampled inspection across 89:39 source, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/IJSu7440Ick/overview/index.json",
+      ".videos/coaching-knowledge/IJSu7440Ick/detail/index.json",
+      ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/index.json"
+    ],
+    "inspected_native_frames": [
+      ".videos/coaching-knowledge/IJSu7440Ick/native-graphs/frame-02455.000.jpg",
+      ".videos/coaching-knowledge/IJSu7440Ick/native-graphs/frame-02910.000.jpg",
+      ".videos/coaching-knowledge/IJSu7440Ick/native-graphs/frame-03040.000.jpg",
+      ".videos/coaching-knowledge/IJSu7440Ick/native-graphs/frame-03190.000.jpg"
+    ],
+    "limitations": [
+      "480p video and filmed/edited inserts; some graph fields small or cropped.",
+      "Caption display windows overlap and technical terms/numbers can be wrong.",
+      "Edited shots and comparisons are not a complete chronological trial log.",
+      "No raw launch/force/3D exports, calibrated phone mapping or longitudinal follow-up."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        35,
+        245
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=35s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "player_context",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Allen reports being right-handed, strong with wedges/short irons, weaker with long irons and variable with driver. He describes flipping/timing and wants more centre-face contact, understanding of sequence and a reliable way to recover when off. Rose asks rather than assumes what flipping means.",
+      "frames": [
+        {
+          "time_seconds": 90,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/overview/frame-00090.000.jpg",
+          "observation": "Player describes strengths and timing concerns."
+        },
+        {
+          "time_seconds": 150,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/overview/frame-00150.000.jpg",
+          "observation": "Player explains his three goals."
+        }
+      ],
+      "limitations": [
+        "Later dialogue refines short-iron left miss, long-iron thin/right and driver two-way. No handicap or complete shot history established."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        245,
+        430
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=245s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "physical_screen",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Physical screen finds right-side rotation, ankle and hip limitations despite player initially suspecting left hip tighter. Rose notes right glute strength/stability during a bridge and wrist tightness. He explicitly says the screen does not mean a swing problem must exist; it directs attention toward the backswing.",
+      "frames": [
+        {
+          "time_seconds": 260,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-00260.000.jpg",
+          "observation": "Pelvis/trunk separation screen."
+        },
+        {
+          "time_seconds": 305,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-00305.000.jpg",
+          "observation": "Squat assessment."
+        },
+        {
+          "time_seconds": 320,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-00320.000.jpg",
+          "observation": "Close view during leg/hip assessment."
+        },
+        {
+          "time_seconds": 375,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-00375.000.jpg",
+          "observation": "Coach demonstrates rotation while player follows."
+        }
+      ],
+      "limitations": [
+        "No formal diagnostic report or complete quantified screen. Caption 2941 is not parsed into two angles without clear attribution. No body-handicap score."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        430,
+        610
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=430s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "capacity_context",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Player reports driver speed 125-126 mph when pushing. Jump trials are spoken as 25.9 and 27.6 inches, often rounded to 27. Power-rating discussion gives lower/core/upper 27.5/28.25/25.75 and above-tour comparisons. Rose concludes no general power weakness; core and lower-body contribution are particularly strong.",
+      "frames": [
+        {
+          "time_seconds": 445,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-00445.000.jpg",
+          "observation": "Coach records power testing."
+        },
+        {
+          "time_seconds": 460,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-00460.000.jpg",
+          "observation": "Jump test captured close up."
+        },
+        {
+          "time_seconds": 515,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-00515.000.jpg",
+          "observation": "Seated/supine throwing test in lab."
+        },
+        {
+          "time_seconds": 550,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-00550.000.jpg",
+          "observation": "Player at end of a throwing test."
+        },
+        {
+          "time_seconds": 565,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-00565.000.jpg",
+          "observation": "Coach shows assessment information to player."
+        }
+      ],
+      "limitations": [
+        "Ratings are source-specific and described with horsepower analogy, not physical horsepower measurements. No raw test report or independently verified comparison norms."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        625,
+        1010
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=625s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "initial_hypotheses",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Range observation identifies aiming right of the intended target. Phone discussion with Jamie Mulligan contributes prior low plane and the goal of loading/coiling around the right leg. Rose initially hypothesizes early extension as a reason for two-way misses. Harder driver swings look better to him than guarded swings.",
+      "frames": [
+        {
+          "time_seconds": 655,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-00655.000.jpg",
+          "observation": "Coach points toward the intended target."
+        },
+        {
+          "time_seconds": 715,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-00715.000.jpg",
+          "observation": "Player addresses long club on range."
+        },
+        {
+          "time_seconds": 750,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/overview/frame-00750.000.jpg",
+          "observation": "Coach consults Mulligan by phone."
+        },
+        {
+          "time_seconds": 955,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-00955.000.jpg",
+          "observation": "Player and coach discuss more aggressive swings."
+        }
+      ],
+      "limitations": [
+        "Early extension and over-the-top compensation are preliminary; later captured evidence revises them. Harder-is-better is a player-specific observation."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        1010,
+        1158
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=1010s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "alignment_test",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Club placed behind heels reveals rightward alignment versus chosen tree. Hand-window eye test leads Rose to call Allen strongly right-eye dominant. They try an intermediate spot in front of ball, then recheck heel line; first result is judged aligned.",
+      "frames": [
+        {
+          "time_seconds": 1030,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01030.000.jpg",
+          "observation": "Player places shaft behind heels."
+        },
+        {
+          "time_seconds": 1050,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/overview/frame-01050.000.jpg",
+          "observation": "Hand-window eye-dominance test."
+        },
+        {
+          "time_seconds": 1120,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01120.000.jpg",
+          "observation": "Coach points at a near-ball spot."
+        },
+        {
+          "time_seconds": 1135,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01135.000.jpg",
+          "observation": "Player stands over selected spot and line."
+        }
+      ],
+      "limitations": [
+        "No calibrated alignment angle. Eye explanation is the coach's proposed mechanism; the observed alignment response is the decision evidence."
+      ]
+    },
+    {
+      "id": "E06",
+      "span_seconds": [
+        1158,
+        1300
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=1158s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "comparison_and_selection",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "A new target and six-iron attempt still aim right because the selected spot itself is right of target. They correct the spot. A second method, facing the line with binocular view then stepping into the ball, produces too-far-left alignment. Rose selects the forward-spot method for Allen.",
+      "frames": [
+        {
+          "time_seconds": 1195,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01195.000.jpg",
+          "observation": "Close view of shaft/feet during spot error check."
+        },
+        {
+          "time_seconds": 1210,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01210.000.jpg",
+          "observation": "Coach checks corrected line."
+        },
+        {
+          "time_seconds": 1245,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01245.000.jpg",
+          "observation": "Alternate walk-in approach discussed."
+        },
+        {
+          "time_seconds": 1265,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01265.000.jpg",
+          "observation": "Player steps toward address during alternate method."
+        },
+        {
+          "time_seconds": 1280,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01280.000.jpg",
+          "observation": "Address after alternate alignment trial."
+        }
+      ],
+      "limitations": [
+        "One successful attempt does not prove retention. Neither method is universally preferred; retain failed spot selection and alternate overshoot."
+      ]
+    },
+    {
+      "id": "E07",
+      "span_seconds": [
+        1300,
+        1470
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=1300s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "setup_instruction",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Allen describes progressively rearward short-iron/wedge ball position. Rose demonstrates a lead-foot reference: feet together, ball between, lead foot flared, trail foot moved to change width for wedge through driver. He recommends not letting stock ball position drift behind stance centre and checking with Mulligan.",
+      "frames": [
+        {
+          "time_seconds": 1330,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01330.000.jpg",
+          "observation": "Player describes ball-position convention."
+        },
+        {
+          "time_seconds": 1345,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01345.000.jpg",
+          "observation": "Feet-together reference and ball."
+        },
+        {
+          "time_seconds": 1350,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/overview/frame-01350.000.jpg",
+          "observation": "Close view of lead foot and narrow stance."
+        },
+        {
+          "time_seconds": 1360,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01360.000.jpg",
+          "observation": "Stance-width demonstration."
+        },
+        {
+          "time_seconds": 1470,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01470.000.jpg",
+          "observation": "Close view of stock setup during further check."
+        }
+      ],
+      "limitations": [
+        "Specialty-shot exception explicitly retained. Statements about what most players do are not universal targets. No fixed centimetre value."
+      ]
+    },
+    {
+      "id": "E08",
+      "span_seconds": [
+        1470,
+        1808
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=1470s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "setup_retest_and_process",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Repeated checks show rightward alignment returning when Allen skips the spot routine. Ball farther forward first risks heavy contact while early release remains. Rose asks for reset behind each shot and a consistent checklist. Player realizes a supposedly open cut stance may previously have been nearer square.",
+      "frames": [
+        {
+          "time_seconds": 1495,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01495.000.jpg",
+          "observation": "Coach checks setup after reset."
+        },
+        {
+          "time_seconds": 1510,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01510.000.jpg",
+          "observation": "Shot setup with ball farther forward."
+        },
+        {
+          "time_seconds": 1620,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01620.000.jpg",
+          "observation": "Player places club down to check alignment again."
+        },
+        {
+          "time_seconds": 1685,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01685.000.jpg",
+          "observation": "Another setup check rather than raking next ball."
+        },
+        {
+          "time_seconds": 1740,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01740.000.jpg",
+          "observation": "Coach explains the pre-shot process."
+        }
+      ],
+      "limitations": [
+        "Praise/ball flight are qualitative. No precise strike location or angle measurement."
+      ]
+    },
+    {
+      "id": "E09",
+      "span_seconds": [
+        1808,
+        2058
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=1808s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "visual_diagnosis",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Face-on video shows targetward trunk tilt relative to pelvis and early club release; a reference-player insert compares shaft position at a similar hand location. Rose considers ball-back setup and body position as possible causes of casting, rather than demanding wrist-angle retention immediately.",
+      "frames": [
+        {
+          "time_seconds": 1870,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01870.000.jpg",
+          "observation": "Source draws a yellow body-reference line on face-on top-of-backswing image."
+        },
+        {
+          "time_seconds": 1905,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01905.000.jpg",
+          "observation": "Player swing replay near delivery."
+        },
+        {
+          "time_seconds": 1920,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01920.000.jpg",
+          "observation": "Player replay compared with an inserted reference golfer."
+        },
+        {
+          "time_seconds": 1995,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-01995.000.jpg",
+          "observation": "Coach explains possible release causes."
+        }
+      ],
+      "limitations": [
+        "Source reference golfer named Justin Thomas in dialogue. A 2D overlay is not a calibrated 3D spine measurement. Broad all-player claims are not adopted."
+      ]
+    },
+    {
+      "id": "E10",
+      "span_seconds": [
+        2058,
+        2345
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=2058s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "phase_specific_plane_review",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Down-the-line review separates early transition from impact-zone delivery. Source draws shaft at address and lead-arm-parallel backswing to define a slot and judges Allen within it in transition. It then draws impact plane and describes club below before impact and above after, consistent with his in-to-out miss pattern. This qualifies the initial over-the-top suspicion.",
+      "frames": [
+        {
+          "time_seconds": 2138,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-02138.000.jpg",
+          "observation": "Original shaft-plane annotation at address."
+        },
+        {
+          "time_seconds": 2146,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-02146.000.jpg",
+          "observation": "Second shaft line at lead-arm-parallel backswing."
+        },
+        {
+          "time_seconds": 2150,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-02150.000.jpg",
+          "observation": "Two plane lines show the proposed slot."
+        },
+        {
+          "time_seconds": 2198,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-02198.000.jpg",
+          "observation": "Impact-position shaft reference line."
+        },
+        {
+          "time_seconds": 2210,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-02210.000.jpg",
+          "observation": "Monitor replay during impact-zone discussion."
+        }
+      ],
+      "limitations": [
+        "The slot and impact plane are the source's 2D coaching construction, not one universal fixed swing plane. No numeric path angle or full launch conditions established."
+      ]
+    },
+    {
+      "id": "E11",
+      "span_seconds": [
+        2345,
+        2555
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=2345s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "instrument_sequence",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Lab captures driver, six-iron and four-iron because long irons are the complaint, rather than defaulting to a wedge. Four-iron force review is praised for lateral/rock/twist/jump order and sufficiently early timing relative to shaft checkpoints.",
+      "frames": [
+        {
+          "time_seconds": 2380,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-02380.000.jpg",
+          "observation": "Dual-camera force capture with charts."
+        },
+        {
+          "time_seconds": 2410,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-02410.000.jpg",
+          "observation": "Iron capture and synchronized plotted channels."
+        },
+        {
+          "time_seconds": 2455,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/native-graphs/frame-02455.000.jpg",
+          "observation": "Full force display with coloured peaks and timing markers."
+        },
+        {
+          "time_seconds": 2520,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-02520.000.jpg",
+          "observation": "Coach uses shaft orientation to explain timing."
+        }
+      ],
+      "limitations": [
+        "No raw force export or repeated-trial statistics. Good force sequence does not alone establish good body-segment transfer."
+      ]
+    },
+    {
+      "id": "E12",
+      "span_seconds": [
+        2555,
+        2810
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=2555s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "instrument_hypothesis",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Magnitude review says lateral 24 percent body weight, twist slightly more than rock, and vertical only 138 despite strong jump capacity. Rose hypothesizes direction/use of force and possible early extension or trunk position. Boat/skier and cannonball analogies illustrate moving away from the club rather than toward it; 3D is requested before concluding.",
+      "frames": [
+        {
+          "time_seconds": 2590,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-02590.000.jpg",
+          "observation": "Player listens to magnitude comparison."
+        },
+        {
+          "time_seconds": 2610,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-02610.000.jpg",
+          "observation": "Coach demonstrates rocking versus twisting."
+        },
+        {
+          "time_seconds": 2668,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-02668.000.jpg",
+          "observation": "Skeleton insert with rear-body reference lines."
+        },
+        {
+          "time_seconds": 2670,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-02670.000.jpg",
+          "observation": "Later skeleton position in same illustrative insert."
+        },
+        {
+          "time_seconds": 2740,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-02740.000.jpg",
+          "observation": "Player and coach rehearse the direction analogy."
+        }
+      ],
+      "limitations": [
+        "Native force graphic at 2455s shows vertical peak about 146.6 rather than spoken 138; trial identity unresolved. Skeleton insert is not explicitly a matched Allen trial. Analogies are not quantified forces or compulsory jump instructions."
+      ]
+    },
+    {
+      "id": "E13",
+      "span_seconds": [
+        2810,
+        2925
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=2810s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "hypothesis_rejected_by_capture",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Motion capture asks player to rate shots, with seven/eight reported. Rose finds good kinematic sequence and says captured swings do not show the early extension he expected. Targetward trunk position/reverse spine angle remains the main finding. Graphs and skeleton are displayed.",
+      "frames": [
+        {
+          "time_seconds": 2850,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/overview/frame-02850.000.jpg",
+          "observation": "Player wearing motion-capture sensors."
+        },
+        {
+          "time_seconds": 2890,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-02890.000.jpg",
+          "observation": "Close view of instrumented player during review."
+        },
+        {
+          "time_seconds": 2908,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-02908.000.jpg",
+          "observation": "Full 3D dashboard with angles, positions, velocities and skeleton."
+        },
+        {
+          "time_seconds": 2910,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/native-graphs/frame-02910.000.jpg",
+          "observation": "Thorax-angle graph titled JA-4iron-2-7."
+        }
+      ],
+      "limitations": [
+        "This rules against early extension in these captures, not every swing the player ever makes. No precise overall score or calibrated reverse-spine-angle threshold extracted."
+      ]
+    },
+    {
+      "id": "E14",
+      "span_seconds": [
+        2925,
+        3070
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=2925s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "drill_with_instrument_retest",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Electric-fence drill places an imagined barrier beside the right leg: reach upper body over it without moving lower body into it. Shirt buttons should feel to the right of trouser zipper. Instrumented trial feels different and higher on face to Allen; Rose judges data improved. Post-drill graph is explicitly labelled reachoverthefence.",
+      "frames": [
+        {
+          "time_seconds": 2964,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-02964.000.jpg",
+          "observation": "Coach introduces reach while player addresses."
+        },
+        {
+          "time_seconds": 2966,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-02966.000.jpg",
+          "observation": "Player rehearses backswing reach."
+        },
+        {
+          "time_seconds": 2970,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-02970.000.jpg",
+          "observation": "Close view of reaching rehearsal."
+        },
+        {
+          "time_seconds": 3000,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03000.000.jpg",
+          "observation": "Instrumented trial setup."
+        },
+        {
+          "time_seconds": 3038,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-03038.000.jpg",
+          "observation": "Post-drill thorax-angle graph title includes reachoverthefence."
+        },
+        {
+          "time_seconds": 3040,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/native-graphs/frame-03040.000.jpg",
+          "observation": "Native post-drill thorax-angle graph."
+        }
+      ],
+      "limitations": [
+        "Player-reported higher strike is not an impact-location measurement. Before/after graph cursor values occur at different swing times, so do not subtract them as improvement."
+      ]
+    },
+    {
+      "id": "E15",
+      "span_seconds": [
+        3070,
+        3325
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=3070s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "drill_compensation_and_correction",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Rose keeps alignment and ball position as prerequisites, then refines fence drill because lower-body sway creeps in. He explains reverse spine angle may arise from pelvis moving away from target as well as trunk moving toward it. Coach applies manual resistance/push during rehearsal to provoke stable right-leg support while reaching.",
+      "frames": [
+        {
+          "time_seconds": 3080,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03080.000.jpg",
+          "observation": "Instrumented reaching backswing."
+        },
+        {
+          "time_seconds": 3190,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/native-graphs/frame-03190.000.jpg",
+          "observation": "Further 3D dashboard after drill."
+        },
+        {
+          "time_seconds": 3236,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-03236.000.jpg",
+          "observation": "Coach beside right hip before resisted rehearsal."
+        },
+        {
+          "time_seconds": 3238,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-03238.000.jpg",
+          "observation": "Coach contacts/pushes at hip during backswing rehearsal."
+        },
+        {
+          "time_seconds": 3242,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-03242.000.jpg",
+          "observation": "Player returns through rehearsal with coach at hip."
+        }
+      ],
+      "limitations": [
+        "Manual resistance is a demonstrated coaching interaction, not something current phone app can physically provide. Sway/tilt relationship is source reasoning; clinical causation not established."
+      ]
+    },
+    {
+      "id": "E16",
+      "span_seconds": [
+        3325,
+        3525
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=3325s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "turf_transfer_and_partial_result",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "On grass, Allen keeps the reach and setup work. Correct alignment feels left after long use of rightward aim, so Rose tries an out-right swing feel without changing feet. Repeated shots get positive height/contact feedback. Deliberate old trunk-forward pattern produces a reported glancing blow. Release is judged about 50 percent better but not resolved.",
+      "frames": [
+        {
+          "time_seconds": 3340,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03340.000.jpg",
+          "observation": "Range address before transfer attempt."
+        },
+        {
+          "time_seconds": 3360,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03360.000.jpg",
+          "observation": "Shot follow-through."
+        },
+        {
+          "time_seconds": 3390,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03390.000.jpg",
+          "observation": "Coach watches a backswing."
+        },
+        {
+          "time_seconds": 3420,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03420.000.jpg",
+          "observation": "Finish after target/feel instruction."
+        },
+        {
+          "time_seconds": 3490,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03490.000.jpg",
+          "observation": "Address before contrasting old pattern."
+        },
+        {
+          "time_seconds": 3510,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03510.000.jpg",
+          "observation": "Close view of delivery during release check."
+        }
+      ],
+      "limitations": [
+        "Height and divot comments are qualitative, with no matched launch/strike data. Fifty percent is an informal coach estimate, not a calculated metric."
+      ]
+    },
+    {
+      "id": "E17",
+      "span_seconds": [
+        3525,
+        3710
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=3525s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "conditional_release_cue",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "After partial release improvement, Rose uses a two-hand tennis-forehand analogy and physically guides club/hand position while player rotates. He describes reverse motorcycle feel to square the face earlier and retain angle longer. Player locates the sensation in wrists. Trial remains close; coach returns to reach, setup and athletic swing as main work.",
+      "frames": [
+        {
+          "time_seconds": 3530,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03530.000.jpg",
+          "observation": "Player rehearses two-handed forehand-like motion."
+        },
+        {
+          "time_seconds": 3564,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-03564.000.jpg",
+          "observation": "Coach guides club and arms in slow rehearsal."
+        },
+        {
+          "time_seconds": 3568,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-03568.000.jpg",
+          "observation": "Guided downswing position while player rotates."
+        },
+        {
+          "time_seconds": 3572,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-03572.000.jpg",
+          "observation": "Close hand/club guidance near delivery."
+        },
+        {
+          "time_seconds": 3600,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03600.000.jpg",
+          "observation": "Player sets up to test the feel."
+        },
+        {
+          "time_seconds": 3630,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03630.000.jpg",
+          "observation": "Trial follow-through."
+        }
+      ],
+      "limitations": [
+        "Do not add a wrist instruction before checking the upstream changes. No exact wrist rotation target or proven complete release fix."
+      ]
+    },
+    {
+      "id": "E18",
+      "span_seconds": [
+        3690,
+        3980
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=3690s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "error_detection_and_variability",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Setup and sway continue to need attention. Rose asks player to identify possible reasons for left shots, then uses exaggerated aim-left/swing-right draw attempts, swing-left fade attempts and an in-between target. Player learns relative shot feels; middle attempt is praised.",
+      "frames": [
+        {
+          "time_seconds": 3750,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03750.000.jpg",
+          "observation": "Setup with recurring ball-position check."
+        },
+        {
+          "time_seconds": 3780,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03780.000.jpg",
+          "observation": "Player considers cause of a left miss."
+        },
+        {
+          "time_seconds": 3810,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03810.000.jpg",
+          "observation": "Swing during foot-line work."
+        },
+        {
+          "time_seconds": 3860,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03860.000.jpg",
+          "observation": "Address for exaggerated start-right task."
+        },
+        {
+          "time_seconds": 3920,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03920.000.jpg",
+          "observation": "Swing during opposite-direction test."
+        },
+        {
+          "time_seconds": 3980,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-03980.000.jpg",
+          "observation": "Discussion after the middle-flight trial."
+        }
+      ],
+      "limitations": [
+        "Start one foot right of tree is a source task target, not a measured flight result. Deliberate extremes are practice contrasts, not normal alignment targets."
+      ]
+    },
+    {
+      "id": "E19",
+      "span_seconds": [
+        3980,
+        4118
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=3980s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "coordination_and_persistent_issue",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Rose updates the fitter on new setup and swing work because delivery changes can affect equipment decisions. Right-side sway remains difficult; manual resisted turn revisited and player reminded not to drift aim right while rapidly hitting balls.",
+      "frames": [
+        {
+          "time_seconds": 4000,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04000.000.jpg",
+          "observation": "Fitter joins the range discussion."
+        },
+        {
+          "time_seconds": 4030,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04030.000.jpg",
+          "observation": "Coach and fitter watch Allen."
+        },
+        {
+          "time_seconds": 4055,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04055.000.jpg",
+          "observation": "Allen prepares another shot."
+        },
+        {
+          "time_seconds": 4080,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04080.000.jpg",
+          "observation": "Follow-through while working through turn difficulty."
+        }
+      ],
+      "limitations": [
+        "No new club specification or fitting result established. Do not record an equipment change from the discussion alone."
+      ]
+    },
+    {
+      "id": "E20",
+      "span_seconds": [
+        4118,
+        4210
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=4118s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "adaptation_test",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Trail-foot orientation comparison uses loaded right leg, toe turned inward then outward. Outward flare feels easier to Allen. Rose uses it as an interim way to turn around the right hip while working on mobility separately.",
+      "frames": [
+        {
+          "time_seconds": 4136,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-04136.000.jpg",
+          "observation": "Coach demonstrates foot-orientation comparison."
+        },
+        {
+          "time_seconds": 4138,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-04138.000.jpg",
+          "observation": "Player stands mainly over right leg during comparison."
+        },
+        {
+          "time_seconds": 4142,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-04142.000.jpg",
+          "observation": "Close view of flared trail-foot setup."
+        },
+        {
+          "time_seconds": 4150,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04150.000.jpg",
+          "observation": "Feet and ball during adapted setup."
+        },
+        {
+          "time_seconds": 4170,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04170.000.jpg",
+          "observation": "Shot trial with flare."
+        }
+      ],
+      "limitations": [
+        "No exact flare angle or measured increase in hip joint range. Easier task rotation is not proof that joint mobility itself changed instantly."
+      ]
+    },
+    {
+      "id": "E21",
+      "span_seconds": [
+        4200,
+        4355
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=4200s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "process_transfer_and_reassessment",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Rose stops rapid raking of balls and asks Allen to pick spot again, then choose shot/club/flight and use full process. Intended draw example uses slightly left aim, ball forward and start just right. Player still feels he may hit behind ball; coach says position is not excessively forward and identifies continued sway.",
+      "frames": [
+        {
+          "time_seconds": 4210,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04210.000.jpg",
+          "observation": "Player resets behind the ball after reminder."
+        },
+        {
+          "time_seconds": 4290,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04290.000.jpg",
+          "observation": "Address while discussing fear of heavy contact."
+        },
+        {
+          "time_seconds": 4320,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04320.000.jpg",
+          "observation": "Coach considers continued sway."
+        },
+        {
+          "time_seconds": 4342,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-04342.000.jpg",
+          "observation": "Address in right-leg-focused rehearsal."
+        },
+        {
+          "time_seconds": 4344,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/graphs-sequences/frame-04344.000.jpg",
+          "observation": "Backswing in right-leg-focused rehearsal."
+        }
+      ],
+      "limitations": [
+        "Ball-back habit and fear do not prove the corrected setup is too far forward. Shot recommendation explicitly assumes draw intent."
+      ]
+    },
+    {
+      "id": "E22",
+      "span_seconds": [
+        4355,
+        4520
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=4355s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "second_adaptation",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Because stabilizing the rightward shift remains difficult, Rose tests beginning with more weight on right side, later specified about 60 right/40 left. Keep that feeling in backswing, rotate, then go left in downswing. Player reports easier turn and less handsy feel; the flare/stance width can be adjusted with this setup.",
+      "frames": [
+        {
+          "time_seconds": 4370,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04370.000.jpg",
+          "observation": "Address while coach discusses adapting the shift."
+        },
+        {
+          "time_seconds": 4400,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04400.000.jpg",
+          "observation": "Coach crouches to inspect setup."
+        },
+        {
+          "time_seconds": 4420,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04420.000.jpg",
+          "observation": "Player finishes a trial."
+        },
+        {
+          "time_seconds": 4450,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04450.000.jpg",
+          "observation": "Close stance view during starting-load discussion."
+        },
+        {
+          "time_seconds": 4480,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04480.000.jpg",
+          "observation": "Follow-up trial setup."
+        },
+        {
+          "time_seconds": 4510,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04510.000.jpg",
+          "observation": "Four-iron setup with starting-load feel."
+        }
+      ],
+      "limitations": [
+        "Sixty/forty is spoken feel/setup guidance, not measured pressure or centre of mass. Earlier seventy/thirty description is ambiguous in direction; final instruction is explicit."
+      ]
+    },
+    {
+      "id": "E23",
+      "span_seconds": [
+        4520,
+        4655
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=4520s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "cross_club_test_and_overcorrection",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "A left shot with trail-loaded setup prompts a warning against staying on right side. Backswing is over right leg but downswing must go left, like stepping into a pitch. Rose tests longer clubs including two-iron and driver and recommends the concept across the bag. Execution is described as roughly one out of three at this point.",
+      "frames": [
+        {
+          "time_seconds": 4530,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04530.000.jpg",
+          "observation": "Four-iron setup during transfer."
+        },
+        {
+          "time_seconds": 4550,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04550.000.jpg",
+          "observation": "Coach explains moving left on downswing."
+        },
+        {
+          "time_seconds": 4580,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04580.000.jpg",
+          "observation": "Player switches or resets club for further trials."
+        },
+        {
+          "time_seconds": 4590,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/overview/frame-04590.000.jpg",
+          "observation": "Driver setup seen close enough to compare stance."
+        },
+        {
+          "time_seconds": 4600,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04600.000.jpg",
+          "observation": "Driver finish."
+        }
+      ],
+      "limitations": [
+        "One out of three is informal observation, not a recorded success rate. No proof all clubs or on-course play improved."
+      ]
+    },
+    {
+      "id": "E24",
+      "span_seconds": [
+        4655,
+        4785
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=4655s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "visual_feedback",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Mirror rehearsal pairs visible right-hip stability and trunk position with the fence feel, including deliberate wrong-way comparison. Rose notes guidance devices can help perception but are not proof of motor learning. Training discussion distinguishes existing tissue/strength work from the specific mobility task.",
+      "frames": [
+        {
+          "time_seconds": 4685,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04685.000.jpg",
+          "observation": "Player rehearses beside mirror with coach watching."
+        },
+        {
+          "time_seconds": 4740,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04740.000.jpg",
+          "observation": "Player and coach discuss hip work in front of mirror."
+        }
+      ],
+      "limitations": [
+        "Source evidence claim about motor learning is not independently reviewed here. Mirror success does not establish retention without guidance."
+      ]
+    },
+    {
+      "id": "E25",
+      "span_seconds": [
+        4785,
+        5030
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=4785s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "mobility_exercise",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Hip windshield-wiper exercise demonstrates seated leg rotation with active lengthening/reaching heel away while toes rotate, butt kept down. Left/right difference is apparent to coach and player. Hands-behind, hands-in-front, bent adjacent leg and crossover variants alter the position. Source suggests about 20-30 seconds per variant and consistent daily work.",
+      "frames": [
+        {
+          "time_seconds": 4830,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04830.000.jpg",
+          "observation": "Seated wide-leg starting position, hands behind."
+        },
+        {
+          "time_seconds": 4850,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04850.000.jpg",
+          "observation": "Player rotates/lengthens the extended leg."
+        },
+        {
+          "time_seconds": 4870,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04870.000.jpg",
+          "observation": "Front view of left/right comparison."
+        },
+        {
+          "time_seconds": 4940,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04940.000.jpg",
+          "observation": "Close view of feet and extended leg."
+        },
+        {
+          "time_seconds": 4960,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-04960.000.jpg",
+          "observation": "Other foot beside knee for variant."
+        },
+        {
+          "time_seconds": 5000,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-05000.000.jpg",
+          "observation": "Crossover variant with both hands on knee."
+        }
+      ],
+      "limitations": [
+        "The source uses dramatic dislocate/unscrew language for a feel; do not make literal joint dislocation an instruction. Joint distraction mechanism and long-term benefits are source claims, not independently measured."
+      ]
+    },
+    {
+      "id": "E26",
+      "span_seconds": [
+        5030,
+        5168
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=5030s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "mobility_exercise",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Hip 90/90 stretch uses both toes drawn toward shins, tucked pelvis, tall trunk and reach toward the space between knee and foot. Source compares left and right, uses a supporting hand when needed and progresses to two-hand reach. Holds are suggested up to 60 seconds, starting around 20 if needed.",
+      "frames": [
+        {
+          "time_seconds": 5060,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-05060.000.jpg",
+          "observation": "Player in 90/90 hip position."
+        },
+        {
+          "time_seconds": 5080,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-05080.000.jpg",
+          "observation": "One hand reaches while other supports body."
+        },
+        {
+          "time_seconds": 5120,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-05120.000.jpg",
+          "observation": "Close view of hip/thigh placement."
+        },
+        {
+          "time_seconds": 5140,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-05140.000.jpg",
+          "observation": "Opposite-side reach."
+        },
+        {
+          "time_seconds": 5160,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-05160.000.jpg",
+          "observation": "Player comes out of the stretch."
+        }
+      ],
+      "limitations": [
+        "Fascia explanation and promised future mobility change are source claims. No clinical diagnosis, exact joint angles or measured pre/post mobility."
+      ]
+    },
+    {
+      "id": "E27",
+      "span_seconds": [
+        5168,
+        5250
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=5168s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "familiar_skill_analogy",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Rose retains two exercises, trail-foot flare for play and mirror fence practice. A football-throw rehearsal demonstrates familiar loading on right then going left; deliberate trunk-forward throw contrast connects the golf problem to a known action.",
+      "frames": [
+        {
+          "time_seconds": 5200,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-05200.000.jpg",
+          "observation": "Standing throwing rehearsal in front of mirror."
+        },
+        {
+          "time_seconds": 5190,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/overview/frame-05190.000.jpg",
+          "observation": "Player stands after exercise before throwing comparison."
+        },
+        {
+          "time_seconds": 5240,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-05240.000.jpg",
+          "observation": "Edited medicine-ball throwing insert; not a new outcome measurement."
+        }
+      ],
+      "limitations": [
+        "Football analogy is for this athlete. Do not imply the same transfer or exact load percentages for all golfers."
+      ]
+    },
+    {
+      "id": "E28",
+      "span_seconds": [
+        5250,
+        5375
+      ],
+      "source_url": "https://www.youtube.com/watch?v=IJSu7440Ick&t=5250s",
+      "attribution": "Greg Rose and Josh Allen; Jamie Mulligan contributes by phone and a fitter later joins",
+      "kind": "teachback",
+      "session": "TPI assessment; edited physical screen, range, lab and gym",
+      "summary": "Teach-back confirms windshield wipers and 90/90 daily, good sequencing, the sway/trunk-position concern, head behind pelvis and getting left through the swing. Rose summarizes improved understanding and hoped-for contact. No later performance follow-up is supplied.",
+      "frames": [
+        {
+          "time_seconds": 5270,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-05270.000.jpg",
+          "observation": "Player and coach perform teach-back."
+        },
+        {
+          "time_seconds": 5300,
+          "path": ".videos/coaching-knowledge/IJSu7440Ick/detail/frame-05300.000.jpg",
+          "observation": "Closing discussion after teach-back."
+        }
+      ],
+      "limitations": [
+        "Closing certainty about future contact is expectation, not a measured outcome or proof the player will no longer search."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "IJSu7440Ick-C01",
+      "title": "Select and verify a near-ball alignment spot",
+      "tags": {
+        "phase": [
+          "setup"
+        ],
+        "body": [
+          "feet",
+          "vision"
+        ],
+        "outcome": [
+          "contact",
+          "direction"
+        ],
+        "concept": [
+          "alignment",
+          "comparison",
+          "failed alternative"
+        ]
+      },
+      "evidence_ids": [
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ],
+      "coaching_finding": "Player aims right of stated tree; the next selected spot is itself wrong. Alternate face-line/step-in method then overshoots left.",
+      "coach_reasoning": "Rose tests actual heel-line alignment rather than trusting perceived aim. Forward spot gives the best response for Allen; eye dominance is explanatory context, not enough to choose the method alone.",
+      "intervention": {
+        "procedure": "Choose target from behind ball, pick a nearby spot in front on that line, align parallel, then verify heel line in practice.",
+        "cue": "Line up to the spot before looking at the distant target.",
+        "alternative": "Facing line then stepping into ball was tested but not selected for this player."
+      },
+      "applicability": [
+        "Rightward setup error verified relative to intended target.",
+        "Spot must itself be checked; similar sensation does not establish same eye or alignment cause."
+      ],
+      "unknowns": [
+        "No calibrated degrees or exact target distance; retention not proven."
+      ],
+      "observed_result": "First spot attempt improves alignment; a wrong spot fails and alternate method goes too far left. Forward spot selected.",
+      "selection": {
+        "coaching_focus": "Establish a repeatable intended line",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Setup checks, selected movement and alternatives must not become a simultaneous checklist during the swing.",
+        "reassess": "Recheck across targets and clubs; return behind ball when line drifts."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "IJSu7440Ick-C02",
+      "title": "Stabilize stock ball position before treating release",
+      "tags": {
+        "phase": [
+          "setup"
+        ],
+        "body": [
+          "feet",
+          "ball"
+        ],
+        "outcome": [
+          "contact",
+          "direction"
+        ],
+        "concept": [
+          "ball position",
+          "upstream variable"
+        ]
+      },
+      "evidence_ids": [
+        "E07",
+        "E08",
+        "E09"
+      ],
+      "coaching_finding": "Short-club ball position drifts behind centre; player describes a habitual rearward progression and later fears heavy contact with ball forward.",
+      "coach_reasoning": "Rose suspects rearward ball and body position encourage early release. Removing the variable may allow hands to respond without a direct wrist instruction.",
+      "intervention": {
+        "reference": "Feet together with ball between, flare lead foot, vary trail-foot position/stance width for club.",
+        "instruction": "Keep stock ball position from drifting behind stance centre; discuss convention with existing coach.",
+        "exception": "Specialty shots may use different ball positions."
+      },
+      "applicability": [
+        "Observed rearward stock setup and corresponding contact/release concern.",
+        "Check intended shot and club; do not override specialty-flight setup."
+      ],
+      "unknowns": [
+        "No fixed distance, controlled strike data or isolated causal test."
+      ],
+      "observed_result": "Some initial heavy-contact tendency, then qualitative flight praise; ball-back habit recurs.",
+      "selection": {
+        "coaching_focus": "Repeat the chosen stock ball position",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Setup checks, selected movement and alternatives must not become a simultaneous checklist during the swing.",
+        "reassess": "Check setup again before attributing a poor shot to a new mechanical fault."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "IJSu7440Ick-C03",
+      "title": "Use the full shot process to prevent setup drift",
+      "tags": {
+        "phase": [
+          "practice",
+          "setup"
+        ],
+        "body": [
+          "whole body"
+        ],
+        "outcome": [
+          "contact",
+          "direction"
+        ],
+        "concept": [
+          "routine",
+          "transfer"
+        ]
+      },
+      "evidence_ids": [
+        "E08",
+        "E21"
+      ],
+      "coaching_finding": "Rapidly raking balls reintroduces rightward aim and ball-back setup.",
+      "coach_reasoning": "A change that works during a coached repetition must survive the process used on course. Rose repeatedly resets target and setup rather than adding swing thoughts.",
+      "intervention": {
+        "procedure": "Step back, select shot/club/flight, choose spot, set up and hit. Reset for the next shot.",
+        "scope": "Keep setup checks before the swing; use only the current movement focus during it."
+      },
+      "applicability": [
+        "Observable drift during repetitive range practice."
+      ],
+      "unknowns": [
+        "No on-course retention test or proof a checklist alone fixes mechanics."
+      ],
+      "observed_result": "Coach catches repeated drift and the player resumes the process.",
+      "selection": {
+        "coaching_focus": "Repeat the same preparation",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Setup checks, selected movement and alternatives must not become a simultaneous checklist during the swing.",
+        "reassess": "Test independent setup over multiple targets and clubs."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "IJSu7440Ick-C04",
+      "title": "Revise the diagnosis when phase-specific video and 3D disagree with the first impression",
+      "tags": {
+        "phase": [
+          "backswing",
+          "downswing"
+        ],
+        "body": [
+          "trunk",
+          "pelvis"
+        ],
+        "outcome": [
+          "contact",
+          "direction"
+        ],
+        "concept": [
+          "rejected hypothesis",
+          "phase-specific evidence",
+          "confidence"
+        ]
+      },
+      "evidence_ids": [
+        "E02",
+        "E04",
+        "E09",
+        "E10",
+        "E11",
+        "E12",
+        "E13"
+      ],
+      "coaching_finding": "Initial early-extension/over-the-top suspicion is not supported as a complete explanation. Video transition sits in the described slot; impact-zone path is judged in-to-out. 3D captures show little evidence of early extension, while trunk tilt remains.",
+      "coach_reasoning": "Different observations answer different questions. Good force order and kinematic sequence do not remove the need to examine trunk position; a two-way miss cannot select one cause by itself.",
+      "intervention": {
+        "action": "Retain unsupported hypotheses as rejected for these captures. Prioritize setup and trunk/pelvis relationship.",
+        "annotation": "Separate address/P3 shaft lines, early transition, and P6-P8 impact-zone reference rather than one swing-plane verdict."
+      },
+      "applicability": [
+        "Comparable evidence from relevant views/phase or external measurements.",
+        "Phone estimates do not substitute for force or 3D data."
+      ],
+      "unknowns": [
+        "No universal threshold, raw data or assurance early extension never occurs on other shots."
+      ],
+      "observed_result": "Source changes the main diagnosis and selects fence drill. No broad accuracy improvement inferred solely from diagnosis.",
+      "selection": {
+        "coaching_focus": "Use evidence to choose the actual case",
+        "max_simultaneous_cues": 0,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Setup checks, selected movement and alternatives must not become a simultaneous checklist during the swing.",
+        "reassess": "Gather missing phase/view or metric before selecting a cause."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "IJSu7440Ick-C05",
+      "title": "Reach over an imagined fence without shifting pelvis into it",
+      "tags": {
+        "phase": [
+          "backswing",
+          "downswing"
+        ],
+        "body": [
+          "trunk",
+          "pelvis"
+        ],
+        "outcome": [
+          "contact",
+          "direction"
+        ],
+        "concept": [
+          "constraint drill",
+          "instrument retest"
+        ]
+      },
+      "evidence_ids": [
+        "E09",
+        "E13",
+        "E14",
+        "E15",
+        "E16"
+      ],
+      "coaching_finding": "Targetward trunk position relative to pelvis persists after capture rules against major early extension.",
+      "coach_reasoning": "Rose wants a real turn into the trail side with upper body to the right of pelvis, rather than a tilt toward target. The fence constrains lower-body sway while giving a simple upper-body task.",
+      "intervention": {
+        "drill": "Imagine fence beside trail/right leg and a table beyond it. Reach over to the table without leg touching fence.",
+        "cue": "Reach over the fence without touching it.",
+        "explanatory_reference": "Shirt buttons feel right of trouser zipper, for this right-handed player."
+      },
+      "applicability": [
+        "Source-observed trunk/pelvis pattern; verify player response.",
+        "Alignment and stock ball position already checked."
+      ],
+      "unknowns": [
+        "No medical cause proved; no precise 3D target or continuous motion measurement from images."
+      ],
+      "observed_result": "Instrumented retest is praised, player feels different/higher-face strike. Turf transfer improves qualitatively but sway and release are not fully resolved.",
+      "selection": {
+        "coaching_focus": "Turn while keeping the trail-side base controlled",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Setup checks, selected movement and alternatives must not become a simultaneous checklist during the swing.",
+        "reassess": "Record the drill and compare actual target movement; inspect whether pelvis sway substitutes for reach."
+      },
+      "alternative_case_ids": [
+        "IJSu7440Ick-C07",
+        "IJSu7440Ick-C08"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "IJSu7440Ick-C06",
+      "title": "Address sway that emerges during the fence drill",
+      "tags": {
+        "phase": [
+          "backswing",
+          "downswing"
+        ],
+        "body": [
+          "trunk",
+          "pelvis"
+        ],
+        "outcome": [
+          "contact",
+          "direction"
+        ],
+        "concept": [
+          "compensation",
+          "manual constraint"
+        ]
+      },
+      "evidence_ids": [
+        "E15",
+        "E16",
+        "E19"
+      ],
+      "coaching_finding": "Player moves pelvis away from target during the reach, leaving head/trunk relatively targetward. The original cue alone remains difficult.",
+      "coach_reasoning": "The same trunk-to-pelvis picture can arise through pelvic displacement, so asking only for head position can miss the mechanism. Rose adds manual resistance to help the player stabilize the trail leg.",
+      "intervention": {
+        "drill": "Coach applies a controlled push at trail hip during rehearsal while player resists sway and reaches.",
+        "cue": "Do not let the right leg touch the fence.",
+        "app_role": "Capture the demonstration as coaching evidence; current app cannot supply the manual interaction."
+      },
+      "applicability": [
+        "Visible compensation in C05 and suitable in-person coaching setup."
+      ],
+      "unknowns": [
+        "No force magnitude, resistance dosage or proof of underlying physical cause."
+      ],
+      "observed_result": "Corrected rehearsals shown, but continued range difficulty prompts setup adaptations.",
+      "selection": {
+        "coaching_focus": "Stabilize the base rather than add more reach",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Setup checks, selected movement and alternatives must not become a simultaneous checklist during the swing.",
+        "reassess": "If repeated attempts stay difficult, test a setup adaptation instead of repeating identical instructions."
+      },
+      "alternative_case_ids": [
+        "IJSu7440Ick-C07",
+        "IJSu7440Ick-C08"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "IJSu7440Ick-C07",
+      "title": "Test trail-foot flare when turning into trail hip is difficult",
+      "tags": {
+        "phase": [
+          "setup",
+          "backswing"
+        ],
+        "body": [
+          "trail foot",
+          "trail hip"
+        ],
+        "outcome": [
+          "contact",
+          "direction"
+        ],
+        "concept": [
+          "body context",
+          "setup adaptation"
+        ]
+      },
+      "evidence_ids": [
+        "E02",
+        "E20",
+        "E22",
+        "E25"
+      ],
+      "coaching_finding": "Right-side turn is limited in screen and range task; foot-in versus foot-out comparison feels distinctly easier with flare.",
+      "coach_reasoning": "Changing foot orientation may make the required turn achievable while separately addressing physical capacity. This is a task adaptation, not proof instant hip joint mobility improved.",
+      "intervention": {
+        "setup": "Flare trail/right foot outward to the amount that makes the tested turn easier.",
+        "cue": "Keep the fence reach while using the easier foot orientation.",
+        "duration": "Interim adaptation; source leaves open keeping it longer-term if preferred."
+      },
+      "applicability": [
+        "Right-side task limitation and a favourable trial response.",
+        "Recheck alignment after changing foot orientation."
+      ],
+      "unknowns": [
+        "No exact flare angle, measured joint-range change or clinical diagnosis."
+      ],
+      "observed_result": "Player reports easier turn and shots receive praise; subsequent sway still requires another adaptation.",
+      "selection": {
+        "coaching_focus": "Make the intended turn achievable",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Setup checks, selected movement and alternatives must not become a simultaneous checklist during the swing.",
+        "reassess": "Compare task movement and shot result; do not increase flare by an arbitrary angle."
+      },
+      "alternative_case_ids": [
+        "IJSu7440Ick-C08"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "IJSu7440Ick-C08",
+      "title": "Begin with more trail-side load when the backswing shift is hard to stabilize",
+      "tags": {
+        "phase": [
+          "setup",
+          "backswing",
+          "downswing"
+        ],
+        "body": [
+          "trunk",
+          "pelvis"
+        ],
+        "outcome": [
+          "contact",
+          "direction"
+        ],
+        "concept": [
+          "alternate adaptation",
+          "overcorrection"
+        ]
+      },
+      "evidence_ids": [
+        "E21",
+        "E22",
+        "E23",
+        "E27"
+      ],
+      "coaching_finding": "Despite flare and reach work, player still struggles to stabilize shifting into right leg. Coach tests starting there instead.",
+      "coach_reasoning": "Starting around 60 right/40 left reduces the new rightward shift needing control, then allows a turn and leftward downswing. Staying on the right can create another left miss, so the second part is essential.",
+      "intervention": {
+        "setup": "Source feel: about 60 percent on right/trail side and 40 on left at address, maintained during backswing turn.",
+        "cue": "Turn from the right, then step into the pitch to the left.",
+        "avoid": "Do not turn this into 100/0 or remain on the right through downswing."
+      },
+      "applicability": [
+        "Same demonstrated stabilization difficulty and tested easier response.",
+        "Distinguish perceived load from force-plate pressure or measured centre of mass."
+      ],
+      "unknowns": [
+        "No measured 60/40 force distribution or controlled pre/post shift data."
+      ],
+      "observed_result": "Player reports easier turn and less handsiness; coach tests four-iron, longer iron and driver. Consistency is still roughly one out of three by informal observation.",
+      "selection": {
+        "coaching_focus": "Simplify loading and complete the leftward downswing",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Setup checks, selected movement and alternatives must not become a simultaneous checklist during the swing.",
+        "reassess": "Retest across clubs and check for hanging on trail side after the backswing."
+      },
+      "alternative_case_ids": [
+        "IJSu7440Ick-C05",
+        "IJSu7440Ick-C07"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "IJSu7440Ick-C09",
+      "title": "Add a release feel only after upstream changes partly work",
+      "tags": {
+        "phase": [
+          "downswing",
+          "impact"
+        ],
+        "body": [
+          "wrists",
+          "arms",
+          "trunk"
+        ],
+        "outcome": [
+          "contact",
+          "direction"
+        ],
+        "concept": [
+          "conditional cue",
+          "partial result"
+        ]
+      },
+      "evidence_ids": [
+        "E08",
+        "E09",
+        "E16",
+        "E17"
+      ],
+      "coaching_finding": "Alignment, ball position and reach help release but do not fully remove early release; coach informally calls it fifty percent better.",
+      "coach_reasoning": "Rose first lets the hands respond to better conditions, then tries a brief hand/club demonstration when needed. He asks where the player feels it rather than imposing a generic sensation.",
+      "intervention": {
+        "primary": "Two-hand forehand/reverse-motorcycle rehearsal to feel earlier face organization and angle retained as body turns.",
+        "delivery": "Slow coach-guided rehearsal, then a shot and video check.",
+        "priority": "Return to setup and reach if the added hand cue does not clearly help."
+      },
+      "applicability": [
+        "Actual residual early release after relevant upstream adjustments.",
+        "Do not retrieve from the word flippy alone or use on extreme-lag pattern."
+      ],
+      "unknowns": [
+        "No measured fifty-percent reduction or exact wrist-angle target."
+      ],
+      "observed_result": "Trial described as close; complete resolution not shown. Main plan returns to reach, setup and athletic action.",
+      "selection": {
+        "coaching_focus": "Test one release sensation",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Setup checks, selected movement and alternatives must not become a simultaneous checklist during the swing.",
+        "reassess": "Compare against previous shots and remove the cue if it adds confusion without improving target."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "IJSu7440Ick-C10",
+      "title": "Use opposite ball-flight tasks to recalibrate a misleading swing feel",
+      "tags": {
+        "phase": [
+          "practice",
+          "downswing"
+        ],
+        "body": [
+          "whole body"
+        ],
+        "outcome": [
+          "contact",
+          "direction"
+        ],
+        "concept": [
+          "contrast learning",
+          "shot intent"
+        ]
+      },
+      "evidence_ids": [
+        "E16",
+        "E18"
+      ],
+      "coaching_finding": "Corrected alignment feels left; familiar compensatory swing feels remain. Player has trouble identifying straight from sensation alone.",
+      "coach_reasoning": "Rose asks for contrasting draw/start-right and fade/start-left tasks, then a shot between them. The exercise gives the player a range of feels rather than more verbal plane instructions.",
+      "intervention": {
+        "procedure": "With verified setup, try exaggerated swing-right draw intent, then swing-left fade intent, then an intermediate start target.",
+        "cue": "Find the shot between the two feels.",
+        "scope": "One task at a time. Exaggerations are not permanent alignment changes."
+      },
+      "applicability": [
+        "Player can attempt the shot-shape tasks and setup is checked."
+      ],
+      "unknowns": [
+        "No measured start-line/path values or retention results."
+      ],
+      "observed_result": "Coach praises intermediate result; player says it feels only slightly right. Actual dispersion is not quantified.",
+      "selection": {
+        "coaching_focus": "Calibrate the intended flight",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Setup checks, selected movement and alternatives must not become a simultaneous checklist during the swing.",
+        "reassess": "Compare desired and actual starts/curves, then return to stock task."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "IJSu7440Ick-C11",
+      "title": "Preserve athletic intent when guarded swings work worse",
+      "tags": {
+        "phase": [
+          "backswing",
+          "downswing"
+        ],
+        "body": [
+          "trunk",
+          "pelvis"
+        ],
+        "outcome": [
+          "contact",
+          "direction"
+        ],
+        "concept": [
+          "intent",
+          "capacity versus skill"
+        ]
+      },
+      "evidence_ids": [
+        "E03",
+        "E04",
+        "E09",
+        "E17"
+      ],
+      "coaching_finding": "Allen has ample measured/tested power context and harder swings look better to Rose than guarded attempts.",
+      "coach_reasoning": "For this athlete, intent to attack appears to organize movement better. Rose does not identify general power development as the primary need and connects to a familiar throwing action.",
+      "intervention": {
+        "cue": "Make an athletic committed swing after the setup and reach are established.",
+        "scope": "A player-specific tested intent, not a request for every golfer to swing maximally."
+      },
+      "applicability": [
+        "Observed favourable response to intent and appropriate player context."
+      ],
+      "unknowns": [
+        "No controlled effort/speed/dispersion comparison."
+      ],
+      "observed_result": "Coach prefers the harder swings; no measured speed gain or guarantee that left side disappears.",
+      "selection": {
+        "coaching_focus": "Keep the learned action athletic",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Setup checks, selected movement and alternatives must not become a simultaneous checklist during the swing.",
+        "reassess": "Check contact and control rather than equate effort with improvement."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "IJSu7440Ick-C12",
+      "title": "Use seated hip rotation variants as specific physical homework",
+      "tags": {
+        "phase": [
+          "physical training"
+        ],
+        "body": [
+          "hips"
+        ],
+        "outcome": [
+          "contact",
+          "direction"
+        ],
+        "concept": [
+          "body context",
+          "mobility homework"
+        ]
+      },
+      "evidence_ids": [
+        "E02",
+        "E25",
+        "E28"
+      ],
+      "coaching_finding": "Right-side seated rotation is visibly/reportedly harder; current training emphasises strength/tissue work.",
+      "coach_reasoning": "Rose wants a small repeatable mobility task that reveals the side difference and can be practised consistently. His proposed distraction mechanism remains a source claim.",
+      "intervention": {
+        "procedure": "Seated windshield-wiper variations: rotate extended leg while reaching heel away, keep seat down; compare hands behind/in front and bent-leg/crossover positions as demonstrated.",
+        "source_dose": "About 20-30 seconds per variant, daily consistency.",
+        "language": "Translate dramatic dislocate/unscrew metaphor as gentle lengthening intent, never literal joint dislocation."
+      },
+      "applicability": [
+        "Corresponding in-person assessed limitation and suitable physical exercise guidance.",
+        "Body context stored separately from swing-video diagnosis."
+      ],
+      "unknowns": [
+        "No measured range change, clinical assessment or proven long-term outcome."
+      ],
+      "observed_result": "Player sees side difference and remembers the exercise; no follow-up improvement.",
+      "selection": {
+        "coaching_focus": "Practise the selected mobility task consistently",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Setup checks, selected movement and alternatives must not become a simultaneous checklist during the swing.",
+        "reassess": "Reassess comparable range/task under suitable supervision before claiming change."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "IJSu7440Ick-C13",
+      "title": "Adapt the 90/90 hip reach to the player\u2019s current tolerance",
+      "tags": {
+        "phase": [
+          "physical training"
+        ],
+        "body": [
+          "hips",
+          "trunk"
+        ],
+        "outcome": [
+          "contact",
+          "direction"
+        ],
+        "concept": [
+          "exercise adaptation",
+          "homework"
+        ]
+      },
+      "evidence_ids": [
+        "E26",
+        "E28"
+      ],
+      "coaching_finding": "Right/left 90/90 positions differ in difficulty and support need.",
+      "coach_reasoning": "Source links full-body positioning to the desired stretch, using support and shorter holds when the harder version is not yet manageable.",
+      "intervention": {
+        "procedure": "90/90 seated hip position, toes toward shins, pelvis tucked, trunk tall; reach between knee and foot with opposite hand supporting as needed.",
+        "progression": "Two-hand reach only when manageable; source suggests up to 60 seconds, beginning around 20 if needed.",
+        "scope": "Second source-selected exercise; not a universal programme for a visible swing label."
+      },
+      "applicability": [
+        "Suitable physical assessment and ability to take the demonstrated position."
+      ],
+      "unknowns": [
+        "No validated fascia mechanism, quantified mobility gain or follow-up."
+      ],
+      "observed_result": "Supported and opposite-side versions demonstrated; homework recalled at teach-back.",
+      "selection": {
+        "coaching_focus": "Use a manageable version of the selected stretch",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Setup checks, selected movement and alternatives must not become a simultaneous checklist during the swing.",
+        "reassess": "Reassess position and comfort instead of forcing duration or reach."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "IJSu7440Ick-C14",
+      "title": "Link visual feedback and teach-back to a familiar action",
+      "tags": {
+        "phase": [
+          "learning",
+          "practice planning"
+        ],
+        "body": [
+          "trunk",
+          "pelvis"
+        ],
+        "outcome": [
+          "contact",
+          "direction"
+        ],
+        "concept": [
+          "teach-back",
+          "visual feedback",
+          "familiar skill"
+        ]
+      },
+      "evidence_ids": [
+        "E24",
+        "E27",
+        "E28"
+      ],
+      "coaching_finding": "Player wants to understand mechanics and already knows a loading pattern from throwing. Visual rehearsal helps him distinguish sway/tilt from intended turn.",
+      "coach_reasoning": "Mirror is a temporary way to connect appearance and feel. Familiar throwing action supplies an analogy; teach-back checks whether selected tasks and understanding survived a detailed lesson.",
+      "intervention": {
+        "procedure": "Compare intended and deliberately wrong fence rehearsal in mirror, connect right-load/left-shift to throwing, then explain the plan back.",
+        "learning_check": "Player names the two exercises, daily routine, good sequence, controlled turn and leftward downswing."
+      },
+      "applicability": [
+        "Feedback suits the player; use familiar task only if truly familiar."
+      ],
+      "unknowns": [
+        "No proof mirror use or correct explanation produces unguided retention."
+      ],
+      "observed_result": "Player recounts key work and coach confirms. Subsequent on-course improvement is unknown.",
+      "selection": {
+        "coaching_focus": "Confirm one understood action",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference: one focus, at most two compatible cues. Setup checks, selected movement and alternatives must not become a simultaneous checklist during the swing.",
+        "reassess": "Check independent execution without mirror and review later performance."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "id": "M01",
+      "evidence_ids": [
+        "E03"
+      ],
+      "kind": "spoken_capacity_context",
+      "values": {
+        "self_report_driver_mph_range": [
+          125,
+          126
+        ],
+        "jump_inches_spoken": [
+          25.9,
+          27.6
+        ],
+        "power_rating_lower_core_upper": [
+          27.5,
+          28.25,
+          25.75
+        ]
+      },
+      "limits": [
+        "Jump rounded to 27 elsewhere. Power ratings described as horsepower metaphor, not SI/physical horsepower. Tour comparisons not app thresholds."
+      ]
+    },
+    {
+      "id": "M02",
+      "evidence_ids": [
+        "E11",
+        "E12"
+      ],
+      "kind": "source_force_display_and_spoken_comparison",
+      "frame": ".videos/coaching-knowledge/IJSu7440Ick/native-graphs/frame-02455.000.jpg",
+      "columns": [
+        "Trail/Lead Force",
+        "Frontal Plane Torque",
+        "Horizontal Plane Torque",
+        "Vertical Force Combined"
+      ],
+      "displayed_peaks_approx": [
+        24.2,
+        18.9,
+        19.4,
+        146.6
+      ],
+      "spoken_lateral_percent_body_weight": 24,
+      "spoken_vertical_percent_body_weight": 138,
+      "source_sequence": [
+        "lateral",
+        "rock",
+        "twist",
+        "jump"
+      ],
+      "limits": [
+        "Graphic channels carry different physical quantities; percentages are retained as displayed normalized values, not all called forces.",
+        "Spoken 138 differs from approximately 146.6 shown; no matched trial identity proves reconciliation.",
+        "Peak timing linked to shaft checkpoints verbally; no precise milliseconds inferred."
+      ]
+    },
+    {
+      "id": "M03",
+      "evidence_ids": [
+        "E13",
+        "E14"
+      ],
+      "kind": "labelled_3D_graph_pair",
+      "frames": [
+        ".videos/coaching-knowledge/IJSu7440Ick/native-graphs/frame-02910.000.jpg",
+        ".videos/coaching-knowledge/IJSu7440Ick/native-graphs/frame-03040.000.jpg"
+      ],
+      "displayed_cursor_values": [
+        {
+          "source_seconds": 2910,
+          "time_seconds": 0.529,
+          "ThxRot": -57.3,
+          "ThxBnd": 17.2,
+          "ThxSBnd": -33.4
+        },
+        {
+          "source_seconds": 3040,
+          "time_seconds": 1.171,
+          "ThxRot": 75.0,
+          "ThxBnd": -1.3,
+          "ThxSBnd": 47.2
+        }
+      ],
+      "limits": [
+        "Cursor times differ and do not form a matched checkpoint comparison. Do not subtract these values or label them top/impact readings.",
+        "Full traces and coach judgement support qualitative changed pattern; no exact reverse-spine-angle delta calculated."
+      ]
+    },
+    {
+      "id": "M04",
+      "evidence_ids": [
+        "E16",
+        "E23"
+      ],
+      "kind": "informal_coach_estimates",
+      "values": {
+        "release_better_percent_spoken": 50,
+        "successful_execution_spoken": "roughly one out of three"
+      },
+      "limits": [
+        "Neither is a measured outcome statistic. No independent denominator or calculation."
+      ]
+    },
+    {
+      "id": "M05",
+      "evidence_ids": [
+        "E22",
+        "E23"
+      ],
+      "kind": "setup_feel",
+      "values": {
+        "right_left_starting_load_feel": [
+          60,
+          40
+        ]
+      },
+      "limits": [
+        "Not measured pressure, force distribution or centre of mass. Retain move-left downswing requirement."
+      ]
+    },
+    {
+      "id": "M06",
+      "evidence_ids": [
+        "E25",
+        "E26"
+      ],
+      "kind": "source_homework_dose",
+      "values": {
+        "windshield_wiper_variant_seconds": [
+          20,
+          30
+        ],
+        "ninety_ninety_hold_seconds_goal": 60,
+        "ninety_ninety_start_seconds_option": 20,
+        "frequency": "daily"
+      },
+      "limits": [
+        "Source advice for assessed individual, not validated universal dosage."
+      ]
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "BcG-r_13z_I-C01",
+      "current_case": "IJSu7440Ick-C04",
+      "relation": "Different evidence resolves similar fault language differently",
+      "explanation": "Menante's extreme lag contradicts casting as the explanation of a sequence pattern; Allen's captured early release supports investigating casting after setup. A label or peak order alone cannot select the intervention."
+    },
+    {
+      "source_case": "BcG-r_13z_I-C03",
+      "current_case": "IJSu7440Ick-C11",
+      "relation": "Power development is conditional",
+      "explanation": "Menante has assessed upper/core power deficit; Allen has ample general power. Avoid applying the same training priority."
+    },
+    {
+      "source_case": "HQNKUS_BSGY-C02",
+      "current_case": "IJSu7440Ick-C02",
+      "relation": "Stock setup reference with shot exceptions",
+      "explanation": "Both use a repeatable lead-side reference and stance-width variation; do not blend source-specific distances into a universal rule."
+    },
+    {
+      "source_case": "1dF_irGY6YM-C01",
+      "current_case": "IJSu7440Ick-C02",
+      "relation": "Specialty trajectory setup differs from stock setup correction",
+      "explanation": "Fleetwood uses relative forward/back changes for height. Allen's stock ball-back problem does not prohibit those task-specific changes."
+    },
+    {
+      "source_case": "BcG-r_13z_I-C05",
+      "current_case": "IJSu7440Ick-C06",
+      "relation": "Incomplete transfer requires adaptation",
+      "explanation": "Both lessons preserve attempts that do not fully work. Allen's continued sway leads to foot and starting-load adaptations."
+    },
+    {
+      "source_case": "BcG-r_13z_I-C07",
+      "current_case": "IJSu7440Ick-C07",
+      "relation": "Different trail-foot changes and intents",
+      "explanation": "Menante steps the foot back to influence trunk/pelvis timing; Allen flares it outward to ease the turn. Do not merge setback and flare."
+    },
+    {
+      "source_case": "NOMY1bzMI28-C12",
+      "current_case": "IJSu7440Ick-C14",
+      "relation": "Teach-back checks meaning",
+      "explanation": "Store what the player actually remembers and the coach's correction/confirmation rather than only the initial explanation."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "IJSu7440Ick-C01",
+        "IJSu7440Ick-C10"
+      ],
+      "relationship": "Fix unintended rightward alignment first; later aim-left/swing-right task is a deliberate contrast, not the old setup error."
+    },
+    {
+      "cases": [
+        "IJSu7440Ick-C05",
+        "IJSu7440Ick-C06",
+        "IJSu7440Ick-C07",
+        "IJSu7440Ick-C08"
+      ],
+      "relationship": "Original fence cue, resisted stabilization, foot flare and trail-loaded setup are successive tests/adaptations. Select one manageable focus rather than stack them."
+    },
+    {
+      "cases": [
+        "IJSu7440Ick-C02",
+        "IJSu7440Ick-C09"
+      ],
+      "relationship": "Release instruction follows partial response to setup/trunk work; it is not the initial response to flippy."
+    },
+    {
+      "cases": [
+        "IJSu7440Ick-C08",
+        "IJSu7440Ick-C14"
+      ],
+      "relationship": "Trail loading in backswing retains an explicit leftward downswing. Head-behind-pelvis language must not imply staying on trail side."
+    },
+    {
+      "cases": [
+        "IJSu7440Ick-C12",
+        "IJSu7440Ick-C13"
+      ],
+      "relationship": "Two physical homework exercises stored with different setup and dose; their proposed mechanisms and outcomes are not independently verified."
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        310,
+        345
+      ],
+      "issue": "Caption 2941 during screen lacks clear units/attribution; no precise values invented."
+    },
+    {
+      "span_seconds": [
+        2435,
+        2660
+      ],
+      "issue": "Force screenshot peaks differ from later spoken vertical 138; trial identity unresolved."
+    },
+    {
+      "span_seconds": [
+        2880,
+        3050
+      ],
+      "issue": "Pre/post graph cursor readouts at different moments cannot quantify change."
+    },
+    {
+      "span_seconds": [
+        1800,
+        2925
+      ],
+      "issue": "Initial early-extension/over-the-top hypotheses revised by phase-specific video and later 3D; not silently retained as confirmed diagnosis."
+    },
+    {
+      "span_seconds": [
+        4370,
+        4520
+      ],
+      "issue": "Initial 70/30 report ambiguous, final 60 right/40 left setup explicitly repeated."
+    },
+    {
+      "span_seconds": [
+        4785,
+        5168
+      ],
+      "issue": "Dislocate/ripping-apart language is metaphorical coaching wording and must not become literal exercise instruction."
+    }
+  ],
+  "annotation_opportunities": [
+    "Target line, verified near-ball spot and heel reference; distinguish intended target from camera direction.",
+    "Face-on pelvis/head or shirt-button/zipper references with view uncertainty.",
+    "Separate natural swing, deliberate wrong-way contrast and guided rehearsal.",
+    "Address/P3 plane references and P6-P8 delivery as separate observations.",
+    "Attach graph labels, source times and trial names to cases; do not infer phone force measurements.",
+    "Distinguish trail-foot flare from stance setback and subjective loading from measured pressure."
+  ],
+  "excluded_material": [
+    "Promotional opening/closing and unverified career/athletic statistics.",
+    "Broad clinical, fascia and injury-protection claims treated as source context, not clinical guidance.",
+    "Tour averages and claims about almost all golfers not used as thresholds.",
+    "Future contact gains, equipment changes, mobility improvement and on-course success not invented from closing optimism."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Source-grounded extraction and condition-specific cases; independent coaching correctness and applicability remain unestablished."
+  },
+  "asset_sha256": {
+    "video": "51f1bc72149fb8187c7ce46352ee3753c7ac33cbc5ca11aeea14a927aa5994c6",
+    "raw_captions": "58744f4922241700ee710f9269847eb2a4ea5ad7969cb8b65447d2914578672d",
+    "transcript": "013b1deba93790d63ea82b0e973bb5330bfaf14a3a0b301edab8b22c2143652f"
+  }
+}

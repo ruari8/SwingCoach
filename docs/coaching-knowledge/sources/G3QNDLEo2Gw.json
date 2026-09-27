@@ -1,0 +1,1928 @@
+{
+  "version": 1,
+  "source_id": "G3QNDLEo2Gw",
+  "url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw",
+  "title": "This World #1 Golf Coach Shows Me the Easiest Way to Hit Driver & Irons Straight and Long",
+  "publisher": "Jerome Rufin",
+  "published": "20260823",
+  "duration_seconds": 4348,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "golfer": "Jerome Rufin",
+    "coach": "Chris, continuing the Chris Mayson Golf lesson series",
+    "attribution_basis": "Source dialogue and lesson context, not facial identification."
+  },
+  "context": {
+    "handedness": "right",
+    "tasks": [
+      "Iron full swing",
+      "Driver transfer",
+      "Basic pitching",
+      "Bunker practice",
+      "Edited on-course application"
+    ],
+    "golfer_report": "Reports continuing arm discomfort after prolonged golf and advice from his physical therapist; this is context, not evidence of medical clearance or advice to keep playing.",
+    "body_screening": "No formal physical screen, body handicap, force-plate data or calibrated 3D assessment shown.",
+    "source_plan": "Chris initially names three topics: face, width, transition. He then postpones transition until backswing structure is adequate.",
+    "style": "Hands-on demonstrations, technical sequencing language, different feels, simple constraints, humour and blunt feedback."
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/G3QNDLEo2Gw/G3QNDLEo2Gw.mp4",
+    "raw_captions": ".videos/coaching-knowledge/G3QNDLEo2Gw/G3QNDLEo2Gw.en-orig.json3",
+    "transcript": ".videos/coaching-knowledge/G3QNDLEo2Gw/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/G3QNDLEo2Gw/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/G3QNDLEo2Gw/G3QNDLEo2Gw.info.json",
+    "overview": ".videos/coaching-knowledge/G3QNDLEo2Gw/overview/index.json",
+    "detail": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/index.json",
+    "annotations": ".videos/coaching-knowledge/G3QNDLEo2Gw/annotations/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 2469,
+    "transcript_kind": "YouTube en-orig automatic captions; speaker identity inferred from dialogue and inspected footage.",
+    "audio_independently_transcribed": false,
+    "visual_review_method": "72 full-timeline overview frames, 160 targeted detail frames and 24 annotation/drill-sequence frames. All 22 contact sheets inspected. Some timestamps repeat; sampled review, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/G3QNDLEo2Gw/overview/index.json",
+      ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/index.json",
+      ".videos/coaching-knowledge/G3QNDLEo2Gw/annotations/index.json"
+    ],
+    "limitations": [
+      "480p source and small replay panels limit fine geometry.",
+      "Edited course inserts and promotional montages are not one chronological session.",
+      "No readable device metric screen was verified.",
+      "Caption display windows overlap; source playback seconds are not real swing time."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        45,
+        93
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=45s",
+      "attribution": "Chris",
+      "kind": "coach_explanation",
+      "session": "current_lesson",
+      "summary": "Grip strength and wrist condition must be compatible; Chris rejects Jerome's assumption that a particular impact wrist change is always required.",
+      "frames": [
+        {
+          "time_seconds": 90,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/overview/frame-00090.000.jpg",
+          "observation": "Golfer at address during the initial swings and grip/wrist discussion."
+        }
+      ],
+      "limitations": [
+        "No precise wrist-angle or grip-strength measurement."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        185,
+        276
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=185s",
+      "attribution": "Chris",
+      "kind": "coach_explanation",
+      "session": "current_lesson",
+      "summary": "Chris sees some rolled-in takeaway and a slightly high/across top, but a reasonable early delivery. He identifies left-shoulder leaning, increased steepness, then stalled rotation and an arm throw through impact. His plan includes face condition, width and a different transition.",
+      "frames": [
+        {
+          "time_seconds": 200,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00200.000.jpg",
+          "observation": "Split-screen replay near the top accompanies tablet diagnosis."
+        },
+        {
+          "time_seconds": 215,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00215.000.jpg",
+          "observation": "Replay shows hands/club after impact while Chris discusses the stalled pivot."
+        },
+        {
+          "time_seconds": 230,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00230.000.jpg",
+          "observation": "Top-position replay accompanies the description of leaning in transition."
+        },
+        {
+          "time_seconds": 262,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00262.000.jpg",
+          "observation": "Coach demonstrates upper-body/arm structure during the proposed transition correction."
+        }
+      ],
+      "limitations": [
+        "Rotation, inclination and force are qualitative coach assessments.",
+        "Three planned topics are preserved as source content, not claimed to be a two-item source prescription."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        284,
+        453
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=284s",
+      "attribution": "Chris",
+      "kind": "drill_and_priority",
+      "session": "current_lesson",
+      "summary": "Chris uses a hinge-up-in-front rehearsal to check face condition, then asks for a shorter, wider hand radius. He temporarily postpones downswing work. He asks for five to ten slow repetitions and describes hands beneath the lead shoulder with the shaft horizontal as a first-move reference.",
+      "frames": [
+        {
+          "time_seconds": 297,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00297.000.jpg",
+          "observation": "Coach and golfer examine the club held in front."
+        },
+        {
+          "time_seconds": 316,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00316.000.jpg",
+          "observation": "Coach points at the hands/club during the hinge rehearsal."
+        },
+        {
+          "time_seconds": 350,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00350.000.jpg",
+          "observation": "Golfer rehearses a wide arm position."
+        },
+        {
+          "time_seconds": 412,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00412.000.jpg",
+          "observation": "Coach guides the takeaway; a yellow training aid is visible near the arms."
+        },
+        {
+          "time_seconds": 442,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00442.000.jpg",
+          "observation": "Coach assists the wider arm structure."
+        }
+      ],
+      "limitations": [
+        "Training aid is visible but make/model and loading are not established.",
+        "Face-square reference is qualitative; do not assign an angle.",
+        "The prescribed repetitions belong to this slow exercise."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        475,
+        540
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=475s",
+      "attribution": "Chris",
+      "kind": "progression_gate",
+      "session": "current_lesson",
+      "summary": "Chris reviews the arm structure and says the backswing must be stable enough before he introduces transition work. He prioritises face condition and the wide lead arm over the folding trail arm.",
+      "frames": [
+        {
+          "time_seconds": 504,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00504.000.jpg",
+          "observation": "Takeaway replay beside tablet review."
+        },
+        {
+          "time_seconds": 518,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00518.000.jpg",
+          "observation": "Top-position replay beside the coach's explanation."
+        }
+      ],
+      "limitations": []
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        665,
+        812
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=665s",
+      "attribution": "Chris",
+      "kind": "adaptation_and_retest",
+      "session": "current_lesson",
+      "summary": "Repeated guided rehearsals distinguish stretching the hand radius from reaching, picking up, or hinging at the top. Chris eventually approves progression to the downswing.",
+      "frames": [
+        {
+          "time_seconds": 678,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00678.000.jpg",
+          "observation": "Coach guides the golfer's arms through the first part of the rehearsal."
+        },
+        {
+          "time_seconds": 690,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/overview/frame-00690.000.jpg",
+          "observation": "Coach holds and guides the arms near the top."
+        },
+        {
+          "time_seconds": 800,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00800.000.jpg",
+          "observation": "Golfer performs another short backswing rehearsal."
+        }
+      ],
+      "limitations": [
+        "No force/stretch measurement; the distinction is a teaching feel."
+      ]
+    },
+    {
+      "id": "E06",
+      "span_seconds": [
+        818,
+        918
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=818s",
+      "attribution": "Jerome",
+      "kind": "on_course_outcome",
+      "session": "edited_on_course_insert",
+      "summary": "Jerome applies the iron/width intention on a par-three hole and reports par. His spoken putt-distance estimates vary within the insert.",
+      "frames": [
+        {
+          "time_seconds": 870,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/overview/frame-00870.000.jpg",
+          "observation": "Edited shot tracer accompanies an iron shot toward the green."
+        },
+        {
+          "time_seconds": 915,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00915.000.jpg",
+          "observation": "Golfer reports the hole result on the course."
+        }
+      ],
+      "limitations": [
+        "One edited example; no isolated causal or retention test."
+      ]
+    },
+    {
+      "id": "E07",
+      "span_seconds": [
+        919,
+        1150
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=919s",
+      "attribution": "Chris",
+      "kind": "transition_drill",
+      "session": "current_lesson",
+      "summary": "Transition demonstration contrasts leaning the shoulder/handle toward the lead side with holding the upper structure while pressing the lead foot, moving the belt down/forward, then turning the hips. Chris guides Jerome through a paused sequence and reviews the result.",
+      "frames": [
+        {
+          "time_seconds": 926,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00926.000.jpg",
+          "observation": "Coach holds an upper-body/club position while demonstrating the transition."
+        },
+        {
+          "time_seconds": 939,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00939.000.jpg",
+          "observation": "Coach demonstrates a changed lower-body position with the upper structure retained."
+        },
+        {
+          "time_seconds": 951,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-00951.000.jpg",
+          "observation": "Coach demonstrates rotation toward the finish."
+        },
+        {
+          "time_seconds": 1000,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01000.000.jpg",
+          "observation": "Coach guides the golfer's arms near the top."
+        },
+        {
+          "time_seconds": 1125,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01125.000.jpg",
+          "observation": "Split-screen replay accompanies the sequence reassessment."
+        }
+      ],
+      "limitations": [
+        "Foot pressure, ground reaction force and muscle loading are spoken claims; no force-plate or kinematic graph is visible.",
+        "A paused rehearsal is not a literal timing prescription for the full-speed swing."
+      ]
+    },
+    {
+      "id": "E08",
+      "span_seconds": [
+        1154,
+        1338
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=1154s",
+      "attribution": "Chris",
+      "kind": "overcorrection_and_progression",
+      "session": "current_lesson",
+      "summary": "Chris corrects a lead knee staying inward, asks for a smaller press after Jerome presses too far and gets stuck, and blends the exercise at roughly half speed before increasing effort.",
+      "frames": [
+        {
+          "time_seconds": 1170,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01170.000.jpg",
+          "observation": "Coach exaggerates the lower-body transition contrast."
+        },
+        {
+          "time_seconds": 1225,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01225.000.jpg",
+          "observation": "Golfer listens at address during correction of excessive pressing."
+        },
+        {
+          "time_seconds": 1250,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01250.000.jpg",
+          "observation": "Golfer holds a backswing position before blending the movement."
+        },
+        {
+          "time_seconds": 1320,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01320.000.jpg",
+          "observation": "Coach gives hands-on guidance to the paused position."
+        }
+      ],
+      "limitations": [
+        "50%, 60% and 75% are requested/estimated effort levels, not measured club speeds.",
+        "Do not infer a universal knee or pelvis displacement target."
+      ]
+    },
+    {
+      "id": "E09",
+      "span_seconds": [
+        1359,
+        1450
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=1359s",
+      "attribution": "Chris",
+      "kind": "residual_finding",
+      "session": "current_lesson",
+      "summary": "Replay reassessment says backswing structure is better but the club is still thrown slightly; Chris seeks a more effective hip-driven pivot.",
+      "frames": [
+        {
+          "time_seconds": 1375,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01375.000.jpg",
+          "observation": "Replay shows the backswing while coach and golfer review the tablet."
+        },
+        {
+          "time_seconds": 1410,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/overview/frame-01410.000.jpg",
+          "observation": "Golfer rehearses arm structure while discussing the feel."
+        }
+      ],
+      "limitations": []
+    },
+    {
+      "id": "E10",
+      "span_seconds": [
+        1455,
+        1689
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=1455s",
+      "attribution": "Chris",
+      "kind": "drill_demonstration",
+      "session": "current_lesson",
+      "summary": "Impact-preset drill: from address, move pressure slightly forward, turn the hips, feel the handle forward/down and a secure trail hand. Make a small backswing and return through that position; then progress to half/three-quarter swings without the preset. Chris also changes ball position for the exercise.",
+      "frames": [
+        {
+          "time_seconds": 1465,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01465.000.jpg",
+          "observation": "Coach begins an address-position demonstration."
+        },
+        {
+          "time_seconds": 1475,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01475.000.jpg",
+          "observation": "Coach demonstrates hips turned and handle forward."
+        },
+        {
+          "time_seconds": 1510,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01510.000.jpg",
+          "observation": "Coach physically guides the golfer's hands and body at the preset."
+        },
+        {
+          "time_seconds": 1563,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01563.000.jpg",
+          "observation": "Golfer rehearses the preset before the small shot."
+        },
+        {
+          "time_seconds": 1600,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01600.000.jpg",
+          "observation": "Golfer prepares a later repetition without the earlier hands-on assistance."
+        },
+        {
+          "time_seconds": 1665,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01665.000.jpg",
+          "observation": "Coach contrasts a tilted/stalled movement while golfer watches."
+        }
+      ],
+      "limitations": [
+        "Pressure in the shaft is a feel, not measured shaft loading.",
+        "The ball-position adjustment is local to the drill, not a replacement for every setup.",
+        "No numerical launch or strike-location data."
+      ]
+    },
+    {
+      "id": "E11",
+      "span_seconds": [
+        1690,
+        1820
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=1690s",
+      "attribution": "Chris",
+      "kind": "immediate_retest",
+      "session": "current_lesson",
+      "summary": "Chris praises improved strike and the pivot, summarising the sequence as wide hand radius, pressure, then width through. He attributes previous difficulty partly to overthinking.",
+      "frames": [
+        {
+          "time_seconds": 1719,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01719.000.jpg",
+          "observation": "Coach guides the hand/handle structure during the review."
+        },
+        {
+          "time_seconds": 1800,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01800.000.jpg",
+          "observation": "Coach demonstrates the hand/club radius during explanation."
+        }
+      ],
+      "limitations": [
+        "Qualitative praise and demonstrations, not quantified efficiency or distance gains."
+      ]
+    },
+    {
+      "id": "E12",
+      "span_seconds": [
+        1835,
+        1900
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=1835s",
+      "attribution": "Chris",
+      "kind": "shot_pattern_preference",
+      "session": "current_lesson",
+      "summary": "Chris interprets little pushes/draws in the current practice context and describes his preferred draw-player miss: starting right and remaining there or returning, without an excessive curve either way.",
+      "frames": [
+        {
+          "time_seconds": 1860,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01860.000.jpg",
+          "observation": "Golfer watches a practice shot during ball-flight discussion."
+        },
+        {
+          "time_seconds": 1885,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01885.000.jpg",
+          "observation": "Coach explains his preference in a close view."
+        }
+      ],
+      "limitations": [
+        "Coach preference conditional on intended shape. A right-starting shot is not universally acceptable.",
+        "Face-to-target and face-to-path references are easy to confuse in captions; preserve the distinction."
+      ]
+    },
+    {
+      "id": "E13",
+      "span_seconds": [
+        1960,
+        2050
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=1960s",
+      "attribution": "Chris",
+      "kind": "feel_vs_movement",
+      "session": "current_lesson",
+      "summary": "Chris contrasts remaining in posture while turning with hips rising early; he accepts a down/forward sensation while saying the resulting movement is not literally that simple.",
+      "frames": [
+        {
+          "time_seconds": 1995,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-01995.000.jpg",
+          "observation": "Golfer gestures toward his chest while discussing its direction."
+        },
+        {
+          "time_seconds": 2012,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02012.000.jpg",
+          "observation": "Coach demonstrates the torso/pivot movement."
+        },
+        {
+          "time_seconds": 2030,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02030.000.jpg",
+          "observation": "Golfer watches the previous shot; coach continues the explanation."
+        }
+      ],
+      "limitations": [
+        "No measured ground force, body rise, or angular values."
+      ]
+    },
+    {
+      "id": "E14",
+      "span_seconds": [
+        2060,
+        2288
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=2060s",
+      "attribution": "Chris",
+      "kind": "grip_drill",
+      "session": "current_lesson",
+      "summary": "Chris spots an insecure right hand. He keeps the existing left-hand grip, puts fingers securely on, and shows a thumb/index-finger pinch and hand placement that feels stable without squeezing everything tightly. He takes a reference photo.",
+      "frames": [
+        {
+          "time_seconds": 2125,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02125.000.jpg",
+          "observation": "Coach crouches beside the golfer's grip to adjust the trail hand."
+        },
+        {
+          "time_seconds": 2140,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02140.000.jpg",
+          "observation": "Close view shows coach pointing to the right thumb/index region."
+        },
+        {
+          "time_seconds": 2160,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02160.000.jpg",
+          "observation": "Close view shows the golfer's hands around the grip after adjustment."
+        },
+        {
+          "time_seconds": 2220,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02220.000.jpg",
+          "observation": "Coach demonstrates how the right hand wraps around the left thumb."
+        },
+        {
+          "time_seconds": 2235,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02235.000.jpg",
+          "observation": "Close view shows fingers and thumb placement being checked."
+        },
+        {
+          "time_seconds": 2250,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02250.000.jpg",
+          "observation": "Coach guides and checks the joined hands."
+        }
+      ],
+      "limitations": [
+        "Secure vs tight is subjective; no grip-pressure measurement.",
+        "Do not conflate stronger/weaker hand orientation with more/less squeezing force."
+      ]
+    },
+    {
+      "id": "E15",
+      "span_seconds": [
+        2290,
+        2544
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=2290s",
+      "attribution": "Jerome",
+      "kind": "on_course_outcome",
+      "session": "edited_on_course_insert",
+      "summary": "On-course insert tests the grip with driver and approach. Jerome describes improved security, then records a three-putt bogey and acknowledges the putting failure.",
+      "frames": [
+        {
+          "time_seconds": 2340,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02340.000.jpg",
+          "observation": "Driver follow-through with an edited tracer."
+        },
+        {
+          "time_seconds": 2415,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02415.000.jpg",
+          "observation": "Golfer describes club selection and shot intention."
+        },
+        {
+          "time_seconds": 2520,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02520.000.jpg",
+          "observation": "Golfer addresses the remaining putt on the green."
+        }
+      ],
+      "limitations": [
+        "Mixed outcome retained; improved swing feel does not imply improved hole score.",
+        "No controlled comparison or exact measured driving dispersion."
+      ]
+    },
+    {
+      "id": "E16",
+      "span_seconds": [
+        2570,
+        2655
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=2570s",
+      "attribution": "Chris",
+      "kind": "club_specific_conditions",
+      "session": "current_lesson",
+      "summary": "Before driver, Chris prevents Jerome from weakening his left hand while fitting the new right-hand grip. He contrasts the iron down/forward intention with a driver press followed by working up/back.",
+      "frames": [
+        {
+          "time_seconds": 2585,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02585.000.jpg",
+          "observation": "Coach checks setup and club placement beside the golfer."
+        },
+        {
+          "time_seconds": 2595,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02595.000.jpg",
+          "observation": "Close view of the coach adjusting the grip."
+        },
+        {
+          "time_seconds": 2634,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02634.000.jpg",
+          "observation": "Coach gestures toward the upper-body direction during the iron/driver distinction."
+        }
+      ],
+      "limitations": [
+        "Driver attack angle and loft are not instrumentally measured.",
+        "Thumb position uses this grip's visible branding as a local reference, not a universal distance."
+      ]
+    },
+    {
+      "id": "E17",
+      "span_seconds": [
+        2658,
+        2760
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=2658s",
+      "attribution": "Chris",
+      "kind": "transfer_failure_and_priority",
+      "session": "current_lesson",
+      "summary": "The driver backswing becomes long/across and contact suffers. Chris first asks for a slow backswing and normal delivery, then explicitly says the current driver problem is in the backswing rather than adding a new downswing fix.",
+      "frames": [
+        {
+          "time_seconds": 2660,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02660.000.jpg",
+          "observation": "Golfer rehearses with driver."
+        },
+        {
+          "time_seconds": 2680,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02680.000.jpg",
+          "observation": "Golfer discusses the strike after a swing."
+        },
+        {
+          "time_seconds": 2700,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02700.000.jpg",
+          "observation": "Golfer works through a slow backswing."
+        },
+        {
+          "time_seconds": 2720,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02720.000.jpg",
+          "observation": "Golfer resets while Chris observes."
+        }
+      ],
+      "limitations": [
+        "Drop-kick is not a universal diagnostic test for across-line backswing. This inference belongs to this observed case."
+      ]
+    },
+    {
+      "id": "E18",
+      "span_seconds": [
+        2800,
+        2995
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=2800s",
+      "attribution": "Chris",
+      "kind": "regression_and_transfer",
+      "session": "current_lesson",
+      "summary": "When the driver feel remains unreliable, Chris returns Jerome to a shorter club, rebuilds press/pivot, then retries driver. The final strike is praised. Captions include an ambiguous, unverified carry-distance comparison.",
+      "frames": [
+        {
+          "time_seconds": 2880,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02880.000.jpg",
+          "observation": "Golfer rehearses the shorter-club arm/torso position."
+        },
+        {
+          "time_seconds": 2910,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02910.000.jpg",
+          "observation": "Golfer demonstrates how he was applying pressure."
+        },
+        {
+          "time_seconds": 2950,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02950.000.jpg",
+          "observation": "Golfer contrasts the lower-body intention with a club across his upper body."
+        },
+        {
+          "time_seconds": 2985,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-02985.000.jpg",
+          "observation": "Golfer bends after the praised driver shot; the edit adds a positive sound comment."
+        }
+      ],
+      "limitations": [
+        "No readable launch-monitor carry display; automatic captions contain roughly 300/350 wording and are not accepted as a measured gain.",
+        "A single successful retry does not establish transfer retention."
+      ]
+    },
+    {
+      "id": "E19",
+      "span_seconds": [
+        2999,
+        3041
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=2999s",
+      "attribution": "Chris",
+      "kind": "task_definition",
+      "session": "current_lesson",
+      "summary": "Short-game task defines a landing dot and desired rollout to the hole. The first ball is judged too high and too spinny for that task.",
+      "frames": [
+        {
+          "time_seconds": 3007,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03007.000.jpg",
+          "observation": "Golfer gestures toward the intended landing area."
+        },
+        {
+          "time_seconds": 3023,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03023.000.jpg",
+          "observation": "Golfer watches the result before tablet review."
+        }
+      ],
+      "limitations": [
+        "Landing and spin are coach observations, not tracked numeric data."
+      ]
+    },
+    {
+      "id": "E20",
+      "span_seconds": [
+        3042,
+        3093
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=3042s",
+      "attribution": "Chris",
+      "kind": "annotated_diagnosis",
+      "session": "current_lesson",
+      "summary": "Pitch replay uses face-on head/shaft reference marks and a down-the-line shaft reference. Chris identifies excess loft from stopping the body and scooping, and wants a more suitable handle return and club path.",
+      "frames": [
+        {
+          "time_seconds": 3050,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/annotations/frame-03050.000.jpg",
+          "observation": "Face-on replay shows green head/shaft reference marks against the moving golfer."
+        },
+        {
+          "time_seconds": 3058,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/annotations/frame-03058.000.jpg",
+          "observation": "Down-the-line address replay shows a green diagonal shaft reference."
+        },
+        {
+          "time_seconds": 3062,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/annotations/frame-03062.000.jpg",
+          "observation": "Backswing replay is compared with that same diagonal reference."
+        },
+        {
+          "time_seconds": 3070,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/annotations/frame-03070.000.jpg",
+          "observation": "Follow-through replay remains over the shaft reference."
+        },
+        {
+          "time_seconds": 3086,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/annotations/frame-03086.000.jpg",
+          "observation": "Face-on replay returns with the green head/shaft references."
+        }
+      ],
+      "limitations": [
+        "Lines are qualitative coach annotations, not calibrated angle or head-displacement measurements.",
+        "Head-down/forward cue belongs to this pitch task, not all swings."
+      ]
+    },
+    {
+      "id": "E21",
+      "span_seconds": [
+        3093,
+        3299
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=3093s",
+      "attribution": "Chris",
+      "kind": "pitch_drill",
+      "session": "current_lesson",
+      "summary": "For basic pitching, Chris opens the stance slightly, checks club/handle setup, lets arms drop before carrying them through with the pivot, and explicitly distinguishes this finesse sequence from the hip-led full-swing exercise. He explains coordination of hand and club arcs.",
+      "frames": [
+        {
+          "time_seconds": 3145,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03145.000.jpg",
+          "observation": "Golfer at pitch address after setup guidance."
+        },
+        {
+          "time_seconds": 3190,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03190.000.jpg",
+          "observation": "Coach demonstrates a flowing partial-swing finish."
+        },
+        {
+          "time_seconds": 3210,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03210.000.jpg",
+          "observation": "Coach guides golfer's arms/body through the pitch follow-through."
+        },
+        {
+          "time_seconds": 3273,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03273.000.jpg",
+          "observation": "Coach demonstrates hand/club relationship during the semicircle explanation."
+        },
+        {
+          "time_seconds": 3290,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03290.000.jpg",
+          "observation": "Coach returns the club near address while explaining setup and return."
+        }
+      ],
+      "limitations": [
+        "Gravity and sequence explanations are coaching models, not measured segment timing.",
+        "Ball position, lie and loft must remain attached to the particular short-game task."
+      ]
+    },
+    {
+      "id": "E22",
+      "span_seconds": [
+        3300,
+        3419
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=3300s",
+      "attribution": "Chris",
+      "kind": "trajectory_variants",
+      "session": "current_lesson",
+      "summary": "Trajectory changes are set up before the swing: lower runner with ball farther back, squarer face and more forward handle; higher shot with ball forward, wider stance and more open face. Chris uses 58/70-degree loft examples to explain retaining the selected loft relationship, while naming exceptions for specialised shots.",
+      "frames": [
+        {
+          "time_seconds": 3322,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03322.000.jpg",
+          "observation": "Coach guides the lower-shot setup."
+        },
+        {
+          "time_seconds": 3358,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03358.000.jpg",
+          "observation": "Coach points near the golfer's club during the loft explanation."
+        },
+        {
+          "time_seconds": 3380,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03380.000.jpg",
+          "observation": "Coach guides the club/arm position through a small swing."
+        },
+        {
+          "time_seconds": 3400,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03400.000.jpg",
+          "observation": "Golfer and coach discuss the next higher trajectory."
+        }
+      ],
+      "limitations": [
+        "58 and 70 are instructional loft examples, not observed dynamic-loft values.",
+        "No generic ball-position offsets, face angles, or carry/run ratios."
+      ]
+    },
+    {
+      "id": "E23",
+      "span_seconds": [
+        3420,
+        3538
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=3420s",
+      "attribution": "Chris",
+      "kind": "overcorrection_and_task_success",
+      "session": "current_lesson",
+      "summary": "Jerome adds a scoop when asked for height. Chris keeps returning him to the preset loft and continuing pivot. A high, soft result is praised technically but rejected as the wrong shot for the exercise.",
+      "frames": [
+        {
+          "time_seconds": 3440,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03440.000.jpg",
+          "observation": "Golfer performs a small pitch during the higher-shot work."
+        },
+        {
+          "time_seconds": 3480,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03480.000.jpg",
+          "observation": "Golfer resets after the coach distinguishes contact from intended shot."
+        },
+        {
+          "time_seconds": 3530,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03530.000.jpg",
+          "observation": "Pitch follow-through after another correction."
+        }
+      ],
+      "limitations": [
+        "Preserve intended trajectory and landing outcome separately from contact quality."
+      ]
+    },
+    {
+      "id": "E24",
+      "span_seconds": [
+        3580,
+        3700
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=3580s",
+      "attribution": "Chris",
+      "kind": "bunker_diagnosis_and_drill",
+      "session": "current_lesson",
+      "summary": "In the bunker, Chris links a short/high result to the same added-loft/scooping tendency. He uses a sand line, wider stance, pressure-left feel, open face, slightly forward handle and continued turn.",
+      "frames": [
+        {
+          "time_seconds": 3620,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03620.000.jpg",
+          "observation": "Coach explains the next bunker rehearsal beside the line in the sand."
+        },
+        {
+          "time_seconds": 3640,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03640.000.jpg",
+          "observation": "Golfer rehearses from the bunker setup."
+        },
+        {
+          "time_seconds": 3660,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03660.000.jpg",
+          "observation": "Golfer addresses the sand line while coach observes."
+        },
+        {
+          "time_seconds": 3680,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03680.000.jpg",
+          "observation": "Coach contrasts the unwanted club action."
+        }
+      ],
+      "limitations": [
+        "Pressure and loft are not measured.",
+        "Conditions are an ordinary practice bunker; no buried lie, slope or unusual sand assessment shown."
+      ]
+    },
+    {
+      "id": "E25",
+      "span_seconds": [
+        3701,
+        3740
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=3701s",
+      "attribution": "Chris",
+      "kind": "constraint_drill",
+      "session": "current_lesson",
+      "summary": "Sand-carry rehearsal: pick up some sand on the club, retain it while turning, then throw it over the shoulder. This physical scoop of sand is distinct from the wrist-scooping fault.",
+      "frames": [
+        {
+          "time_seconds": 3704,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/annotations/frame-03704.000.jpg",
+          "observation": "Coach demonstrates collecting sand on the club."
+        },
+        {
+          "time_seconds": 3707,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/annotations/frame-03707.000.jpg",
+          "observation": "Coach turns and carries the club over the shoulder."
+        },
+        {
+          "time_seconds": 3717,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/annotations/frame-03717.000.jpg",
+          "observation": "Golfer lowers the club to collect sand for the rehearsal."
+        },
+        {
+          "time_seconds": 3723,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/annotations/frame-03723.000.jpg",
+          "observation": "Golfer turns into the over-shoulder finish."
+        }
+      ],
+      "limitations": [
+        "The word scoop names two different actions here; do not merge their meanings.",
+        "Rehearsal result does not prove ball-shot retention."
+      ]
+    },
+    {
+      "id": "E26",
+      "span_seconds": [
+        3741,
+        3809
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=3741s",
+      "attribution": "Chris",
+      "kind": "observable_feedback",
+      "session": "current_lesson",
+      "summary": "Sand-line drill checks entry point and amount of sand. If entry is behind, Chris offers incomplete turn or early throw as possible causes, then asks for a firmer thump while keeping the face open through.",
+      "frames": [
+        {
+          "time_seconds": 3746,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/annotations/frame-03746.000.jpg",
+          "observation": "Coach points at the ground reference/strike area."
+        },
+        {
+          "time_seconds": 3750,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/annotations/frame-03750.000.jpg",
+          "observation": "Golfer and coach inspect the sand after a rehearsal."
+        },
+        {
+          "time_seconds": 3754,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/annotations/frame-03754.000.jpg",
+          "observation": "Golfer repeats the strike relative to the line."
+        },
+        {
+          "time_seconds": 3800,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03800.000.jpg",
+          "observation": "Coach and golfer look toward the bunker-shot result."
+        }
+      ],
+      "limitations": [
+        "He gives possible causes rather than a one-to-one diagnosis from entry location.",
+        "No measured sand depth or entry distance."
+      ]
+    },
+    {
+      "id": "E27",
+      "span_seconds": [
+        3810,
+        3898
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=3810s",
+      "attribution": "Chris",
+      "kind": "bunker_variants",
+      "session": "current_lesson",
+      "summary": "After contact improves, Chris gives four bunker-distance variables: club choice, face opening, grip length and swing length. He contrasts a farther/lower shot with a shorter/higher one.",
+      "frames": [
+        {
+          "time_seconds": 3820,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03820.000.jpg",
+          "observation": "Coach counts/explains the bunker variables."
+        },
+        {
+          "time_seconds": 3840,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03840.000.jpg",
+          "observation": "Golfer follows through on the longer-shot attempt."
+        },
+        {
+          "time_seconds": 3880,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03880.000.jpg",
+          "observation": "Golfer changes setup for the higher/shorter shot."
+        }
+      ],
+      "limitations": [
+        "Four available variables are not four mandatory simultaneous corrections.",
+        "No distance table or proof for every lie."
+      ]
+    },
+    {
+      "id": "E28",
+      "span_seconds": [
+        3900,
+        4090
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=3900s",
+      "attribution": "Chris",
+      "kind": "error_correction_and_retest",
+      "session": "current_lesson",
+      "summary": "Later bunker misses show too little sand, a thrown club and rising out of posture. Chris restores the handle/start relationship, staying down and turning; the final shots are praised. He links related patterns across the lesson without claiming identical sequences.",
+      "frames": [
+        {
+          "time_seconds": 3920,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03920.000.jpg",
+          "observation": "Golfer assesses an unsatisfactory bunker attempt."
+        },
+        {
+          "time_seconds": 3940,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03940.000.jpg",
+          "observation": "Coach demonstrates the club/handle return."
+        },
+        {
+          "time_seconds": 3960,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-03960.000.jpg",
+          "observation": "Coach demonstrates the posture/turn relationship."
+        },
+        {
+          "time_seconds": 4050,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-04050.000.jpg",
+          "observation": "Golfer and coach inspect a phone replay."
+        },
+        {
+          "time_seconds": 4080,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-04080.000.jpg",
+          "observation": "Golfer prepares a final bunker attempt."
+        }
+      ],
+      "limitations": [
+        "No force or 3D sequencing measurements.",
+        "Similar symptoms across tasks do not imply identical full-swing and finesse sequencing."
+      ]
+    },
+    {
+      "id": "E29",
+      "span_seconds": [
+        4120,
+        4318
+      ],
+      "source_url": "https://www.youtube.com/watch?v=G3QNDLEo2Gw&t=4120s",
+      "attribution": "Jerome",
+      "kind": "course_management_application",
+      "session": "edited_on_course_insert",
+      "summary": "Final on-course example includes a pulled drive, a recovery punch, a more conservative approach target and a reported par. Jerome attributes improved scoring partly to course decisions.",
+      "frames": [
+        {
+          "time_seconds": 4145,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-04145.000.jpg",
+          "observation": "Golfer describes the pulled tee shot and recovery situation."
+        },
+        {
+          "time_seconds": 4185,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-04185.000.jpg",
+          "observation": "Golfer follows the recovery shot from beside the trees."
+        },
+        {
+          "time_seconds": 4220,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-04220.000.jpg",
+          "observation": "Golfer discusses the next target and risk."
+        },
+        {
+          "time_seconds": 4300,
+          "path": ".videos/coaching-knowledge/G3QNDLEo2Gw/detail/frame-04300.000.jpg",
+          "observation": "Putting ball is shown near the hole in the closing sequence."
+        }
+      ],
+      "limitations": [
+        "No complete strokes-gained or repeated comparison data.",
+        "Final score involves recovery and putting; do not credit it entirely to a swing change."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "G3QNDLEo2Gw-C01",
+      "title": "Stabilise backswing width and face before progressing",
+      "tags": {
+        "phase": [
+          "P1-P2",
+          "P2-P4"
+        ],
+        "body": [
+          "hands",
+          "arms",
+          "clubface"
+        ],
+        "outcome": [
+          "backswing_repeatability"
+        ],
+        "concept": [
+          "arm_width",
+          "face_condition",
+          "progression_gate"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E03",
+        "E04",
+        "E05"
+      ],
+      "coaching_finding": "Backswing becomes picked up/narrow with an unsuitable face condition; driver is especially long/across.",
+      "coach_reasoning": "Chris needs a repeatable structure before adding the transition correction.",
+      "intervention": {
+        "drill": [
+          "Hinge club up in front without rolling it open; check the face.",
+          "Rehearse a shorter, wide hand radius with the trail arm folding.",
+          "Use five to ten slow repetitions of the current exercise.",
+          "Advance only after the coach's visual checks are satisfied."
+        ],
+        "feel": [
+          "Stretch rather than reach or lift at the top."
+        ],
+        "source_first_move_reference": "Hands beneath lead shoulder with shaft horizontal."
+      },
+      "applicability": [
+        "This right-handed golfer's observed narrow/across pattern and face condition.",
+        "Needs suitable takeaway/top footage and grip context."
+      ],
+      "unknowns": [
+        "No numerical width/face target.",
+        "Yellow aid model and load are not established."
+      ],
+      "observed_result": "Guided rehearsals improve enough for Chris to introduce transition work at about 13 minutes.",
+      "selection": {
+        "coaching_focus": "backswing structure",
+        "max_simultaneous_cues": 2,
+        "policy_origin": "Future app presentation policy; does not rewrite the source's three-topic lesson plan.",
+        "reassess": "Check several ordinary swings, especially after changing club."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "G3QNDLEo2Gw-C02",
+      "title": "Press then pivot instead of leaning the upper body",
+      "tags": {
+        "phase": [
+          "P4-P7"
+        ],
+        "body": [
+          "lead_leg",
+          "pelvis",
+          "torso"
+        ],
+        "outcome": [
+          "strike",
+          "pivot"
+        ],
+        "concept": [
+          "transition",
+          "shoulder_lean",
+          "stall",
+          "pressure_feel"
+        ]
+      },
+      "evidence_ids": [
+        "E02",
+        "E07",
+        "E08",
+        "E09",
+        "E13"
+      ],
+      "coaching_finding": "Chris sees shoulder-led leaning followed by a stalled pivot and arm throw.",
+      "coach_reasoning": "He seeks lower-body movement under a retained upper structure so rotation can continue through impact.",
+      "intervention": {
+        "drill": [
+          "Hold a reviewed wide top position.",
+          "Rehearse a small lead-foot press while retaining the upper structure.",
+          "Turn hips through, then blend the stages at reduced effort."
+        ],
+        "feel": [
+          "Back remains toward target initially; belt moves down/forward."
+        ],
+        "overcorrection": "When pressing too far makes the golfer stuck, reduce it to a small stepping sensation.",
+        "progression": "Coach asks for roughly half speed, then more effort once the movement works."
+      },
+      "applicability": [
+        "Observed lean/stall pattern after the backswing is adequate.",
+        "Requires frontal/oblique evidence in addition to contact feedback."
+      ],
+      "unknowns": [
+        "No force-plate data or pelvis-displacement target.",
+        "Back-to-target is a phase-specific feel, not an instruction to prevent the chest ever turning."
+      ],
+      "observed_result": "Coach and golfer report better strike; excessive pressing appears and is corrected within the same lesson.",
+      "selection": {
+        "coaching_focus": "transition and pivot",
+        "max_simultaneous_cues": 2,
+        "policy_origin": "Future app presentation policy; does not rewrite the source's three-topic lesson plan.",
+        "reassess": "Check whether the upper-body lean, stalled turn and strike improve without overpressing."
+      },
+      "alternative_case_ids": [
+        "G3QNDLEo2Gw-C03"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "G3QNDLEo2Gw-C03",
+      "title": "Impact-preset half shots to learn the pivot",
+      "tags": {
+        "phase": [
+          "P7",
+          "partial_swing"
+        ],
+        "body": [
+          "hips",
+          "hands"
+        ],
+        "outcome": [
+          "contact"
+        ],
+        "concept": [
+          "impact_preset",
+          "shaft_pressure_feel",
+          "half_swing"
+        ]
+      },
+      "evidence_ids": [
+        "E09",
+        "E10",
+        "E11"
+      ],
+      "coaching_finding": "Golfer cannot consistently recover the desired through-impact movement from the top.",
+      "coach_reasoning": "Chris lets him feel a simplified impact-like structure first, then approach it from a short backswing.",
+      "intervention": {
+        "drill": [
+          "From address, slightly shift pressure forward, turn hips and feel the handle forward/down.",
+          "Keep the trail-hand connection secure.",
+          "Make a small backswing and turn through the same region.",
+          "Progress to half/three-quarter swings without presetting."
+        ],
+        "local_setup_change": "Coach moves ball position back for the exercise."
+      },
+      "applicability": [
+        "Alternative learning route for the observed transition/pivot issue.",
+        "Adapt grip/face context and inspect resulting contact."
+      ],
+      "unknowns": [
+        "No shaft force measurement or exact setup geometry.",
+        "No universally prescribed ball-position shift."
+      ],
+      "observed_result": "Immediate small shots receive repeated strike praise, followed by longer attempts.",
+      "selection": {
+        "coaching_focus": "through-impact pivot",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "Future app presentation policy; does not rewrite the source's three-topic lesson plan.",
+        "reassess": "Transfer to an ordinary backswing, then to the longer club."
+      },
+      "alternative_case_ids": [
+        "G3QNDLEo2Gw-C02"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "G3QNDLEo2Gw-C04",
+      "title": "Secure trail-hand contact without excessive gripping tension",
+      "tags": {
+        "phase": [
+          "P1"
+        ],
+        "body": [
+          "trail_hand",
+          "grip"
+        ],
+        "outcome": [
+          "club_control"
+        ],
+        "concept": [
+          "grip_security",
+          "thumb_index_connection"
+        ]
+      },
+      "evidence_ids": [
+        "E14",
+        "E16",
+        "E15"
+      ],
+      "coaching_finding": "Chris observes fingers not securely contacting the grip and a loose right-hand connection.",
+      "coach_reasoning": "He distinguishes stable hand contact from squeezing hard, preserving the left-hand orientation while placing the right hand.",
+      "intervention": {
+        "drill": [
+          "Keep the reviewed left-hand grip.",
+          "Place right hand around the left thumb and wrap the fingers on securely.",
+          "Use the demonstrated thumb/index connection with otherwise soft pressure.",
+          "Save/check a grip reference and test a small shot."
+        ],
+        "avoid": "Do not weaken the left hand merely to fit the right, or equate grip strength with squeeze force."
+      },
+      "applicability": [
+        "Observed insecure trail-hand connection in a right-handed golfer.",
+        "Requires a close hand view; coarse whole-body video may be insufficient."
+      ],
+      "unknowns": [
+        "No measured grip pressure or universally ideal hand orientation."
+      ],
+      "observed_result": "Jerome reports greater security; later on-course result is a bogey after three putts, preserving the mixed outcome.",
+      "selection": {
+        "coaching_focus": "grip security",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "Future app presentation policy; does not rewrite the source's three-topic lesson plan.",
+        "reassess": "Check the hand connection and face/strike response; avoid adding unrelated swing thoughts."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "G3QNDLEo2Gw-C05",
+      "title": "Transfer iron learning to driver with a shorter-club reset",
+      "tags": {
+        "phase": [
+          "P1-P7"
+        ],
+        "body": [
+          "arms",
+          "torso",
+          "hips"
+        ],
+        "outcome": [
+          "driver_contact"
+        ],
+        "concept": [
+          "club_transfer",
+          "regression",
+          "backswing_width"
+        ]
+      },
+      "evidence_ids": [
+        "E16",
+        "E17",
+        "E18"
+      ],
+      "coaching_finding": "The driver reintroduces a long/across backswing and the golfer loses the learned movement.",
+      "coach_reasoning": "Chris distinguishes club-specific intentions, checks backswing first and returns to a shorter club when the driver task overwhelms the feel.",
+      "intervention": {
+        "drill": [
+          "Use a slow, wide driver backswing while keeping the reviewed grip.",
+          "If structure remains unreliable, return to the shorter club and rehearse the successful press/pivot.",
+          "Retry driver once that feel returns."
+        ],
+        "club_specific_feel": "Iron down/forward versus driver press then up/back is the coach's contextual distinction."
+      },
+      "applicability": [
+        "Transfer failure after successful shorter-club shots.",
+        "Check driver setup, face and top position rather than assuming the same downswing diagnosis."
+      ],
+      "unknowns": [
+        "No measured attack angle or verified carry improvement.",
+        "Captioned roughly 300/350 distance discussion is ambiguous."
+      ],
+      "observed_result": "A later driver strike is praised; no valid numerical distance comparison or retention test.",
+      "selection": {
+        "coaching_focus": "restore the successful movement with driver",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "Future app presentation policy; does not rewrite the source's three-topic lesson plan.",
+        "reassess": "Recheck several driver swings, not just the celebrated shot."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "G3QNDLEo2Gw-C06",
+      "title": "Accept or reject a push according to intended shot pattern",
+      "tags": {
+        "phase": [
+          "ball_flight_review"
+        ],
+        "body": [],
+        "outcome": [
+          "start_line",
+          "curvature"
+        ],
+        "concept": [
+          "shot_intention",
+          "acceptable_miss"
+        ]
+      },
+      "evidence_ids": [
+        "E12"
+      ],
+      "coaching_finding": "Golfer asks whether every small push needs a technical correction.",
+      "coach_reasoning": "Chris makes the answer conditional on the intended draw pattern and his preferred miss.",
+      "intervention": {
+        "action": "Set intended start/curve and acceptable miss, then judge the shot within that plan rather than label every right start a fault."
+      },
+      "applicability": [
+        "Draw-player practice context with confirmed strike and observed ball flight."
+      ],
+      "unknowns": [
+        "No quantified dispersion window.",
+        "A push toward a hazard would not be acceptable simply because the coach accepts this range example."
+      ],
+      "observed_result": "Coach explicitly accepts the demonstrated small push pattern in context.",
+      "selection": {
+        "coaching_focus": "shot-pattern intention",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "Future app presentation policy; does not rewrite the source's three-topic lesson plan.",
+        "reassess": "Measure actual dispersion against the intended target and safe miss."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "G3QNDLEo2Gw-C07",
+      "title": "Basic pitch: coordinate falling arms and continued pivot",
+      "tags": {
+        "phase": [
+          "short_game_backswing",
+          "short_game_delivery"
+        ],
+        "body": [
+          "hands",
+          "arms",
+          "torso"
+        ],
+        "outcome": [
+          "pitch_contact",
+          "trajectory"
+        ],
+        "concept": [
+          "scooping",
+          "finesse_sequence",
+          "handle_return"
+        ]
+      },
+      "evidence_ids": [
+        "E19",
+        "E20",
+        "E21",
+        "E23"
+      ],
+      "coaching_finding": "Pitch comes out too high/spinny; Chris sees added loft, a stopped body and a scooping return.",
+      "coach_reasoning": "He uses head/shaft references and a different finesse sequence to retain a suitable handle/club relationship through the shot.",
+      "intervention": {
+        "drill": [
+          "Use the reviewed slightly open stance, club resting appropriately and small forward handle relationship.",
+          "Rehearse the forward swing first.",
+          "Add a small backswing, let hands/arms drop, then carry through with the pivot."
+        ],
+        "sequence_distinction": "Chris explicitly says arms precede thorax/lower body in this finesse task; do not reuse the full-swing hip-first prescription.",
+        "target": "Land at the chosen spot with the intended rollout."
+      },
+      "applicability": [
+        "Basic pitch task with this observed scoop/stall and an identified landing target.",
+        "Must know lie, intended height and club setup."
+      ],
+      "unknowns": [
+        "No measured 3D sequence or loft.",
+        "Annotation lines are qualitative references."
+      ],
+      "observed_result": "Contact improves, but a high/soft shot is still rejected when it misses the intended task.",
+      "selection": {
+        "coaching_focus": "pitch contact and intended landing",
+        "max_simultaneous_cues": 2,
+        "policy_origin": "Future app presentation policy; does not rewrite the source's three-topic lesson plan.",
+        "reassess": "Assess contact, landing, height and rollout separately."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "G3QNDLEo2Gw-C08",
+      "title": "Set pitch trajectory before swinging; avoid helping the ball up",
+      "tags": {
+        "phase": [
+          "short_game_setup",
+          "short_game_delivery"
+        ],
+        "body": [
+          "hands",
+          "clubface"
+        ],
+        "outcome": [
+          "trajectory",
+          "rollout"
+        ],
+        "concept": [
+          "loft_selection",
+          "low_runner",
+          "high_pitch"
+        ]
+      },
+      "evidence_ids": [
+        "E22",
+        "E23"
+      ],
+      "coaching_finding": "When asked for height, Jerome adds a scoop despite the already-open face.",
+      "coach_reasoning": "Chris establishes the shot through setup and asks for the same basic coordinated swing, instead of manufacturing extra loft during delivery.",
+      "intervention": {
+        "variants": {
+          "lower": "Ball farther back, face squarer, handle more forward; same basic coordinated motion.",
+          "higher": "Ball farther forward, face more open, stance wider and swing somewhat longer."
+        },
+        "feel": "Retain the chosen loft relationship on the arc and keep turning.",
+        "exceptions": "Coach acknowledges specialised low/hot shots may deliberately use another face action."
+      },
+      "applicability": [
+        "After baseline pitch contact is usable.",
+        "Shot intent, lie and available landing area must be known."
+      ],
+      "unknowns": [
+        "58/70-degree examples are not measured dynamic loft.",
+        "No universal setup offsets or carry/run ratios."
+      ],
+      "observed_result": "Lower running and higher soft examples are discussed; repeated scooping requires correction.",
+      "selection": {
+        "coaching_focus": "one selected pitch trajectory",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "Future app presentation policy; does not rewrite the source's three-topic lesson plan.",
+        "reassess": "Change one appropriate setup variable, then check actual landing and rollout."
+      },
+      "alternative_case_ids": [
+        "G3QNDLEo2Gw-C07"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "G3QNDLEo2Gw-C09",
+      "title": "Use a sand line to address scooping and inconsistent entry",
+      "tags": {
+        "phase": [
+          "bunker_setup",
+          "bunker_delivery"
+        ],
+        "body": [
+          "hands",
+          "torso",
+          "lead_leg"
+        ],
+        "outcome": [
+          "sand_entry",
+          "bunker_contact"
+        ],
+        "concept": [
+          "low_point",
+          "scooping",
+          "continued_turn"
+        ]
+      },
+      "evidence_ids": [
+        "E24",
+        "E26",
+        "E28"
+      ],
+      "coaching_finding": "Bunker shot travels very little with excess loft; later attempts clip too little sand while the golfer throws the club and rises.",
+      "coach_reasoning": "Chris ties the result to the observed handle/turn pattern and makes the sand-entry location visible with a line.",
+      "intervention": {
+        "drill": [
+          "Use the demonstrated practice line in sand.",
+          "Set wider stance, open face, slightly forward handle and lead-side pressure feel.",
+          "Strike the reference area while continuing the turn.",
+          "Inspect sand entry and repeat."
+        ],
+        "diagnostic_alternatives": [
+          "Incomplete turn",
+          "Early throw"
+        ],
+        "overcorrection": "Avoid throwing the club and standing up when trying to produce a high shot."
+      },
+      "applicability": [
+        "Ordinary practice bunker with the shown scoop/entry problem.",
+        "Observe entry location and amount of sand along with body/club movement."
+      ],
+      "unknowns": [
+        "No measured entry depth/distance.",
+        "No assessment of buried lies, unusual sand, slope or lip height."
+      ],
+      "observed_result": "Improved shots are praised, but errors recur and are corrected.",
+      "selection": {
+        "coaching_focus": "repeatable bunker contact",
+        "max_simultaneous_cues": 2,
+        "policy_origin": "Future app presentation policy; does not rewrite the source's three-topic lesson plan.",
+        "reassess": "Use observed entry and ball result; do not infer one universal cause from entry alone."
+      },
+      "alternative_case_ids": [
+        "G3QNDLEo2Gw-C10"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "G3QNDLEo2Gw-C10",
+      "title": "Carry sand over the shoulder to feel continued face support",
+      "tags": {
+        "phase": [
+          "bunker_rehearsal"
+        ],
+        "body": [
+          "hands",
+          "torso"
+        ],
+        "outcome": [
+          "rehearsal_control"
+        ],
+        "concept": [
+          "sand_carry",
+          "constraint_drill"
+        ]
+      },
+      "evidence_ids": [
+        "E24",
+        "E25"
+      ],
+      "coaching_finding": "Golfer keeps trying to add loft through the bunker strike.",
+      "coach_reasoning": "Chris uses holding sand on the club through a turn as a physical rehearsal of the desired relationship.",
+      "intervention": {
+        "drill": [
+          "Collect sand on the clubface.",
+          "Carry it while turning.",
+          "Throw it over the shoulder as demonstrated.",
+          "Return to a ball shot and check contact."
+        ],
+        "language_note": "Scooping sand onto the face is not the wrist-scooping fault being corrected."
+      },
+      "applicability": [
+        "Alternative physical feel for the C09 bunker pattern."
+      ],
+      "unknowns": [
+        "No dosage or isolated measured result."
+      ],
+      "observed_result": "Coach demonstrates and golfer repeats the sand-carry action.",
+      "selection": {
+        "coaching_focus": "continued turn with supported clubface",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "Future app presentation policy; does not rewrite the source's three-topic lesson plan.",
+        "reassess": "Check whether the intended relationship survives when striking a ball."
+      },
+      "alternative_case_ids": [
+        "G3QNDLEo2Gw-C09"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "G3QNDLEo2Gw-C11",
+      "title": "Bunker distance and height variants after contact is reliable",
+      "tags": {
+        "phase": [
+          "bunker_setup",
+          "bunker_swing"
+        ],
+        "body": [
+          "grip",
+          "clubface"
+        ],
+        "outcome": [
+          "height",
+          "distance"
+        ],
+        "concept": [
+          "club_choice",
+          "face_opening",
+          "grip_length",
+          "swing_length"
+        ]
+      },
+      "evidence_ids": [
+        "E27",
+        "E28"
+      ],
+      "coaching_finding": "Once contact is acceptable, the golfer needs different bunker trajectories and distances.",
+      "coach_reasoning": "Chris offers four adjustable variables while retaining the underlying contact pattern.",
+      "intervention": {
+        "variables": [
+          "Club choice",
+          "Face opening",
+          "Position of hands along grip",
+          "Swing length"
+        ],
+        "variants": {
+          "short_high": "More loft/open face, shorter effective club through gripping down, smaller swing as appropriate.",
+          "longer_lower": "Less-lofted club or squarer face, grip higher, longer swing as appropriate."
+        },
+        "selection": "Choose the variant for the actual task; do not prescribe changes to all four variables at once."
+      },
+      "applicability": [
+        "Baseline sand contact first.",
+        "Match actual distance, lip, lie and sand conditions before selection."
+      ],
+      "unknowns": [
+        "No calibrated distance matrix or evidence covering every lie."
+      ],
+      "observed_result": "Demonstrations show different shot intentions; later failed contact causes a return to basics.",
+      "selection": {
+        "coaching_focus": "one bunker shot intention",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "Future app presentation policy; does not rewrite the source's three-topic lesson plan.",
+        "reassess": "If entry quality degrades, return to contact before changing more variables."
+      },
+      "alternative_case_ids": [
+        "G3QNDLEo2Gw-C09"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "G3QNDLEo2Gw-C12",
+      "title": "Recovery and target choice contribute to scoring independently of swing improvement",
+      "tags": {
+        "phase": [
+          "course_decision"
+        ],
+        "body": [],
+        "outcome": [
+          "score",
+          "risk"
+        ],
+        "concept": [
+          "recovery",
+          "target_selection",
+          "course_management"
+        ]
+      },
+      "evidence_ids": [
+        "E06",
+        "E15",
+        "E29"
+      ],
+      "coaching_finding": "A pulled drive creates a recovery situation, while another hole is lost through three-putting.",
+      "coach_reasoning": "Jerome describes choosing a recovery and safer approach target rather than compounding the tee-shot error.",
+      "intervention": {
+        "action": "Identify the actual lie and available route, choose the recovery/target, then execute a known shot.",
+        "attribution": "Narrator application, not a direct quantified coach prescription."
+      },
+      "applicability": [
+        "Requires actual course context, distance and hazard information."
+      ],
+      "unknowns": [
+        "No repeated score comparison or quantified risk model."
+      ],
+      "observed_result": "Three edited holes yield reported par, bogey and par; improvements are mixed and involve putting/recovery.",
+      "selection": {
+        "coaching_focus": "current shot decision",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "Future app presentation policy; does not rewrite the source's three-topic lesson plan.",
+        "reassess": "Track decision quality, execution and scoring separately."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "span_seconds": [
+        2986,
+        2993
+      ],
+      "quantity": "driver_carry_comparison",
+      "value": null,
+      "caption_numbers": [
+        300,
+        350
+      ],
+      "status": "ambiguous_spoken_comparison_not_verified",
+      "screen_verified": false,
+      "limitation": "Do not store as a measured gain or resolve ambiguous wording by guessing."
+    },
+    {
+      "span_seconds": [
+        3344,
+        3369
+      ],
+      "quantity": "loft_examples",
+      "values": [
+        58,
+        70
+      ],
+      "unit": "degrees",
+      "status": "instructional_examples_not_dynamic_loft_measurements",
+      "screen_verified": false
+    },
+    {
+      "span_seconds": [
+        1190,
+        1300
+      ],
+      "quantity": "practice_effort",
+      "values": [
+        50,
+        60,
+        75
+      ],
+      "unit": "percent",
+      "status": "coach_requested_or_estimated_effort_not_measured_speed"
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "HQNKUS_BSGY-C09",
+      "current_case": "G3QNDLEo2Gw-C02",
+      "relation": "conditional_change_in_priority",
+      "explanation": "First source withholds extra transition work because Chris judges it adequate. This source identifies shoulder-led leaning/stall and works on transition after restoring backswing structure. Fresh evidence determines applicability."
+    },
+    {
+      "source_case": "HQNKUS_BSGY-C01",
+      "current_case": "G3QNDLEo2Gw-C01",
+      "relation": "same_family_different_face_condition",
+      "explanation": "First source uses an opening feel for a closed-face tendency. This source checks a face Chris calls too open and discourages rolling it open. Do not copy the directional feel without the face/grip evidence."
+    },
+    {
+      "source_case": "HQNKUS_BSGY-C11",
+      "current_case": "G3QNDLEo2Gw-C06",
+      "relation": "shot_intention_changes_acceptability",
+      "explanation": "First source explores a fade for this golfer. The later source discusses acceptable small pushes in a draw-player context. Preserve the chosen shot intention instead of treating right-start as universally good or bad."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "G3QNDLEo2Gw-C02",
+        "G3QNDLEo2Gw-C07"
+      ],
+      "relationship": "Full-swing hip-led cue and pitching finesse sequence differ by task; shared pivot language does not make them interchangeable."
+    },
+    {
+      "cases": [
+        "G3QNDLEo2Gw-C09",
+        "G3QNDLEo2Gw-C10"
+      ],
+      "relationship": "Wrist scooping fault versus physically collecting sand in a rehearsal: identical word, different action."
+    },
+    {
+      "cases": [
+        "G3QNDLEo2Gw-C07",
+        "G3QNDLEo2Gw-C08"
+      ],
+      "relationship": "Good contact/soft flight can still fail the intended landing/trajectory task."
+    }
+  ],
+  "annotation_opportunities": [
+    {
+      "observation": "Shoulder/handle lean compared with lower-body shift in transition",
+      "evidence_ids": [
+        "E02",
+        "E07",
+        "E08"
+      ],
+      "possible_visual": "Same-golfer front-view comparison of trunk inclination, knee/pelvis and hands between reviewed positions.",
+      "limitation": "Do not display force/pressure estimates from these images."
+    },
+    {
+      "observation": "Trail-hand connection",
+      "evidence_ids": [
+        "E14"
+      ],
+      "possible_visual": "Close grip photo showing contact points and consistent placement.",
+      "limitation": "Pressure magnitude remains unknown."
+    },
+    {
+      "observation": "Pitch head/shaft reference and handle return",
+      "evidence_ids": [
+        "E20"
+      ],
+      "possible_visual": "Face-on and down-the-line source-specific lines linked to the stated task.",
+      "limitation": "No universal head-still rule or calibrated shaft-angle threshold."
+    },
+    {
+      "observation": "Bunker entry point relative to a line",
+      "evidence_ids": [
+        "E26"
+      ],
+      "possible_visual": "Mark sand line and observed strike mark after a rehearsal.",
+      "limitation": "Entry location alone cannot determine the cause."
+    }
+  ],
+  "excluded_material": [
+    {
+      "span_seconds": [
+        0,
+        45
+      ],
+      "reason": "Promotional preview, not independent outcome evidence."
+    },
+    {
+      "span_seconds": [
+        540,
+        665
+      ],
+      "reason": "Community promotion and testimonials; not treated as validated improvement evidence."
+    },
+    {
+      "span_seconds": [
+        2758,
+        2800
+      ],
+      "reason": "App promotion."
+    },
+    {
+      "span_seconds": [
+        3538,
+        3580
+      ],
+      "reason": "Community promotion before bunker lesson."
+    },
+    {
+      "span_seconds": [
+        4318,
+        4348
+      ],
+      "reason": "Closing motivational narration."
+    }
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Source-grounded knowledge; detector reliability and suitability for a new golfer remain separate work."
+  },
+  "asset_sha256": {
+    "video": "2ea92aac365db696a2d19e129ba0e0758b4f064ca273d6d8b419c456fcef8054",
+    "raw_captions": "7c6192fa2af4ba7e9af00dbb3f12dfab0e7eb3801986b2b9c3048edbc4466ab0",
+    "transcript": "087f6e6dc348afe5835ef9d33614cc3f08bc74940acfbf6385a83579355eebbe"
+  }
+}

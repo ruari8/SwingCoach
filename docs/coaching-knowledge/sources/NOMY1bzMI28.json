@@ -1,0 +1,2149 @@
+{
+  "version": 1,
+  "source_id": "NOMY1bzMI28",
+  "url": "https://www.youtube.com/watch?v=NOMY1bzMI28",
+  "title": "We Tested One of the Best Athletes on the PGA TOUR | Michael Brennan\u2019s TPI Assessment",
+  "publisher": "TPI - Titleist Performance Institute",
+  "published": "20260825",
+  "duration_seconds": 6103,
+  "analysed_on": "2026-09-13",
+  "people": {
+    "golfer": "Michael Brennan",
+    "coaches": [
+      "Greg Rose",
+      "Dave Phillips"
+    ],
+    "team": "Longstanding swing coach, trainer and caddy contribute; preserve roles without relying on uncertain automatic-caption spellings.",
+    "attribution_basis": "Source title, named dialogue and on-camera demonstrations"
+  },
+  "context": {
+    "handedness": "right",
+    "level": "Tour player with high existing speed and established team",
+    "tasks": [
+      "Driver preservation/optional length control",
+      "Iron setup and timing",
+      "Bunker entry/high-soft skill",
+      "Putting alignment perception",
+      "Physical and power screening"
+    ],
+    "body_context": "Formal in-person screen is shown. No numerical body-handicap score provided. Clinical remarks remain source context, not app diagnoses.",
+    "style": "Detailed measurement-led assessment followed by simple task-specific instructions, contrasts and teach-back"
+  },
+  "assets": {
+    "video": ".videos/coaching-knowledge/NOMY1bzMI28/NOMY1bzMI28.mp4",
+    "raw_captions": ".videos/coaching-knowledge/NOMY1bzMI28/NOMY1bzMI28.en-orig.json3",
+    "transcript": ".videos/coaching-knowledge/NOMY1bzMI28/transcript.json",
+    "reading_index": ".videos/coaching-knowledge/NOMY1bzMI28/transcript.txt",
+    "metadata": ".videos/coaching-knowledge/NOMY1bzMI28/NOMY1bzMI28.info.json",
+    "overview": ".videos/coaching-knowledge/NOMY1bzMI28/overview/index.json",
+    "detail": ".videos/coaching-knowledge/NOMY1bzMI28/detail/index.json",
+    "graphs": ".videos/coaching-knowledge/NOMY1bzMI28/graphs/index.json",
+    "sequences": ".videos/coaching-knowledge/NOMY1bzMI28/sequences/index.json"
+  },
+  "coverage": {
+    "full_transcript_read": true,
+    "caption_events": 3377,
+    "transcript_kind": "Full YouTube en-orig automatic caption text, 204 reading-index blocks",
+    "audio_independently_transcribed": false,
+    "visual_review_method": "102 full-timeline overview frames, 172 targeted detail frames, 36 graph-context frames and 36 rehearsal/contrast frames. All 30 contact sheets inspected. Some timestamps repeat; sampled inspection, not continuous playback.",
+    "inspected_sheet_indexes": [
+      ".videos/coaching-knowledge/NOMY1bzMI28/overview/index.json",
+      ".videos/coaching-knowledge/NOMY1bzMI28/detail/index.json",
+      ".videos/coaching-knowledge/NOMY1bzMI28/graphs/index.json",
+      ".videos/coaching-knowledge/NOMY1bzMI28/sequences/index.json"
+    ],
+    "limitations": [
+      "480p video; filmed monitors have glare and small text. Clear full-screen graph inserts separately identified.",
+      "Edited outdoor, lab and interview inserts are not a chronological trial log.",
+      "Automatic captions include ambiguous technical words and inconsistent short summaries.",
+      "No raw 3D/force/launch export or controlled before/after dataset."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E01",
+      "span_seconds": [
+        105,
+        475
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=105s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "problem_definition",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Interview distinguishes the reported fault from the actual problem: Brennan thinks hanging back causes an excessively left path and dislikes the high finish. Rose asks whether he would mind hanging back if path were acceptable. Long clubs favour a fade; shorter irons are described as straighter. These are the initial hypotheses, not confirmed findings.",
+      "frames": [
+        {
+          "time_seconds": 300,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-00300.000.jpg",
+          "observation": "Brennan describes his driver-path concern."
+        },
+        {
+          "time_seconds": 321,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-00321.000.jpg",
+          "observation": "Rose questions which performance problem matters."
+        }
+      ],
+      "limitations": [
+        "Source interpretation, not independently validated biomechanics."
+      ]
+    },
+    {
+      "id": "E02",
+      "span_seconds": [
+        535,
+        875
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=535s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "context_and_baseline",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Team contributes right-hip history, existing testing, bunker height/control and rapid frustration after one imperfect shot. TPI recommends collecting good-day baseline data and agrees the assessment plan with the team. Caddy feedback adds context that the player alone did not initially raise.",
+      "frames": [
+        {
+          "time_seconds": 630,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/overview/frame-00630.000.jpg",
+          "observation": "Caddy and player during team interview."
+        },
+        {
+          "time_seconds": 690,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/overview/frame-00690.000.jpg",
+          "observation": "Caddy describes reactions to poor shots."
+        },
+        {
+          "time_seconds": 870,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/overview/frame-00870.000.jpg",
+          "observation": "Team concludes the assessment discussion."
+        }
+      ],
+      "limitations": [
+        "Source interpretation, not independently validated biomechanics."
+      ]
+    },
+    {
+      "id": "E03",
+      "span_seconds": [
+        890,
+        1148
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=890s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "physical_screen",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Physical screen includes pelvic tilting and segment separation, squat variations, foot alignment, ankle testing and hip comparison. Right side feels tighter/pinchy in some positions. Rose investigates manually and does not recommend replacing the existing programme.",
+      "frames": [
+        {
+          "time_seconds": 912,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-00912.000.jpg",
+          "observation": "Arms crossed during pelvic/segment control screen."
+        },
+        {
+          "time_seconds": 980,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-00980.000.jpg",
+          "observation": "Overhead squat preparation with changed foot alignment."
+        },
+        {
+          "time_seconds": 1008,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01008.000.jpg",
+          "observation": "Kneeling ankle movement with heel and foot orientation visible."
+        },
+        {
+          "time_seconds": 1024,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01024.000.jpg",
+          "observation": "Right-side ankle test repeated."
+        },
+        {
+          "time_seconds": 1067,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01067.000.jpg",
+          "observation": "Practitioner manually assesses a hip while player is supine."
+        }
+      ],
+      "limitations": [
+        "No formal diagnostic report or imaging. Do not infer a clinical diagnosis or reproduce manual testing as app coaching.",
+        "The source makes informal tissue/impingement remarks; these are not independently established diagnoses."
+      ]
+    },
+    {
+      "id": "E04",
+      "span_seconds": [
+        1170,
+        1540
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=1170s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "physical_context_and_hypothesis",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Rose checks trunk asymmetry, leg motion, balance, shoulder/neck movement, loaded hip rotation and seated trunk rotation. He distinguishes adequate unloaded range from reduced loaded right-hip rotation as a possible stability/guarding issue. Left trunk rotation is reported around 43 degrees versus 61 right, new to the trainer. Findings suggest possibilities to compare with the swing, not proof of causation.",
+      "frames": [
+        {
+          "time_seconds": 1185,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01185.000.jpg",
+          "observation": "Practitioner inspects trunk posture."
+        },
+        {
+          "time_seconds": 1245,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01245.000.jpg",
+          "observation": "Quadruped rock-back position during trunk observation."
+        },
+        {
+          "time_seconds": 1334,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01334.000.jpg",
+          "observation": "Player performs loaded rotation with hands on hips."
+        },
+        {
+          "time_seconds": 1374,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01374.000.jpg",
+          "observation": "Supine manual comparison appears in the explanation."
+        },
+        {
+          "time_seconds": 1425,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01425.000.jpg",
+          "observation": "Seated trunk-rotation screen with a bar across shoulders."
+        },
+        {
+          "time_seconds": 1436,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01436.000.jpg",
+          "observation": "Bar and trunk viewed during rotation measurement."
+        }
+      ],
+      "limitations": [
+        "Source suggests tracking asymmetry; this record does not diagnose scoliosis or a joint condition.",
+        "Loaded and unloaded testing need a suitable assessment; phone swing footage alone does not establish stability or mobility limitations."
+      ]
+    },
+    {
+      "id": "E05",
+      "span_seconds": [
+        1540,
+        1687
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=1540s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "capacity_assessment",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Existing trainer records indicate high strength. Power tests report roughly 26-inch jump, 24-foot sit-up throw, 23-foot chest pass and grip readings 72/66 with units not clear in captions. TPI concludes lack of general power is not the main problem. Tour-average figures vary in the dialogue and are not adopted as thresholds.",
+      "frames": [
+        {
+          "time_seconds": 1565,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01565.000.jpg",
+          "observation": "Player prepares to jump in the testing area."
+        },
+        {
+          "time_seconds": 1580,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01580.000.jpg",
+          "observation": "Jump test with hands near hips."
+        },
+        {
+          "time_seconds": 1630,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01630.000.jpg",
+          "observation": "Throwing motion during power assessment."
+        },
+        {
+          "time_seconds": 1667,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01667.000.jpg",
+          "observation": "Hand-held grip test instrument visible."
+        }
+      ],
+      "limitations": [
+        "Test apparatus visible but result displays not independently readable here. Values are source-spoken.",
+        "Medicine-ball mass, grip units and full protocols not established; do not compare users numerically to these results."
+      ]
+    },
+    {
+      "id": "E06",
+      "span_seconds": [
+        1687,
+        1920
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=1687s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "measurement_collection",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Instrumented driver, iron and simulated bunker swings are collected. Early commentary sees more backward-body behaviour with irons than driver, and bunker setup that appears square/tall for the desired high soft shot. The bunker capture is on a mat, not actual sand.",
+      "frames": [
+        {
+          "time_seconds": 1803,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01803.000.jpg",
+          "observation": "Player wears motion-capture markers/suit and addresses an iron in the lab."
+        },
+        {
+          "time_seconds": 1844,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01844.000.jpg",
+          "observation": "Close view of ball and wedge on the lab mat."
+        },
+        {
+          "time_seconds": 1905,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01905.000.jpg",
+          "observation": "3D skeleton and club graphs appear during the bunker-capture discussion."
+        }
+      ],
+      "limitations": [
+        "Lab simulated bunker task must be distinguished from later outdoor sand shots.",
+        "Edited inserts are not a shot-by-shot chronological measurement log."
+      ]
+    },
+    {
+      "id": "E07",
+      "span_seconds": [
+        1920,
+        2165
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=1920s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "hypothesis_before_instrument_review",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Video review starts with the player describing what he checks: right-hip drift, right big toe contact, long backswing and weakness when simply shortening arms. Phillips proposes investigating pelvic/spinal extension as a possible source of extra length, pending 3D review. Driver looks very good on video.",
+      "frames": [
+        {
+          "time_seconds": 1975,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-01975.000.jpg",
+          "observation": "Face-on swing replay on monitor during self-evaluation."
+        },
+        {
+          "time_seconds": 2060,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-02060.000.jpg",
+          "observation": "Phillips gestures an extended/long swing beside the replay."
+        },
+        {
+          "time_seconds": 2145,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-02145.000.jpg",
+          "observation": "Face-on top-position replay during the discussion."
+        }
+      ],
+      "limitations": [
+        "Source interpretation, not independently validated biomechanics."
+      ]
+    },
+    {
+      "id": "E08",
+      "span_seconds": [
+        2165,
+        2405
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=2165s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "non_intervention_and_attention",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "The player compares his trail-foot/finish appearance to other golfers. TPI cautions against inventing a problem from aesthetics and asks for functional evidence. A prolonged trail-foot contact is not automatically hanging back. They propose a limited set of relevant benchmarks for an analytical player.",
+      "frames": [
+        {
+          "time_seconds": 2230,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-02230.000.jpg",
+          "observation": "Player demonstrates his disliked finish/foot relationship."
+        },
+        {
+          "time_seconds": 2270,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-02270.000.jpg",
+          "observation": "Player and coaches discuss desired foot appearance."
+        },
+        {
+          "time_seconds": 2310,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/overview/frame-02310.000.jpg",
+          "observation": "Close view of foot/heel demonstration."
+        },
+        {
+          "time_seconds": 2390,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-02390.000.jpg",
+          "observation": "Swing replay shown while attention is narrowed to useful checks."
+        }
+      ],
+      "limitations": [
+        "Source comments about spinal loading or heel direction are qualitative claims, not a quantified injury-risk assessment.",
+        "Do not convert a heel-position image into a force or safety diagnosis."
+      ]
+    },
+    {
+      "id": "E09",
+      "span_seconds": [
+        2405,
+        2522
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=2405s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "instrument_evidence",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Driver force review is praised for lateral-rock-twist-jump peak sequence and unusually early force timing relative to shaft position. The graphic explicitly labelled Driver: Full Kinetic Sequence shows peak order 1/2/3/4 and max row 19/26/20/188. A skeleton accompanies the timing discussion.",
+      "frames": [
+        {
+          "time_seconds": 2455,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-02455.000.jpg",
+          "observation": "3D skeleton on the lab display."
+        },
+        {
+          "time_seconds": 2488,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/graphs/frame-02488.000.jpg",
+          "observation": "Full-screen driver kinetic chart with colour-coded traces and numeric table."
+        },
+        {
+          "time_seconds": 2490,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/graphs/frame-02490.000.jpg",
+          "observation": "Skeleton at an early downswing position beside the driver kinetic chart."
+        }
+      ],
+      "limitations": [
+        "Store the displayed table as labelled; units differ between force/moment channels and are not all readable in this extraction.",
+        "An ordered peak sequence is not a phone-video measurement. No raw force export or repeatability statistics."
+      ]
+    },
+    {
+      "id": "E10",
+      "span_seconds": [
+        2522,
+        2705
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=2522s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "hypothesis_revised_by_context",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "3D discussion reports about 125 degrees thorax turn and roughly 21-25 degrees extension. The initially suspected arch is accepted in the context of this large turn and strong overall swing. A core-engagement brake is optional if the team wants less length or greater control, not a mandatory repair.",
+      "frames": [
+        {
+          "time_seconds": 2540,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-02540.000.jpg",
+          "observation": "Rose explains turn/extension relationship."
+        },
+        {
+          "time_seconds": 2620,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-02620.000.jpg",
+          "observation": "Team discusses whether a shorter swing is desirable."
+        },
+        {
+          "time_seconds": 2650,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-02650.000.jpg",
+          "observation": "Instrumented backswing shown in an insert."
+        }
+      ],
+      "limitations": [
+        "Spoken angles and normal-reference descriptions vary; do not derive a universal extension-to-turn formula.",
+        "No medical clearance or proven safe extension angle follows from this discussion."
+      ]
+    },
+    {
+      "id": "E11",
+      "span_seconds": [
+        2705,
+        3002
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=2705s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "club_specific_diagnosis",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Iron kinetics are later than driver. TPI describes lateral force peaking before the top with driver but after the start down with iron, and iron pelvis setup farther back relative to stance than expected. They connect this to the reported hanging-back issue. Spoken lateral push is about 19 percent body weight driver versus 23 iron.",
+      "frames": [
+        {
+          "time_seconds": 2824,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-02824.000.jpg",
+          "observation": "Iron review includes plotted lab data on the monitor."
+        },
+        {
+          "time_seconds": 2860,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-02860.000.jpg",
+          "observation": "Multiple 3D traces visible during pelvis/trunk review."
+        },
+        {
+          "time_seconds": 2918,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/graphs/frame-02918.000.jpg",
+          "observation": "Driver force graph and vertical timing marker during before-top explanation."
+        },
+        {
+          "time_seconds": 2935,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-02935.000.jpg",
+          "observation": "Rose switches the explanation to later iron timing."
+        }
+      ],
+      "limitations": [
+        "The clear driver table verifies 19, but iron 23 and the precise iron peak timing are retained as spoken readings.",
+        "No precise millisecond difference or matched raw trials available."
+      ]
+    },
+    {
+      "id": "E12",
+      "span_seconds": [
+        3002,
+        3358
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=3002s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "bunker_instrument_reasoning",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Further force review mentions driver lead-side braking lower than trail push despite the broadly favourable driver assessment. Simulated bunker kinematics are more full-swing-like than desired. Table reports trunk 573 and lead-arm 746, with other velocities. Pelvis backswing sway is read as 2.2 inches and trunk 1.4 inches. TPI links the unstable base to variable sand entry, and proposes avoiding backward pelvis travel.",
+      "frames": [
+        {
+          "time_seconds": 3070,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-03070.000.jpg",
+          "observation": "Skeleton at the iron timing reference."
+        },
+        {
+          "time_seconds": 3144,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/graphs/frame-03144.000.jpg",
+          "observation": "Wedge kinetic table shows peak order lateral 1, rock 3, twist 2, jump 4."
+        },
+        {
+          "time_seconds": 3192,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/graphs/frame-03192.000.jpg",
+          "observation": "Peak angular velocity sequence table reads pelvis 305, trunk 573, lead arm 746, club shaft 1797, club head 1895."
+        },
+        {
+          "time_seconds": 3244,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/graphs/frame-03244.000.jpg",
+          "observation": "Position graph in inches shows target-direction red trace reaching about -2.2 before moving forward."
+        },
+        {
+          "time_seconds": 3305,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-03305.000.jpg",
+          "observation": "Separate trunk-position graph appears while 1.4-inch motion is discussed."
+        }
+      ],
+      "limitations": [
+        "Source mechanical explanation is preserved as TPI reasoning, not independently verified causality.",
+        "Negative on the target axis means away from target. Do not confuse position, force and angular velocity.",
+        "Driver braking caveat does not become a prescribed driver overhaul."
+      ]
+    },
+    {
+      "id": "E13",
+      "span_seconds": [
+        3358,
+        3518
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=3358s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "optional_rehearsal_and_boundary",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "TPI repeatedly says the full swing is highly efficient. If shortening is desired, Phillips uses plugged-in power-cord imagery. Rose contrasts arched and less arched pelvic positions to feel a natural turn limit. Pelvic control belongs in gym training; he explicitly does not ask the player to consciously perform the full pelvic-tilt screen during a swing.",
+      "frames": [
+        {
+          "time_seconds": 3420,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-03420.000.jpg",
+          "observation": "Phillips gestures two connected points for the plugged-in feel."
+        },
+        {
+          "time_seconds": 3447,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/sequences/frame-03447.000.jpg",
+          "observation": "Player addresses an imaginary ball for pelvic-tilt/turn contrast."
+        },
+        {
+          "time_seconds": 3450,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/sequences/frame-03450.000.jpg",
+          "observation": "Player turns during the rehearsal."
+        },
+        {
+          "time_seconds": 3470,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-03470.000.jpg",
+          "observation": "Player returns to standing during the control discussion."
+        }
+      ],
+      "limitations": [
+        "Source interpretation, not independently validated biomechanics."
+      ]
+    },
+    {
+      "id": "E14",
+      "span_seconds": [
+        3540,
+        3735
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=3540s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "cue_interpretation_and_revision",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Asked what getting forward means, Brennan demonstrates left knee and left shoulder going down/forward before turning. Rose checks privately with his established coaches and reframes the issue as when lead-side force starts, not simply how far the body travels. Extra travel before pushing can delay the push. They discuss reducing the iron pelvis excursion and starting more centred.",
+      "frames": [
+        {
+          "time_seconds": 3590,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-03590.000.jpg",
+          "observation": "Player points to the upper body while describing his existing feel."
+        },
+        {
+          "time_seconds": 3650,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-03650.000.jpg",
+          "observation": "Rose discusses the interpretation with the established coaches."
+        },
+        {
+          "time_seconds": 3680,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-03680.000.jpg",
+          "observation": "Rose demonstrates motion in the hallway."
+        },
+        {
+          "time_seconds": 3705,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-03705.000.jpg",
+          "observation": "Close view of foot motion during the force-versus-travel explanation."
+        }
+      ],
+      "limitations": [
+        "Source interpretation, not independently validated biomechanics."
+      ]
+    },
+    {
+      "id": "E15",
+      "span_seconds": [
+        3735,
+        3830
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=3735s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "selected_intervention",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Final proposal is simple and club-specific: iron pelvis more centred or slightly forward relative to stance, keep it there in backswing, then go. Preserve the driver. The goal is earlier useful action without a large deliberate chest shift.",
+      "frames": [
+        {
+          "time_seconds": 3760,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-03760.000.jpg",
+          "observation": "Team returns to explain the proposal."
+        },
+        {
+          "time_seconds": 3790,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-03790.000.jpg",
+          "observation": "Rose demonstrates the centred starting position."
+        }
+      ],
+      "limitations": [
+        "Source interpretation, not independently validated biomechanics."
+      ]
+    },
+    {
+      "id": "E16",
+      "span_seconds": [
+        3830,
+        4020
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=3830s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "putting_problem_definition",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Putting assessment reproduces the normal process. Brennan reports that a ball line known to be correct looks wrong from address. Phillips discusses AimPoint as a possible structure for reading, while retaining speed as the basis for the chosen break. This does not yet establish a faulty stroke.",
+      "frames": [
+        {
+          "time_seconds": 3890,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-03890.000.jpg",
+          "observation": "Player walks through the putting process."
+        },
+        {
+          "time_seconds": 3920,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-03920.000.jpg",
+          "observation": "Player and team inspect the line on the green."
+        },
+        {
+          "time_seconds": 3980,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-03980.000.jpg",
+          "observation": "Player prepares another putt with the team watching."
+        }
+      ],
+      "limitations": [
+        "Source interpretation, not independently validated biomechanics."
+      ]
+    },
+    {
+      "id": "E17",
+      "span_seconds": [
+        4020,
+        4165
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=4020s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "controlled_perception_experiment",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Rose discusses same-side eye dominance as a tendency, then tests this player. A line that looks left from address is checked from behind and appears right edge. Exaggerated open/closed stances change little or worsen it. Moving ball forward shifts perceived aim right; back shifts it left. This is the monkey-dance setup experiment.",
+      "frames": [
+        {
+          "time_seconds": 4050,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04050.000.jpg",
+          "observation": "Player addresses the marked ball."
+        },
+        {
+          "time_seconds": 4070,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04070.000.jpg",
+          "observation": "Rose crouches to inspect line/aim."
+        },
+        {
+          "time_seconds": 4110,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04110.000.jpg",
+          "observation": "Player tests an altered stance with Rose watching."
+        },
+        {
+          "time_seconds": 4130,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04130.000.jpg",
+          "observation": "Group discusses the altered aim perception from another angle."
+        }
+      ],
+      "limitations": [
+        "Perception and eye-dominance labels are source-reported, not inferable from appearance.",
+        "No validated visual-system diagnosis or universal dominant-eye setup rule. The source population percentage is not independently checked."
+      ]
+    },
+    {
+      "id": "E18",
+      "span_seconds": [
+        4165,
+        4358
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=4165s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "putting_selection_and_retest",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Ball position is the useful variable for Brennan; open/closed stance was less influential. Slightly forward from his habitual position makes the line look aligned. They ask him to find a reproducible location across right/left break and uphill/downhill putts. His earlier head-position concern may also relate to the ball reference.",
+      "frames": [
+        {
+          "time_seconds": 4170,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04170.000.jpg",
+          "observation": "Rose observes player testing the ball position."
+        },
+        {
+          "time_seconds": 4260,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04260.000.jpg",
+          "observation": "Rose gestures while explaining how to reproduce the preferred setup."
+        },
+        {
+          "time_seconds": 4295,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04295.000.jpg",
+          "observation": "Practice recommendation discussed beside the target."
+        },
+        {
+          "time_seconds": 4350,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04350.000.jpg",
+          "observation": "Rose demonstrates body/ball relation."
+        }
+      ],
+      "limitations": [
+        "Improved reported alignment confidence is not a quantified putting-accuracy or scoring improvement."
+      ]
+    },
+    {
+      "id": "E19",
+      "span_seconds": [
+        4358,
+        4505
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=4358s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "bunker_base_then_height",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Outdoor bunker work starts from measured pelvic sway. They ask Brennan to maintain the lead-side base while pivoting, distinguishing his personal knee feel from a universal joint instruction. Phillips then suggests standing farther from the ball and lowering the handle for the high soft shot.",
+      "frames": [
+        {
+          "time_seconds": 4400,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04400.000.jpg",
+          "observation": "Instrumented bunker-motion insert provides diagnosis context."
+        },
+        {
+          "time_seconds": 4420,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04420.000.jpg",
+          "observation": "Player sets up in the outdoor bunker."
+        },
+        {
+          "time_seconds": 4450,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04450.000.jpg",
+          "observation": "Player finishes a bunker attempt."
+        },
+        {
+          "time_seconds": 4500,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04500.000.jpg",
+          "observation": "Rose watches a changed address position."
+        }
+      ],
+      "limitations": [
+        "Source interpretation, not independently validated biomechanics."
+      ]
+    },
+    {
+      "id": "E20",
+      "span_seconds": [
+        4505,
+        4618
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=4505s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "body_reference_clarification",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Rose explains a pelvis-centre path towards the target, up and away from the ball during finesse shots, avoiding the extra move away from target first. The instruction concerns belt buckle, not chest. The stance can be balanced; it is not a demand to begin entirely on the lead side.",
+      "frames": [
+        {
+          "time_seconds": 4530,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04530.000.jpg",
+          "observation": "Bunker setup seen from wide view."
+        },
+        {
+          "time_seconds": 4555,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04555.000.jpg",
+          "observation": "Rose gestures the desired direction near the player."
+        },
+        {
+          "time_seconds": 4600,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04600.000.jpg",
+          "observation": "Phillips explains the distinction between pelvis and chest."
+        }
+      ],
+      "limitations": [
+        "Directions are source coaching descriptions, not calibrated target trajectories for every finesse shot."
+      ]
+    },
+    {
+      "id": "E21",
+      "span_seconds": [
+        4618,
+        4778
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=4618s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "contrast_trial_and_overcorrection",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "They compare a better attempt with a deliberately wrong one in which the pelvis drifts back; the latter is called heavy with entry too far behind. Excessive left lean at address is revised towards a roughly balanced starting feel and moving left, because starting too far left can prompt falling back. Downhill is named as an exception.",
+      "frames": [
+        {
+          "time_seconds": 4639,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/sequences/frame-04639.000.jpg",
+          "observation": "Player prepares the deliberately wrong attempt."
+        },
+        {
+          "time_seconds": 4641,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/sequences/frame-04641.000.jpg",
+          "observation": "Early motion in the deliberately wrong attempt."
+        },
+        {
+          "time_seconds": 4643,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/sequences/frame-04643.000.jpg",
+          "observation": "Player through the deliberately wrong attempt."
+        },
+        {
+          "time_seconds": 4685,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04685.000.jpg",
+          "observation": "Close view of bunker feet/club setup."
+        },
+        {
+          "time_seconds": 4710,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04710.000.jpg",
+          "observation": "Player through a subsequent bunker shot."
+        }
+      ],
+      "limitations": [
+        "Sand-entry difference and sound are coach-described; sampled wide frames do not support an independently measured entry distance.",
+        "50/50, 60/40 and 70/30 are feels/examples here, not verified pressure readouts."
+      ]
+    },
+    {
+      "id": "E22",
+      "span_seconds": [
+        4778,
+        4865
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=4778s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "tactile_rehearsal_and_old_new_contrast",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Rose supplies manual resistance at the hip during an unhit rehearsal. Brennan resists being pushed away during the first backswing move, described around P1 to P2. They contrast deliberate drift with the new feel. Unfamiliarity is accepted when the desired change is present.",
+      "frames": [
+        {
+          "time_seconds": 4782,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/sequences/frame-04782.000.jpg",
+          "observation": "Rose places a hand at the hip in address rehearsal."
+        },
+        {
+          "time_seconds": 4784,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/sequences/frame-04784.000.jpg",
+          "observation": "Player turns against the hand reference."
+        },
+        {
+          "time_seconds": 4788,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/sequences/frame-04788.000.jpg",
+          "observation": "Repetition of the resisted early backswing."
+        },
+        {
+          "time_seconds": 4792,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/sequences/frame-04792.000.jpg",
+          "observation": "Player and Rose finish the rehearsal."
+        }
+      ],
+      "limitations": [
+        "Applied force not measured. This is a hands-on rehearsal, not a phone-derived force target."
+      ]
+    },
+    {
+      "id": "E23",
+      "span_seconds": [
+        4860,
+        4950
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=4865s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "equipment_condition",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Wedge discussion reports 60-degree wedge with 4 degrees bounce and 56 with 11. Current firm sand suits the low-bounce option; softer sand may favour opening the higher-bounce 56 rather than automatically choosing the highest-loft club. Equipment and sand condition qualify the recommendation.",
+      "frames": [
+        {
+          "time_seconds": 4860,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04860.000.jpg",
+          "observation": "Player in bunker address during the equipment discussion."
+        },
+        {
+          "time_seconds": 4920,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04920.000.jpg",
+          "observation": "Sand exits during a bunker attempt."
+        }
+      ],
+      "limitations": [
+        "Equipment specifications are spoken, not a measured sole geometry or fitting. Opening the face does not have a fixed effective-bounce change in this record."
+      ]
+    },
+    {
+      "id": "E24",
+      "span_seconds": [
+        4950,
+        4992
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=4950s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "lie_specific_exception",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "A downhill bunker situation changes the setup requirement: more forward handle/angle is used for the slope, while retaining the no-backward-pelvis-drift principle. Attempt is praised.",
+      "frames": [
+        {
+          "time_seconds": 4950,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04950.000.jpg",
+          "observation": "Player prepares on the changed bunker lie."
+        },
+        {
+          "time_seconds": 4970,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-04970.000.jpg",
+          "observation": "Team discusses the completed attempt."
+        }
+      ],
+      "limitations": [
+        "Source interpretation, not independently validated biomechanics."
+      ]
+    },
+    {
+      "id": "E25",
+      "span_seconds": [
+        4992,
+        5178
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=4992s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "iron_setup_demonstration",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Iron practice clarifies pelvis-centre projection relative to stance centre, not the ball. Source examples range from driver slightly behind, mid iron near centre, eight iron about an inch ahead and wedge farther ahead. Start with eight iron; keep pelvis from travelling back while allowing chest to turn. The source corrects and refines earlier setup wording.",
+      "frames": [
+        {
+          "time_seconds": 5050,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05050.000.jpg",
+          "observation": "Rose demonstrates a vertical pelvis/stance reference."
+        },
+        {
+          "time_seconds": 5080,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05080.000.jpg",
+          "observation": "Rose and Brennan discuss where the reference falls."
+        },
+        {
+          "time_seconds": 5150,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05150.000.jpg",
+          "observation": "Player addresses the eight iron."
+        },
+        {
+          "time_seconds": 5170,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05170.000.jpg",
+          "observation": "Player rehearses with coaches observing."
+        }
+      ],
+      "limitations": [
+        "Inch values are source coaching examples, not universal body proportions or actual pressure percentages.",
+        "Plumb bob is a pelvis-centre projection, not a measured whole-body centre of mass."
+      ]
+    },
+    {
+      "id": "E26",
+      "span_seconds": [
+        5178,
+        5365
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=5178s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "retest_and_visual_feedback",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "TPI links the setup to low point and the direction of the arc, remarks that divots/path look more right, and leaves the efficient downswing alone. The changed trail-leg loading feels unusual. A coach films face-on so Brennan can compare the feel with the actual pelvis motion; the group says it looks normal and did not move back.",
+      "frames": [
+        {
+          "time_seconds": 5190,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05190.000.jpg",
+          "observation": "Iron swing during retest."
+        },
+        {
+          "time_seconds": 5280,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05280.000.jpg",
+          "observation": "Player describes the altered trail-leg feel."
+        },
+        {
+          "time_seconds": 5299,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/sequences/frame-05299.000.jpg",
+          "observation": "Coach records a face-on view of the new setup."
+        },
+        {
+          "time_seconds": 5302,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/sequences/frame-05302.000.jpg",
+          "observation": "Player starts the filmed swing."
+        },
+        {
+          "time_seconds": 5305,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/sequences/frame-05305.000.jpg",
+          "observation": "Player finishes the filmed swing."
+        },
+        {
+          "time_seconds": 5310,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05310.000.jpg",
+          "observation": "Coaches inspect the phone."
+        }
+      ],
+      "limitations": [
+        "No post-change force-plate, club-path or dispersion dataset shown. Divot direction is not an exact club-path measurement."
+      ]
+    },
+    {
+      "id": "E27",
+      "span_seconds": [
+        5365,
+        5548
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=5365s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "progression_and_maintenance",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Progress to longer irons with pelvis closer to stance centre. Keeping the pelvis farther forward effectively changes ball relation; Phillips suggests moving the ball slightly forward to avoid making the long-iron task feel too far back. Rose recommends periodic setup checks, about monthly in this dialogue, to catch drift. Once contact and understanding improve, they stop adding changes.",
+      "frames": [
+        {
+          "time_seconds": 5380,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05380.000.jpg",
+          "observation": "Player changes position during longer-iron progression."
+        },
+        {
+          "time_seconds": 5400,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05400.000.jpg",
+          "observation": "Longer-iron attempt and discussion."
+        },
+        {
+          "time_seconds": 5460,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05460.000.jpg",
+          "observation": "Player at address after setup discussion."
+        },
+        {
+          "time_seconds": 5490,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05490.000.jpg",
+          "observation": "Brennan describes his old club-mark setup checks."
+        },
+        {
+          "time_seconds": 5510,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05510.000.jpg",
+          "observation": "Team discusses keeping the change simple."
+        }
+      ],
+      "limitations": [
+        "Source interpretation, not independently validated biomechanics."
+      ]
+    },
+    {
+      "id": "E28",
+      "span_seconds": [
+        5548,
+        5758
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=5548s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "optional_trial_and_result",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Optional driver shortening is tried with the plugged-in core feel. Player reports resistance/natural endpoint and solid contact after adjustment. Coaches say club is a little shorter, estimating 10-15 degrees compared with earlier, but still reiterate it need not be used all the time. Early attempts were not immediately ideal.",
+      "frames": [
+        {
+          "time_seconds": 5642,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/sequences/frame-05642.000.jpg",
+          "observation": "Driver trial at address."
+        },
+        {
+          "time_seconds": 5644,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/sequences/frame-05644.000.jpg",
+          "observation": "Driver trial in motion."
+        },
+        {
+          "time_seconds": 5646,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/sequences/frame-05646.000.jpg",
+          "observation": "Driver trial finishes."
+        },
+        {
+          "time_seconds": 5660,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05660.000.jpg",
+          "observation": "Player reports how the trial felt."
+        },
+        {
+          "time_seconds": 5690,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05690.000.jpg",
+          "observation": "Player prepares another driver trial."
+        },
+        {
+          "time_seconds": 5720,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05720.000.jpg",
+          "observation": "Player completes another attempt."
+        }
+      ],
+      "limitations": [
+        "10-15 degrees is a coach visual estimate, not an independently measured or calibrated reduction.",
+        "No matched speed/dispersion evidence proves benefit; do not turn optional control into a mandatory driver fix."
+      ]
+    },
+    {
+      "id": "E29",
+      "span_seconds": [
+        5758,
+        5915
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=5758s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "teach_back_and_correction",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Brennan records a teach-back on his phone: putting ball position, bunker pelvis control and handle height, iron pelvis position, optional core engagement. Rose interrupts to correct an important error: pelvis position is relative to stance centre, not ball position. Gym work supports control without overloading the swing with conscious instructions.",
+      "frames": [
+        {
+          "time_seconds": 5780,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05780.000.jpg",
+          "observation": "Putting setup insert accompanies the recorded recap."
+        },
+        {
+          "time_seconds": 5810,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05810.000.jpg",
+          "observation": "Bunker feet/club insert accompanies the recap."
+        },
+        {
+          "time_seconds": 5840,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05840.000.jpg",
+          "observation": "Rose indicates the ground reference during the stance-centre correction."
+        },
+        {
+          "time_seconds": 5890,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05890.000.jpg",
+          "observation": "Brennan records the explanation on his phone."
+        },
+        {
+          "time_seconds": 5910,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/detail/frame-05910.000.jpg",
+          "observation": "Player completes the recap."
+        }
+      ],
+      "limitations": [
+        "Source interpretation, not independently validated biomechanics."
+      ]
+    },
+    {
+      "id": "E30",
+      "span_seconds": [
+        5915,
+        6103
+      ],
+      "source_url": "https://www.youtube.com/watch?v=NOMY1bzMI28&t=5915s",
+      "attribution": "Greg Rose and Dave Phillips, with Michael Brennan and his team",
+      "kind": "retention_limit_and_followup",
+      "session": "TPI_assessment_with_edited_replays_and_commentary",
+      "summary": "Closing emphasis is on basics, a stable bunker base, believable putting alignment, a consistent team and checking the right things. Player reports confirmation of the existing work. Follow-up visits are suggested, but no later competition or handicap result is demonstrated.",
+      "frames": [
+        {
+          "time_seconds": 5970,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/overview/frame-05970.000.jpg",
+          "observation": "Rose delivers closing interpretation."
+        },
+        {
+          "time_seconds": 6030,
+          "path": ".videos/coaching-knowledge/NOMY1bzMI28/overview/frame-06030.000.jpg",
+          "observation": "Phillips discusses future development."
+        }
+      ],
+      "limitations": [
+        "Source interpretation, not independently validated biomechanics."
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "NOMY1bzMI28-C01",
+      "title": "Define the performance problem and preserve a good-day baseline",
+      "tags": {
+        "phase": [],
+        "body": [],
+        "outcome": [
+          "path",
+          "confidence"
+        ],
+        "concept": [
+          "interview",
+          "baseline",
+          "attention"
+        ]
+      },
+      "evidence_ids": [
+        "E01",
+        "E02",
+        "E07",
+        "E08",
+        "E30"
+      ],
+      "coaching_finding": "Analytical elite player suspects a fault and dislikes some appearances; caddy reports frustration after isolated imperfect shots.",
+      "coach_reasoning": "Ask what observable outcome is wrong, then compare with known good data and the established team's history. A disliked appearance alone need not require correction.",
+      "intervention": {
+        "process": "Separate golfer report, coach hypothesis and measured evidence. Record club, intended flight and actual miss.",
+        "attention": "Give the player a small set of useful checks and one current intention.",
+        "baseline": "Retain good-day captures for future comparison."
+      },
+      "applicability": [
+        "Player reports a fault, perceived aesthetic problem or sudden loss of confidence.",
+        "Known shot intent and meaningful performance outcome."
+      ],
+      "unknowns": [
+        "No mental-health diagnosis or tested psychological intervention.",
+        "One poor shot does not establish a durable pattern."
+      ],
+      "observed_result": "Assessment narrows attention to iron setup, bunker base and putting perception while largely preserving driver. No later scoring results.",
+      "selection": {
+        "coaching_focus": "Clarify one problem worth solving",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference for one focus and at most two compatible cues. Source assessment contains multiple tasks, alternatives and a longer recap.",
+        "reassess": "Check whether the suspected fault co-occurs with the actual miss and differs from a good baseline."
+      },
+      "alternative_case_ids": [
+        "NOMY1bzMI28-C04",
+        "NOMY1bzMI28-C06"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "NOMY1bzMI28-C02",
+      "title": "Use loaded and unloaded screening as context for swing hypotheses",
+      "tags": {
+        "phase": [
+          "setup",
+          "backswing"
+        ],
+        "body": [
+          "pelvis",
+          "right_hip",
+          "right_ankle",
+          "trunk"
+        ],
+        "outcome": [
+          "loading"
+        ],
+        "concept": [
+          "physical_screen",
+          "body_swing_connection",
+          "mobility_vs_stability"
+        ]
+      },
+      "evidence_ids": [
+        "E03",
+        "E04",
+        "E06"
+      ],
+      "coaching_finding": "Source finds mild right-side restrictions/control differences and asymmetric trunk rotation, with otherwise strong screening performance.",
+      "coach_reasoning": "Rose contrasts manually available range with reduced loaded range and considers guarding/stability. He explicitly needs the swing to show a matching effect before making a body-swing connection.",
+      "intervention": {
+        "process": "Preserve screen result, test position, assessor interpretation and uncertainty separately.",
+        "training": "Existing trainer handles pelvic control and relevant physical work; no new detailed exercise prescription given."
+      },
+      "applicability": [
+        "A real physical assessment is available with test context.",
+        "A separately observed swing pattern may be related, without assuming causation."
+      ],
+      "unknowns": [
+        "No diagnosis of tissue pathology, scoliosis, pain source or a body handicap score.",
+        "Current app video cannot substitute for manual screening or force/mobility measurements."
+      ],
+      "observed_result": "Physical context informs later investigation; final intervention remains modest. No physical retest after training.",
+      "selection": {
+        "coaching_focus": "Use assessed body context when available",
+        "max_simultaneous_cues": 0,
+        "policy_origin": "User preference for one focus and at most two compatible cues. Source assessment contains multiple tasks, alternatives and a longer recap.",
+        "reassess": "Verify the proposed connection against actual swing/task data; leave cause unknown when assessment is absent."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "NOMY1bzMI28-C03",
+      "title": "High capacity can rule out general power as the first coaching priority",
+      "tags": {
+        "phase": [],
+        "body": [
+          "legs",
+          "trunk",
+          "arms",
+          "hands"
+        ],
+        "outcome": [
+          "speed"
+        ],
+        "concept": [
+          "power_assessment",
+          "priority"
+        ]
+      },
+      "evidence_ids": [
+        "E05",
+        "E09"
+      ],
+      "coaching_finding": "Brennan already has high strength/power results and reports approximately 126 mph cruising driver speed.",
+      "coach_reasoning": "TPI distinguishes capacity from technique/equipment efficiency; insufficient general power is not the obvious bottleneck in this case.",
+      "intervention": {
+        "decision": "Prioritise the identified control/timing problems rather than automatically prescribing more strength or speed work."
+      },
+      "applicability": [
+        "Reliable capacity tests and swing outcomes in the same golfer."
+      ],
+      "unknowns": [
+        "Test protocols and some units incomplete.",
+        "Source tour-average statements are inconsistent and not a normative dataset."
+      ],
+      "observed_result": "Coaching proceeds to task-specific setup and timing; no speed-gain programme tested.",
+      "selection": {
+        "coaching_focus": "Choose the actual limiting factor",
+        "max_simultaneous_cues": 0,
+        "policy_origin": "User preference for one focus and at most two compatible cues. Source assessment contains multiple tasks, alternatives and a longer recap.",
+        "reassess": "Use comparable individual testing and performance; do not infer jump or grip capacity from a swing video."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "NOMY1bzMI28-C04",
+      "title": "Preserve an efficient driver despite unconventional-looking details",
+      "tags": {
+        "phase": [
+          "backswing",
+          "downswing",
+          "follow_through"
+        ],
+        "body": [
+          "trail_foot",
+          "pelvis",
+          "trunk"
+        ],
+        "outcome": [
+          "driver_performance"
+        ],
+        "concept": [
+          "non_intervention",
+          "context",
+          "aesthetics"
+        ]
+      },
+      "evidence_ids": [
+        "E07",
+        "E08",
+        "E09",
+        "E10",
+        "E12",
+        "E15"
+      ],
+      "coaching_finding": "Player worries about foot banking, high finish and long/arched-looking backswing. Driver data is broadly favourable.",
+      "coach_reasoning": "3D/force review places visible features in context. Large thorax turn accompanies extension; an unattractive foot position alone is not proof of hanging back.",
+      "intervention": {
+        "decision": "Keep the normal driver pattern. Optional length-control experiment is a separate case.",
+        "qualification": "Retain the later lead-side braking observation as a caveat, not evidence that all driver metrics were perfect."
+      },
+      "applicability": [
+        "Driver performance and reliable assessment support efficiency.",
+        "No demonstrated need for a specific change solely to match another player's appearance."
+      ],
+      "unknowns": [
+        "Source biomechanical/safety explanations are not independently validated.",
+        "No universal turn/extension ratio or ideal heel pattern."
+      ],
+      "observed_result": "Driver retained as default; optional core trial later. No claim that one lab assessment proves lifetime safety.",
+      "selection": {
+        "coaching_focus": "Preserve what works",
+        "max_simultaneous_cues": 0,
+        "policy_origin": "User preference for one focus and at most two compatible cues. Source assessment contains multiple tasks, alternatives and a longer recap.",
+        "reassess": "Reconsider only with a relevant outcome, new data or a specific shot-control need."
+      },
+      "alternative_case_ids": [
+        "NOMY1bzMI28-C05"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "NOMY1bzMI28-C05",
+      "title": "Optional core engagement creates a felt endpoint for a long backswing",
+      "tags": {
+        "phase": [
+          "setup",
+          "backswing",
+          "P4"
+        ],
+        "body": [
+          "pelvis",
+          "core",
+          "trunk"
+        ],
+        "outcome": [
+          "swing_length",
+          "control"
+        ],
+        "concept": [
+          "optional_intervention",
+          "feel_vs_motion"
+        ]
+      },
+      "evidence_ids": [
+        "E07",
+        "E10",
+        "E13",
+        "E28",
+        "E29"
+      ],
+      "coaching_finding": "Trying to shorten arms feels weak because Brennan does not feel a natural end to his turn.",
+      "coach_reasoning": "TPI proposes controlling extra extension to create resistance while retaining coil. This is optional; existing long-driver timing may suit him.",
+      "intervention": {
+        "feel": "Keep the chest/abdomen connection plugged in through the turn.",
+        "demonstration": "Compare turning with an arched versus more controlled pelvic position to feel the endpoint.",
+        "practice": "Train pelvic control with his trainer; do not consciously reproduce the pelvic-tilt screen during full swings.",
+        "use": "An optional control shot or response to unwanted length, not an obligatory default."
+      },
+      "applicability": [
+        "Player wants a shorter swing and needs a felt endpoint.",
+        "Evidence of extra turn/extension relevant to length, with a suitable physical context."
+      ],
+      "unknowns": [
+        "No universal spine angle or prescribed bracing force.",
+        "No matched speed/accuracy trial; 10-15-degree reduction is a coach estimate."
+      ],
+      "observed_result": "Player reports resistance and likes the feel; later attempts praised after initially imperfect contact. Coaches still say it is not needed all the time.",
+      "selection": {
+        "coaching_focus": "One plugged-in turn feel",
+        "max_simultaneous_cues": 2,
+        "policy_origin": "User preference for one focus and at most two compatible cues. Source assessment contains multiple tasks, alternatives and a longer recap.",
+        "reassess": "Compare contact, useful speed, dispersion and comfort; retain ordinary driver if no benefit."
+      },
+      "alternative_case_ids": [
+        "NOMY1bzMI28-C04"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "NOMY1bzMI28-C06",
+      "title": "Iron hang-back case: pelvis setup and earlier force, not extra chest travel",
+      "tags": {
+        "phase": [
+          "setup",
+          "backswing",
+          "P1",
+          "P2",
+          "transition"
+        ],
+        "body": [
+          "pelvis",
+          "lead_leg",
+          "ball_position"
+        ],
+        "outcome": [
+          "iron_path",
+          "contact",
+          "timing"
+        ],
+        "concept": [
+          "club_specific",
+          "force_vs_position",
+          "progression"
+        ]
+      },
+      "evidence_ids": [
+        "E11",
+        "E14",
+        "E15",
+        "E25",
+        "E26",
+        "E27",
+        "E29"
+      ],
+      "coaching_finding": "Iron assessment shows later force timing and pelvis position/motion farther back than desired. Existing get-left cue includes chest movement and extra travel before pushing.",
+      "coach_reasoning": "Starting the pelvis appropriately relative to stance and preventing early backward drift can reduce the travel needed before useful force. Long-iron ball position must be reconsidered after this change.",
+      "intervention": {
+        "primary": "Set pelvis centre near stance centre or modestly ahead according to the iron; retain that position through early backswing.",
+        "feel": "Resist the pelvis being pushed away in P1-P2. Let chest turn; leave efficient downswing alone.",
+        "progression": "Eight iron first, then longer irons. Move ball modestly forward if the new body relation makes it effectively too far back.",
+        "reference": "Plumb bob means centre of pelvis relative to centre of stance, not the ball and not pressure percentage."
+      },
+      "applicability": [
+        "Iron-specific backward pelvis setup/drift supported by suitable view or measurement.",
+        "Timing claims require force-plate evidence; visual displacement alone is insufficient.",
+        "Actual contact/path problem and shot intent."
+      ],
+      "unknowns": [
+        "No matched post-change force/path/dispersion export.",
+        "Setup wording shifts through the source; use the explicit final stance-centre clarification, preserving the ambiguity log.",
+        "Inch values are source examples, not body-size-independent thresholds."
+      ],
+      "observed_result": "Player reports different loading; face-on video is said to show reduced drift, contact is praised and divots appear more right. These are qualitative retests.",
+      "selection": {
+        "coaching_focus": "Pelvis setup and early-backswing stability",
+        "max_simultaneous_cues": 2,
+        "policy_origin": "User preference for one focus and at most two compatible cues. Source assessment contains multiple tasks, alternatives and a longer recap.",
+        "reassess": "Check actual pelvis motion, contact and start/curve; use force data if claiming timing improved. Add ball adjustment only if needed."
+      },
+      "alternative_case_ids": [
+        "NOMY1bzMI28-C04",
+        "NOMY1bzMI28-C08"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "NOMY1bzMI28-C07",
+      "title": "Putting line looks wrong: test ball position before changing the stroke",
+      "tags": {
+        "phase": [
+          "putting_setup"
+        ],
+        "body": [
+          "ball_position",
+          "eyes",
+          "head"
+        ],
+        "outcome": [
+          "perceived_alignment",
+          "confidence"
+        ],
+        "concept": [
+          "perception_test",
+          "individual_response"
+        ]
+      },
+      "evidence_ids": [
+        "E16",
+        "E17",
+        "E18",
+        "E29"
+      ],
+      "coaching_finding": "Known ball-line aim appears left from address to this right-handed player; source labels him same-side eye dominant.",
+      "coach_reasoning": "Use a fixed independently checked line and change one setup variable. Here ball fore/aft affects perception more than open/closed stance, despite general eye-dominance tendencies discussed.",
+      "intervention": {
+        "test": "Set a verified ball line, address without re-aiming, report where it looks aimed, then test fore/aft ball position and stance changes.",
+        "selection": "Move ball modestly forward from this player's habit to the location where perception matches.",
+        "practice": "Repeat with right/left break and uphill/downhill conditions; retain speed and start-line checks."
+      },
+      "applicability": [
+        "A reproducible mismatch between checked aim and perceived aim.",
+        "Player feedback is available; eye dominance or confidence cannot be read from video alone."
+      ],
+      "unknowns": [
+        "No prescription solely from eye dominance.",
+        "No quantified putting improvement, vision diagnosis or ideal universal ball position."
+      ],
+      "observed_result": "Player says the slightly forward location looks better aligned. Open/closed exaggerations were less helpful.",
+      "selection": {
+        "coaching_focus": "One ball-position experiment around a checked line",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference for one focus and at most two compatible cues. Source assessment contains multiple tasks, alternatives and a longer recap.",
+        "reassess": "Confirm perception across putts, then start line and speed; avoid assuming confidence proves a correct read."
+      },
+      "alternative_case_ids": [],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "NOMY1bzMI28-C08",
+      "title": "Bunker entry control through pelvis stability and a balanced starting feel",
+      "tags": {
+        "phase": [
+          "setup",
+          "backswing",
+          "P1",
+          "P2"
+        ],
+        "body": [
+          "pelvis",
+          "lead_side"
+        ],
+        "outcome": [
+          "sand_entry",
+          "strike",
+          "height"
+        ],
+        "concept": [
+          "stable_base",
+          "contrast_trial",
+          "overcorrection"
+        ]
+      },
+      "evidence_ids": [
+        "E12",
+        "E19",
+        "E20",
+        "E21",
+        "E22",
+        "E29"
+      ],
+      "coaching_finding": "Simulated bunker data shows 2.2-inch backward pelvic travel. Real bunker trials connect drifting back with heavy entry and poor high-soft control.",
+      "coach_reasoning": "Backward pelvic travel shifts the bottom of the swing. Excessive left lean can also encourage falling back, so the later instruction uses a roughly balanced starting feel and then motion towards the target.",
+      "intervention": {
+        "primary": "Avoid the initial pelvis move away from target while pivoting.",
+        "rehearsal": "Use the demonstrated resisted early-backswing rehearsal to feel the difference.",
+        "starting_feel": "Roughly balanced rather than all-left. Keep pelvis distinct from chest.",
+        "contrast": "Deliberately drift once in the teaching comparison to identify the old feel, then return to the intended pattern."
+      },
+      "applicability": [
+        "Bunker task with evidence of pelvic drift and inconsistent sand entry.",
+        "Sand/lie and equipment considered; do not import full-swing power sequence as ideal."
+      ],
+      "unknowns": [
+        "Position is not pressure. 50/50 and related ratios were not read from outdoor force plates.",
+        "Exact sand-entry distance and improvement are not independently measured."
+      ],
+      "observed_result": "Deliberately wrong drift attempt called heavy; later shots praised with different sound and player recognition of the changed feel.",
+      "selection": {
+        "coaching_focus": "One stable-pelvis task",
+        "max_simultaneous_cues": 2,
+        "policy_origin": "User preference for one focus and at most two compatible cues. Source assessment contains multiple tasks, alternatives and a longer recap.",
+        "reassess": "Check repeatable entry and useful flight; if excessively left setup prompts falling back, reduce the initial lean."
+      },
+      "alternative_case_ids": [
+        "NOMY1bzMI28-C09",
+        "NOMY1bzMI28-C10",
+        "NOMY1bzMI28-C11"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "NOMY1bzMI28-C09",
+      "title": "High soft bunker shot: lower handle and more room after the base is stable",
+      "tags": {
+        "phase": [
+          "setup",
+          "bunker_delivery"
+        ],
+        "body": [
+          "hands",
+          "club",
+          "stance"
+        ],
+        "outcome": [
+          "height",
+          "soft_landing"
+        ],
+        "concept": [
+          "loft",
+          "bounce",
+          "setup"
+        ]
+      },
+      "evidence_ids": [
+        "E06",
+        "E12",
+        "E19",
+        "E20",
+        "E29"
+      ],
+      "coaching_finding": "Bunker setup appears square/tall and too much like pitch/full-swing delivery for the requested high soft shot.",
+      "coach_reasoning": "Phillips seeks lower handle and more room to let the open club work under the ball; TPI also notes the source bunker kinematic pattern differs from that of their preferred finesse examples.",
+      "intervention": {
+        "setup": "Stand a little farther from the ball and lower handle for this high-soft task.",
+        "prerequisite": "Maintain controlled pelvic base and consider face/loft, sand and bounce.",
+        "boundary": "Do not ask the golfer to independently manipulate every segment speed in the displayed graph."
+      },
+      "applicability": [
+        "High soft bunker shot requested with compatible lie/sand.",
+        "Stable entry/base or that problem addressed first."
+      ],
+      "unknowns": [
+        "No target handle angle, exact speed or measured spin/height gain.",
+        "Source sequence reasoning not a universal kinematic prescription."
+      ],
+      "observed_result": "Later bunker shots praised; no isolated test attributes benefit solely to handle height.",
+      "selection": {
+        "coaching_focus": "One handle-height/setup adjustment",
+        "max_simultaneous_cues": 2,
+        "policy_origin": "User preference for one focus and at most two compatible cues. Source assessment contains multiple tasks, alternatives and a longer recap.",
+        "reassess": "Check entry, escape height and landing behaviour while retaining the stable base."
+      },
+      "alternative_case_ids": [
+        "NOMY1bzMI28-C08",
+        "NOMY1bzMI28-C10",
+        "NOMY1bzMI28-C11"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "NOMY1bzMI28-C10",
+      "title": "Bunker club choice depends on sand and bounce as well as loft",
+      "tags": {
+        "phase": [
+          "bunker_setup"
+        ],
+        "body": [
+          "club"
+        ],
+        "outcome": [
+          "sand_interaction",
+          "height"
+        ],
+        "concept": [
+          "equipment",
+          "conditions"
+        ]
+      },
+      "evidence_ids": [
+        "E23",
+        "E29"
+      ],
+      "coaching_finding": "Player's 60-degree wedge reportedly has 4 degrees bounce; 56 has 11. Highest loft need not give the best high-soft bunker interaction.",
+      "coach_reasoning": "TPI explains that softer sand may favour more bounce, while this firmer sand can suit the low-bounce club.",
+      "intervention": {
+        "option": "For fluffy sand, try the higher-bounce 56 opened appropriately rather than automatically using the 60.",
+        "condition": "Retain the lower-bounce option when suitable for firm sand and the intended shot."
+      },
+      "applicability": [
+        "Known wedge specifications, sand condition, lie and shot intent."
+      ],
+      "unknowns": [
+        "No verified club measurement or fitting outcome.",
+        "Source contains a confusing phrase about opening in soft sand; do not turn it into an exact face-angle rule."
+      ],
+      "observed_result": "Discussed as an option; no clear isolated comparative fitting trial establishes a winner.",
+      "selection": {
+        "coaching_focus": "Choose one suitable wedge for conditions",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference for one focus and at most two compatible cues. Source assessment contains multiple tasks, alternatives and a longer recap.",
+        "reassess": "Compare sand entry and escape; keep the technique experiment separate from equipment changes."
+      },
+      "alternative_case_ids": [
+        "NOMY1bzMI28-C08",
+        "NOMY1bzMI28-C09"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "NOMY1bzMI28-C11",
+      "title": "Downhill bunker lie qualifies the general handle-height advice",
+      "tags": {
+        "phase": [
+          "bunker_setup"
+        ],
+        "body": [
+          "hands",
+          "pelvis"
+        ],
+        "outcome": [
+          "contact",
+          "escape"
+        ],
+        "concept": [
+          "lie_exception"
+        ]
+      },
+      "evidence_ids": [
+        "E21",
+        "E24"
+      ],
+      "coaching_finding": "Downhill lie requires a different address angle than the earlier level high-soft task.",
+      "coach_reasoning": "TPI allows more forward handle/lean for slope while preserving control against drifting back.",
+      "intervention": {
+        "action": "Match the downhill task with the demonstrated forward handle/angle, then retain the pelvic reference through the shot."
+      },
+      "applicability": [
+        "A downhill bunker lie actually present."
+      ],
+      "unknowns": [
+        "Slope angle and exact entry/launch values unavailable.",
+        "Do not apply this exception to every level-lie high-soft shot."
+      ],
+      "observed_result": "Attempt praised; no quantified dispersion or carry outcome.",
+      "selection": {
+        "coaching_focus": "One slope-specific setup",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference for one focus and at most two compatible cues. Source assessment contains multiple tasks, alternatives and a longer recap.",
+        "reassess": "Check escape and contact without restoring backward drift."
+      },
+      "alternative_case_ids": [
+        "NOMY1bzMI28-C08",
+        "NOMY1bzMI28-C09"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    },
+    {
+      "id": "NOMY1bzMI28-C12",
+      "title": "Teach-back, visible retest and periodic setup checks prevent cue drift",
+      "tags": {
+        "phase": [],
+        "body": [],
+        "outcome": [
+          "understanding",
+          "retention"
+        ],
+        "concept": [
+          "teach_back",
+          "practice",
+          "maintenance"
+        ]
+      },
+      "evidence_ids": [
+        "E26",
+        "E27",
+        "E29",
+        "E30"
+      ],
+      "coaching_finding": "Player initially restates pelvis position relative to the ball rather than stance centre. Setup markers have also drifted out of regular use.",
+      "coach_reasoning": "Have the player explain the plan, correct the exact misunderstanding and pair new feels with visible feedback. Keep a reproducible setup check rather than adding more swing thoughts.",
+      "intervention": {
+        "teach_back": "Record the player explaining one current cue, its reference and intended result; correct it before further practice.",
+        "visual": "Use the face-on clip to compare unusual feel with actual movement.",
+        "maintenance": "Source suggests periodic setup checks, about monthly; this is a source practice suggestion, not an app automation."
+      },
+      "applicability": [
+        "A cue has been delivered and the player can explain it.",
+        "A defined visual/reference check exists."
+      ],
+      "unknowns": [
+        "Full recap spans multiple shot families; do not present them as simultaneous swing instructions.",
+        "No longitudinal retention or handicap outcome."
+      ],
+      "observed_result": "Coach catches and corrects the stance-centre error during the recorded recap. Player reports understanding and confidence.",
+      "selection": {
+        "coaching_focus": "Verify understanding of the current cue",
+        "max_simultaneous_cues": 1,
+        "policy_origin": "User preference for one focus and at most two compatible cues. Source assessment contains multiple tasks, alternatives and a longer recap.",
+        "reassess": "Ask for a brief explanation and retest against the correct reference before progressing."
+      },
+      "alternative_case_ids": [
+        "NOMY1bzMI28-C01"
+      ],
+      "review_status": "source_checked_not_expert_validated"
+    }
+  ],
+  "measurement_register": [
+    {
+      "id": "M01",
+      "evidence_ids": [
+        "E05"
+      ],
+      "kind": "spoken_test_results",
+      "values": {
+        "vertical_jump_in": 26.4,
+        "situp_throw_ft": 24,
+        "chest_pass_ft": 23,
+        "grip_readings": [
+          72,
+          66
+        ]
+      },
+      "limits": [
+        "Jump later rounded to 26. Grip units not verified. Tour-average references vary. Ball weight and full test protocol absent."
+      ]
+    },
+    {
+      "id": "M02",
+      "evidence_ids": [
+        "E04"
+      ],
+      "kind": "spoken_screen_results",
+      "values": {
+        "seated_trunk_right_deg": 61,
+        "seated_trunk_left_deg": 43
+      },
+      "limits": [
+        "Final spoken pair 61/43 and explanation about left restriction support side assignment; approximate narrative also says 60 versus 40-something. No raw screen report."
+      ]
+    },
+    {
+      "id": "M03",
+      "evidence_ids": [
+        "E09"
+      ],
+      "kind": "readable_source_graph",
+      "frame": ".videos/coaching-knowledge/NOMY1bzMI28/graphs/frame-02488.000.jpg",
+      "columns": [
+        "Lateral",
+        "Rock",
+        "Twist",
+        "Jump"
+      ],
+      "peak_order": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_displayed": [
+        19,
+        26,
+        20,
+        188
+      ],
+      "limits": [
+        "Raw displayed values retained. Do not assume all four columns share units or treat these as desired targets."
+      ]
+    },
+    {
+      "id": "M04",
+      "evidence_ids": [
+        "E10"
+      ],
+      "kind": "spoken_3D_readings",
+      "values": {
+        "driver_thorax_turn_deg_about": 125,
+        "extension_deg_descriptions": [
+          21,
+          25
+        ]
+      },
+      "limits": [
+        "Signed -21 mentioned; later almost 25 described. No fixed conversion to spine/tissue angles. Reference norms conflict or use differing definitions."
+      ]
+    },
+    {
+      "id": "M05",
+      "evidence_ids": [
+        "E11"
+      ],
+      "kind": "spoken_force_comparison",
+      "values": {
+        "driver_lateral_push_percent_body_weight_about": 19,
+        "iron_lateral_push_percent_body_weight_about": 23
+      },
+      "timing": "Source says driver lateral peak before top, iron after start down.",
+      "limits": [
+        "Driver 19 also appears on the readable table. Iron 23 and timing comparison not independently digitised. No milliseconds inferred."
+      ]
+    },
+    {
+      "id": "M06",
+      "evidence_ids": [
+        "E12"
+      ],
+      "kind": "readable_source_graph",
+      "frame": ".videos/coaching-knowledge/NOMY1bzMI28/graphs/frame-03192.000.jpg",
+      "columns": [
+        "Pelvis",
+        "Trunk",
+        "Lead Arm",
+        "Club Shaft",
+        "Club Head"
+      ],
+      "transition_order_as_labelled": [
+        1,
+        2,
+        3,
+        5,
+        4
+      ],
+      "max_velocity_displayed": [
+        305,
+        573,
+        746,
+        1797,
+        1895
+      ],
+      "units_context": "Angular velocity graph context; source describes segment angular speed in degrees per second.",
+      "limits": [
+        "Table title says Peak Angular Velocity Sequence while row says Transition Order; preserve labels rather than silently equate event types.",
+        "Simulated bunker context. Raw capture, filtering and segment definitions unavailable."
+      ]
+    },
+    {
+      "id": "M07",
+      "evidence_ids": [
+        "E12"
+      ],
+      "kind": "spoken_and_visual_position_evidence",
+      "frame": ".videos/coaching-knowledge/NOMY1bzMI28/graphs/frame-03244.000.jpg",
+      "values": {
+        "bunker_pelvis_away_from_target_in": 2.2,
+        "bunker_trunk_away_from_target_in": 1.4
+      },
+      "sign_convention": "Graph positive red towards target; pelvis backswing trough about -2.2 inches.",
+      "limits": [
+        "Pelvis graph supports magnitude and direction; trunk 1.4 retained from spoken reading with filmed graph context. Not a force value."
+      ]
+    },
+    {
+      "id": "M08",
+      "evidence_ids": [
+        "E23"
+      ],
+      "kind": "spoken_equipment_specs",
+      "values": [
+        {
+          "loft_deg": 60,
+          "bounce_deg": 4
+        },
+        {
+          "loft_deg": 56,
+          "bounce_deg": 11
+        }
+      ],
+      "limits": [
+        "No physical specification measurement."
+      ]
+    },
+    {
+      "id": "M09",
+      "evidence_ids": [
+        "E25",
+        "E29"
+      ],
+      "kind": "coaching_reference_examples",
+      "values": {
+        "driver_pelvis_from_stance_centre_in_about": -0.5,
+        "mid_iron_in_about": 0,
+        "eight_iron_in_about": 1,
+        "wedge_in_about": 2
+      },
+      "limits": [
+        "Positive toward target. Contextual coaching references, not observed user measurements or universal thresholds."
+      ]
+    },
+    {
+      "id": "M10",
+      "evidence_ids": [
+        "E28"
+      ],
+      "kind": "coach_visual_estimate",
+      "description": "Club was about 10-15 degrees farther down at the top before the optional shorter-driver trial.",
+      "limits": [
+        "Estimate only; not independently measured."
+      ]
+    },
+    {
+      "id": "M11",
+      "evidence_ids": [
+        "E13"
+      ],
+      "kind": "spoken_speed_context",
+      "values": {
+        "trunk_peak_angular_velocity_deg_per_s": 909
+      },
+      "limits": [
+        "Spoken full-swing performance example; no clear matched shot ID in this extraction. Do not mix with simulated bunker 573."
+      ]
+    }
+  ],
+  "cross_source_links": [
+    {
+      "source_case": "G3QNDLEo2Gw-C02",
+      "current_case": "NOMY1bzMI28-C06",
+      "relation": "Similar weight-shift language with different diagnosis",
+      "explanation": "Earlier coach uses a small press then pivot for a shoulder-lean/stall pattern. Here extra travel before pushing is itself a timing concern. Do not map every hanging-back label to a bigger lead-side shift."
+    },
+    {
+      "source_case": "1dF_irGY6YM-C03",
+      "current_case": "NOMY1bzMI28-C04",
+      "relation": "Finish appearance is insufficient",
+      "explanation": "Both distinguish what a late finish looks like from whether the earlier action needs changing."
+    },
+    {
+      "source_case": "G3QNDLEo2Gw-C09",
+      "current_case": "NOMY1bzMI28-C08",
+      "relation": "Lead-side feel requires task-specific starting conditions",
+      "explanation": "Earlier bunker lesson uses pressure-left feel. Brennan becomes too left at setup and is guided toward a more balanced start with controlled forward pelvis motion. Store this as an overcorrection condition."
+    },
+    {
+      "source_case": "HQNKUS_BSGY-C01",
+      "current_case": "NOMY1bzMI28-C05",
+      "relation": "Different route to limiting backswing length",
+      "explanation": "Earlier width/face/overrotation work and this optional core endpoint address different evidence and players. Similar shorter-swing wording is not sufficient to select either."
+    }
+  ],
+  "within_source_distinctions": [
+    {
+      "cases": [
+        "NOMY1bzMI28-C04",
+        "NOMY1bzMI28-C06"
+      ],
+      "relationship": "Driver broadly preserved while iron setup/timing changes; do not apply iron recommendation across the bag."
+    },
+    {
+      "cases": [
+        "NOMY1bzMI28-C08",
+        "NOMY1bzMI28-C09",
+        "NOMY1bzMI28-C11"
+      ],
+      "relationship": "Stable bunker base, high-soft handle setup and downhill exception are separate decisions with an explicit order and conditions."
+    },
+    {
+      "cases": [
+        "NOMY1bzMI28-C04",
+        "NOMY1bzMI28-C05"
+      ],
+      "relationship": "Optional shorter-driver experiment does not override the default recommendation to preserve the normal driver swing."
+    },
+    {
+      "cases": [
+        "NOMY1bzMI28-C02",
+        "NOMY1bzMI28-C06"
+      ],
+      "relationship": "Physical screen suggests context; the selected iron intervention comes from task-specific swing evidence, not a proven physical cause."
+    }
+  ],
+  "source_ambiguities": [
+    {
+      "span_seconds": [
+        1555,
+        1645
+      ],
+      "issue": "Tour-average power numbers vary within the dialogue; preserve own test results and avoid adopting comparison thresholds."
+    },
+    {
+      "span_seconds": [
+        2522,
+        2680
+      ],
+      "issue": "Turn/extension norms and descriptions use differing figures; no universal mathematical rule inferred."
+    },
+    {
+      "span_seconds": [
+        2820,
+        2888
+      ],
+      "issue": "Pelvis-centre projection sometimes described as centre of mass. These are not treated as interchangeable measured quantities."
+    },
+    {
+      "span_seconds": [
+        3495,
+        3540
+      ],
+      "issue": "Short editorial summary describes being behind the ball while moving it forward; distinguish pelvis-versus-stance from chest-versus-ball reference."
+    },
+    {
+      "span_seconds": [
+        5060,
+        5110
+      ],
+      "issue": "Setup dialogue alternates starting back and starting forward then moving back. Preserve source-specific comparisons rather than one exact original offset."
+    },
+    {
+      "span_seconds": [
+        5538,
+        5560
+      ],
+      "issue": "Brief recap caption says plumb bob more back, conflicting with repeated detailed instruction and corrected teach-back. Final record follows the repeated explicit pelvis-versus-stance instruction and retains this conflict."
+    },
+    {
+      "span_seconds": [
+        5820,
+        5855
+      ],
+      "issue": "Player says relative to ball; Rose immediately corrects to stance centre. Correction is essential content, not a transcript error to erase."
+    }
+  ],
+  "annotation_opportunities": [
+    "Face-on pelvis-centre and stance-centre references, labelled as visual position estimates with camera constraints.",
+    "Link force charts to source shaft checkpoints, keeping timing evidence separate from phone-visible displacement.",
+    "Mark bunker P1-P2 pelvic drift and pair old/new rehearsal without treating staged wrong swings as natural baseline shots.",
+    "Show fixed putting aim reference and ask player perception; do not infer eye dominance from video.",
+    "Separate driver retain/optional and iron change instructions in retrieval."
+  ],
+  "excluded_material": [
+    "Promotional opening/closing and duplicate montage material.",
+    "Unverified career statistics and rankings are not coaching evidence.",
+    "Informal clinical diagnoses, broad tour norms and dramatic mechanical analogies are not app rules.",
+    "Edited ball landings and praise without numeric endpoints are not invented carry, spin or dispersion metrics."
+  ],
+  "independent_validation": {
+    "qualified_coach_review": false,
+    "biomechanical_claims_validated": false,
+    "safe_for_automatic_prescription": false,
+    "reason": "Detailed source extraction and conditional cases; independent clinical/biomechanical validity and applicability to other golfers not established."
+  },
+  "asset_sha256": {
+    "video": "bcec2458769a4525536f52515f0a8a34e5c50835c2cac4ddc40ad117dca84423",
+    "raw_captions": "26d3e57d7a3c2b4296e31d5b2e04c16a6668437c9ced63a0e4d0090497943246",
+    "transcript": "812e252a5c00d30e1b156e68a3e52d8d778bb6a3be4212e28db9d699ce1c5110"
+  }
+}
