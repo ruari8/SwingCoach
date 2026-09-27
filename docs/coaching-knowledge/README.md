@@ -4,6 +4,11 @@ This library connects source lessons to the evidence behind their coaching decis
 
 ## Scope and progress
 
+Browse the cases and local videos with `python3 scripts/knowledge_viewer.py`, then
+open <http://127.0.0.1:8769>. The [viewer guide](../../tools/knowledge-viewer/README.md)
+covers search, timestamp playback and missing media. See the
+[implementation plan](implementation.md) for the app integration work.
+
 Completed: all 22 supplied videos and four distinct additional videos from each specified creator, 30 sources and 145 coaching records. A repost of the Cameron review was excluded from the additional count. See [decision examples](decision-examples.md) for contrasting cases and the evidence that changes the recommendation.
 
 [manifest.json](manifest.json) preserves the user's 22 supplied videos in order. It also tracks four additional videos from each of the two specified annotation creators. Process one source at a time. Do not count queued URLs, downloaded captions, or a title summary as an analysed video.

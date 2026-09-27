@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SwingCoach · Coaching library</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header><div class="brand">SwingCoach <span>Field notes</span></div><span class="local">Local research library</span></header>
+  <section class="intro"><p class="eyebrow">THE REASON BEHIND THE CUE</p><h1>Coaching, with context.</h1><p>Explore what a coach saw, why they chose a change, and the moment they taught it.</p><p id="stats" class="stats">Loading your library…</p></section>
+  <main>
+    <aside aria-label="Find coaching cases">
+      <label for="search">Search the knowledge</label><input id="search" type="search" placeholder="Try grip, transition, early extension…">
+      <div class="filters"><label>Coach / source<select id="source"><option value="">All sources</option></select></label><label>Swing phase<select id="phase"><option value="">All phases</option></select></label></div>
+      <p id="count" role="status"></p><div id="cases"></div>
+    </aside>
+    <article id="detail" aria-label="Coaching case"><p>Select a case to explore the evidence.</p></article>
+  </main>
+</body>
+</html>
