@@ -1,58 +1,30 @@
-# Pipeline Stage 2: Video Annotations
+# Pipeline stage 2: visual evidence
 
-## Current Status
+The active renderer writes clean `base.mp4` and compatibility `annotated.mp4`,
+plus normalized, timestamped `annotation_tracks.json`. The iOS player draws the
+tracks and exposes layer toggles; annotation pixels are not baked into either MP4.
 
-Generated video annotations are intentionally disabled.
+Two layers currently use the same confident body landmarks as the observations:
 
-The previous implementation was committed as `abc12c4` (`experimental: annotation impl`) before the reset. The current backend keeps the API/artifact contract stable while the annotation set is redesigned from scratch.
+- `body_reference`: the current shoulder-to-hip midpoint line and a circle at
+  the first reliable nose position. The circle is explicitly a first-visible
+  reference, not an assumed address checkpoint.
+- `hand_path`: a short trail of the midpoint of the two visible wrists. This is
+  a hand path in the image, not a clubhead path or swing plane.
 
-## Current Output
+Landmarks need visibility >= 0.65 and normalized coordinates inside the frame.
+Tracks appear near their sampled timestamp. A detector dropout clears the layer;
+hand paths reset across gaps greater than 0.25 seconds. Source dimensions and
+playback FPS remain in the contract. No generated phase markers, clubface,
+shaft planes, contact points, speed badges or 3D replay are produced in this pass.
 
-For each completed analysis run, the renderer writes:
+`annotation_metadata.json` lists the actual layers and `knowledge_coaching_v1`
+mode. A run without accepted landmarks has an empty layer list. Clean video still
+plays. The previous experimental annotation implementation remains at `abc12c4`.
 
-- `base.mp4`: clean source-timeline playback video
-- `annotated.mp4`: currently the same clean video, kept for legacy response compatibility
-- `annotation_metadata.json`: empty layer metadata
-- `annotation_tracks.json`: normalized track envelope with no generated layers
+The reference forms follow patterns catalogued in the coaching library. They
+explain recorded movement; they do not establish that movement needs correction.
+Future shaft work must use `detect_shaft()` with the `club shaft` prompt.
 
-`annotation_metadata.json` currently reports:
-
-```json
-{
-  "layers": [],
-  "pipeline_mode": "annotation_reset",
-  "annotations_enabled": false
-}
-```
-
-`annotation_tracks.json` currently keeps per-frame timing records but each frame has an empty `layers` object. There are no phase markers, confidence badges, guide layers, ball/contact evidence, shaft planes, pose skeletons, or path overlays.
-
-## Disabled Work
-
-The reset pipeline does not run:
-
-- MediaPipe pose estimation
-- Event/phase detection
-- SAM3 equipment prompts
-- Club path/shaft tracking
-- Body 3D recovery
-- Metric cards
-- GLTF replay export
-
-This avoids spending runtime on annotation behavior that is not yet agreed.
-
-## Next Step
-
-Before re-enabling automatic overlays, define the annotation contract:
-
-1. Which coaching annotations are required.
-2. What visual geometry each annotation must show.
-3. Which detector or model source is authoritative for each annotation.
-4. What confidence threshold hides the annotation instead of drawing a misleading shape.
-5. What fixture videos prove the annotation is correct.
-
-## Key Files
-
-- [analysis/pipeline_3d.py](../../analysis/pipeline_3d.py)
-- [analysis/artifact_renderer.py](../../analysis/artifact_renderer.py)
-- [test_annotation_tracks.py](../../test_annotation_tracks.py)
+Main files: `analysis/video_observations.py`, `analysis/artifact_renderer.py`,
+`analysis/pipeline_3d.py`, and the app's `AnalysisResultView.swift` overlay renderer.

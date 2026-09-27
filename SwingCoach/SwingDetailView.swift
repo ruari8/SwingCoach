@@ -291,20 +291,35 @@ struct SwingDetailView: View {
                             .foregroundColor(.white)
 
                         ForEach(savedAnalysis.metrics, id: \.key) { metric in
-                            HStack(alignment: .firstTextBaseline) {
-                                Text(metric.name)
-                                    .foregroundColor(.white.opacity(0.72))
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(alignment: .firstTextBaseline) {
+                                    Text(metric.name)
+                                        .foregroundColor(.white.opacity(0.72))
 
-                                Spacer(minLength: 12)
+                                    Spacer(minLength: 12)
 
-                                Text(metric.value)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.white)
-                                    .multilineTextAlignment(.trailing)
+                                    Text(metric.value)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.white)
+                                        .multilineTextAlignment(.trailing)
+                                }
+                                .font(.subheadline)
+                                if let explanation = metric.explanation {
+                                    Text(explanation).font(.caption).foregroundColor(.white.opacity(0.65))
+                                }
+                                if let confidence = metric.confidence {
+                                    Text("Tracking confidence: \(Int(confidence * 100))%")
+                                        .font(.caption2).foregroundColor(.white.opacity(0.55))
+                                }
                             }
-                            .font(.subheadline)
                         }
                     }
+                }
+
+                if let coaching = savedAnalysis.coaching {
+                    GroundedCoachingView(coaching: coaching)
+                        .foregroundStyle(.white)
+                        .environment(\.colorScheme, .dark)
                 }
 
                 if !savedAnalysis.drills.isEmpty {
@@ -331,9 +346,6 @@ struct SwingDetailView: View {
                     }
                 }
 
-                Text("Note: this page is the future home for richer coach notes and linked drill content once the drill library is wired into the analysis flow.")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.54))
             }
             .padding(.horizontal, 22)
             .padding(.top, 92)

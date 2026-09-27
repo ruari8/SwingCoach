@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 
 
@@ -45,13 +46,19 @@ class KnowledgeLibrary:
 
     def search(self, query: str, limit: int = 12) -> list[dict]:
         """Retrieve candidates for review. Search rank is never diagnostic confidence."""
-        terms = set(query.lower().split())
+        stopwords = {"the", "a", "an", "and", "or", "of", "to", "in", "on", "at", "is", "are", "as", "with",
+                     "from", "for", "this", "that", "your", "across", "clip", "visible", "image", "range", "change"}
+        terms = set(re.findall(r"[a-z0-9]+", query.lower())) - stopwords
         ranked = []
         for case in self.cases.values():
             searchable = json.dumps({key: case[key] for key in (
                 "title", "tags", "coaching_finding", "coach_reasoning", "applicability"
             )}).lower()
-            score = sum(term in searchable for term in terms)
+            words = set(re.findall(r"[a-z0-9]+", searchable))
+            title_tags = set(re.findall(r"[a-z0-9]+", (case["title"] + json.dumps(case["tags"])).lower()))
+            def matches(term, vocabulary):
+                return term in vocabulary or (len(term) >= 4 and any(word.startswith(term) for word in vocabulary))
+            score = sum(matches(term, words) + 2 * matches(term, title_tags) for term in terms)
             if score:
                 ranked.append((score, case))
         ranked.sort(key=lambda item: (-item[0], item[1]["id"]))

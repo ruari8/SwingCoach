@@ -1,4 +1,4 @@
-"""Clean artifact renderer used while annotations are being redesigned."""
+"""Clean playback video plus confidence-gated client annotation tracks."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ class ArtifactRenderResult:
 
 
 class ArtifactRenderer:
-    """Write clean playback artifacts with an intentionally empty overlay contract."""
+    """Keep pixels clean and render evidence through the mobile overlay contract."""
 
     def _empty_annotation_tracks(
         self,
@@ -61,6 +61,8 @@ class ArtifactRenderer:
         video_fps: float,
         frame_width: int,
         frame_height: int,
+        layers_by_frame: Optional[Dict[int, Dict[str, Any]]] = None,
+        sample_interval: int = 1,
     ) -> ArtifactRenderResult:
         if len(frames) != len(frame_indices):
             frame_indices = list(range(len(frames)))
@@ -69,18 +71,21 @@ class ArtifactRenderer:
         base_video_bytes = exporter.export_video(frames, fps=video_fps)
         run_store.save_bytes("base.mp4", base_video_bytes)
 
-        # Keep the legacy annotated-video URL usable, but make it the same clean
-        # video while generated overlays are disabled.
+        # Both URLs use clean pixels. The app draws toggleable annotation tracks.
         run_store.save_bytes("annotated.mp4", base_video_bytes)
 
+        supplied_layers = layers_by_frame or {}
+        layer_names = sorted({guide["layer"] for layers in supplied_layers.values() for guide in layers.get("guides", [])})
         metadata = {
-            "layers": [],
+            "layers": [{"name": name, "color": "#67D6B0" if name == "body_reference" else "#F5C76B",
+                        "description": "Body reference · 2D" if name == "body_reference" else "Hand path · 2D",
+                        "enabled": True} for name in layer_names],
             "club_plane_angle_degrees": None,
             "swing_path_point_count": 0,
             "video_fps": video_fps,
             "frame_count": len(frames),
-            "pipeline_mode": "annotation_reset",
-            "annotations_enabled": False,
+            "pipeline_mode": "knowledge_coaching_v1",
+            "annotations_enabled": bool(layer_names),
         }
         run_store.save_json("annotation_metadata.json", metadata)
 
@@ -90,6 +95,12 @@ class ArtifactRenderer:
             frame_width=frame_width,
             frame_height=frame_height,
         )
+        tracks["guide_layers"] = layer_names
+        # A sample is displayed only near its timestamp, never carried through a
+        # detector dropout. The nearest sample with absent layers clears overlays.
+        for frame in tracks["frames"]:
+            nearest = int(round(frame["frame_index"] / max(sample_interval, 1))) * max(sample_interval, 1)
+            frame["layers"] = supplied_layers.get(nearest, {})
         run_store.save_json("annotation_tracks.json", tracks)
 
         return ArtifactRenderResult(

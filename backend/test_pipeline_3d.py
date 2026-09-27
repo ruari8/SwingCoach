@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise the annotation-reset pipeline on synthetic video or a supplied clip."""
+"""Exercise the no-pose fallback pipeline on synthetic video or a supplied clip."""
 
 from __future__ import annotations
 
@@ -10,9 +10,21 @@ import subprocess
 import tempfile
 
 from analysis.pipeline_3d import SwingCoachPipeline3D
+from unittest.mock import patch
 
 
-def test_pipeline_reset_mode_is_annotation_free() -> None:
+class NoPose:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
+
+    def detect_pose(self, *args, **kwargs):
+        return None
+
+
+def test_pipeline_without_pose_is_annotation_free() -> None:
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
         source = root / "source.mp4"
@@ -21,12 +33,13 @@ def test_pipeline_reset_mode_is_annotation_free() -> None:
             "color=c=green:s=96x64:r=12:d=1", "-c:v", "libx264",
             "-pix_fmt", "yuv420p", str(source),
         ], check=True)
-        pipeline = SwingCoachPipeline3D(output_root=str(root / "runs"))
+        pipeline = SwingCoachPipeline3D(output_root=str(root / "runs"), pose_detector_factory=NoPose)
         progress = []
-        result = pipeline.analyze_video(
-            source.read_bytes(),
-            progress_callback=lambda stage, fraction, message: progress.append((stage, fraction)),
-        )
+        with patch.dict("os.environ", {"OPENAI_API_KEY": ""}):
+            result = pipeline.analyze_video(
+                source.read_bytes(),
+                progress_callback=lambda stage, fraction, message: progress.append((stage, fraction)),
+            )
         run = Path(result.run_dir)
         base = (run / "base.mp4").read_bytes()
         assert base == (run / "annotated.mp4").read_bytes()
@@ -68,7 +81,7 @@ def main() -> int:
     parser.add_argument("--fps", type=float)
     parser.add_argument("--goal")
     args = parser.parse_args()
-    test_pipeline_reset_mode_is_annotation_free()
+    test_pipeline_without_pose_is_annotation_free()
     print("Synthetic pipeline output checks passed")
     if args.video_path is not None:
         result = SwingCoachPipeline3D().analyze_video(

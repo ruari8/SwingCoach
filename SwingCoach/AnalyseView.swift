@@ -31,6 +31,7 @@ struct AnalysisResult {
     let metrics: [SavedAnalysisMetric]
     let annotatedVideo: SavedAnalysisVideo?
     let drills: [SavedAnalysisDrill]
+    let coaching: SavedCoachingDetail?
 
     init(savedAnalysis: SavedAnalysis) {
         analysisID = savedAnalysis.analysisID
@@ -38,6 +39,7 @@ struct AnalysisResult {
         metrics = savedAnalysis.metrics
         annotatedVideo = savedAnalysis.annotatedVideo
         drills = savedAnalysis.drills
+        coaching = savedAnalysis.coaching
     }
 }
 
@@ -53,6 +55,11 @@ struct AnalyseView: View {
     @State private var analyses: [SwingAnalysis] = []
     @State private var isAnalyzing = false
     @State private var showSwingPicker = false
+    @State private var showPracticeContext = false
+    @AppStorage("coaching.goal") private var practiceGoal = ""
+    @AppStorage("coaching.club") private var practiceClub = ""
+    @AppStorage("coaching.handedness") private var handedness = ""
+    @AppStorage("coaching.outcome") private var shotOutcome = ""
 
     // Selection for picking from library
     @State private var selectedSwingIDs: Set<UUID> = []
@@ -88,6 +95,36 @@ struct AnalyseView: View {
                 }
             }
             .navigationTitle("Swing Coach")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Practice context", systemImage: "text.bubble") { showPracticeContext = true }
+                        .accessibilityIdentifier("coaching-context")
+                }
+            }
+            .sheet(isPresented: $showPracticeContext) {
+                NavigationStack {
+                    Form {
+                        Section("This practice session") {
+                            TextField("What are you working on?", text: $practiceGoal, axis: .vertical)
+                                .accessibilityIdentifier("practice-goal")
+                            TextField("Club, for example 7 iron", text: $practiceClub)
+                                .accessibilityIdentifier("practice-club")
+                            Picker("Handedness", selection: $handedness) {
+                                Text("Not specified").tag("")
+                                Text("Right handed").tag("right")
+                                Text("Left handed").tag("left")
+                            }
+                            TextField("Typical strike and ball flight", text: $shotOutcome, axis: .vertical)
+                        }
+                        Section {
+                            Text("These notes accompany new analyses until you change them. Describe what happened; leave anything uncertain blank.")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .navigationTitle("Practice context")
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showPracticeContext = false } } }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     if !isAnalyzing {

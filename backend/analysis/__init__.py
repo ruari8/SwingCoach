@@ -1,8 +1,8 @@
 """Swing analysis modules.
 
-The active backend pipeline is currently in annotation-reset mode. Heavy legacy
-analysis modules remain importable lazily for experiments, but importing the
-package no longer initializes pose, event, visualizer, or SAM-related code.
+The active pipeline measures 2D video evidence and grounds coaching in source
+cases. Heavy detector modules load only when the pipeline requests them; importing
+the package does not initialize pose, event, visualizer or SAM-related code.
 """
 
 __all__ = [

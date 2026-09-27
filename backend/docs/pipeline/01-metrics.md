@@ -1,34 +1,37 @@
-# Pipeline Stage 1: Metrics
+# Pipeline stage 1: video observations and metrics
 
-## Current Status
+The active `knowledge_coaching_v1` pipeline runs MediaPipe body pose and calculates
+three descriptive image-space quantities in `analysis/video_observations.py`:
 
-Generated metrics are intentionally disabled while the annotation and detection contract is rebuilt.
+| Key | Calculation | Unit |
+|---|---|---|
+| `head_x_range_pct` | Maximum minus minimum visible nose x across the clip | Percent of frame width |
+| `head_y_range_pct` | Maximum minus minimum visible nose y across the clip | Percent of frame height |
+| `torso_image_angle_range_deg` | Range of the shoulder-midpoint to hip-midpoint angle from vertical, using image pixel aspect ratio | Degrees in the image |
 
-The reset pipeline writes `metrics.json` with an empty `cards` array and `raw.metrics_enabled = false`. App-facing `metrics[]` is empty. This avoids publishing unstable biomechanical or club-delivery values before the source detections are agreed and validated.
+These ranges include setup and follow-through. They are not address-to-impact
+measurements, fault scores, physical distances or 3D rotation. Camera motion,
+multiple swings and detector errors can make them unsuitable for comparison.
+The coaching model receives these limits explicitly. There is no magnitude-based
+priority ranking or automatic “too much movement” threshold.
 
-## Disabled Work
+The pipeline samples at approximately 15 Hz, with a maximum of 180 samples spread
+across the full clip. A landmark must be inside the image with visibility at least
+0.65. A quantity needs four usable samples. Reported tracking confidence is mean
+landmark visibility capped at 0.85; it is not calibrated diagnostic confidence.
+Low-confidence or missing quantities are omitted. Missing MediaPipe/model files
+produce a warning while preserving clean playback and the remaining evidence.
 
-The current default pipeline does not run:
+`observations.json` records all sampled frame indices, accepted landmarks, metric
+observations, methods and limits. `metrics.json` preserves numeric values,
+confidence and explanations. The app displays explanations and confidence beside
+formatted metrics. File FPS governs timestamps and playback; a different caller
+capture FPS produces a warning instead of silently changing the timeline.
 
-- 2D pose-derived biomechanical metrics
-- 3D body recovery
-- 3D club fusion
-- tempo/head/spine/turn metric cards
-- club delivery metrics
+Clubface, shaft, pressure, mobility, ball flight, club speed, 3D angles and validated
+swing phases remain unavailable. The old metric/event modules are dormant. The
+legacy event module's P numbering must not be reused for coaching P4/P7 labels.
 
-## Re-Enable Criteria
-
-Before metrics return to the app, define:
-
-1. The exact coaching metric names and visual/user-facing meaning.
-2. The detector source required for each metric.
-3. The calibration assumptions.
-4. The confidence threshold for publish vs. omit.
-5. Fixture videos or labeled references that prove the metric is directionally correct.
-
-## Key Files
-
-- [analysis/pipeline_3d.py](../../analysis/pipeline_3d.py)
-- [analysis/metrics.py](../../analysis/metrics.py)
-- [analysis/metrics_engine.py](../../analysis/metrics_engine.py)
-- [output/runs/](../../output/runs)
+Tests: `test_grounded_coaching.py` checks known image geometry and confidence
+omission; `test_pipeline_3d.py` checks the complete no-pose pipeline and decoded
+video. Real-video and iOS evidence is recorded by `scripts/verify-coaching.sh`.

@@ -1,6 +1,6 @@
 # Coaching knowledge library
 
-This library connects source lessons to the evidence behind their coaching decisions. It is research material for SwingCoach. The app does not consume these records yet, and source extraction does not establish that a recommendation is correct for another golfer.
+This library connects source lessons to the evidence behind their coaching decisions. The local viewer and initial coaching pipeline share these structured records. Source extraction does not establish that a recommendation is correct for another golfer; the pipeline must also establish applicable evidence from the new recording and golfer context.
 
 ## Scope and progress
 

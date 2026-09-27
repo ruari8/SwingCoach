@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression checks for the annotation-reset artifact contract."""
+"""Regression checks for the no-pose fallback artifact contract."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ class _FakeVideoExporter:
         return f"fake-video:{len(frames)}:{fps}".encode()
 
 
-def test_render_writes_clean_reset_contract() -> None:
+def test_render_without_pose_writes_clean_contract() -> None:
     renderer = ArtifactRenderer()
     frames = [_frame(), _frame(), _frame()]
     frame_indices = [0, 1, 2]
@@ -58,7 +58,7 @@ def test_render_writes_clean_reset_contract() -> None:
 
     assert metadata["layers"] == []
     assert metadata["annotations_enabled"] is False
-    assert metadata["pipeline_mode"] == "annotation_reset"
+    assert metadata["pipeline_mode"] == "knowledge_coaching_v1"
     assert metadata["frame_count"] == 3
 
     assert tracks["guide_layers"] == []
@@ -70,5 +70,5 @@ def test_render_writes_clean_reset_contract() -> None:
 
 
 if __name__ == "__main__":
-    test_render_writes_clean_reset_contract()
-    print("annotation reset contract checks passed")
+    test_render_without_pose_writes_clean_contract()
+    print("no-pose annotation contract checks passed")

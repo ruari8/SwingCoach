@@ -5,6 +5,7 @@ Pydantic models for API request/response schemas.
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, List
 from enum import Enum
+from analysis.coaching_contract import CoachingDetail
 
 
 class Vantage(str, Enum):
@@ -24,6 +25,8 @@ class AnalyzeRequest(BaseModel):
     video_key: str = Field(..., description="Key of the video in R2 storage")
     vantage: Vantage = Field(..., description="Camera vantage point (DTL or Face-On)")
     fps: Optional[float] = Field(None, description="Video FPS (auto-detected if not provided)")
+    student_goal: Optional[str] = Field(None, max_length=1000)
+    golfer_context: Dict[str, str] = Field(default_factory=dict)
 
 
 class DrillLink(BaseModel):
@@ -168,6 +171,8 @@ class AnalysisMetric(BaseModel):
     key: str
     name: str
     value: str
+    confidence: Optional[float] = None
+    explanation: Optional[str] = None
 
 
 class AnalysisDrill(BaseModel):
@@ -209,6 +214,7 @@ class AnalyzeResponse(BaseModel):
     metrics: List[AnalysisMetric] = Field(default_factory=list)
     annotated_video: Optional[AnalysisVideo] = None
     drills: List[AnalysisDrill] = Field(default_factory=list)
+    coaching: Optional[CoachingDetail] = None
 
 
 class AnalysisRunCreateResponse(BaseModel):

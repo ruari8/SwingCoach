@@ -1,20 +1,20 @@
-"""Baseline orchestrator for SwingCoach video analysis.
-
-The prior annotation implementation is preserved in git history. This pipeline
-keeps the API and artifact contract alive while annotation semantics are rebuilt
-from a clean specification.
-"""
-
+"""Video evidence -> source-backed coaching -> mobile playback artifacts."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
+import logging
+import math
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from .artifact_renderer import ArtifactRenderer
-from .coach_response_builder import CoachingBundle
+from .coach_response_builder import CoachResponseBuilder, CoachingBundle
 from .frame_extractor import FrameExtractor
 from .metrics_engine import MetricCard
 from .run_store import RunStore
+from .video_observations import measure_poses
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -28,121 +28,101 @@ class Pipeline3DResult:
 
 
 class SwingCoachPipeline3D:
-    """Current backend pipeline: clean video artifacts, no generated annotations."""
+    """Knowledge-backed 2D coaching foundation; no uncalibrated 3D claims."""
 
-    def __init__(self, output_root: Optional[str] = None):
-        from pathlib import Path
-
-        self.output_root = Path(output_root) if output_root else (Path(__file__).parent.parent / "output" / "runs")
+    def __init__(self, output_root=None, *, pose_detector_factory=None, coach_builder=None):
+        self.output_root = Path(output_root) if output_root else Path(__file__).parent.parent / "output/runs"
         self.frame_extractor = FrameExtractor()
         self.artifact_renderer = ArtifactRenderer()
+        self.pose_detector_factory = pose_detector_factory
+        self.coach_builder = coach_builder
 
-    def analyze_video(
-        self,
-        video_bytes: bytes,
-        vantage: str = "DTL",
-        requested_fps: Optional[float] = None,
-        student_goal: Optional[str] = None,
-        progress_callback: Optional[Callable[[str, float, str], None]] = None,
-    ) -> Pipeline3DResult:
+    def analyze_video(self, video_bytes: bytes, vantage="DTL", requested_fps=None,
+                      student_goal=None, progress_callback=None, golfer_context=None) -> Pipeline3DResult:
         run_store = RunStore(self.output_root)
-        warnings = ["Annotation generation is disabled while the annotation contract is being rebuilt."]
+        warnings = []
 
-        def emit(stage: str, progress: float, message: str) -> None:
+        def emit(stage, progress, message):
             if progress_callback:
-                progress_callback(stage, max(0.0, min(1.0, progress)), message)
+                progress_callback(stage, progress, message)
 
         emit("video_info", 0.05, "Reading video metadata")
         with run_store.stage("video_info"):
-            video_info = self.frame_extractor.get_video_info(video_bytes)
-            fps = float(requested_fps or video_info.get("fps") or 30.0)
-            frame_count = int(video_info.get("frame_count") or 0)
-            frame_width = int(video_info.get("width") or 1920)
-            frame_height = int(video_info.get("height") or 1080)
-            run_store.save_json(
-                "input_meta.json",
-                {
-                    "vantage": vantage,
-                    "fps": fps,
-                    "frame_count": frame_count,
-                    "frame_width": frame_width,
-                    "frame_height": frame_height,
-                    "requested_fps": requested_fps,
-                    "student_goal": student_goal,
-                    "pipeline_mode": "annotation_reset",
-                },
-            )
+            info = self.frame_extractor.get_video_info(video_bytes)
+            # Metadata FPS determines playback and timestamp alignment. A caller's
+            # capture FPS can differ for slow-motion export; never silently retime.
+            fps = float(info.get("fps") or requested_fps or 30)
+            if not math.isfinite(fps) or fps <= 0:
+                raise ValueError("Video frame rate must be positive")
+            if requested_fps and abs(requested_fps - fps) > 0.1:
+                warnings.append("Capture FPS differs from the file; measurements use the file playback timeline.")
+            width, height = int(info["width"]), int(info["height"])
+            run_store.save_json("input_meta.json", {**info, "fps": fps, "requested_fps": requested_fps,
+                               "vantage": vantage, "student_goal": student_goal,
+                               "golfer_context": golfer_context or {}, "pipeline_mode": "knowledge_coaching_v1"})
 
-        emit("artifact_frames", 0.35, "Preparing clean video artifact")
+        emit("artifact_frames", 0.15, "Preparing video frames")
         with run_store.stage("artifact_frames"):
-            artifact_frames = self.frame_extractor.extract_frames(video_bytes, sample_rate=1)
-            artifact_indices = list(range(len(artifact_frames)))
-            if not artifact_frames:
-                raise ValueError("Could not extract frames from uploaded video.")
+            frames = self.frame_extractor.extract_frames(video_bytes, sample_rate=1)
+            if not frames:
+                raise ValueError("Could not extract frames from uploaded video")
+        # At most 180 pose samples covering the entire clip, normally about 15 Hz.
+        interval = max(1, math.ceil(fps / 15), math.ceil(len(frames) / 180))
+        indices = list(range(0, len(frames), interval))
+        poses = []
+        emit("observations", 0.3, "Tracking body movement and reference positions")
+        with run_store.stage("observations"):
+            try:
+                factory = self.pose_detector_factory
+                if factory is None:
+                    from .pose_detector import PoseDetector
+                    factory = PoseDetector
+                with factory() as detector:
+                    for index in indices:
+                        pose = detector.detect_pose(frames[index], frame_index=index)
+                        if pose is not None:
+                            poses.append(pose)
+            except (ImportError, FileNotFoundError, RuntimeError) as exc:
+                logger.warning("Body tracking unavailable: %s", type(exc).__name__)
+                warnings.append("Body tracking is unavailable for this run. No body measurements were inferred.")
+                poses = []
+            evidence = measure_poses(poses, fps=fps, width=width, height=height, vantage=vantage)
+            warnings.extend(evidence.warnings)
+            run_store.save_json("observations.json", {"version": 1, "samples": evidence.samples,
+                                "observations": evidence.observations, "sample_interval": interval,
+                                "sampled_frames": indices, "vantage": vantage})
+            run_store.save_json("metrics.json", {"cards": evidence.metrics,
+                                "raw": {c.key: c.value for c in evidence.metrics}})
+            run_store.save_json("events.json", {"phases": [], "reason": "No validated phase detector in this pass"})
 
-        run_store.save_json(
-            "events.json",
-            {
-                "sparse": {},
-                "dense": {},
-                "dense_window": None,
-                "pipeline_mode": "annotation_reset",
-            },
-        )
-        run_store.save_json("metrics.json", {"cards": [], "raw": {"metrics_enabled": False}})
-
-        emit("artifacts", 0.75, "Writing clean artifact contract")
+        emit("artifacts", 0.6, "Writing reference overlays and playback video")
         with run_store.stage("artifacts"):
             rendered = self.artifact_renderer.render(
-                run_store=run_store,
-                frames=artifact_frames,
-                frame_indices=artifact_indices,
-                video_fps=fps,
-                frame_width=frame_width,
-                frame_height=frame_height,
+                run_store=run_store, frames=frames, frame_indices=list(range(len(frames))),
+                video_fps=fps, frame_width=width, frame_height=height,
+                layers_by_frame=evidence.layers_by_frame, sample_interval=interval,
             )
-
-        emit("coaching", 0.9, "Building reset summary")
-        coaching = CoachingBundle(
-            summary=(
-                "Clean swing video is ready. Generated annotations are temporarily disabled "
-                "while the annotation set is rebuilt from a fresh specification."
-            ),
-            top_priorities=[
-                "Define the next annotation contract before enabling automatic overlay generation."
-            ],
-            drills=[],
-        )
+        emit("coaching", 0.8, "Reviewing evidence against coaching cases")
         with run_store.stage("coaching"):
-            run_store.save_json(
-                "coach_summary.json",
-                {
-                    "summary": coaching.summary,
-                    "top_priorities": coaching.top_priorities,
-                    "drills": [],
-                },
+            builder = self.coach_builder or CoachResponseBuilder()
+            # Evenly spaced source frames, bounded independently of source FPS.
+            visual_indices = sorted({round(i * (len(frames) - 1) / max(min(24, len(frames)) - 1, 1))
+                                     for i in range(min(24, len(frames)))})
+            coaching = builder.build_coaching_bundle(
+                evidence.metrics, warnings, student_goal,
+                observations=evidence.observations, frames=[(i, frames[i]) for i in visual_indices],
+                fps=fps, vantage=vantage, golfer_context=golfer_context,
             )
-
+            run_store.save_json("coach_summary.json", asdict(coaching))
         run_store.finalize_timings()
-
-        quality = {
-            "warnings": warnings,
-            "missing_data": [],
-            "timings": run_store.timings,
-            "flags": {
-                "pipeline_mode": "annotation_reset",
-                "annotations_enabled": False,
-                "metrics_enabled": False,
-                "export_baked_overlays": False,
-            },
-        }
-
-        emit("pipeline_complete", 1.0, "Pipeline complete")
+        quality = {"warnings": warnings, "missing_data": ["clubface", "shaft", "pressure", "ball flight", "validated phases"],
+                   "timings": run_store.timings,
+                   "flags": {"pipeline_mode": "knowledge_coaching_v1", "annotations_enabled": bool(evidence.layers_by_frame),
+                             "metrics_enabled": bool(evidence.metrics), "export_baked_overlays": False}}
+        emit("pipeline_complete", 1.0, "Video evidence and coaching ready")
         return Pipeline3DResult(
-            run_id=run_store.run_id,
-            metrics=[],
-            coaching=coaching,
-            artifacts={
+            run_id=run_store.run_id, metrics=evidence.metrics, coaching=coaching, quality=quality,
+            run_dir=str(run_store.run_dir), artifacts={
                 "base_video_path": rendered.base_video_filename,
                 "annotated_video_path": rendered.annotated_video_filename,
                 "swing_3d_path": rendered.swing_3d_filename,
@@ -150,6 +130,4 @@ class SwingCoachPipeline3D:
                 "debug_paths": rendered.debug_files,
                 "annotation_metadata": rendered.annotation_metadata,
             },
-            quality=quality,
-            run_dir=str(run_store.run_dir),
         )

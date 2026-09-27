@@ -148,10 +148,14 @@ actor SwingCoachAPI {
     struct AnalyzeRequest: Codable {
         let videoKey: String
         let vantage: String
+        var studentGoal: String? = nil
+        var golferContext: [String: String]? = nil
 
         enum CodingKeys: String, CodingKey {
             case videoKey = "video_key"
             case vantage
+            case studentGoal = "student_goal"
+            case golferContext = "golfer_context"
         }
     }
 
@@ -159,6 +163,8 @@ actor SwingCoachAPI {
         let key: String
         let name: String
         let value: String
+        var confidence: Double? = nil
+        var explanation: String? = nil
     }
 
     struct AnalysisDrill: Codable {
@@ -199,6 +205,7 @@ actor SwingCoachAPI {
         let metrics: [AnalysisMetric]
         let annotatedVideo: AnalysisVideo?
         let drills: [AnalysisDrill]
+        var coaching: SavedCoachingDetail? = nil
 
         enum CodingKeys: String, CodingKey {
             case analysisID = "analysis_id"
@@ -206,6 +213,7 @@ actor SwingCoachAPI {
             case metrics
             case annotatedVideo = "annotated_video"
             case drills
+            case coaching
         }
     }
 
@@ -377,7 +385,16 @@ actor SwingCoachAPI {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let vantageString = vantage == .dtl ? "DTL" : "FO"
-        let requestBody = AnalyzeRequest(videoKey: videoKey, vantage: vantageString)
+        let requestBody = AnalyzeRequest(
+            videoKey: videoKey, vantage: vantageString,
+            studentGoal: UserDefaults.standard.string(forKey: "coaching.goal"),
+            golferContext: ["club", "handedness", "outcome"].reduce(into: [String: String]()) { result, key in
+                if let value = UserDefaults.standard.string(forKey: "coaching.\(key)"),
+                   !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    result[key] = value
+                }
+            }
+        )
         request.httpBody = try JSONEncoder().encode(requestBody)
 
         let data: Data
@@ -514,7 +531,16 @@ actor SwingCoachAPI {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let vantageString = vantage == .dtl ? "DTL" : "FO"
-        let requestBody = AnalyzeRequest(videoKey: videoKey, vantage: vantageString)
+        let requestBody = AnalyzeRequest(
+            videoKey: videoKey, vantage: vantageString,
+            studentGoal: UserDefaults.standard.string(forKey: "coaching.goal"),
+            golferContext: ["club", "handedness", "outcome"].reduce(into: [String: String]()) { result, key in
+                if let value = UserDefaults.standard.string(forKey: "coaching.\(key)"),
+                   !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    result[key] = value
+                }
+            }
+        )
         request.httpBody = try JSONEncoder().encode(requestBody)
 
         let data: Data

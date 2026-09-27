@@ -6,8 +6,8 @@ Python FastAPI backend for the SwingCoach coaching pipeline.
 
 Given one uploaded swing video, the backend returns:
 1. Full-duration clean video artifacts
-2. An empty normalized overlay-track contract
-3. Reset-state coaching output
+2. Normalized body-reference and hand-path overlays with image-space metrics
+3. Source-backed coaching, or an explicit model-unavailable result
 4. Run-quality metadata (warnings, missing data, timings)
 
 Primary orchestrator: [analysis/pipeline_3d.py](./analysis/pipeline_3d.py)
@@ -49,7 +49,7 @@ cp .env.example .env
 
 R2 HTTPS certificate verification is enabled by default. If a local machine has a temporary certificate-store problem, set `R2_VERIFY_SSL=false` in `backend/.env`; do not use that setting for deployed backends.
 
-Generated annotations, SAM3 equipment prompting, pose/event detection, 3D replay export, and metric cards are disabled in the reset pipeline; the optional 3D dependencies are retained only for future experiments.
+The pipeline uses MediaPipe and `models/pose_landmarker_heavy.task` for 2D observations. Missing tracking dependencies produce an explicit warning. SAM3, event detection and 3D replay remain inactive. Configure `OPENAI_API_KEY` for the visual observer and smart coach; `SWINGCOACH_COACH_MODEL` defaults to `gpt-4o-mini`. Deploy the committed coaching source JSON folder with the backend, or set `SWINGCOACH_KNOWLEDGE_DIR` to its location. Raw reference media is not needed by the API.
 
 ## API Contract
 
@@ -76,15 +76,18 @@ Request shape:
 - `video_key: str`
 - `vantage: "DTL" | "FO"`
 - `fps: Optional[float]`
+- `student_goal: Optional[str]`
+- `golfer_context: Dict[str, str]`, such as club, handedness and reported outcome
 
 Response shape (`AnalyzeResponse`):
 - `analysis_id`
 - `summary`
-- `metrics[]` (display rows with `key`, `name`, `value`)
+- `metrics[]` (display rows with `key`, `name`, `value`, optional `confidence` and `explanation`)
 - `annotated_video` (`key`, fresh signed `url`, optional `base_key` / `base_url`, optional `tracks_key` / `tracks_url`, rendered `layers[]`)
-- `drills[]` (lightweight `title`, `summary` suggestions)
+- `drills[]` (one selected source intervention with `title`, `summary`)
+- `coaching` (optional versioned focus, status, rationale, cue, reassessment, questions, evidence, source moments and limitations)
 
-The reset pipeline records warnings, timings, a full-duration clean base video, and an empty overlay-track artifact. `annotated_video.layers` is empty, and generated phase markers, club planes, pose skeletons, paths, confidence badges, metrics, and drills are omitted by design.
+The pipeline records sampled landmarks and observations, numeric metrics, clean full-duration video and confidence-gated overlay tracks. The smart coach uses versioned prompts and the committed case library. With no model key or an invalid model response, the result keeps measured evidence and withholds drills. A whole-clip movement range is never treated as a phase-specific fault.
 
 ### `POST /analysis-runs`
 
@@ -94,6 +97,8 @@ Request shape:
 - `video_key: str`
 - `vantage: "DTL" | "FO"`
 - `fps: Optional[float]`
+- `student_goal: Optional[str]`
+- `golfer_context: Dict[str, str]`, such as club, handedness and reported outcome
 
 Response shape:
 - `run_id`
@@ -152,12 +157,13 @@ Response shape:
 
 ## Pipeline Outline
 
-1. Read video metadata.
-2. Extract the full source timeline.
-3. Render `base.mp4` and clean compatibility `annotated.mp4`.
-4. Write empty `annotation_metadata.json` and `annotation_tracks.json`.
-5. Write empty metrics plus reset coaching summary.
-6. Persist run artifacts and timings.
+1. Read video metadata and retain the full source timeline.
+2. Sample reliable 2D pose landmarks and calculate descriptive whole-clip metrics.
+3. Render clean videos plus timed body-reference and hand-path overlay tracks.
+4. Review sampled frames through the configured visual model, retrieve source cases,
+   and validate the coach's evidence references and prerequisite checks.
+5. Return one sourced focus, cue and reassessment, or explain missing evidence/model access.
+6. Persist observations, coaching context, artifacts and timings for reopening and chat.
 
 ## Run Artifacts
 
@@ -168,6 +174,7 @@ Typical files per successful run:
 - `input_meta.json`
 - `events.json`
 - `metrics.json`
+- `observations.json`
 - `coach_summary.json`
 - `base.mp4`
 - `annotated.mp4`
@@ -187,7 +194,7 @@ python test_pipeline_3d.py
 # 2D pipeline test
 python test_pipeline.py
 
-# Annotation reset contract test
+# No-pose annotation contract test
 python test_annotation_tracks.py
 
 # Async run lifecycle test
@@ -200,30 +207,38 @@ python test_temporal_smoothing.py
 python test_animation_export.py
 ```
 
-## Annotation Reset Notes
+## Knowledge coaching and limits
 
-The previous experimental annotation implementation is preserved in git commit `abc12c4` (`experimental: annotation impl`). Do not re-enable SAM3, pose/event, or metric stages until the next annotation contract is agreed and covered by fixture-level visual validation.
+The current pipeline builds on the earlier clean-video reset. Its first measurements
+are head position range and projected torso-angle range across the entire clip.
+They are descriptive quantities, not automatic fault classifications. The body
+reference and hand path overlays use reliable pose samples. There are no generated
+swing phases, shaft lines, clubface angles, pressure estimates or calibrated 3D values.
 
-## Known Reliability Notes
+The coach loads the same [source corpus](../docs/coaching-knowledge/README.md) as the
+local viewer. `OPENAI_API_KEY` enables the two-stage visual review and coaching call;
+`SWINGCOACH_COACH_MODEL` selects a vision/structured-output capable model. Without
+model access, measurements remain available and no drill is selected. Structural
+validation checks cited observations, source membership, confidence and all case
+prerequisites. It does not independently prove the model's visual interpretation.
 
-1. Generated annotations and metrics are currently absent by design.
-2. The overlay-track artifact is present for API compatibility but has no generated layers.
-3. Async run state is currently in-memory; production deployment should persist run state if jobs need to survive process restarts.
+Async run state remains in memory; production jobs need durable state to survive
+process restarts. Persisted run artifacts support reopening completed results.
 
-The default `test_pipeline_3d.py` check generates a one-second local fixture with
-FFmpeg and verifies the decoded output, source timeline, and empty annotation
-contract. It requires no uploaded video, R2 credentials, or model weights. Passing
-a video path additionally runs that clip for manual inspection. The unused
-`--max-dense` option was removed because the reset pipeline has no dense scan.
+The default `test_pipeline_3d.py` uses synthetic video with an injected no-pose
+provider to verify source timing, decoded pixels and the empty-overlay fallback.
+It needs no R2 credentials or model weights. `test_grounded_coaching.py` verifies
+measurement geometry and coaching contracts with deterministic model responses.
+Run both library and coach checks with:
 
-Synthetic smoothing and animation checks use the optional temporal-smoothing
-requirements, but do not run SAM inference. Identity smoothing, frozen movement,
-failed exports, and incorrect exported joint data fail their assertions. Optional
-real-video runs report failure through a nonzero process exit status.
+```bash
+python -m unittest test_knowledge_library test_grounded_coaching
+```
 
-The reset renderer takes video frames, frame indices, frame rate, and dimensions.
-It no longer accepts ignored pose, club, phase, or overlay-toggle inputs. Empty
-pose/club NPZ placeholders and their unused writer were removed. Video, track,
-metrics, coaching, and progress contracts remain available. Disconnected body-3D,
-club-fusion, and dense-window orchestration is preserved in git history rather
-than exposed as current pipeline modules.
+From the repository root, `bash scripts/verify-coaching.sh` tests real local upload,
+pose analysis, overlay controls and saved notes in a disposable Simulator. A clearly
+labelled saved fixture checks sourced cue rendering; it is not a live model diagnosis.
+See [implementation evidence](../docs/coaching-knowledge/implementation.md).
+
+Synthetic smoothing and animation checks concern optional legacy components, not
+active coaching behavior. The older experimental implementation is preserved in Git.

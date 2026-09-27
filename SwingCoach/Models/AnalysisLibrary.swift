@@ -12,6 +12,47 @@ struct SavedAnalysisMetric: Codable, Equatable {
     let key: String
     let name: String
     let value: String
+    var confidence: Double? = nil
+    var explanation: String? = nil
+}
+
+struct SavedCoachingDetail: Codable, Equatable {
+    let version: Int
+    let status: String
+    let focus: String
+    let rationale: String
+    let cue: String?
+    let reassess: String
+    let questions: [String]
+    let evidence: [Evidence]
+    let sources: [Source]
+    let limitations: [String]
+
+    struct Evidence: Codable, Equatable, Identifiable {
+        let id: String
+        let description: String
+        let kind: String
+        let confidence: Double
+        let timestamps: [Double]
+    }
+
+    struct Source: Codable, Equatable {
+        let caseID: String
+        let title: String
+        let publisher: String
+        let url: String
+        let startSeconds: Double
+        let endSeconds: Double
+        let reviewStatus: String
+
+        enum CodingKeys: String, CodingKey {
+            case caseID = "case_id"
+            case title, publisher, url
+            case startSeconds = "start_seconds"
+            case endSeconds = "end_seconds"
+            case reviewStatus = "review_status"
+        }
+    }
 }
 
 struct SavedAnalysisDrill: Codable, Equatable {
@@ -93,6 +134,7 @@ struct SavedAnalysis: Identifiable, Codable, Equatable {
     let metrics: [SavedAnalysisMetric]
     var annotatedVideo: SavedAnalysisVideo?
     let drills: [SavedAnalysisDrill]
+    var coaching: SavedCoachingDetail? = nil
 }
 
 @MainActor
@@ -121,7 +163,8 @@ final class AnalysisLibrary: ObservableObject {
             createdAt: Date(),
             summary: response.summary,
             metrics: response.metrics.map {
-                SavedAnalysisMetric(key: $0.key, name: $0.name, value: $0.value)
+                SavedAnalysisMetric(key: $0.key, name: $0.name, value: $0.value,
+                                    confidence: $0.confidence, explanation: $0.explanation)
             },
             annotatedVideo: response.annotatedVideo.map {
                 SavedAnalysisVideo(
@@ -144,7 +187,8 @@ final class AnalysisLibrary: ObservableObject {
             },
             drills: response.drills.map {
                 SavedAnalysisDrill(title: $0.title, summary: $0.summary)
-            }
+            },
+            coaching: response.coaching
         )
 
         analyses.removeAll { $0.swingID == swing.id }

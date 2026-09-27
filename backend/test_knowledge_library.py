@@ -45,6 +45,7 @@ class KnowledgeLibraryTests(unittest.TestCase):
                 with self.assertRaises(HTTPError) as raised:
                     urlopen(base + path)
                 self.assertEqual(raised.exception.code, 404)
+                raised.exception.close()
             videos = [p for p in catalogue["available_assets"] if p.endswith(".mp4")]
             if videos:
                 path = videos[0]
@@ -55,6 +56,7 @@ class KnowledgeLibraryTests(unittest.TestCase):
                 with self.assertRaises(HTTPError) as raised:
                     urlopen(Request(base + "/media/" + path, headers={"Range": "bytes=999999999999-"}))
                 self.assertEqual(raised.exception.code, 416)
+                raised.exception.close()
         finally:
             server.shutdown()
             server.server_close()

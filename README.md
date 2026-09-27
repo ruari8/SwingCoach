@@ -10,7 +10,7 @@ This is an active prototype rather than a polished App Store product. The repo i
 - Runs on-device `SwingDetectorV3` using the YOLO/Core ML golf-object model, Apple Vision pose, persistent target relationships, and target-specific contact outcomes to preselect swing windows.
 - Uploads clips to a Python backend through Cloudflare R2 pre-signed URLs.
 - Queues asynchronous analysis runs and streams backend progress back to the app with Server-Sent Events.
-- Produces clean analyzed-video artifacts and a stable, currently empty overlay-track contract while generated annotations are redesigned.
+- Produces clean playback video with toggleable body-reference and hand-path overlays, image-space measurements, and source-backed coaching when the model is configured.
 
 ## System Shape
 
@@ -25,7 +25,7 @@ Cloudflare R2
         | video_key
         v
 FastAPI backend
-  /analysis-runs -> video metadata -> clean full-video artifacts -> reset coaching bundle
+  /analysis-runs -> video observations -> metrics / overlays -> sourced coaching
         |
         | status + SSE progress + signed artifact URLs
         v
@@ -70,7 +70,7 @@ The backend is a FastAPI service. Its main mobile path is asynchronous:
 4. Stream `GET /analysis-runs/{run_id}/events`
 5. Fetch `GET /analysis-runs/{run_id}` for the completed result
 
-The default pipeline currently covers video metadata, full-duration clean video artifacts, an empty overlay-track contract, and a reset coaching summary. Generated annotations, pose/event detection, SAM3 equipment prompting, metric cards, and 3D replay export are intentionally disabled while the annotation contract is redesigned.
+The default pipeline measures 2D body movement, writes reference overlays and retrieves cases from the coaching knowledge library. An optional AI visual review and smart coach choose one source-backed focus with evidence and a reassessment plan. Without an API key, measured evidence remains available and no correction is invented. Shaft, impact, pressure, calibrated 3D and ball-flight measurements remain unavailable.
 
 See [backend/README.md](backend/README.md) and [backend/docs/README.md](backend/docs/README.md) for API details and pipeline notes.
 
@@ -99,7 +99,7 @@ cp .env.example .env
 
 Configure `backend/.env` with Cloudflare R2 credentials before running real upload/analysis flows. Without R2 configuration, `/health` reports a degraded state and storage-backed endpoints will not complete.
 
-The optional 3D/SAM dependency stack is not used by the reset analysis pipeline.
+The optional 3D/SAM dependency stack is not used by the knowledge coaching pipeline.
 
 ## Useful Checks
 
@@ -127,7 +127,7 @@ Heavy local fixture videos, raw detector outputs, model-training outputs, backen
 - The iOS capture, library, trim, analysis queue, swing detail, and analyzed-video playback workflows are implemented.
 - The async backend analysis API is implemented, including progress events, R2 artifacts, `/chat`, and a legacy synchronous `/analyze` fallback.
 - The on-device detector is still experimental. It is useful for clip preselection and auto-capture iteration, but it is not treated as a solved detection problem.
-- Generated annotations and metric rows are currently omitted by design. The committed rollback point for the previous experimental annotation implementation is `abc12c4`.
+- Body-reference overlays and three descriptive image-space metric rows are enabled when tracking is usable. They are not validated swing diagnoses. The prior experimental annotation implementation remains at `abc12c4`.
 - The current mobile product path is DTL-first. Face-on exists in the data model, but the most mature flows and validation focus on down-the-line swings.
 - Async run state is currently in memory, so active jobs do not survive backend restarts.
 
@@ -139,3 +139,7 @@ Heavy local fixture videos, raw detector outputs, model-training outputs, backen
 - [Backend docs index](backend/docs/README.md)
 - [Detector tooling](detector_workbench/README.md)
 - [Deployment notes](docs/DEPLOYMENT.md)
+
+## Coaching knowledge
+
+Run `python3 scripts/knowledge_viewer.py` to browse the 30 sources and 145 cases at <http://127.0.0.1:8769>. The [library](docs/coaching-knowledge/README.md) preserves transcripts, source reasoning, prerequisites and local visual evidence. The [implementation record](docs/coaching-knowledge/implementation.md) explains runtime scope and verification.

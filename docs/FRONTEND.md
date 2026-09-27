@@ -355,3 +355,22 @@ Run `scripts/verify-save-photos.sh` for an isolated Simulator check. It substitu
 ### Auto review annotation verification
 
 Run `./scripts/verify-capture-controls.sh <artifact-directory> annotations` for the affected Simulator checks. The scratch build supplies synthetic saved videos and detector snapshots, then drives the production Capture review and Library UI. It verifies drawing, undo, paging isolation, reopening, disk persistence after relaunch, portrait Library controls after device rotation, clearing from either entry point, playback, and review deletion. Camera input, live detection, capture restart timing, and physical Photos deletion still require an iPhone.
+
+## Grounded coaching foundation
+
+Coach > Practice context stores a goal, club, handedness and reported shot outcome.
+These notes accompany new analysis requests until edited. The API response now
+includes optional metric confidence/explanations and a versioned `coaching` object.
+Older saved results remain readable. New results persist the full coaching object.
+
+Swing detail > Coach notes shows the selected focus, rationale, one cue when
+justified, reassessment and missing-evidence questions. Expand the evidence,
+source-moment and limitation sections for support. Original source links open
+externally; the shown timestamp identifies the moment. Body Reference and Hand
+Path toggles draw 2D tracks over clean analyzed video. They do not measure the
+clubface, pressure or 3D rotation. A missing model produces an explicit unavailable
+state, measured evidence and no invented correction.
+
+Run `scripts/verify-coaching.sh` for a disposable Simulator and local-storage API
+pass. It tests real upload/analysis and persistence, plus a clearly labelled saved
+source-recommendation fixture. No live model or remote R2 requests are made.

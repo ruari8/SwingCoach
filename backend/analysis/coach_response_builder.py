@@ -1,12 +1,21 @@
-"""LLM-backed coaching summary and grounded chat answers."""
-
+"""Grounded visual review, source-case selection and follow-up coaching."""
 from __future__ import annotations
 
+import base64
+from dataclasses import asdict, dataclass, field
+import io
 import json
+import logging
 import os
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
+from PIL import Image
+
+from .coaching_contract import CoachDecision, CoachingDetail, CoachingEvidence, CoachingSource, VisualReview
+from .knowledge_library import KnowledgeLibrary
+
+logger = logging.getLogger(__name__)
+PROMPTS = Path(__file__).resolve().parents[1] / "prompts"
 
 
 @dataclass
@@ -20,161 +29,179 @@ class DrillSuggestion:
 @dataclass
 class CoachingBundle:
     summary: str
-    top_priorities: List[str]
-    drills: List[DrillSuggestion]
+    top_priorities: list[str]
+    drills: list[DrillSuggestion]
+    detail: dict | None = None
+    context: dict = field(default_factory=dict)
+
+
+def intervention_text(value: Any) -> str:
+    if isinstance(value, dict):
+        return "\n".join(f"{key.replace('_', ' ').capitalize()}: {intervention_text(item)}" for key, item in value.items())
+    if isinstance(value, list):
+        return "\n".join(intervention_text(item) for item in value)
+    return str(value)
 
 
 class CoachResponseBuilder:
-    """Builds coaching seed output and follow-up chat responses."""
+    def __init__(self, *, client=None, library: KnowledgeLibrary | None = None):
+        self.library = library or KnowledgeLibrary()
+        self.client = client
+        if self.client is None and os.getenv("OPENAI_API_KEY"):
+            from openai import OpenAI
+            self.client = OpenAI(timeout=90, max_retries=1)
+        self.model = os.getenv("SWINGCOACH_COACH_MODEL", "gpt-4o-mini")
 
-    def __init__(self, drill_corpus_path: Optional[Path] = None):
-        self.drill_corpus_path = drill_corpus_path or (Path(__file__).parent.parent / "data" / "curated_drills.json")
-        self.drills = self._load_drills()
-        self.client = None
+    def _parse(self, schema, prompt_name, content):
+        response = self.client.responses.parse(
+            model=self.model, store=False,
+            instructions=(PROMPTS / prompt_name).read_text(),
+            input=[{"role": "user", "content": content}], text_format=schema,
+        )
+        if response.status != "completed" or response.output_parsed is None:
+            raise ValueError("Coach response was incomplete or declined")
+        return response.output_parsed
 
-        api_key = os.getenv("OPENAI_API_KEY")
-        if api_key:
-            try:
-                from openai import OpenAI
+    def observe(self, frames: list[tuple[int, bytes]], context: dict) -> VisualReview:
+        content = [{"type": "input_text", "text": json.dumps(context)}]
+        for index, image_bytes in frames:
+            with Image.open(io.BytesIO(image_bytes)) as image:
+                image.thumbnail((768, 768))
+                buffer = io.BytesIO()
+                image.convert("RGB").save(buffer, "JPEG", quality=80)
+            content.extend([
+                {"type": "input_text", "text": f"Frame {index}, timestamp {index / context['fps']:.3f}s"},
+                {"type": "input_image", "image_url": "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode(), "detail": "high"},
+            ])
+        review = self._parse(VisualReview, "visual_observer_v1.md", content)
+        supplied = {index for index, _ in frames}
+        ids = {o["id"] for o in context["observations"]}
+        for finding in review.findings:
+            if finding.id in ids:
+                raise ValueError("Duplicate observation ID")
+            ids.add(finding.id)
+            if not finding.frame_indices or not set(finding.frame_indices) <= supplied:
+                raise ValueError("Visual finding cites frames the model did not receive")
+        return review
 
-                self.client = OpenAI(api_key=api_key)
-            except Exception:
-                self.client = None
+    def candidates(self, observations, student_goal):
+        selected = {}
+        for observation in observations:
+            query = observation.get("topic") or observation["description"]
+            for case in self.library.search(query, limit=4):
+                selected[case["id"]] = case
+        if student_goal:
+            for case in self.library.search(student_goal, limit=4):
+                selected[case["id"]] = case
+        for case in list(selected.values()):
+            for alternative in case["alternative_case_ids"]:
+                if alternative in self.library.cases:
+                    selected[alternative] = self.library.cases[alternative]
+        return [{k: v for k, v in case.items() if k != "evidence"} for case in selected.values()]
 
-    def _load_drills(self) -> List[Dict[str, Any]]:
-        if not self.drill_corpus_path.exists():
-            return []
-        try:
-            return json.loads(self.drill_corpus_path.read_text())
-        except Exception:
-            return []
-
-    def _pick_priorities(self, metric_cards: List[Any], max_items: int = 2) -> List[str]:
-        scored = []
-        for card in metric_cards:
-            if card.value is None or card.confidence < 0.35:
-                continue
-            # crude severity estimate: larger normalized magnitude => higher priority
-            magnitude = abs(float(card.value))
-            scored.append((magnitude * card.confidence, card.name, card.fix_hint))
-
-        scored.sort(reverse=True, key=lambda item: item[0])
-        priorities = [f"{name}: {hint}" for _, name, hint in scored[:max_items]]
-        if not priorities:
-            priorities = ["Capture quality or detection confidence was too low for strong coaching priorities."]
-        return priorities
-
-    def _drills_for_priorities(self, priorities: List[str], limit: int = 3) -> List[DrillSuggestion]:
-        if not self.drills:
-            return []
-
-        text = " ".join(priorities).lower()
-        selected: List[DrillSuggestion] = []
-        seen = set()
-        for drill in self.drills:
-            tags = [tag.lower() for tag in drill.get("fault_tags", [])]
-            if not any(tag.replace("_", " ") in text or tag in text for tag in tags):
-                continue
-            did = drill.get("id")
-            if did in seen:
-                continue
-            seen.add(did)
-            selected.append(
-                DrillSuggestion(
-                    id=did,
-                    title=drill.get("title", "Drill"),
-                    source=drill.get("source", ""),
-                    summary=drill.get("summary", ""),
-                )
-            )
-            if len(selected) >= limit:
-                break
+    def validate_decision(self, decision: CoachDecision, observations, candidates):
+        by_id = {o["id"]: o for o in observations}
+        if not set(decision.observation_ids) <= by_id.keys():
+            raise ValueError("Unknown coaching observation reference")
+        selected = next((c for c in candidates if c["id"] == decision.case_id), None)
+        if decision.case_id and selected is None:
+            raise ValueError("Coach selected a case outside the supplied evidence")
+        if decision.status != "recommend":
+            if decision.cue is not None:
+                raise ValueError("Withheld decision must not prescribe a cue")
+            return selected
+        if not selected or not decision.observation_ids or not decision.cue or not decision.reassess.strip():
+            raise ValueError("Recommendation needs a case, evidence, cue and reassessment")
+        if not any(by_id[key]["kind"] == "visual_interpretation" for key in decision.observation_ids):
+            raise ValueError("A whole-clip metric or reported goal alone cannot diagnose a swing")
+        if any(by_id[key]["confidence"] < 0.65 for key in decision.observation_ids):
+            raise ValueError("Recommendation relies on low-confidence observations")
+        expected = set(range(len(selected["applicability"])))
+        checks = decision.prerequisite_checks
+        if len(checks) != len(expected) or {c.condition_index for c in checks} != expected:
+            raise ValueError("Missing or duplicate prerequisite checks")
+        for check in checks:
+            if check.status != "supported" or not check.observation_ids:
+                raise ValueError("Recommendation has unresolved prerequisites")
+            if any(key not in by_id or by_id[key]["confidence"] < 0.65 for key in check.observation_ids):
+                raise ValueError("Prerequisite has no reliable evidence")
         return selected
 
-    def _fallback_summary(self, priorities: List[str], warnings: List[str]) -> str:
-        lead = priorities[0] if priorities else "No high-confidence priority found."
-        if warnings:
-            return f"Primary focus: {lead}. Note: {warnings[0]}"
-        return f"Primary focus: {lead}"
+    def build_coaching_bundle(self, metric_cards, quality_warnings, student_goal=None, *,
+                              observations=None, frames=None, fps=30.0, vantage="DTL", golfer_context=None):
+        observations = list(observations or [])
+        observations.extend({"id": f"context.{key}", "kind": "golfer_report", "description": f"{key}: {value}",
+                             "confidence": 1.0, "frame_indices": []}
+                            for key, value in (golfer_context or {}).items() if value.strip())
+        context = {"version": 1, "vantage": vantage, "fps": fps, "student_goal": student_goal,
+                   "golfer_context": golfer_context or {}, "observations": observations,
+                   "metrics": [asdict(c) for c in metric_cards], "warnings": quality_warnings,
+                   "prompt_version": "v1", "model": self.model}
+        review = None
+        decision = None
+        status = "model_unavailable"
+        if self.client is not None and frames:
+            try:
+                review = self.observe(frames, context)
+                for finding in review.findings:
+                    observations.append({**finding.model_dump(), "kind": "visual_interpretation"})
+                context["visual_review"] = review.model_dump()
+                candidates = self.candidates(observations, student_goal)
+                context["candidate_cases"] = candidates
+                decision = self._parse(CoachDecision, "smart_coach_v1.md",
+                                       [{"type": "input_text", "text": json.dumps(context)}])
+                self.validate_decision(decision, observations, candidates)
+                status = decision.status
+            except Exception as exc:
+                # Model failures must not discard measured video evidence.
+                logger.warning("Grounded coach unavailable: %s", type(exc).__name__)
+                context["model_error"] = type(exc).__name__
+                decision = None
+                status = "model_unavailable"
+        evidence = [CoachingEvidence(id=o["id"], description=o["description"], kind=o["kind"],
+                                     confidence=o["confidence"], timestamps=[i / fps for i in o["frame_indices"]])
+                    for o in observations]
+        if decision is None:
+            summary = ("Your video measurements and reference overlays are ready. "
+                       "The coaching model is unavailable, so no swing correction has been selected."
+                       if metric_cards else
+                       "There isn't enough reliable evidence to select a swing correction from this recording.")
+            detail = CoachingDetail(status=status, focus="Establish a useful baseline",
+                                    rationale="A movement measurement alone does not establish a fault or the right drill. Compare it with your intended shot and actual result.",
+                                    reassess="Record the same club and camera view, and note the strike and ball flight.",
+                                    questions=["What club did you use, what shot did you intend, and what actually happened?"],
+                                    evidence=evidence, limitations=quality_warnings)
+            return CoachingBundle(summary, [detail.focus], [], detail.model_dump(), context)
+        context["decision"] = decision.model_dump()
+        sources, drills = [], []
+        if decision.case_id:
+            case = self.library.cases[decision.case_id]
+            for item in case["evidence"]:
+                sources.append(CoachingSource(case_id=case["id"], title=case["title"], publisher=case["publisher"],
+                                               url=case["source_url"], start_seconds=item["span_seconds"][0],
+                                               end_seconds=item["span_seconds"][1], review_status=case["review_status"]))
+            if decision.status == "recommend":
+                drills.append(DrillSuggestion(case["id"], case["title"], case["source_url"], intervention_text(case["intervention"])))
+        detail = CoachingDetail(status=status, focus=decision.focus, rationale=decision.rationale, cue=decision.cue,
+                                reassess=decision.reassess, questions=decision.questions, evidence=evidence,
+                                sources=sources, limitations=quality_warnings + (review.missing_evidence if review else []))
+        return CoachingBundle(decision.summary, [decision.focus], drills, detail.model_dump(), context)
 
-    def build_coaching_bundle(self, metric_cards: List[Any], quality_warnings: List[str], student_goal: Optional[str] = None) -> CoachingBundle:
-        priorities = self._pick_priorities(metric_cards)
-        drills = self._drills_for_priorities(priorities)
-
+    def answer_chat(self, question, metric_cards, coaching_bundle, student_goal=None):
         if self.client is None:
-            return CoachingBundle(
-                summary=self._fallback_summary(priorities, quality_warnings),
-                top_priorities=priorities,
-                drills=drills,
-            )
-
-        metric_lines = [
-            f"- {card.name}: {card.value} {card.unit} (confidence {card.confidence:.2f})"
-            for card in metric_cards
-            if card.value is not None
-        ]
-
-        prompt = (
-            "You are a golf coach. Write a short, plain-English diagnosis in 2-3 sentences. "
-            "Focus only on high confidence findings and practical fixes.\n\n"
-            f"Student goal: {student_goal or 'Improve consistency and contact'}\n"
-            f"Priorities: {priorities}\n"
-            f"Quality warnings: {quality_warnings}\n"
-            "Metrics:\n"
-            + "\n".join(metric_lines)
-        )
-
+            return coaching_bundle.summary + " " + (coaching_bundle.detail or {}).get("reassess", "")
+        context = {**coaching_bundle.context, "coaching": coaching_bundle.detail,
+                   "summary": coaching_bundle.summary, "question": question, "student_goal": student_goal}
         try:
-            resp = self.client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "You are a concise PGA-style coach."},
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.4,
-                max_tokens=220,
+            response = self.client.responses.create(
+                model=self.model, store=False,
+                instructions=(PROMPTS / "smart_coach_v1.md").read_text() +
+                "\nAnswer the follow-up in plain text using only this saved run. Do not introduce new diagnoses or drills. "
+                "A reported outcome is not a new visual measurement. Explain the selected action, its limits or the next evidence needed.",
+                input=json.dumps(context),
             )
-            summary = (resp.choices[0].message.content or "").strip()
+            if response.status != "completed" or not response.output_text.strip():
+                raise ValueError("Incomplete chat response")
+            return response.output_text.strip()
         except Exception:
-            summary = self._fallback_summary(priorities, quality_warnings)
-
-        return CoachingBundle(summary=summary, top_priorities=priorities, drills=drills)
-
-    def answer_chat(self, question: str, metric_cards: List[Any], coaching_bundle: CoachingBundle, student_goal: Optional[str] = None) -> str:
-        if self.client is None:
-            return (
-                "I can answer using this run's metrics. "
-                "Main priorities are: "
-                + "; ".join(coaching_bundle.top_priorities[:2])
-            )
-
-        metric_lines = [
-            f"- {card.name}: {card.value} {card.unit} (confidence {card.confidence:.2f})"
-            for card in metric_cards
-        ]
-
-        prompt = (
-            "Answer the golfer's question using only the provided run context. "
-            "If confidence is low for a related metric, state uncertainty clearly.\n\n"
-            f"Student goal: {student_goal or 'General improvement'}\n"
-            f"Coaching summary: {coaching_bundle.summary}\n"
-            f"Top priorities: {coaching_bundle.top_priorities}\n"
-            "Run metrics:\n"
-            + "\n".join(metric_lines)
-            + f"\n\nQuestion: {question}"
-        )
-
-        try:
-            resp = self.client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "You are an evidence-grounded swing coach."},
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.3,
-                max_tokens=320,
-            )
-            return (resp.choices[0].message.content or "").strip()
-        except Exception:
-            return "I couldn't reach the coaching model right now. Please retry your question."
-
+            return "The coaching model is unavailable. " + coaching_bundle.summary

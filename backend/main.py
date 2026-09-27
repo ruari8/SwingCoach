@@ -278,6 +278,8 @@ def _build_analyze_response(result) -> AnalyzeResponse:
             key=card.key,
             name=card.name,
             value=_format_metric_value(card.value, card.unit),
+            confidence=card.confidence,
+            explanation=card.explanation,
         )
         for card in result.metrics
         if card.value is not None
@@ -286,6 +288,7 @@ def _build_analyze_response(result) -> AnalyzeResponse:
     return AnalyzeResponse(
         analysis_id=result.run_id,
         summary=result.coaching.summary,
+        coaching=result.coaching.detail,
         metrics=metrics,
         annotated_video=_artifact_video(
             artifacts.annotated_video_key,
@@ -326,6 +329,8 @@ def _run_analysis_for_request(
         video_bytes=video_bytes,
         vantage=request.vantage.value,
         requested_fps=request.fps,
+        student_goal=request.student_goal,
+        golfer_context=request.golfer_context,
         progress_callback=progress_callback,
     )
 
@@ -528,7 +533,10 @@ async def analyze_swing(request: AnalyzeRequest):
 
 
 def _load_run_context(run_id: str):
-    run_dir = Path(__file__).parent / "output" / "runs" / run_id
+    root = _pipeline.output_root.resolve() if _pipeline else (Path(__file__).parent / "output/runs").resolve()
+    run_dir = (root / run_id).resolve()
+    if not run_dir.is_relative_to(root):
+        raise HTTPException(status_code=400, detail="Invalid run ID")
     if not run_dir.exists():
         raise HTTPException(status_code=404, detail="Run ID not found")
 
@@ -548,6 +556,8 @@ def _load_run_context(run_id: str):
         summary=coach_payload.get("summary", ""),
         top_priorities=coach_payload.get("top_priorities", []),
         drills=[SimpleNamespace(**drill) for drill in coach_payload.get("drills", [])],
+        detail=coach_payload.get("detail"),
+        context=coach_payload.get("context", {}),
     )
     return metric_cards, coaching_bundle
 
