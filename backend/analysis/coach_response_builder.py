@@ -50,11 +50,12 @@ class CoachResponseBuilder:
         if self.client is None and os.getenv("OPENAI_API_KEY"):
             from openai import OpenAI
             self.client = OpenAI(timeout=90, max_retries=1)
-        self.model = os.getenv("SWINGCOACH_COACH_MODEL", "gpt-4o-mini")
+        self.model = os.getenv("SWINGCOACH_COACH_MODEL", "gpt-6.1-sol")
+        self.reasoning = {"effort": os.getenv("SWINGCOACH_COACH_REASONING", "low")}
 
     def _parse(self, schema, prompt_name, content):
         response = self.client.responses.parse(
-            model=self.model, store=False,
+            model=self.model, reasoning=self.reasoning, store=False,
             instructions=(PROMPTS / prompt_name).read_text(),
             input=[{"role": "user", "content": content}], text_format=schema,
         )
@@ -194,7 +195,7 @@ class CoachResponseBuilder:
                    "summary": coaching_bundle.summary, "question": question, "student_goal": student_goal}
         try:
             response = self.client.responses.create(
-                model=self.model, store=False,
+                model=self.model, reasoning=self.reasoning, store=False,
                 instructions=(PROMPTS / "smart_coach_v1.md").read_text() +
                 "\nAnswer the follow-up in plain text using only this saved run. Do not introduce new diagnoses or drills. "
                 "A reported outcome is not a new visual measurement. Explain the selected action, its limits or the next evidence needed.",

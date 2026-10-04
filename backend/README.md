@@ -49,7 +49,7 @@ cp .env.example .env
 
 R2 HTTPS certificate verification is enabled by default. If a local machine has a temporary certificate-store problem, set `R2_VERIFY_SSL=false` in `backend/.env`; do not use that setting for deployed backends.
 
-The pipeline uses MediaPipe and `models/pose_landmarker_heavy.task` for 2D observations. Missing tracking dependencies produce an explicit warning. SAM3, event detection and 3D replay remain inactive. Configure `OPENAI_API_KEY` for the visual observer and smart coach; `SWINGCOACH_COACH_MODEL` defaults to `gpt-4o-mini`. Deploy the committed coaching source JSON folder with the backend, or set `SWINGCOACH_KNOWLEDGE_DIR` to its location. Raw reference media is not needed by the API.
+The pipeline uses MediaPipe and `models/pose_landmarker_heavy.task` for 2D observations. Missing tracking dependencies produce an explicit warning. SAM3, event detection and 3D replay remain inactive. Configure `OPENAI_API_KEY` for the visual observer and smart coach; `SWINGCOACH_COACH_MODEL` defaults to `gpt-6.1-sol` and `SWINGCOACH_COACH_REASONING` to `low`. Deploy the committed coaching source JSON folder with the backend, or set `SWINGCOACH_KNOWLEDGE_DIR` to its location. Raw reference media is not needed by the API.
 
 ## API Contract
 

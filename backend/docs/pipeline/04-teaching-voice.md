@@ -10,8 +10,9 @@ The active builder uses two versioned prompts:
    evidence or preserves the existing movement.
 
 Both calls use the OpenAI Responses API with Pydantic structured output and
-`store=False`. Set `OPENAI_API_KEY` and optionally `SWINGCOACH_COACH_MODEL` in the
-backend environment. The default remains `gpt-4o-mini`; model quality for this
+`store=False`. Set `OPENAI_API_KEY` and optionally `SWINGCOACH_COACH_MODEL` and
+`SWINGCOACH_COACH_REASONING` in the backend environment. The defaults are
+`gpt-6.1-sol` with `low` reasoning effort; model quality for this
 coaching task is not established. See [official structured-output documentation](https://developers.openai.com/api/docs/guides/structured-outputs).
 
 Frames sent to the model are bounded to 768 pixels on the longest edge and JPEG
