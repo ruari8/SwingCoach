@@ -93,6 +93,28 @@ final class SwingClipContextTests: XCTestCase {
         }
     }
 
+    func testRolloverRecordsIntoWriterOpenedAheadOfTime() async throws {
+        let queue = DispatchQueue(label: "test.standby-writer")
+        let buffer = AutoRollingVideoBuffer(writerQueue: queue)
+        let frames = try SyntheticFrames(fps: 30)
+        queue.sync { for index in 0..<30 { frames.append(index, to: buffer) } }
+        var standbyURL: URL?
+        for _ in 0..<200 where standbyURL == nil {
+            try await Task.sleep(nanoseconds: 10_000_000)
+            standbyURL = queue.sync { buffer.standbyWriterURL }
+        }
+        let expectedURL = try XCTUnwrap(standbyURL, "The next writer should open while the first chunk records")
+        let prepared: AutoRollingVideoBuffer.PreparedClip = try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                buffer.prepareClip(in: CMTimeRange(start: self.time(19), end: self.time(21))) { continuation.resume(with: $0) }
+                for index in 30..<(22 * 30) { frames.append(index, to: buffer) }
+            }
+        }
+        defer { queue.sync { buffer.release(prepared); buffer.reset() } }
+        XCTAssertEqual(prepared.segments.map(\.url).last, expectedURL)
+        try await assertFrames(try await prepared.makeAsset(), count: 60)
+    }
+
     func testStoppingEarlyFinishesPendingClipAndKeepsItsFilesUntilRelease() async throws {
         let (buffer, queue, prepared) = try await record(seconds: 5, range: CMTimeRange(start: time(1), end: time(20)))
         defer { queue.sync { buffer.release(prepared); buffer.reset() } }
@@ -155,6 +177,34 @@ final class SwingClipContextTests: XCTestCase {
         let segments = try await track.load(.segments)
         XCTAssertFalse(segments.contains(where: \.isEmpty))
         try await assertFrames(asset, count: 31)
+    }
+
+    private struct SyntheticFrames {
+        let fps: Int
+        let pixelBuffer: CVPixelBuffer
+        let format: CMVideoFormatDescription
+
+        init(fps: Int) throws {
+            self.fps = fps
+            var pixelBuffer: CVPixelBuffer?
+            guard CVPixelBufferCreate(kCFAllocatorDefault, 64, 64, kCVPixelFormatType_32BGRA, nil, &pixelBuffer) == kCVReturnSuccess,
+                  let pixelBuffer else { throw TestError.sample }
+            var format: CMVideoFormatDescription?
+            guard CMVideoFormatDescriptionCreateForImageBuffer(allocator: kCFAllocatorDefault, imageBuffer: pixelBuffer, formatDescriptionOut: &format) == noErr,
+                  let format else { throw TestError.sample }
+            self.pixelBuffer = pixelBuffer
+            self.format = format
+        }
+
+        func append(_ index: Int, to buffer: AutoRollingVideoBuffer) {
+            let pts = CMTime(value: Int64(index), timescale: Int32(fps))
+            var timing = CMSampleTimingInfo(duration: CMTime(value: 1, timescale: Int32(fps)), presentationTimeStamp: pts, decodeTimeStamp: .invalid)
+            var sample: CMSampleBuffer?
+            guard CMSampleBufferCreateReadyWithImageBuffer(allocator: kCFAllocatorDefault, imageBuffer: pixelBuffer,
+                formatDescription: format, sampleTiming: &timing, sampleBufferOut: &sample) == noErr,
+                  let sample else { return XCTFail("Could not create frame \(index)") }
+            buffer.append(sampleBuffer: sample, relativeTime: pts.seconds, videoRotationAngle: 90, sourceFPS: Double(fps), queueDelay: 0)
+        }
     }
 
     private func time(_ seconds: Double) -> CMTime { CMTime(seconds: seconds, preferredTimescale: 60000) }

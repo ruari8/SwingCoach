@@ -140,8 +140,41 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
     private var inputCadence = CaptureCadenceWindow()
     private var nextInputCadenceReport = 0.0
 
+    /// An opened writer waiting to receive the next chunk's first frame.
+    /// Opening a writer and closing its predecessor each block for tens of
+    /// milliseconds; at 240 fps that exhausts the camera's buffer pool. Both now
+    /// happen on their own queues, so a rollover only swaps destinations.
+    private struct PreparedWriter {
+        let url: URL
+        let writer: AVAssetWriter
+        let input: AVAssetWriterInput
+        let format: CMFormatDescription
+        let videoRotationAngle: CGFloat
+        let expectedFPS: Int
+        let averageBitRate: Int
+        let generation: UUID
+    }
+    // The slot is filled on standbyQueue and taken on writerQueue, so it has its
+    // own lock rather than a queue hop that a busy writerQueue would delay.
+    private let standbyLock = NSLock()
+    private var standbySlot: PreparedWriter?
+    private var isPreparingStandby = false
+    private let standbyQueue = DispatchQueue(label: "auto-buffer.standby-writer", qos: .userInitiated)
+    private let finalizeQueue = DispatchQueue(label: "auto-buffer.finalize-writer", qos: .userInitiated)
+
     init(writerQueue: DispatchQueue) {
         self.writerQueue = writerQueue
+    }
+
+    deinit {
+        discardStandby()
+    }
+
+    /// The file the next rollover will record into, once its writer is open.
+    var standbyWriterURL: URL? {
+        standbyLock.lock()
+        defer { standbyLock.unlock() }
+        return standbySlot?.url
     }
 
     func reset(preservingPendingExports: Bool = false) {
@@ -173,6 +206,7 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
         }
         chunks = preservedChunks
         recordingChunk = nil
+        discardStandby()
         latestRelativeTime = -Double.greatestFiniteMagnitude
     }
 
@@ -331,87 +365,153 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
         videoRotationAngle: CGFloat,
         sourceFPS: Double
     ) {
-        let setupStarted = ProcessInfo.processInfo.systemUptime
         do {
             guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else {
                 throw BufferError.missingFormatDescription
             }
-
-            let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
             let expectedFPS = max(30, Int(sourceFPS.rounded()))
-            let averageBitRate: Int
-            switch expectedFPS {
-            case 180...:
-                averageBitRate = 50_000_000
-            case 90...:
-                averageBitRate = 32_000_000
-            case 45...:
-                averageBitRate = 20_000_000
-            default:
-                averageBitRate = 14_000_000
-            }
-            let outputSettings: [String: Any] = [
-                AVVideoCodecKey: AVVideoCodecType.h264,
-                AVVideoWidthKey: Int(dimensions.width),
-                AVVideoHeightKey: Int(dimensions.height),
-                AVVideoCompressionPropertiesKey: [
-                    AVVideoExpectedSourceFrameRateKey: expectedFPS,
-                    AVVideoAverageBitRateKey: averageBitRate,
-                    AVVideoMaxKeyFrameIntervalKey: expectedFPS * 2
-                ]
-            ]
-            let url = Self.tempURL()
-            let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
-            let input = AVAssetWriterInput(
-                mediaType: .video,
-                outputSettings: outputSettings,
-                sourceFormatHint: formatDescription
-            )
-            input.expectsMediaDataInRealTime = true
-            // Keep raw pixel buffers untouched for detector performance, and
-            // record the device-aware orientation as the movie track transform.
-            input.transform = Self.videoTransform(
-                rotationAngle: videoRotationAngle,
-                dimensions: dimensions
-            )
-
-            guard writer.canAdd(input) else {
-                throw BufferError.writerCreationFailed("Video input could not be added.")
-            }
-
-            writer.add(input)
-            let configuredAt = ProcessInfo.processInfo.systemUptime
-            guard writer.startWriting() else {
-                throw BufferError.writerCreationFailed(writer.error?.localizedDescription ?? "Writer did not start.")
-            }
-            writer.startSession(atSourceTime: .zero)
-            CaptureCadenceDiagnostics.shared.emit("DEBUG-handoff-setup", values: [
-                "configurationSeconds": configuredAt - setupStarted,
-                "startSeconds": ProcessInfo.processInfo.systemUptime - configuredAt
-            ])
+            let standby = takeStandby(matching: formatDescription, rotation: videoRotationAngle, expectedFPS: expectedFPS)
+            // The first chunk, a rotation or a camera format change has no
+            // matching standby and opens its writer inline.
+            let prepared = try standby ?? Self.makeWriter(format: formatDescription, rotation: videoRotationAngle,
+                                                          expectedFPS: expectedFPS, generation: generation)
 
             let chunk = Chunk(
-                url: url,
+                url: prepared.url,
                 generation: generation,
-                writer: writer,
-                input: input,
+                writer: prepared.writer,
+                input: prepared.input,
                 startRelativeTime: relativeTime,
                 startSampleTime: sampleTime,
                 videoRotationAngle: videoRotationAngle,
                 sourceFPS: sourceFPS
             )
+            let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
             CaptureCadenceDiagnostics.shared.emit("writer-start", id: chunk.id.uuidString, values: [
                 "sourcePTS": sampleTime.seconds, "relativeTime": relativeTime,
-                "sourceFPS": sourceFPS, "bitRate": Double(averageBitRate),
+                "sourceFPS": sourceFPS, "bitRate": Double(prepared.averageBitRate),
                 "width": Double(dimensions.width), "height": Double(dimensions.height),
                 "rotation": Double(videoRotationAngle)
-            ], state: ["codec": "h264", "recordingPolicy": "consecutive-v1"])
+            ], state: ["codec": "h264", "recordingPolicy": "consecutive-v2",
+                       "writerSource": standby == nil ? "inline" : "standby"])
             chunks.append(chunk)
             recordingChunk = chunk
+            prepareStandby(format: formatDescription, rotation: videoRotationAngle, expectedFPS: expectedFPS)
         } catch {
             CaptureCadenceDiagnostics.shared.emit("writer-start-failed", state: ["error": error.localizedDescription])
             print("❌ Auto rolling buffer failed to start: \(error.localizedDescription)")
         }
+    }
+
+    private func prepareStandby(format: CMFormatDescription, rotation: CGFloat, expectedFPS: Int) {
+        guard !isPreparingStandby else { return }
+        isPreparingStandby = true
+        let generation = generation
+        standbyQueue.async { [weak self] in
+            let prepared: PreparedWriter?
+            do {
+                prepared = try Self.makeWriter(format: format, rotation: rotation,
+                                               expectedFPS: expectedFPS, generation: generation)
+            } catch {
+                CaptureCadenceDiagnostics.shared.emit("writer-standby-failed", state: ["error": error.localizedDescription])
+                prepared = nil
+            }
+            guard let self else {
+                prepared.map(Self.discard)
+                return
+            }
+            self.standbyLock.lock()
+            let replaced = self.standbySlot
+            self.standbySlot = prepared
+            self.standbyLock.unlock()
+            replaced.map(Self.discard)
+        }
+    }
+
+    private func takeStandby(matching format: CMFormatDescription, rotation: CGFloat,
+                             expectedFPS: Int) -> PreparedWriter? {
+        standbyLock.lock()
+        let standby = standbySlot
+        standbySlot = nil
+        standbyLock.unlock()
+        guard let standby else { return nil }
+        // A request still in flight would only fill the slot we just emptied.
+        isPreparingStandby = false
+        guard standby.generation == generation, standby.videoRotationAngle == rotation,
+              standby.expectedFPS == expectedFPS,
+              CMFormatDescriptionEqual(standby.format, otherFormatDescription: format) else {
+            Self.discard(standby)
+            return nil
+        }
+        return standby
+    }
+
+    private func discardStandby() {
+        standbyLock.lock()
+        let standby = standbySlot
+        standbySlot = nil
+        standbyLock.unlock()
+        isPreparingStandby = false
+        standby.map(Self.discard)
+    }
+
+    private static func discard(_ prepared: PreparedWriter) {
+        prepared.writer.cancelWriting()
+        try? FileManager.default.removeItem(at: prepared.url)
+    }
+
+    private static func makeWriter(format formatDescription: CMFormatDescription, rotation videoRotationAngle: CGFloat,
+                                   expectedFPS: Int, generation: UUID) throws -> PreparedWriter {
+        let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
+        let averageBitRate: Int
+        switch expectedFPS {
+        case 180...:
+            averageBitRate = 50_000_000
+        case 90...:
+            averageBitRate = 32_000_000
+        case 45...:
+            averageBitRate = 20_000_000
+        default:
+            averageBitRate = 14_000_000
+        }
+        let outputSettings: [String: Any] = [
+            AVVideoCodecKey: AVVideoCodecType.h264,
+            AVVideoWidthKey: Int(dimensions.width),
+            AVVideoHeightKey: Int(dimensions.height),
+            AVVideoCompressionPropertiesKey: [
+                AVVideoExpectedSourceFrameRateKey: expectedFPS,
+                AVVideoAverageBitRateKey: averageBitRate,
+                AVVideoMaxKeyFrameIntervalKey: expectedFPS * 2
+            ]
+        ]
+        let url = Self.tempURL()
+        let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
+        let input = AVAssetWriterInput(
+            mediaType: .video,
+            outputSettings: outputSettings,
+            sourceFormatHint: formatDescription
+        )
+        input.expectsMediaDataInRealTime = true
+        // Keep raw pixel buffers untouched for detector performance, and
+        // record the device-aware orientation as the movie track transform.
+        input.transform = Self.videoTransform(
+            rotationAngle: videoRotationAngle,
+            dimensions: dimensions
+        )
+
+        guard writer.canAdd(input) else {
+            throw BufferError.writerCreationFailed("Video input could not be added.")
+        }
+
+        writer.add(input)
+        guard writer.startWriting() else {
+            throw BufferError.writerCreationFailed(writer.error?.localizedDescription ?? "Writer did not start.")
+        }
+        // Each chunk retimes its frames relative to its own first frame.
+        writer.startSession(atSourceTime: .zero)
+        return PreparedWriter(url: url, writer: writer, input: input, format: formatDescription,
+                              videoRotationAngle: videoRotationAngle, expectedFPS: expectedFPS,
+                              averageBitRate: averageBitRate, generation: generation)
     }
 
     private func append(_ sampleBuffer: CMSampleBuffer, to chunk: Chunk, relativeTime: Double) {
@@ -498,34 +598,36 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
         chunk.pendingSamples.removeAll(keepingCapacity: false)
         chunk.pendingReadIndex = 0
         chunk.didMarkInputFinished = true
-        let finishStarted = ProcessInfo.processInfo.systemUptime
-        chunk.writer.endSession(atSourceTime: Self.sourceTime(chunk.endRelativeTime - chunk.startRelativeTime))
-        chunk.input.markAsFinished()
-        let markedAt = ProcessInfo.processInfo.systemUptime
-        // finishWriting calls back on AVFoundation's own queue; all chunk state
-        // is owned by writerQueue, so hop back before touching it.
-        chunk.writer.finishWriting { [weak self, weak chunk] in
-            guard let self, let chunk else { return }
-            self.writerQueue.async {
-                CaptureCadenceDiagnostics.shared.emit("writer-end", id: chunk.id.uuidString,
-                    cadence: chunk.cadence.takeSummary(), values: [
-                        "status": Double(chunk.writer.status.rawValue),
-                        "finalizationSeconds": chunk.sealedAt.map { ProcessInfo.processInfo.systemUptime - $0 } ?? 0
-                    ],
-                    state: ["error": chunk.writer.error?.localizedDescription ?? "none"])
-                chunk.isFinished = true
-                chunk.isFinishing = false
-                let handlers = chunk.completionHandlers
-                chunk.completionHandlers = []
-                for handler in handlers {
-                    handler()
+        let sessionEnd = Self.sourceTime(chunk.endRelativeTime - chunk.startRelativeTime)
+        let writer = chunk.writer
+        let input = chunk.input
+        // markAsFinished blocks while the encoder flushes. writerQueue must keep
+        // accepting camera frames, and after this point it never touches the
+        // writer again until the completion hop below.
+        finalizeQueue.async { [weak self, weak chunk] in
+            writer.endSession(atSourceTime: sessionEnd)
+            input.markAsFinished()
+            // finishWriting calls back on AVFoundation's own queue; all chunk
+            // state is owned by writerQueue, so hop back before touching it.
+            writer.finishWriting {
+                guard let self, let chunk else { return }
+                self.writerQueue.async {
+                    CaptureCadenceDiagnostics.shared.emit("writer-end", id: chunk.id.uuidString,
+                        cadence: chunk.cadence.takeSummary(), values: [
+                            "status": Double(chunk.writer.status.rawValue),
+                            "finalizationSeconds": chunk.sealedAt.map { ProcessInfo.processInfo.systemUptime - $0 } ?? 0
+                        ],
+                        state: ["error": chunk.writer.error?.localizedDescription ?? "none"])
+                    chunk.isFinished = true
+                    chunk.isFinishing = false
+                    let handlers = chunk.completionHandlers
+                    chunk.completionHandlers = []
+                    for handler in handlers {
+                        handler()
+                    }
                 }
             }
         }
-        CaptureCadenceDiagnostics.shared.emit("DEBUG-handoff-finish", id: chunk.id.uuidString, values: [
-            "markSeconds": markedAt - finishStarted,
-            "finishCallSeconds": ProcessInfo.processInfo.systemUptime - markedAt
-        ])
     }
 
     private func cleanupOldChunks(currentTime: Double) {
