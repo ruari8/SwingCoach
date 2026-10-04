@@ -32,3 +32,6 @@ xcuserdata/
 *.xcuserstate
 DerivedData/
 .verification-artifacts/
+
+# Shared API key for the test backend (see SwingCoachAPI.apiKey)
+SwingCoach/LocalSecrets.plist

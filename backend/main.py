@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hmac
 import logging
+import os
 import asyncio
 import json
 from pathlib import Path
@@ -11,7 +13,7 @@ from typing import Callable, Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from analysis import SwingCoachPipeline3D
 from analysis.coach_response_builder import CoachResponseBuilder, CoachingBundle
@@ -65,6 +67,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def require_api_key(request: Request, call_next):
+    """Shared-secret gate for a single-user test deployment, not user auth.
+
+    Health stays open for the blue/green deploy check. Unset key = open (local dev).
+    """
+    key = os.getenv("SWINGCOACH_API_KEY")
+    supplied = request.headers.get("x-swingcoach-key", "")
+    if key and request.url.path != "/health" and not hmac.compare_digest(supplied, key):
+        return JSONResponse({"detail": "Missing or invalid API key"}, status_code=401)
+    return await call_next(request)
 
 
 @app.get("/")

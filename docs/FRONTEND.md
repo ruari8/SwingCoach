@@ -374,3 +374,7 @@ state, measured evidence and no invented correction.
 Run `scripts/verify-coaching.sh` for a disposable Simulator and local-storage API
 pass. It tests real upload/analysis and persistence, plus a clearly labelled saved
 source-recommendation fixture. No live model or remote R2 requests are made.
+
+## Backend key
+
+The deployed test backend requires a shared key. The app reads it from `SwingCoach/LocalSecrets.plist` (gitignored, key `SwingCoachAPIKey`) and sends it as `X-SwingCoach-Key` on every backend call; pre-signed storage uploads and downloads do not carry it. Without the file the app sends no key, which works only against a backend with `SWINGCOACH_API_KEY` unset. The value must match `SWINGCOACH_API_KEY` in the VPS shared `.env`.

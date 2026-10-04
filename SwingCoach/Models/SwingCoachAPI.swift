@@ -59,7 +59,22 @@ actor SwingCoachAPI {
     static let shared = SwingCoachAPI()
     private static let analysisRequestTimeout: TimeInterval = 120
 
+    /// Shared secret for the single-user test deployment, read from the
+    /// gitignored LocalSecrets.plist. Not user authentication.
+    private static let apiKey: String? = {
+        guard let url = Bundle.main.url(forResource: "LocalSecrets", withExtension: "plist"),
+              let values = NSDictionary(contentsOf: url) else { return nil }
+        return values["SwingCoachAPIKey"] as? String
+    }()
+
     private init() {}
+
+    /// Every backend call carries the key. Pre-signed storage URLs do not.
+    private static func backendRequest(_ url: URL) -> URLRequest {
+        var request = URLRequest(url: url)
+        if let apiKey { request.setValue(apiKey, forHTTPHeaderField: "X-SwingCoach-Key") }
+        return request
+    }
 
     // MARK: - API Errors
 
@@ -300,7 +315,7 @@ actor SwingCoachAPI {
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await URLSession.shared.data(from: url)
+            (data, response) = try await URLSession.shared.data(for: Self.backendRequest(url))
         } catch {
             throw APIError.networkError(error)
         }
@@ -322,7 +337,7 @@ actor SwingCoachAPI {
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await URLSession.shared.data(from: url)
+            (data, response) = try await URLSession.shared.data(for: Self.backendRequest(url))
         } catch {
             throw APIError.networkError(error)
         }
@@ -380,7 +395,7 @@ actor SwingCoachAPI {
     func createAnalysisRun(videoKey: String, vantage: Vantage) async throws -> AnalysisRunCreateResponse {
         let url = URL(string: "\(Self.baseURL)/analysis-runs")!
 
-        var request = URLRequest(url: url)
+        var request = Self.backendRequest(url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
@@ -423,7 +438,7 @@ actor SwingCoachAPI {
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await URLSession.shared.data(from: url)
+            (data, response) = try await URLSession.shared.data(for: Self.backendRequest(url))
         } catch {
             throw APIError.networkError(error)
         }
@@ -461,7 +476,7 @@ actor SwingCoachAPI {
         onProgress: @escaping (String, Float?) -> Void
     ) async throws -> AnalysisResponse {
         let url = URL(string: "\(Self.baseURL)/analysis-runs/\(runID)/events")!
-        var request = URLRequest(url: url)
+        var request = Self.backendRequest(url)
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
 
         let bytes: URLSession.AsyncBytes
@@ -525,7 +540,7 @@ actor SwingCoachAPI {
     private func requestAnalysis(path: String, videoKey: String, vantage: Vantage) async throws -> AnalysisResponse {
         let url = URL(string: "\(Self.baseURL)\(path)")!
 
-        var request = URLRequest(url: url)
+        var request = Self.backendRequest(url)
         request.httpMethod = "POST"
         request.timeoutInterval = Self.analysisRequestTimeout
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -566,7 +581,7 @@ actor SwingCoachAPI {
     func refreshArtifactURL(key: String) async throws -> ArtifactURLResponse {
         let url = URL(string: "\(Self.baseURL)/artifact-url")!
 
-        var request = URLRequest(url: url)
+        var request = Self.backendRequest(url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONEncoder().encode(ArtifactURLRequest(key: key))
