@@ -19,6 +19,10 @@ case "$suite" in
         test_selectors=(-only-testing:SwingCoachUITests/AutoReviewAnnotationUITests -only-testing:SwingCoachUITests/CaptureControlsUITests/testSavedReviewStillPlaysPagesAndDeletes)
         expected_tests=2
         ;;
+    settings)
+        test_selectors=(-only-testing:SwingCoachUITests/CaptureControlsUITests/testStatsDefaultOffPersistAndFollowBothCaptureModes -only-testing:SwingCoachUITests/CaptureControlsUITests/testDisabledDetectionDoesNotClaimToBeRunning)
+        expected_tests=2
+        ;;
     *) echo "Unknown verification suite: $suite" >&2; exit 2 ;;
 esac
 cleanup() {

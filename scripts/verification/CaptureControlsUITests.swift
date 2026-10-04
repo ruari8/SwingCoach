@@ -213,7 +213,16 @@ final class CaptureControlsUITests: XCTestCase {
     private func openSettings(_ app: XCUIApplication) {
         app.tabBars.buttons["Library"].tap()
         app.buttons["Experimental settings"].tap()
-        XCTAssertTrue(app.switches["show-capture-model-stats"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Experiments"].waitForExistence(timeout: 5))
+        let stats = app.switches["show-capture-model-stats"]
+        // Storage and extra-footage settings now precede diagnostics. List
+        // creates offscreen rows lazily, so reveal the control before using it.
+        for _ in 0..<6 {
+            if stats.exists && stats.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(stats.exists && stats.isHittable)
+        attach(app, "capture-settings-diagnostics-visible")
     }
 
     private func returnToCapture(_ app: XCUIApplication) {

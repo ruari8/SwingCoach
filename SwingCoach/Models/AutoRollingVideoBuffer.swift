@@ -102,6 +102,7 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
         var completionHandlers: [() -> Void] = []
         var cadence = CaptureCadenceWindow()
         var nextCadenceReport = 0.0
+        var sealedAt: Double?
         let sourceFPS: Double
 
         init(
@@ -127,14 +128,15 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
     }
 
     private var chunks: [Chunk] = []
+    // Exactly one chunk receives new camera frames. Sealed chunks can finish
+    // asynchronously and remain available for exports without receiving frames.
+    private var recordingChunk: Chunk?
     private var pendingClips: [PendingClip] = []
     private var generation = UUID()
     private var latestRelativeTime = -Double.greatestFiniteMagnitude
     private let writerQueue: DispatchQueue
     private let chunkDuration = 20.0
-    private let chunkStartInterval = 17.4
     private let retentionDuration = 45.0
-    private var nextChunkStartTime: Double?
     private var inputCadence = CaptureCadenceWindow()
     private var nextInputCadenceReport = 0.0
 
@@ -158,7 +160,7 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
         var preservedChunks: [Chunk] = []
         for chunk in chunks {
             if preservingPendingExports, chunk.pendingExports > 0 {
-                finish(chunk)
+                finish(chunk, reason: "stop")
                 preservedChunks.append(chunk)
                 continue
             }
@@ -170,7 +172,7 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
             try? FileManager.default.removeItem(at: chunk.url)
         }
         chunks = preservedChunks
-        nextChunkStartTime = nil
+        recordingChunk = nil
         latestRelativeTime = -Double.greatestFiniteMagnitude
     }
 
@@ -192,19 +194,22 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
             nextInputCadenceReport = now + 1
             CaptureCadenceDiagnostics.shared.emit("buffer-input", cadence: inputCadence.takeSummary(), values: [
                 "relativeTime": relativeTime, "sourceFPS": sourceFPS,
-                "activeChunks": Double(chunks.filter { !$0.isFinished }.count)
+                "activeChunks": Double(chunks.filter { !$0.isFinished }.count),
+                "recordingChunks": recordingChunk == nil ? 0 : 1
             ])
         }
 
-        let activeChunks = chunks.filter { !$0.isFinishing && !$0.isFinished }
-        if activeChunks.contains(where: { $0.videoRotationAngle != videoRotationAngle }) {
-            for chunk in activeChunks {
-                finish(chunk)
+        if let chunk = recordingChunk {
+            if chunk.videoRotationAngle != videoRotationAngle {
+                finish(chunk, reason: "rotation")
+            } else if relativeTime - chunk.startRelativeTime >= chunkDuration {
+                // Seal before appending the boundary frame. That frame belongs
+                // only to the next file, not to both sides of the rollover.
+                finish(chunk, reason: "rollover")
             }
-            nextChunkStartTime = nil
         }
 
-        if !chunks.contains(where: { !$0.isFinishing && !$0.isFinished }) {
+        if recordingChunk == nil {
             startChunk(
                 sampleBuffer: sampleBuffer,
                 relativeTime: relativeTime,
@@ -214,22 +219,8 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
             )
         }
 
-        while let nextChunkStartTime, relativeTime >= nextChunkStartTime {
-            startChunk(
-                sampleBuffer: sampleBuffer,
-                relativeTime: relativeTime,
-                sampleTime: sampleTime,
-                videoRotationAngle: videoRotationAngle,
-                sourceFPS: sourceFPS
-            )
-        }
-
-        for chunk in chunks where !chunk.isFinishing && !chunk.isFinished {
-            guard relativeTime >= chunk.startRelativeTime else { continue }
+        if let chunk = recordingChunk {
             append(sampleBuffer, to: chunk, relativeTime: relativeTime)
-            if relativeTime - chunk.startRelativeTime >= chunkDuration {
-                finish(chunk)
-            }
         }
 
         resolvePendingClips()
@@ -310,7 +301,7 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
             if !chunk.isFinished {
                 finalization.enter()
                 chunk.completionHandlers.append { finalization.leave() }
-                finish(chunk)
+                finish(chunk, reason: "export")
             }
         }
         finalization.notify(queue: writerQueue) {
@@ -340,6 +331,7 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
         videoRotationAngle: CGFloat,
         sourceFPS: Double
     ) {
+        let setupStarted = ProcessInfo.processInfo.systemUptime
         do {
             guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else {
                 throw BufferError.missingFormatDescription
@@ -388,10 +380,15 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
             }
 
             writer.add(input)
+            let configuredAt = ProcessInfo.processInfo.systemUptime
             guard writer.startWriting() else {
                 throw BufferError.writerCreationFailed(writer.error?.localizedDescription ?? "Writer did not start.")
             }
             writer.startSession(atSourceTime: .zero)
+            CaptureCadenceDiagnostics.shared.emit("DEBUG-handoff-setup", values: [
+                "configurationSeconds": configuredAt - setupStarted,
+                "startSeconds": ProcessInfo.processInfo.systemUptime - configuredAt
+            ])
 
             let chunk = Chunk(
                 url: url,
@@ -408,9 +405,9 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
                 "sourceFPS": sourceFPS, "bitRate": Double(averageBitRate),
                 "width": Double(dimensions.width), "height": Double(dimensions.height),
                 "rotation": Double(videoRotationAngle)
-            ], state: ["codec": "h264"])
+            ], state: ["codec": "h264", "recordingPolicy": "consecutive-v1"])
             chunks.append(chunk)
-            nextChunkStartTime = relativeTime + chunkStartInterval
+            recordingChunk = chunk
         } catch {
             CaptureCadenceDiagnostics.shared.emit("writer-start-failed", state: ["error": error.localizedDescription])
             print("❌ Auto rolling buffer failed to start: \(error.localizedDescription)")
@@ -431,9 +428,16 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
         drainPendingSamples(for: chunk)
     }
 
-    private func finish(_ chunk: Chunk) {
+    private func finish(_ chunk: Chunk, reason: String) {
         guard !chunk.isFinishing, !chunk.isFinished else { return }
+        if recordingChunk === chunk { recordingChunk = nil }
         chunk.isFinishing = true
+        chunk.sealedAt = ProcessInfo.processInfo.systemUptime
+        CaptureCadenceDiagnostics.shared.emit("writer-sealed", id: chunk.id.uuidString, values: [
+            "sourceEndPTS": chunk.startSampleTime.seconds + chunk.endRelativeTime - chunk.startRelativeTime,
+            "endRelativeTime": chunk.endRelativeTime,
+            "pendingFrames": Double(chunk.pendingSamples.count - chunk.pendingReadIndex)
+        ], state: ["reason": reason])
         drainPendingSamples(for: chunk)
     }
 
@@ -456,6 +460,7 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
                 print("❌ Auto rolling buffer append failed: \(message)")
                 chunk.pendingSamples.removeAll(keepingCapacity: false)
                 chunk.pendingReadIndex = 0
+                if recordingChunk === chunk { recordingChunk = nil }
                 chunk.isFinishing = true
                 break
             }
@@ -493,15 +498,20 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
         chunk.pendingSamples.removeAll(keepingCapacity: false)
         chunk.pendingReadIndex = 0
         chunk.didMarkInputFinished = true
+        let finishStarted = ProcessInfo.processInfo.systemUptime
         chunk.writer.endSession(atSourceTime: Self.sourceTime(chunk.endRelativeTime - chunk.startRelativeTime))
         chunk.input.markAsFinished()
+        let markedAt = ProcessInfo.processInfo.systemUptime
         // finishWriting calls back on AVFoundation's own queue; all chunk state
         // is owned by writerQueue, so hop back before touching it.
         chunk.writer.finishWriting { [weak self, weak chunk] in
             guard let self, let chunk else { return }
             self.writerQueue.async {
                 CaptureCadenceDiagnostics.shared.emit("writer-end", id: chunk.id.uuidString,
-                    cadence: chunk.cadence.takeSummary(), values: ["status": Double(chunk.writer.status.rawValue)],
+                    cadence: chunk.cadence.takeSummary(), values: [
+                        "status": Double(chunk.writer.status.rawValue),
+                        "finalizationSeconds": chunk.sealedAt.map { ProcessInfo.processInfo.systemUptime - $0 } ?? 0
+                    ],
                     state: ["error": chunk.writer.error?.localizedDescription ?? "none"])
                 chunk.isFinished = true
                 chunk.isFinishing = false
@@ -512,6 +522,10 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
                 }
             }
         }
+        CaptureCadenceDiagnostics.shared.emit("DEBUG-handoff-finish", id: chunk.id.uuidString, values: [
+            "markSeconds": markedAt - finishStarted,
+            "finishCallSeconds": ProcessInfo.processInfo.systemUptime - markedAt
+        ])
     }
 
     private func cleanupOldChunks(currentTime: Double) {

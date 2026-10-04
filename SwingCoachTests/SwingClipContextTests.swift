@@ -56,6 +56,43 @@ final class SwingClipContextTests: XCTestCase {
         try await assertFrames(asset, count: 62 * 30)
     }
 
+    func testRollingWritersEncodeEachSourceFrameExactlyOnce() async throws {
+        try await assertSingleRecordingDestination(sourceFPS: 30)
+        try await assertSingleRecordingDestination(sourceFPS: 240)
+        try await assertSingleRecordingDestination(sourceFPS: 240, closeChunkAt: 5 * 240)
+    }
+
+    private func assertSingleRecordingDestination(sourceFPS: Int, closeChunkAt: Int? = nil) async throws {
+        let (buffer, queue, prepared) = try await record(
+            seconds: 41, range: CMTimeRange(start: .zero, end: time(41)),
+            closeChunkAt: closeChunkAt, sourceFPS: sourceFPS
+        )
+        defer { queue.sync { buffer.release(prepared); buffer.reset() } }
+        var recordedTimes: [Double] = []
+        // Inspect the actual rolling files, before composition can hide duplicate
+        // recording by selecting non-overlapping portions of overlapping files.
+        for segment in prepared.segments {
+            let asset = AVURLAsset(url: segment.url)
+            let timestamps = try await assertFrames(asset)
+            let origin = prepared.sourceStartTime + segment.timelineStart.seconds - segment.range.start.seconds
+            recordedTimes.append(contentsOf: timestamps.map { origin + $0 })
+        }
+        XCTAssertEqual(recordedTimes.count, 41 * sourceFPS, "Every source frame must be encoded into exactly one rolling file")
+        let uniqueFrames = Set(recordedTimes.map { Int(($0 * Double(sourceFPS)).rounded()) })
+        XCTAssertEqual(uniqueFrames, Set(0..<(41 * sourceFPS)), "Rollovers must retain every frame, including the boundary frame")
+        let asset = try await prepared.makeAsset()
+        let timestamps = try await assertFrames(asset, count: 41 * sourceFPS)
+        for (index, timestamp) in timestamps.enumerated() {
+            // The movie writer quantizes 240 fps timestamps to its media
+            // timescale. Require the original frame identity, not precision
+            // that the encoded track cannot represent.
+            XCTAssertEqual(Int((timestamp * Double(sourceFPS)).rounded()), index)
+        }
+        for (previous, next) in zip(timestamps, timestamps.dropFirst()) {
+            XCTAssertLessThanOrEqual(next - previous, 1.5 / Double(sourceFPS), "A rollover must not introduce a missing-frame interval")
+        }
+    }
+
     func testStoppingEarlyFinishesPendingClipAndKeepsItsFilesUntilRelease() async throws {
         let (buffer, queue, prepared) = try await record(seconds: 5, range: CMTimeRange(start: time(1), end: time(20)))
         defer { queue.sync { buffer.release(prepared); buffer.reset() } }
@@ -123,7 +160,7 @@ final class SwingClipContextTests: XCTestCase {
     private func time(_ seconds: Double) -> CMTime { CMTime(seconds: seconds, preferredTimescale: 60000) }
 
     private func record(seconds: Int, range: CMTimeRange, closeChunkAt: Int? = nil,
-                        droppedFrames: Set<Int> = []) async throws -> (AutoRollingVideoBuffer, DispatchQueue, AutoRollingVideoBuffer.PreparedClip) {
+                        droppedFrames: Set<Int> = [], sourceFPS: Int = 30) async throws -> (AutoRollingVideoBuffer, DispatchQueue, AutoRollingVideoBuffer.PreparedClip) {
         let queue = DispatchQueue(label: "test.swing-context-buffer")
         let buffer = AutoRollingVideoBuffer(writerQueue: queue)
         let prepared: AutoRollingVideoBuffer.PreparedClip = try await withCheckedThrowingContinuation { continuation in
@@ -139,15 +176,15 @@ final class SwingClipContextTests: XCTestCase {
                     var format: CMVideoFormatDescription?
                     guard CMVideoFormatDescriptionCreateForImageBuffer(allocator: kCFAllocatorDefault, imageBuffer: pixelBuffer, formatDescriptionOut: &format) == noErr,
                           let format else { throw TestError.sample }
-                    for index in 0..<(seconds * 30) {
+                    for index in 0..<(seconds * sourceFPS) {
                         if droppedFrames.contains(index) { continue }
-                        let pts = CMTime(value: Int64(index), timescale: 30)
-                        var timing = CMSampleTimingInfo(duration: CMTime(value: 1, timescale: 30), presentationTimeStamp: pts, decodeTimeStamp: .invalid)
+                        let pts = CMTime(value: Int64(index), timescale: Int32(sourceFPS))
+                        var timing = CMSampleTimingInfo(duration: CMTime(value: 1, timescale: Int32(sourceFPS)), presentationTimeStamp: pts, decodeTimeStamp: .invalid)
                         var sample: CMSampleBuffer?
                         guard CMSampleBufferCreateReadyWithImageBuffer(allocator: kCFAllocatorDefault, imageBuffer: pixelBuffer,
                             formatDescription: format, sampleTiming: &timing, sampleBufferOut: &sample) == noErr,
                               let sample else { throw TestError.sample }
-                        buffer.append(sampleBuffer: sample, relativeTime: pts.seconds, videoRotationAngle: 90, sourceFPS: 30, queueDelay: 0)
+                        buffer.append(sampleBuffer: sample, relativeTime: pts.seconds, videoRotationAngle: 90, sourceFPS: Double(sourceFPS), queueDelay: 0)
                         if index == closeChunkAt {
                             buffer.prepareClip(in: CMTimeRange(start: .zero, end: pts)) { result in
                                 switch result {
@@ -168,7 +205,7 @@ final class SwingClipContextTests: XCTestCase {
     }
 
     @discardableResult
-    private func assertFrames(_ asset: AVAsset, count: Int) async throws -> [Double] {
+    private func assertFrames(_ asset: AVAsset, count: Int? = nil) async throws -> [Double] {
         let reader = try AVAssetReader(asset: asset)
         let tracks = try await asset.loadTracks(withMediaType: .video)
         let track = try XCTUnwrap(tracks.first)
@@ -187,7 +224,7 @@ final class SwingClipContextTests: XCTestCase {
             frames += 1
         }
         XCTAssertEqual(reader.status, .completed, reader.error?.localizedDescription ?? "")
-        XCTAssertEqual(frames, count, "Chunk overlap must not duplicate or drop frames")
+        if let count { XCTAssertEqual(frames, count, "Chunk boundaries must not duplicate or drop frames") }
         return timestamps
     }
 

@@ -2,7 +2,11 @@
 
 Issue [#28](https://github.com/ruari8/SwingCoach/issues/28) concerns intermittent jitter in the September 6 range session. All seven marked clips contain presentation-time gaps in the decoded file. The cause upstream of those files remains unproven. This change adds automatic diagnostics; it does not repair existing footage or establish that future capture is fixed.
 
+The [September 10 investigation](./evidence/2026-09-10-auto-cadence-investigation.md) now confirms camera buffer exhaustion during a fresh Auto session. Nearly all measured playback pauses coincide with overlapping rolling writers. The [September 11 candidate](./evidence/2026-09-11-auto-cadence-fix.md) removes duplicate recording across chunk boundaries, but its physical-phone acceptance test still found brief frame drops at file transitions. It is not accepted as a complete jitter fix. The evidence page records the failing handoff check and remaining saved-video acceptance requirements.
+
 ## Offline evidence
+
+The [September 14 range-session check](./evidence/2026-09-14-range-session-investigation.md) finds three saved-video gaps across two of 19 clips, compared with 626 gaps across 12 of 27 clips on September 10. Seventeen new clips have no intervals above 40 ms. The largest remaining pause is 400 ms on the slow-motion playback timeline. Today's camera/writer correlation is pending log retrieval, so the upstream cause of those residual pauses is not yet confirmed.
 
 Run from the repository root with Python 3 and ffprobe:
 
@@ -73,8 +77,8 @@ Events contain schema version, process run ID, UTC time, system uptime and a bou
 
 - `camera` records absolute source PTS, received-frame count, gaps greater than 1.5 expected frame periods, non-increasing timestamps, maximum gap, drop counts by `late`/`outOfBuffers`/`discontinuity`/`unknown`, and analysis coalescing. Coalescing is detector workload, not evidence of lost recorded frames.
 - Camera state includes requested FPS, actual active min/max frame duration, resolution, exposure, ISO, lens position, focus/exposure adjustment, active stabilization mode, thermal state and pressure level.
-- `buffer-input` records source PTS, relative capture time, source FPS, maximum delegate-to-buffer queue delay and active chunk count.
-- `writer-start` maps chunk ID to source PTS and relative time, FPS, resolution, bitrate, codec and rotation. `writer` records accepted chunk-relative PTS, maximum pending-frame depth seen at acceptance, current pending depth, readiness and writer status. `writer-end` includes final status/error and remaining cadence summary. Start, retime and append failures have separate events.
+- `buffer-input` records source PTS, relative capture time, source FPS, maximum delegate-to-buffer queue delay and active chunk count. `recordingChunks` counts the current destination for new frames, separately from `activeChunks`, which includes sealed writers still finishing.
+- `writer-start` maps chunk ID to source PTS and relative time, FPS, resolution, bitrate, codec and rotation. `writer` records accepted chunk-relative PTS, maximum pending-frame depth seen at acceptance, current pending depth, readiness and writer status. `writer-end` includes final status/error and remaining cadence summary. Start, retime and append failures have separate events. Consecutive-writer builds identify `recordingPolicy=consecutive-v1` on `writer-start`. `writer-sealed` records the source end and closure reason, and `writer-end.finalizationSeconds` measures the time from seal to completion when a seal occurred.
 - `export-start` maps chunk ID to the requested range and slow-motion factor. `export-written` adds the output filename. `export-end` records save success or failure. `swing-saved` links the permanent `SavedSwing.id` to the chunk, exact source range, slow-motion factor and original filename. Library batch export already includes this ID as `swingID` in `metadata.json`, so renaming exported videos does not break the join.
 
 A gap between summaries remains counted. Timeline resets start a fresh counter and log `camera-reset`/`buffer-reset`; they are not misreported as frame drops. Event timestamps and chunk source PTS allow correlation across the camera, buffer, writer and exported playback timelines. A total callback stall appears as missing periodic events and, if delivery resumes, a large next PTS interval. A crash can lose queued events. These logs do not promise a complete per-frame trace.
