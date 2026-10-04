@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Disposable local storage adapter for exercising the production analysis API.
+"""Local storage adapter for exercising the production analysis API.
 
-Run only through verify-coaching.sh. No R2 or model requests leave this process.
+verify-coaching.sh runs it with no model access. scripts/run-local-backend.sh runs
+it for the app on a phone, with SWINGCOACH_COACH_PROVIDER=codex for model calls.
+No R2 or API-billed model requests leave this process; OPENAI_API_KEY is cleared.
 Pose detection, metrics, rendering, async runs and response assembly are real.
 """
 import argparse
@@ -20,7 +22,7 @@ import main
 from analysis.pipeline_3d import SwingCoachPipeline3D
 
 
-def build_app(storage, port):
+def build_app(storage, public_url):
     storage.mkdir(parents=True, exist_ok=True)
 
     class LocalStorage:
@@ -35,7 +37,7 @@ def build_app(storage, port):
             return {"upload_url": self.generate_download_url(key), "video_key": key}
 
         def generate_download_url(self, key):
-            return f"http://127.0.0.1:{port}/verification-assets/{key}"
+            return f"{public_url}/verification-assets/{key}"
 
         def video_exists(self, key):
             return self.path(key).is_file()
@@ -76,5 +78,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--storage", type=Path, required=True)
     parser.add_argument("--port", type=int, default=8871)
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--public-url", help="Base URL clients use for uploads and artifacts")
     args = parser.parse_args()
-    uvicorn.run(build_app(args.storage, args.port), host="127.0.0.1", port=args.port)
+    public_url = (args.public_url or f"http://127.0.0.1:{args.port}").rstrip("/")
+    uvicorn.run(build_app(args.storage, public_url), host=args.host, port=args.port)

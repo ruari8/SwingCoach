@@ -47,7 +47,10 @@ class CoachResponseBuilder:
     def __init__(self, *, client=None, library: KnowledgeLibrary | None = None):
         self.library = library or KnowledgeLibrary()
         self.client = client
-        if self.client is None and os.getenv("OPENAI_API_KEY"):
+        if self.client is None and os.getenv("SWINGCOACH_COACH_PROVIDER") == "codex":
+            from .codex_client import CodexClient
+            self.client = CodexClient()
+        elif self.client is None and os.getenv("OPENAI_API_KEY"):
             from openai import OpenAI
             self.client = OpenAI(timeout=90, max_retries=1)
         self.model = os.getenv("SWINGCOACH_COACH_MODEL", "gpt-6.1-sol")
