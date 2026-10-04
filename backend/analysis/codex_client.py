@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -44,7 +45,7 @@ class CodexClient:
                     images.append(str(image))
                     lines.append(f"[Attached image {len(images)}]")
             out = tmp / "out.txt"
-            command = ["codex", "exec", "--ephemeral", "--skip-git-repo-check", "--ignore-user-config",
+            command = [os.getenv("SWINGCOACH_CODEX_BIN", "codex"), "exec", "--ephemeral", "--skip-git-repo-check", "--ignore-user-config",
                        "--sandbox", "read-only", "-C", str(tmp), "-m", model,
                        "-c", f"model_reasoning_effort={reasoning['effort']}", "-o", str(out)]
             if schema is not None:
