@@ -49,4 +49,4 @@ Before broader release, the chosen coaching path still needs device coverage, hu
 
 This epic structure replaces the milestone numbering in the [June master plan](master_plan.html#roadmap). That document remains background research and design material, not the current ticket order. Foundation maps to old M0; Visual coaching combines old M1 and M2; Coaching explanation and Drills separate the concerns in old M3; Metrics and Practice loop retain old M4 and M5's goals.
 
-The [domain glossary](../CONTEXT.md), [architecture decision](adr/0001-hybrid-on-device-and-api-coaching.md), and [out-of-scope notes](OUT_OF_SCOPE.md) still apply. In particular, live cues and advanced 3D measurements are not part of the current checkpoint spec, and capture-framing guidance remains outside MVP scope.
+The [domain glossary](../GLOSSARY.md), [architecture decision](adr/0001-hybrid-on-device-and-api-coaching.md), and [out-of-scope notes](OUT_OF_SCOPE.md) still apply. In particular, live cues and advanced 3D measurements are not part of the current checkpoint spec, and capture-framing guidance remains outside MVP scope.
