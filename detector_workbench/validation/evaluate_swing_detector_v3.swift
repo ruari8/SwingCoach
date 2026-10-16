@@ -13,7 +13,6 @@
 //      -framework AVFoundation -framework CoreML -framework Vision \
 //      -framework CoreGraphics -framework CoreVideo -framework ImageIO \
 //      SwingCoach/Models/SwingDetectionTypes.swift \
-//      SwingCoach/Models/LiveSwingDetecting.swift \
 //      SwingCoach/Models/GolfObjectDetector.swift \
 //      SwingCoach/Models/SwingDetectorV3/*.swift \
 //      detector_workbench/validation/evaluate_swing_detector_v3.swift \

@@ -4,8 +4,7 @@
 //
 //  The v2 swing detector core. Reuses GolfObjectDetector for per-frame objects,
 //  runs the locked-patch + evidence-vector + state-machine pipeline, and exposes
-//  the same live interface (`LiveSwingDetecting`) as the legacy detector plus a
-//  few debug accessors used by the offline evaluator.
+//  a few debug accessors used by the offline evaluator.
 //
 //  All internal logic runs in real-time seconds; inputs/outputs convert to the
 //  source timeline via `configuration.sourceTimeScale`.
@@ -18,7 +17,7 @@ import CoreVideo
 import Foundation
 import Vision
 
-nonisolated final class SwingDetectorV2: LiveSwingDetecting {
+nonisolated final class SwingDetectorV2 {
     enum DetectorError: Error {
         case modelUnavailable
     }
@@ -91,7 +90,7 @@ nonisolated final class SwingDetectorV2: LiveSwingDetecting {
         wantsStartupBurst(atRealTime: realTime) || stateMachine.wantsBurst(atRealTime: realTime)
     }
 
-    // MARK: - LiveSwingDetecting
+    // MARK: - Live interface
 
     func reset(enabled: Bool) {
         self.enabled = enabled

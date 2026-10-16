@@ -8,7 +8,7 @@ The design source of truth remains [Swing Detector Restart Design](./SWING_DETEC
 
 ## Context
 
-The shipping swing detector, `LiveModelSwingDetector` in [ModelBackedSwingDetector.swift](../SwingCoach/Models/ModelBackedSwingDetector.swift), has become hard to reason about because its accept decision is a set of interacting boolean rescue branches. Tuning one branch can silently change which branch wins on another clip.
+The shipping swing detector, `LiveModelSwingDetector` in [ModelBackedSwingDetector.swift](../detector_workbench/legacy/ModelBackedSwingDetector.swift), has become hard to reason about because its accept decision is a set of interacting boolean rescue branches. Tuning one branch can silently change which branch wins on another clip.
 
 `SwingDetectorV2` restarts from first principles:
 
@@ -39,7 +39,7 @@ The shipping swing detector, `LiveModelSwingDetector` in [ModelBackedSwingDetect
 
 ## New V2 Module
 
-All new Swift detector code lives under [SwingDetectorV2](../SwingCoach/Models/SwingDetectorV2/SwingDetectorV2.swift).
+All new Swift detector code lives under [SwingDetectorV2](../detector_workbench/legacy/SwingDetectorV2/SwingDetectorV2.swift).
 
 | File | Responsibility |
 | --- | --- |
@@ -52,7 +52,7 @@ All new Swift detector code lives under [SwingDetectorV2](../SwingCoach/Models/S
 | `SwingCandidateTrace.swift` | Debug-only candidate traces with evidence, score, state, lock, and primary failure. |
 | `SwingDetectorV2.swift` | Driver that feeds YOLO objects, motion, trackers, state machine, scorer, detections, and traces. |
 
-The shared interface is [LiveSwingDetecting.swift](../SwingCoach/Models/LiveSwingDetecting.swift). `SwingDetectorV2` is the app-wired implementation; the legacy detector remains in source for reference/evaluator comparison only.
+V2 once shared a `LiveSwingDetecting` protocol with the legacy detector; it was removed once V3 became the only app detector. V2 and the legacy detector now live in [detector_workbench/legacy](../detector_workbench/legacy/) for evaluator comparison only.
 
 ## Offline Dev Loop
 

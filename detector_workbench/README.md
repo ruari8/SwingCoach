@@ -4,6 +4,7 @@ Tracked detector tooling is split by responsibility:
 
 - `modeling/`: model/data pipeline scripts for frame extraction, pseudo-labeling, YOLO dataset construction, and model visual QA.
 - `validation/`: runtime detector validation scripts, labels, and the Swift/Core ML evaluator source.
+- `legacy/`: retired detectors (`SwingDetectorV2`, `LiveModelSwingDetector`) kept outside the app target so their evaluators can still build for comparison runs.
 
 Ignored heavy workspaces stay outside these tracked folders:
 

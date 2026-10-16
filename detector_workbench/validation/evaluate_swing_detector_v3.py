@@ -42,10 +42,7 @@ OUT_ROOT = FIXTURES / "perf_v3"
 
 V3_SOURCES = [
     "SwingCoach/Models/SwingDetectionTypes.swift",
-    "SwingCoach/Models/LiveSwingDetecting.swift",
     "SwingCoach/Models/GolfObjectDetector.swift",
-    "SwingCoach/Models/SwingDetectorV2/SwingEvidence.swift",
-    "SwingCoach/Models/SwingDetectorV2/SwingCandidateTrace.swift",
     "SwingCoach/Models/SwingDetectorV3",  # expands to *.swift below
     "detector_workbench/validation/evaluate_swing_detector_v3.swift",
 ]
