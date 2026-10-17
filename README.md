@@ -42,7 +42,8 @@ SwingCoach/
 ├── backend/                    # FastAPI API and analysis pipeline
 ├── detector_workbench/         # Detector dataset/modeling/validation tools
 ├── docs/                       # Project and frontend documentation
-└── AGENTS.md                   # Local operator instructions
+├── scripts/                    # UI verification, diagnostics, profiling
+└── AGENTS.md                   # Agent quick guide and file map
 ```
 
 ## iOS App
@@ -107,16 +108,17 @@ Backend smoke and regression checks:
 
 ```bash
 cd backend
-./venv/bin/python test_pipeline_3d.py
-./venv/bin/python test_annotation_tracks.py
+./venv/bin/python test_grounded_coaching.py
+./venv/bin/python test_knowledge_library.py
 ./venv/bin/python test_analysis_runs.py
-./venv/bin/python test_temporal_smoothing.py
+./venv/bin/python test_annotation_tracks.py
+./venv/bin/python test_pipeline_3d.py
 ```
 
 Detector validation tooling:
 
 ```bash
-python3 detector_workbench/validation/evaluate_swing_detector_v2.py --build --only test2
+python3 detector_workbench/validation/evaluate_swing_detector_v3.py --build --only test2
 python3 detector_workbench/validation/evaluate_detector_video_data.py --force
 ```
 
