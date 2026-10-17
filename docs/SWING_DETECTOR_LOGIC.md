@@ -28,7 +28,7 @@ The third system generated the test15 P7 proposals. The user reviewed those befo
 
 ## What the app actually observes
 
-The [V2 driver](../SwingCoach/Models/SwingDetectorV2/SwingDetectorV2.swift) runs these observations on sampled frames:
+The [V2 driver](../detector_workbench/legacy/SwingDetectorV2/SwingDetectorV2.swift) runs these observations on sampled frames:
 
 | Observation | Available information | Current use and limitation |
 | --- | --- | --- |
@@ -64,7 +64,7 @@ flowchart TD
 6. **Accept or reject.** The driver combines target stability, target disappearance, club sweep, arc, ordered sequence, and ball-inventory change. The weighted score must reach 0.74. Mandatory checks additionally require sufficient target disappearance, a nonzero sequence, human presence, club presence, and strong coupling for a retargeted ball. This is not acceptance through one score threshold alone.
 7. **Return a retained window.** Accepted output uses 1.6 real seconds before the estimated impact and 0.8 after it. A 1.5-second impact gap and lock suppression prevent duplicate captures and immediate re-locking on follow-through.
 
-The main implementation is in [AddressMonitor](../SwingCoach/Models/SwingDetectorV2/AddressMonitor.swift), [ClubTracker](../SwingCoach/Models/SwingDetectorV2/ClubTracker.swift), [SwingStateMachine](../SwingCoach/Models/SwingDetectorV2/SwingStateMachine.swift), and [SwingDetectorV2](../SwingCoach/Models/SwingDetectorV2/SwingDetectorV2.swift).
+The main implementation is in [AddressMonitor](../detector_workbench/legacy/SwingDetectorV2/AddressMonitor.swift), [ClubTracker](../detector_workbench/legacy/SwingDetectorV2/ClubTracker.swift), [SwingStateMachine](../detector_workbench/legacy/SwingDetectorV2/SwingStateMachine.swift), and [SwingDetectorV2](../detector_workbench/legacy/SwingDetectorV2/SwingDetectorV2.swift).
 
 ## Where clubhead occlusion is already handled
 
@@ -78,7 +78,7 @@ The user's recollection is supported by both the design and the code. There are 
 | Club crosses the ball patch during a swing | `PatchWatcher` reports ball presence separately from club overlap. Overlap frames do not increment the state machine's absent-sample count. | The elapsed-time resolution path is less strict than the sample-count path. |
 | Ball reappears after temporary covering | An unresolved impact candidate resets to addressed. Final departure evidence prefers post-impact frames without club overlap. | V2 does not perform the offline detector's long future reveal scan or later shot retraction. |
 
-Relevant code: [PatchWatcher](../SwingCoach/Models/SwingDetectorV2/PatchWatcher.swift), `AddressMonitor.holdsAddress`, `AddressMonitor.retargetCandidate`, `SwingStateMachine.update`, and `SwingDetectorV2.departureEvidence`.
+Relevant code: [PatchWatcher](../detector_workbench/legacy/SwingDetectorV2/PatchWatcher.swift), `AddressMonitor.holdsAddress`, `AddressMonitor.retargetCandidate`, `SwingStateMachine.update`, and `SwingDetectorV2.departureEvidence`.
 
 This distinction matters for test15. At the 68% baseline, there is no address lock because the balls fail the height filter. After removing or relaxing the line, two swings are recovered, while the second misses because the detector switches to the spare following a false clubhead detection. Existing occlusion handling does not prevent that wrong-target switch.
 

@@ -792,7 +792,7 @@ xcrun swiftc -parse-as-library \
   -framework CoreGraphics -framework CoreVideo -framework ImageIO \
   SwingCoach/Models/SwingDetectionTypes.swift \
   SwingCoach/Models/GolfObjectDetector.swift \
-  SwingCoach/Models/ModelBackedSwingDetector.swift \
+  detector_workbench/legacy/ModelBackedSwingDetector.swift \
   detector_workbench/validation/evaluate_live_model_detector.swift \
   -o .videos/bin/evaluate_live_model_detector
 
