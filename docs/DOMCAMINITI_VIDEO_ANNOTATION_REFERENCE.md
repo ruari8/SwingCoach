@@ -53,7 +53,7 @@ Important existing pieces:
 - `SwingDetailView` already presents a carousel: original video, analyzed video, coach notes.
 - `AnalysisResultView` already overlays client-rendered JSON tracks on clean video.
 - `ManualAnnotationStore` already supports local line, arrow, freehand, rectangle, circle, label, eraser, undo, colors, and all-swing versus moment scope.
-- `visualization_config.py` already names the likely future layer set: `club_plane`, `shaft_checkpoints`, `clubhead_path`, `setup_geometry`, `head_reference`, `hip_depth`, `hand_depth`, `lead_arm_plane`, `takeaway_checkpoint`, plus legacy `skeleton`, `reference_lines`, `ball_contact`, `phase_markers`, `confidence`, and `speed`.
+- The removed `visualization_config.py` (see git history) named the likely future layer set: `club_plane`, `shaft_checkpoints`, `clubhead_path`, `setup_geometry`, `head_reference`, `hip_depth`, `hand_depth`, `lead_arm_plane`, `takeaway_checkpoint`, plus legacy `skeleton`, `reference_lines`, `ball_contact`, `phase_markers`, `confidence`, and `speed`.
 - Commit `abc12c4` contains the previous experimental implementation. It generated normalized overlay tracks, guide shapes, phase markers, confidence evidence, a persistent club plane, clubhead path, head/hip references, hand-depth guides, lead-arm-plane guides, and ball-contact luma evidence, but it was rolled back so the annotation contract could be redesigned.
 
 Guardrails still apply:

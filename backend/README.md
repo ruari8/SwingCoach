@@ -191,9 +191,6 @@ source venv/bin/activate
 # Synthetic pipeline video, pixel, and output-contract checks
 python test_pipeline_3d.py
 
-# 2D pipeline test
-python test_pipeline.py
-
 # No-pose annotation contract test
 python test_annotation_tracks.py
 
