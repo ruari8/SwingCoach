@@ -60,11 +60,11 @@ SwingCoach/
 ├── SwingCoach/                    # iOS app (flat; there is no Views/ folder)
 │   ├── Models/                    # detectors, capture buffer, library, API client
 │   ├── TrimView/
-│   └── MLModels/                  # Core ML: SwingObjectsYOLO11n, SwingEventTCN
+│   └── MLModels/                  # Core ML: SwingObjectsYOLO11n
 ├── SwingCoachTests/
 ├── backend/
 │   ├── main.py                    # FastAPI endpoints
-│   ├── analysis/                  # live pipeline + legacy modules (see below)
+│   ├── analysis/                  # live analysis pipeline (see below)
 │   ├── docs/pipeline/             # current per-stage pipeline docs
 │   └── test_*.py                  # standalone scripts, not pytest
 ├── detector_workbench/            # detector datasets, training, validation; legacy/ holds retired detectors
@@ -107,8 +107,6 @@ The live detector is `SwingCoach/Models/SwingDetectorV3/` (used by `CaptureView`
 
 `main.py` → `analysis/pipeline_3d.py` (`SwingCoachPipeline3D`, a 2D knowledge-backed pipeline despite the name) → `video_observations.py`, `metrics_engine.py`, `frame_extractor.py`, `pose_detector.py`, `artifact_renderer.py` + `video_exporter.py`, `knowledge_library.py`, `coach_response_builder.py`, `coaching_contract.py`, `codex_client.py`. Async runs: `run_status.py`, `run_store.py`. Stage docs: `backend/docs/pipeline/`.
 
-Legacy, used only by legacy `test_*.py` scripts: `equipment_tracker.py`, `body_3d.py`, `club_analyzer.py`, `temporal_smoother.py`, `visualizer.py`, `visualization_3d.py`, `animation_exporter.py`, `event_detector.py`. Do not edit these to change app behavior.
-
 ## Fast Command Reference
 
 ### Backend setup
@@ -128,9 +126,9 @@ cd backend
 ./venv/bin/python main.py
 ```
 
-### Key backend tests
+### Backend tests
 
-Each runs in about a second without network access.
+These are all the backend tests. Each runs in about a second without network access.
 
 ```bash
 cd backend
@@ -139,9 +137,8 @@ cd backend
 ./venv/bin/python test_analysis_runs.py
 ./venv/bin/python test_annotation_tracks.py
 ./venv/bin/python test_pipeline_3d.py
+./venv/bin/python test_artifact_upload.py
 ```
-
-The other `test_*.py` scripts exercise the legacy SAM3/3D modules.
 
 ### Shell notes
 

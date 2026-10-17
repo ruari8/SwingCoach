@@ -112,12 +112,11 @@ From the repository root:
 
 ```bash
 python3 docs/audits/slop_evidence.py
-backend/venv/bin/python docs/audits/slop_evidence.py --probe-tests
 backend/venv/bin/python backend/test_analysis_runs.py
 backend/venv/bin/python backend/test_annotation_tracks.py
 ```
 
-All four commands completed successfully during the original audit. At that revision, the probe command reproduced the weaknesses. After cleanup, the same command first requires healthy output checks, then succeeds only if the repaired tests reject injected faults. Replacements exist only in the probe processes. It remains a focused test-quality check rather than full product acceptance.
+All four commands, including `slop_evidence.py --probe-tests`, completed successfully during the original audit. That probe was removed in October because the tests it targeted were renamed or deleted; recover it from tag `pre-legacy-cleanup-2026-10`. At the audit revision, the probe command reproduced the weaknesses. After cleanup, the same command first requires healthy output checks, then succeeds only if the repaired tests reject injected faults. Replacements exist only in the probe processes. It remains a focused test-quality check rather than full product acceptance.
 
 The source scan includes declarations and comments and cannot establish safe deletion by itself. Findings above add caller and behavior inspection. The script intentionally stays small and specific to this audit.
 

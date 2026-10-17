@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
-"""Inspect cleanup source references and prove that repaired tests reject faults.
+"""Inspect cleanup source references from the September 2026 slop audit.
 
-Run with Python for source checks. Add --probe-tests with backend/venv/bin/python
-to run output checks and inject faults. Probes use temporary local video and
-animation files. No model inference or network requests are performed.
+Historical: the former --probe-tests fault-injection probes targeted backend
+tests that were later renamed or deleted with the SAM3/3D modules. Recover them
+from tag pre-legacy-cleanup-2026-10 if needed.
 """
 
 import argparse
 import ast
-import logging
 from pathlib import Path
 import re
 import subprocess
-import sys
-from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -62,61 +59,6 @@ def source_checks():
                 print(f"{path}:{node.lineno} {node.name}: {count} asserts")
 
 
-def probe_tests():
-    sys.path.insert(0, str(ROOT / "backend"))
-    logging.disable(logging.CRITICAL)
-    import test_pipeline_3d
-    import test_temporal_smoothing
-    import test_animation_export
-
-    # A healthy baseline prevents missing dependencies from looking like a
-    # successful fault-rejection check.
-    test_pipeline_3d.test_pipeline_reset_mode_is_annotation_free()
-    test_temporal_smoothing.test_synthetic_noisy_sequence()
-    test_animation_export.test_animation_export_synthetic()
-
-    def rejects(label, check):
-        try:
-            check()
-        except AssertionError:
-            print(f"PASS: {label} rejected")
-        else:
-            raise AssertionError(f"Test accepted {label}")
-
-    for label, replacement in [
-        ("identity smoothing", lambda self, poses: poses),
-        ("frozen movement", lambda self, poses: [poses[0]] * len(poses)),
-    ]:
-        with patch.object(test_temporal_smoothing.TemporalSmoother, "smooth_poses", replacement):
-            rejects(label, test_temporal_smoothing.test_synthetic_noisy_sequence)
-
-    analyze = test_pipeline_3d.SwingCoachPipeline3D.analyze_video
-
-    def unexpected_metrics(self, *args, **kwargs):
-        result = analyze(self, *args, **kwargs)
-        result.metrics = [object()]
-        return result
-
-    with patch.object(test_pipeline_3d.SwingCoachPipeline3D, "analyze_video", unexpected_metrics):
-        rejects("metrics in reset output", test_pipeline_3d.test_pipeline_reset_mode_is_annotation_free)
-
-    # Exercise the real command exit status as well as its test function.
-    failed_export = subprocess.run([
-        sys.executable, "-c",
-        "import runpy; from unittest.mock import patch; "
-        "from analysis.animation_exporter import AnimationExporter; "
-        "patch.object(AnimationExporter, 'export_animation', return_value=False).start(); "
-        "runpy.run_path('test_animation_export.py', run_name='__main__')",
-    ], cwd=ROOT / "backend", capture_output=True, text=True)
-    assert failed_export.returncode != 0
-    assert "AssertionError: Animation export failed" in failed_export.stderr
-    print("PASS: failed animation export produces a failing command")
-
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--probe-tests", action="store_true")
-    args = parser.parse_args()
+    argparse.ArgumentParser(description=__doc__).parse_args()
     source_checks()
-    if args.probe_tests:
-        probe_tests()
