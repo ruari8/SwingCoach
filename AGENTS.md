@@ -67,7 +67,7 @@ SwingCoach/
 │   ├── analysis/                  # live pipeline + legacy modules (see below)
 │   ├── docs/pipeline/             # current per-stage pipeline docs
 │   └── test_*.py                  # standalone scripts, not pytest
-├── detector_workbench/            # detector datasets, training, validation
+├── detector_workbench/            # detector datasets, training, validation; legacy/ holds retired detectors
 ├── docs/
 │   ├── evidence/                  # dated investigations; status index in README
 │   ├── coaching-knowledge/        # sourced coaching cases used by the backend
@@ -101,13 +101,13 @@ SwingCoach/
 
 ### Swing detection
 
-The live detector is `SwingCoach/Models/SwingDetectorV3/` (used by `CaptureView`, `DebugReplayView`, and `SwingDetectorV3AssetDetector`). `ModelBackedSwingDetector.swift` and the V2 detector are legacy and not on any live path, except for two shared files that still sit in `SwingDetectorV2/`: V3 scores and traces candidates with `SwingEvidence.swift` (`SwingScorer`, `EvidenceVector`) and `SwingCandidateTrace.swift`. Treat changes to those two files as live V3 changes. Current design: [SWING_DETECTOR_V3.md](./docs/SWING_DETECTOR_V3.md); older detector docs are marked historical.
+The live detector is `SwingCoach/Models/SwingDetectorV3/` (used by `CaptureView`, `DebugReplayView`, and `SwingDetectorV3AssetDetector`). Candidate scoring and traces (`SwingEvidence.swift`, `SwingCandidateTrace.swift`) live in that folder too. The retired V2 detector and `ModelBackedSwingDetector.swift` are outside the app target in `detector_workbench/legacy/`, used only by workbench evaluators. Current design: [SWING_DETECTOR_V3.md](./docs/SWING_DETECTOR_V3.md); older detector docs are marked historical.
 
 ### Backend live path
 
 `main.py` → `analysis/pipeline_3d.py` (`SwingCoachPipeline3D`, a 2D knowledge-backed pipeline despite the name) → `video_observations.py`, `metrics_engine.py`, `frame_extractor.py`, `pose_detector.py`, `artifact_renderer.py` + `video_exporter.py`, `knowledge_library.py`, `coach_response_builder.py`, `coaching_contract.py`, `codex_client.py`. Async runs: `run_status.py`, `run_store.py`. Stage docs: `backend/docs/pipeline/`.
 
-Legacy, used only by legacy `test_*.py` scripts: `coach.py` (old gpt-4o-mini coach), `equipment_tracker.py`, `body_3d.py`, `club_analyzer.py`, `temporal_smoother.py`, `visualizer.py`, `visualization_3d.py`, `animation_exporter.py`, `velocity_estimator.py`, `metrics.py`, `event_detector.py`. Do not edit these to change app behavior.
+Legacy, used only by legacy `test_*.py` scripts: `equipment_tracker.py`, `body_3d.py`, `club_analyzer.py`, `temporal_smoother.py`, `visualizer.py`, `visualization_3d.py`, `animation_exporter.py`, `event_detector.py`. Do not edit these to change app behavior.
 
 ## Fast Command Reference
 
