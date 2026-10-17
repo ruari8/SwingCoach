@@ -50,11 +50,9 @@ def test_render_without_pose_writes_clean_contract() -> None:
         tracks = json.loads(run_store.path("annotation_tracks.json").read_text())
 
         assert result.base_video_filename == "base.mp4"
-        assert result.annotated_video_filename == "annotated.mp4"
-        assert result.swing_3d_filename is None
         assert result.annotation_tracks_filename == "annotation_tracks.json"
         assert run_store.path("base.mp4").read_bytes() == b"fake-video:3:30.0"
-        assert run_store.path("annotated.mp4").read_bytes() == b"fake-video:3:30.0"
+        assert not run_store.path("annotated.mp4").exists()
 
     assert metadata["layers"] == []
     assert metadata["annotations_enabled"] is False

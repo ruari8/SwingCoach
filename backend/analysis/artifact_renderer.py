@@ -11,10 +11,7 @@ from .video_exporter import VideoExporter
 @dataclass
 class ArtifactRenderResult:
     base_video_filename: str
-    annotated_video_filename: Optional[str]
-    swing_3d_filename: Optional[str]
-    annotation_tracks_filename: Optional[str]
-    debug_files: List[str]
+    annotation_tracks_filename: str
     annotation_metadata: Dict[str, Any]
 
 
@@ -69,10 +66,8 @@ class ArtifactRenderer:
 
         exporter = VideoExporter()
         base_video_bytes = exporter.export_video(frames, fps=video_fps)
+        # Pixels stay clean; the app draws toggleable annotation tracks over them.
         run_store.save_bytes("base.mp4", base_video_bytes)
-
-        # Both URLs use clean pixels. The app draws toggleable annotation tracks.
-        run_store.save_bytes("annotated.mp4", base_video_bytes)
 
         supplied_layers = layers_by_frame or {}
         layer_names = sorted({guide["layer"] for layers in supplied_layers.values() for guide in layers.get("guides", [])})
@@ -105,9 +100,6 @@ class ArtifactRenderer:
 
         return ArtifactRenderResult(
             base_video_filename="base.mp4",
-            annotated_video_filename="annotated.mp4",
-            swing_3d_filename=None,
             annotation_tracks_filename="annotation_tracks.json",
-            debug_files=[],
             annotation_metadata=metadata,
         )

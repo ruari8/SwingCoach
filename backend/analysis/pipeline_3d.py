@@ -124,10 +124,7 @@ class SwingCoachPipeline3D:
             run_id=run_store.run_id, metrics=evidence.metrics, coaching=coaching, quality=quality,
             run_dir=str(run_store.run_dir), artifacts={
                 "base_video_path": rendered.base_video_filename,
-                "annotated_video_path": rendered.annotated_video_filename,
-                "swing_3d_path": rendered.swing_3d_filename,
                 "annotation_tracks_path": rendered.annotation_tracks_filename,
-                "debug_paths": rendered.debug_files,
                 "annotation_metadata": rendered.annotation_metadata,
             },
         )

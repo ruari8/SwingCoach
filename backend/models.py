@@ -281,13 +281,8 @@ class ArtifactBundleResponse(BaseModel):
     """Artifact URLs and local keys for run outputs."""
     base_video_url: Optional[str] = None
     base_video_key: Optional[str] = None
-    annotated_video_url: Optional[str] = None
-    annotated_video_key: Optional[str] = None
     annotation_tracks_url: Optional[str] = None
     annotation_tracks_key: Optional[str] = None
-    swing_3d_url: Optional[str] = None
-    swing_3d_key: Optional[str] = None
-    debug_urls: List[str] = Field(default_factory=list)
 
 
 class QualityBundleResponse(BaseModel):
