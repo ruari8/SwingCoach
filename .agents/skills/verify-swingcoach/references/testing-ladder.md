@@ -45,7 +45,49 @@ Before changing the phone:
 1. Complete the phone readiness handshake.
 2. Discover it with `xcrun devicectl list devices` and confirm it is an available destination with `xcodebuild -project SwingCoach.xcodeproj -scheme SwingCoach -showdestinations`.
 3. Record the device model, OS, app build revision, permission state, and the disposable media that the run may create.
-4. Build and launch through Xcode, then prefer an XCUITest that targets the physical-device destination. Capture device logs for the same interval as the UI evidence.
+4. Build and launch with the [recipe below](#physical-iphone-recipe), then prefer an XCUITest that targets the physical-device destination. Capture device logs for the same interval as the UI evidence.
+
+### Physical iPhone recipe
+
+Ruari's development phone is an iPhone 17. The app bundle ID is `Pear.ai.SwingCoach`.
+
+| Tool | Device ID |
+| --- | --- |
+| `xcodebuild -destination 'id=…'` | `00008150-001838EE36F8401C` |
+| `xcrun devicectl --device` | `CD21BEF7-8C46-5763-8024-1312A7C79D5F` (the `xcodebuild` ID also works) |
+
+If neither ID appears in `xcrun devicectl list devices`, the phone is not ready; ask rather than guessing an ID.
+
+Build signed for the phone, then install and launch:
+
+```bash
+DD=/tmp/swingcoach-device-dd
+xcodebuild -project SwingCoach.xcodeproj -scheme SwingCoach -configuration Debug \
+  -destination 'id=00008150-001838EE36F8401C' -derivedDataPath "$DD" \
+  -allowProvisioningUpdates build
+xcrun devicectl device install app --device 00008150-001838EE36F8401C \
+  "$DD/Build/Products/Debug-iphoneos/SwingCoach.app"
+xcrun devicectl device process launch --device 00008150-001838EE36F8401C \
+  --terminate-existing Pear.ai.SwingCoach
+```
+
+Installing over the existing app keeps the user's library and diagnostic logs. Never uninstall the app to get a clean install; that deletes the user's swings.
+
+Copy app data off the phone. Copy diagnostics before installing a new build, because they rotate. Replace the example `OUT` path with the task's evidence directory:
+
+```bash
+OUT='.verification-artifacts/example-task/phone-data'
+mkdir -p "$OUT"
+xcrun devicectl device copy from --device CD21BEF7-8C46-5763-8024-1312A7C79D5F \
+  --domain-type appDataContainer --domain-identifier Pear.ai.SwingCoach \
+  --source 'Library/Application Support/CaptureDiagnostics' \
+  --destination "$OUT/CaptureDiagnostics" --json-output "$OUT/copy-result.json"
+xcrun devicectl device copy from --device CD21BEF7-8C46-5763-8024-1312A7C79D5F \
+  --domain-type appDataContainer --domain-identifier Pear.ai.SwingCoach \
+  --source Documents/swing_library.json --destination "$OUT/swing_library.json"
+```
+
+`swing_library.json` dates (`createdAt`) are seconds since 2001-01-01 UTC. [AUTO_CAPTURE_CADENCE.md](../../../../docs/AUTO_CAPTURE_CADENCE.md) explains how to join diagnostics to exported clips.
 
 Keep the test data bounded: use named test clips or a dedicated QA album, and remove only assets created by the run. Never erase or reset the user's phone as cleanup.
 

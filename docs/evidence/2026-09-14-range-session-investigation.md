@@ -1,5 +1,7 @@
 # September 14 range session investigation
 
+**Status: cadence gaps followed up in the [October 4 handoff analysis](./2026-10-04-handoff-stall.md); the practice-swing false positive is reproduced but not fixed.**
+
 The exported videos show much less interrupted cadence than September 10, but the recording fix is not complete. Three presentation gaps remain in two of today's 19 clips. The flagged practice swing also reproduces as a false contact in the current Mac detector replay with practice capture disabled.
 
 This investigation changes no app code or recording settings. It uses the current working tree at `28a040c`, including the existing consecutive-writer change. Source and model hashes are retained with the local evidence. The installed phone binary's source identity has not been independently verified.

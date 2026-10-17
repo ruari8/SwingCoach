@@ -1,5 +1,7 @@
 # September 10 Auto jitter investigation and proposed fix
 
+**Status: diagnosis implemented by the [September 11 candidate](./2026-09-11-auto-cadence-fix.md); current state is in the [evidence index](./README.md).**
+
 September 11 update: the consecutive-writer implementation is now in the working tree. The sections below preserve the evidence and original proposal; the implementation verification is recorded separately in the September 11 fix artifacts. Phone installation alone does not establish that hardware jitter is eliminated.
 
 The strongest explanation for this session's saved-video jitter is the rolling buffer encoding the same camera frames into two overlapping chunks. Remove that sustained duplicate recording, and assemble clips from consecutive chunks using the existing composition code. This is a proposed fix supported by recorded evidence, not a verified hardware fix.
