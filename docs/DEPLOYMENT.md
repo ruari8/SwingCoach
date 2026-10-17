@@ -156,7 +156,7 @@ The response must include:
 }
 ```
 
-SAM 3D Body is currently optional. If SAM 3D becomes required for production behavior, add a preflight check for the shared `sam_3d_body` folder and any required model files.
+The backend no longer contains SAM 3D Body code (removed in the legacy cleanup), so the shared `sam_3d_body` slot is unused. If SAM 3D returns, add a preflight check for that folder and any required model files.
 
 ## Notifications
 

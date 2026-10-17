@@ -14,8 +14,8 @@ opencv-python>=4.8.0
 # LLM coaching
 openai>=2.14.0
 
-# SAM3 dependencies (install SAM3 separately - see README.md)
-# pip install 'git+https://github.com/facebookresearch/sam3.git'
+# Former SAM3 dependencies. The API no longer imports these; detector_workbench
+# scripts run with backend/venv still use torch and scipy.
 torch>=2.0.0
 torchvision>=0.15.0
 einops>=0.7.0

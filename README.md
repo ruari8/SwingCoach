@@ -100,8 +100,6 @@ cp .env.example .env
 
 Configure `backend/.env` with Cloudflare R2 credentials before running real upload/analysis flows. Without R2 configuration, `/health` reports a degraded state and storage-backed endpoints will not complete.
 
-The optional 3D/SAM dependency stack is not used by the knowledge coaching pipeline.
-
 ## Useful Checks
 
 Backend smoke and regression checks:
