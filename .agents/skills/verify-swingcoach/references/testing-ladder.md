@@ -73,10 +73,11 @@ xcrun devicectl device process launch --device 00008150-001838EE36F8401C \
 
 Installing over the existing app keeps the user's library and diagnostic logs. Never uninstall the app to get a clean install; that deletes the user's swings.
 
-Copy app data off the phone. Copy diagnostics before installing a new build, because they rotate:
+Copy app data off the phone. Copy diagnostics before installing a new build, because they rotate. Replace the example `OUT` path with the task's evidence directory:
 
 ```bash
-OUT=<evidence-directory>
+OUT='.verification-artifacts/example-task/phone-data'
+mkdir -p "$OUT"
 xcrun devicectl device copy from --device CD21BEF7-8C46-5763-8024-1312A7C79D5F \
   --domain-type appDataContainer --domain-identifier Pear.ai.SwingCoach \
   --source 'Library/Application Support/CaptureDiagnostics' \

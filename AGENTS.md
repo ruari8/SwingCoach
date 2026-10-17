@@ -101,7 +101,7 @@ SwingCoach/
 
 ### Swing detection
 
-The live detector is `SwingCoach/Models/SwingDetectorV3/` (used by `CaptureView`, `DebugReplayView`, and `SwingDetectorV3AssetDetector`). `SwingDetectorV2/` and `ModelBackedSwingDetector.swift` are legacy and not on any live path. Current design: [SWING_DETECTOR_V3.md](./docs/SWING_DETECTOR_V3.md); older detector docs are marked historical.
+The live detector is `SwingCoach/Models/SwingDetectorV3/` (used by `CaptureView`, `DebugReplayView`, and `SwingDetectorV3AssetDetector`). `ModelBackedSwingDetector.swift` and the V2 detector are legacy and not on any live path, except for two shared files that still sit in `SwingDetectorV2/`: V3 scores and traces candidates with `SwingEvidence.swift` (`SwingScorer`, `EvidenceVector`) and `SwingCandidateTrace.swift`. Treat changes to those two files as live V3 changes. Current design: [SWING_DETECTOR_V3.md](./docs/SWING_DETECTOR_V3.md); older detector docs are marked historical.
 
 ### Backend live path
 
