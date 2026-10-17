@@ -30,14 +30,6 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Dormant optional 3D dependencies:
-
-```bash
-cd backend
-source venv/bin/activate
-pip install -r requirements-3d.txt
-```
-
 ## Environment
 
 Create `.env` from `.env.example` and configure Cloudflare R2 credentials.
@@ -49,7 +41,7 @@ cp .env.example .env
 
 R2 HTTPS certificate verification is enabled by default. If a local machine has a temporary certificate-store problem, set `R2_VERIFY_SSL=false` in `backend/.env`; do not use that setting for deployed backends.
 
-The pipeline uses MediaPipe and `models/pose_landmarker_heavy.task` for 2D observations. Missing tracking dependencies produce an explicit warning. SAM3, event detection and 3D replay remain inactive. Configure `OPENAI_API_KEY` for the visual observer and smart coach; `SWINGCOACH_COACH_MODEL` defaults to `gpt-6.1-sol` and `SWINGCOACH_COACH_REASONING` to `low`. For local testing without API billing, `SWINGCOACH_COACH_PROVIDER=codex` sends the same calls through `codex exec` and the signed-in ChatGPT plan; `scripts/run-local-backend.sh` starts the backend that way for the app on a phone on the same Wi-Fi. `SWINGCOACH_CODEX_BIN` overrides the `codex` executable path. `SWINGCOACH_API_KEY`, when set, makes every endpoint except `/health` require a matching `X-SwingCoach-Key` header. It keeps strangers off the test deployment; it is not user authentication. Never use the Codex provider for a public deployment. Deploy the committed coaching source JSON folder with the backend, or set `SWINGCOACH_KNOWLEDGE_DIR` to its location. Raw reference media is not needed by the API.
+The pipeline uses MediaPipe and `models/pose_landmarker_heavy.task` for 2D observations. Missing tracking dependencies produce an explicit warning. The SAM3, event-detection and 3D replay prototypes were removed; tag `pre-legacy-cleanup-2026-10` restores them. Configure `OPENAI_API_KEY` for the visual observer and smart coach; `SWINGCOACH_COACH_MODEL` defaults to `gpt-6.1-sol` and `SWINGCOACH_COACH_REASONING` to `low`. For local testing without API billing, `SWINGCOACH_COACH_PROVIDER=codex` sends the same calls through `codex exec` and the signed-in ChatGPT plan; `scripts/run-local-backend.sh` starts the backend that way for the app on a phone on the same Wi-Fi. `SWINGCOACH_CODEX_BIN` overrides the `codex` executable path. `SWINGCOACH_API_KEY`, when set, makes every endpoint except `/health` require a matching `X-SwingCoach-Key` header. It keeps strangers off the test deployment; it is not user authentication. Never use the Codex provider for a public deployment. Deploy the committed coaching source JSON folder with the backend, or set `SWINGCOACH_KNOWLEDGE_DIR` to its location. Raw reference media is not needed by the API.
 
 ## API Contract
 
@@ -198,12 +190,6 @@ python test_artifact_upload.py
 
 # Async run lifecycle test
 python test_analysis_runs.py
-
-# Seeded smoothing accuracy and jitter checks
-python test_temporal_smoothing.py
-
-# Decode exported animation timing and joint motion
-python test_animation_export.py
 ```
 
 ## Knowledge coaching and limits

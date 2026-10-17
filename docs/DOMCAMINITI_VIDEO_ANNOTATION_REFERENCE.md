@@ -50,14 +50,14 @@ What the live pipeline deliberately does not run:
 Important existing pieces:
 
 - `SwingDetailView` already presents a carousel: original video, analyzed video, coach notes.
-- `AnalysisResultView` already overlays client-rendered JSON tracks on clean video.
+- `AnnotatedAnalysisVideo` already overlays client-rendered JSON tracks on clean video.
 - `ManualAnnotationStore` already supports local line, arrow, freehand, rectangle, circle, label, eraser, undo, colors, and all-swing versus moment scope.
 - The removed `visualization_config.py` (see git history) named the likely future layer set: `club_plane`, `shaft_checkpoints`, `clubhead_path`, `setup_geometry`, `head_reference`, `hip_depth`, `hand_depth`, `lead_arm_plane`, `takeaway_checkpoint`, plus legacy `skeleton`, `reference_lines`, `ball_contact`, `phase_markers`, `confidence`, and `speed`.
 - Commit `abc12c4` contains the previous experimental implementation. It generated normalized overlay tracks, guide shapes, phase markers, confidence evidence, a persistent club plane, clubhead path, head/hip references, hand-depth guides, lead-arm-plane guides, and ball-contact luma evidence, but it was rolled back so the annotation contract could be redesigned.
 
 Guardrails still apply:
 
-- Use `detect_shaft()` with prompt `"club shaft"` for shaft/plane work.
+- Shaft/plane work needs a shaft detector. The SAM3 `detect_shaft()` prototype (prompt `"club shaft"`) was removed and can be restored from tag `pre-legacy-cleanup-2026-10`.
 - Use context managers for heavy detectors.
 - Confidence is a first-class output. Low confidence should withhold an overlay rather than draw a misleading one.
 
@@ -209,7 +209,7 @@ SwingCoach implication: add a top-position `shaft_zone` annotation with clear "l
 
 1. Address shaft plane
 
-Persistent line through the address shaft, derived from `detect_shaft()` using prompt `"club shaft"`. It should stay visible through takeaway/delivery comparisons.
+Persistent line through the address shaft, derived from a shaft detector (the removed SAM3 prototype used `detect_shaft()` with prompt `"club shaft"`). It should stay visible through takeaway/delivery comparisons.
 
 2. Takeaway hand/clubhead checkpoint
 

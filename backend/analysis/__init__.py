@@ -2,7 +2,7 @@
 
 The active pipeline measures 2D video evidence and grounds coaching in source
 cases. Heavy detector modules load only when the pipeline requests them; importing
-the package does not initialize pose, event, visualizer or SAM-related code.
+the package does not initialize pose detection.
 """
 
 __all__ = [
@@ -11,16 +11,6 @@ __all__ = [
     "SwingCoachPipeline3D",
     "Pipeline3DResult",
     "PoseDetector",
-    "EventDetector",
-    "SwingEvent",
-    "SwingEvents",
-    "SwingPhase",
-    "SwingPhases",
-    "PHASE_NAMES",
-    "PHASE_DESCRIPTIONS",
-    "SwingVisualizer",
-    "ClubAnalyzer",
-    "ClubPlane",
     "MetricCard",
     "CoachResponseBuilder",
     "CoachingBundle",
@@ -51,37 +41,6 @@ def __getattr__(name):
         from .pose_detector import PoseDetector
 
         return PoseDetector
-
-    if name in {"EventDetector", "SwingEvent", "SwingEvents", "SwingPhase", "SwingPhases", "PHASE_NAMES", "PHASE_DESCRIPTIONS"}:
-        from .event_detector import (
-            EventDetector,
-            PHASE_DESCRIPTIONS,
-            PHASE_NAMES,
-            SwingEvent,
-            SwingEvents,
-            SwingPhase,
-            SwingPhases,
-        )
-
-        return {
-            "EventDetector": EventDetector,
-            "SwingEvent": SwingEvent,
-            "SwingEvents": SwingEvents,
-            "SwingPhase": SwingPhase,
-            "SwingPhases": SwingPhases,
-            "PHASE_NAMES": PHASE_NAMES,
-            "PHASE_DESCRIPTIONS": PHASE_DESCRIPTIONS,
-        }[name]
-
-    if name == "SwingVisualizer":
-        from .visualizer import SwingVisualizer
-
-        return SwingVisualizer
-
-    if name in {"ClubAnalyzer", "ClubPlane"}:
-        from .club_analyzer import ClubAnalyzer, ClubPlane
-
-        return {"ClubAnalyzer": ClubAnalyzer, "ClubPlane": ClubPlane}[name]
 
     if name == "MetricCard":
         from .metrics_engine import MetricCard

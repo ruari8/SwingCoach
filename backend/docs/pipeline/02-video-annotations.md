@@ -25,7 +25,8 @@ plays. The previous experimental annotation implementation remains at `abc12c4`.
 
 The reference forms follow patterns catalogued in the coaching library. They
 explain recorded movement; they do not establish that movement needs correction.
-Future shaft work must use `detect_shaft()` with the `club shaft` prompt.
+The SAM3 shaft prototype (`detect_shaft()`) was removed; restore it from tag
+`pre-legacy-cleanup-2026-10` if shaft work resumes.
 
 Main files: `analysis/video_observations.py`, `analysis/artifact_renderer.py`,
-`analysis/pipeline_3d.py`, and the app's `AnalysisResultView.swift` overlay renderer.
+`analysis/pipeline_3d.py`, and the app's `AnnotatedAnalysisVideo.swift` overlay renderer.

@@ -3,7 +3,7 @@
 ## 2026-06-21 Update
 
 A newer Instagram-native public research pass is documented in
-[docs/DOMCAMINITI_VIDEO_ANNOTATION_REFERENCE.md](./docs/DOMCAMINITI_VIDEO_ANNOTATION_REFERENCE.md).
+[docs/DOMCAMINITI_VIDEO_ANNOTATION_REFERENCE.md](../DOMCAMINITI_VIDEO_ANNOTATION_REFERENCE.md).
 It collected the latest 15 public reels by timestamp, generated local 1 FPS image sheets,
 and analyzed local machine transcripts for annotation and coaching-voice patterns.
 
