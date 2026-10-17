@@ -32,8 +32,7 @@ What the live pipeline does now:
 
 - Reads video metadata.
 - Extracts the full source timeline.
-- Writes `base.mp4`.
-- Writes `annotated.mp4` as the same clean video for compatibility.
+- Writes `base.mp4`, which the response's `annotated_video` also points at.
 - Writes `annotation_metadata.json` with no layers.
 - Writes `annotation_tracks.json` with normalized per-frame timing records and empty `layers`.
 - Returns a reset coaching summary.
@@ -344,7 +343,7 @@ Pipeline shape:
 7. `track_assemble`: write normalized client-rendered JSON over clean video.
 8. `debug_artifacts`: optional contact sheets and per-layer visual tests.
 
-Keep `ArtifactRenderer` focused on artifact writing: clean `base.mp4`, compatibility `annotated.mp4`, `annotation_metadata.json`, `annotation_tracks.json`, and optional baked export.
+Keep `ArtifactRenderer` focused on artifact writing: clean `base.mp4`, `annotation_metadata.json`, `annotation_tracks.json`, and optional baked export.
 
 ## Recommended V1 Order
 

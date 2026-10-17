@@ -83,7 +83,7 @@ Response shape (`AnalyzeResponse`):
 - `analysis_id`
 - `summary`
 - `metrics[]` (display rows with `key`, `name`, `value`, optional `confidence` and `explanation`)
-- `annotated_video` (`key`, fresh signed `url`, optional `base_key` / `base_url`, optional `tracks_key` / `tracks_url`, rendered `layers[]`)
+- `annotated_video` (`key`, fresh signed `url`, optional `base_key` / `base_url`, optional `tracks_key` / `tracks_url`, rendered `layers[]`). Pixels are clean, so `key`/`url` and `base_key`/`base_url` all name the single uploaded `base.mp4`; the app draws the tracks over it.
 - `drills[]` (one selected source intervention with `title`, `summary`)
 - `coaching` (optional versioned focus, status, rationale, cue, reassessment, questions, evidence, source moments and limitations)
 
@@ -177,7 +177,6 @@ Typical files per successful run:
 - `observations.json`
 - `coach_summary.json`
 - `base.mp4`
-- `annotated.mp4`
 - `annotation_metadata.json`
 - `annotation_tracks.json`
 - `timings.json`
@@ -196,6 +195,9 @@ python test_pipeline.py
 
 # No-pose annotation contract test
 python test_annotation_tracks.py
+
+# Single base-video upload and app-facing annotated_video contract
+python test_artifact_upload.py
 
 # Async run lifecycle test
 python test_analysis_runs.py

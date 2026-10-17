@@ -1,8 +1,9 @@
 # Pipeline stage 2: visual evidence
 
-The active renderer writes clean `base.mp4` and compatibility `annotated.mp4`,
-plus normalized, timestamped `annotation_tracks.json`. The iOS player draws the
-tracks and exposes layer toggles; annotation pixels are not baked into either MP4.
+The active renderer writes one clean `base.mp4` plus normalized, timestamped
+`annotation_tracks.json`. The iOS player draws the tracks and exposes layer
+toggles; annotation pixels are not baked into the MP4. The response's
+`annotated_video` points at that same base upload.
 
 Two layers currently use the same confident body landmarks as the observations:
 

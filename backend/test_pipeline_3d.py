@@ -42,7 +42,7 @@ def test_pipeline_without_pose_is_annotation_free() -> None:
             )
         run = Path(result.run_dir)
         base = (run / "base.mp4").read_bytes()
-        assert base == (run / "annotated.mp4").read_bytes()
+        assert not (run / "annotated.mp4").exists()
         info = pipeline.frame_extractor.get_video_info(base)
         assert info["frame_count"] == 12
         assert info["width"] == 96 and info["height"] == 64

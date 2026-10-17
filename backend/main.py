@@ -132,57 +132,21 @@ async def get_upload_url():
 def _upload_run_artifacts(run_id: str, run_dir: Path) -> ArtifactBundleResponse:
     """Upload generated artifacts from local run dir to R2 and return URLs."""
     r2 = get_r2_client()
-
-    base_name = "base.mp4"
-    annotated_name = "annotated.mp4"
-    tracks_name = "annotation_tracks.json"
-    swing_name = "swing_3d.gltf"
-
-    base_path = run_dir / base_name
-    annotated_path = run_dir / annotated_name
-    tracks_path = run_dir / tracks_name
-    swing_path = run_dir / swing_name
-
-    base_key: Optional[str] = None
-    annotated_key: Optional[str] = None
-    tracks_key: Optional[str] = None
-    swing_key: Optional[str] = None
-    base_url: Optional[str] = None
-    annotated_url: Optional[str] = None
-    tracks_url: Optional[str] = None
-    swing_url: Optional[str] = None
+    base_path = run_dir / "base.mp4"
+    tracks_path = run_dir / "annotation_tracks.json"
+    artifacts = ArtifactBundleResponse()
 
     if base_path.exists():
-        base_key = f"analysis_runs/{run_id}/{base_name}"
-        r2.upload_video(base_key, base_path.read_bytes(), content_type="video/mp4")
-        base_url = r2.generate_download_url(base_key)
-
-    if annotated_path.exists():
-        annotated_key = f"analysis_runs/{run_id}/{annotated_name}"
-        r2.upload_video(annotated_key, annotated_path.read_bytes(), content_type="video/mp4")
-        annotated_url = r2.generate_download_url(annotated_key)
+        artifacts.base_video_key = f"analysis_runs/{run_id}/base.mp4"
+        r2.upload_video(artifacts.base_video_key, base_path.read_bytes(), content_type="video/mp4")
+        artifacts.base_video_url = r2.generate_download_url(artifacts.base_video_key)
 
     if tracks_path.exists():
-        tracks_key = f"analysis_runs/{run_id}/{tracks_name}"
-        r2.upload_bytes(tracks_key, tracks_path.read_bytes(), content_type="application/json")
-        tracks_url = r2.generate_download_url(tracks_key)
+        artifacts.annotation_tracks_key = f"analysis_runs/{run_id}/annotation_tracks.json"
+        r2.upload_bytes(artifacts.annotation_tracks_key, tracks_path.read_bytes(), content_type="application/json")
+        artifacts.annotation_tracks_url = r2.generate_download_url(artifacts.annotation_tracks_key)
 
-    if swing_path.exists():
-        swing_key = f"analysis_runs/{run_id}/{swing_name}"
-        r2.upload_bytes(swing_key, swing_path.read_bytes(), content_type="model/gltf+json")
-        swing_url = r2.generate_download_url(swing_key)
-
-    return ArtifactBundleResponse(
-        base_video_url=base_url,
-        base_video_key=base_key,
-        annotated_video_url=annotated_url,
-        annotated_video_key=annotated_key,
-        annotation_tracks_url=tracks_url,
-        annotation_tracks_key=tracks_key,
-        swing_3d_url=swing_url,
-        swing_3d_key=swing_key,
-        debug_urls=[],
-    )
+    return artifacts
 
 
 def _format_metric_value(value: Optional[float], unit: str) -> str:
@@ -305,9 +269,10 @@ def _build_analyze_response(result) -> AnalyzeResponse:
         summary=result.coaching.summary,
         coaching=result.coaching.detail,
         metrics=metrics,
+        # Pixels are clean, so the app's annotated video is the base upload plus tracks.
         annotated_video=_artifact_video(
-            artifacts.annotated_video_key,
-            artifacts.annotated_video_url,
+            artifacts.base_video_key,
+            artifacts.base_video_url,
             base_key=artifacts.base_video_key,
             base_url=artifacts.base_video_url,
             tracks_key=artifacts.annotation_tracks_key,
