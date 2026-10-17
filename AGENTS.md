@@ -88,7 +88,7 @@ SwingCoach/
 | Tab shell (Library, Capture, Coach, DEBUG Debug) | `SwingCoach/AppRootView.swift` |
 | Library tab, import, batch actions, export | `SwingCoach/LibraryView.swift` |
 | Settings (gear icon in Library; there is no `SettingsView`) | `SwingCoach/ExperimentalSettingsView.swift` |
-| Swing detail, analyzed video, coach notes | `SwingCoach/SwingDetailView.swift`; result subviews (`AnnotatedAnalysisVideo`, `GroundedCoachingView`) are in `AnalysisResultView.swift` |
+| Swing detail, analyzed video, coach notes | `SwingCoach/SwingDetailView.swift`; result subviews are `AnnotatedAnalysisVideo.swift` and `GroundedCoachingView.swift` |
 | Left/right swing paging | `SwingCoach/SwingReviewPager.swift` |
 | Capture tab, manual + Auto | `SwingCoach/CaptureView.swift` |
 | Auto rolling recording buffer | `SwingCoach/Models/AutoRollingVideoBuffer.swift` |
