@@ -2475,14 +2475,14 @@ private struct LibraryDragSelectGesture: UIGestureRecognizerRepresentable {
     }
 
     func handleUIGestureRecognizerAction(_ recognizer: UIPanGestureRecognizer, context: Context) {
-        let point = recognizer.location(in: nil)
         switch recognizer.state {
         case .began:
             context.coordinator.begin(recognizer)
-            onBegan(point)
+            // Anchor on the card the finger touched, not where it moved to before the pan began.
+            onBegan(context.coordinator.touchDownLocation)
         case .changed:
             context.coordinator.update(recognizer)
-            onChanged(point)
+            onChanged(recognizer.location(in: nil))
         default:
             context.coordinator.end()
             onEnded()
@@ -2492,6 +2492,9 @@ private struct LibraryDragSelectGesture: UIGestureRecognizerRepresentable {
     final class Coordinator: NSObject, UIGestureRecognizerDelegate {
         var canBegin: (CGPoint) -> Bool = { _ in false }
         var onChanged: (CGPoint) -> Void = { _ in }
+        /// Where the finger touched down, in window coordinates. A pan begins only
+        /// after the finger has moved, and its translation leaves that movement out.
+        private(set) var touchDownLocation: CGPoint = .zero
 
         private weak var scrollView: UIScrollView?
         private weak var recognizer: UIPanGestureRecognizer?
@@ -2503,7 +2506,12 @@ private struct LibraryDragSelectGesture: UIGestureRecognizerRepresentable {
         func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
             guard let pan = gestureRecognizer as? UIPanGestureRecognizer else { return false }
             let velocity = pan.velocity(in: nil)
-            return abs(velocity.x) > abs(velocity.y) && canBegin(pan.location(in: nil))
+            return abs(velocity.x) > abs(velocity.y) && canBegin(touchDownLocation)
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            touchDownLocation = touch.location(in: nil)
+            return true
         }
 
         // Scrolling waits for a sideways drag on a card to fail first.

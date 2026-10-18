@@ -23,10 +23,23 @@ final class LibrarySessionsUITests: XCTestCase {
         app.buttons["Deselect Today session"].tap()
         XCTAssertTrue(app.staticTexts["0 selected"].waitForExistence(timeout: 5))
 
-        // Slide from the first card across and down to the fourth (left/right, two rows).
         let cards = app.buttons.matching(identifier: "swing-card")
         let first = cards.element(boundBy: 0)
         let fourth = cards.element(boundBy: 3)
+
+        // A slide that starts at a card's edge still anchors on that card.
+        first.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.5)).press(
+            forDuration: 0.05,
+            thenDragTo: cards.element(boundBy: 1).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)),
+            withVelocity: .slow,
+            thenHoldForDuration: 0.3
+        )
+        XCTAssertTrue(app.staticTexts["2 selected"].waitForExistence(timeout: 5))
+        app.buttons["Select Today session"].tap()
+        app.buttons["Deselect Today session"].tap()
+        XCTAssertTrue(app.staticTexts["0 selected"].waitForExistence(timeout: 5))
+
+        // Slide from the first card across and down to the fourth (left/right, two rows).
         first.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.5)).press(
             forDuration: 0.05,
             thenDragTo: fourth.coordinate(withNormalizedOffset: CGVector(dx: 0.7, dy: 0.5)),
