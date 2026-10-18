@@ -11,6 +11,7 @@ Library lets a golfer browse personal swings and optional local reference swings
 - `library-playback` exposes play, frame-step, speed, lock, and full-screen controls.
 - `library-star` persists star state.
 - `library-metadata` opens the swing metadata sheet.
+- `library-sessions` groups personal swings into sessions, selects a whole session, slide-selects a range, and exports the selection. Run `./scripts/verify-library-sessions.sh`; it seeds two sessions of local-only clips and needs no local fixtures.
 
 ## How to get to it (user POV)
 
