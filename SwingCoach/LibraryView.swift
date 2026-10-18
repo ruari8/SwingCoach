@@ -37,6 +37,8 @@ struct LibraryView: View {
     @State private var isSelecting = false
     @State private var selectedSwings: Set<UUID> = []
     @State private var showDeleteConfirmation = false
+    @State private var cardFrames = LibraryCardFrames()
+    @State private var dragSelection: SwingRangeSelection? = nil
 
     // Batch export
     @State private var isExportingSelectedSwings = false
@@ -53,12 +55,11 @@ struct LibraryView: View {
         } else {
             filtered = personalSwings
         }
-        return filtered.sorted {
-            if $0.isFavorite != $1.isFavorite {
-                return $0.isFavorite
-            }
-            return $0.createdAt > $1.createdAt
-        }
+        return filtered.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    private var starredSwings: [SavedSwing] {
+        filteredSwings.filter(\.isFavorite)
     }
 
     private var referenceSwings: [SavedSwing] {
@@ -457,18 +458,52 @@ struct LibraryView: View {
                     .padding(.bottom, 18)
                 }
 
-                if !filteredSwings.isEmpty {
-                    librarySectionTitle("Your swings", systemImage: "square.grid.2x2")
+                if !starredSwings.isEmpty && !isSelecting {
+                    librarySectionTitle("Starred", systemImage: "star")
+
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        ForEach(starredSwings) { swing in
+                            swingCard(swing, reviewSwings: starredSwings)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 18)
                 }
 
-                LazyVGrid(columns: columns, spacing: 12) {
-                    ForEach(filteredSwings) { swing in
-                        swingCard(swing)
+                let swings = filteredSwings
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    ForEach(SwingSession.group(swings)) { session in
+                        sessionHeader(session)
+
+                        LazyVGrid(columns: columns, spacing: 12) {
+                            ForEach(session.swings) { swing in
+                                swingCard(swing, reviewSwings: swings)
+                                    .accessibilityIdentifier("swing-card")
+                                    .onGeometryChange(for: CGRect.self) { proxy in
+                                        proxy.frame(in: .global)
+                                    } action: { frame in
+                                        cardFrames.frames[swing.id] = frame
+                                    }
+                                    .onDisappear {
+                                        cardFrames.frames[swing.id] = nil
+                                    }
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.bottom, 20)
                     }
                 }
-                .padding()
                 .padding(.bottom, isSelecting ? 60 : 0) // Space for selection bar
             }
+            .gesture(
+                LibraryDragSelectGesture(
+                    isEnabled: isSelecting,
+                    canBegin: { cardFrames.swingID(at: $0) != nil },
+                    onBegan: beginDragSelection,
+                    onChanged: extendDragSelection,
+                    onEnded: { dragSelection = nil }
+                )
+            )
 
             // Selection bar
             if isSelecting {
@@ -487,6 +522,62 @@ struct LibraryView: View {
         .foregroundColor(.primary)
         .padding(.horizontal)
         .padding(.bottom, 8)
+    }
+
+    private func sessionHeader(_ session: SwingSession) -> some View {
+        let ids = Set(session.swings.map(\.id))
+        let isWholeSessionSelected = isSelecting && ids.isSubset(of: selectedSwings)
+        let title = sessionTitle(session)
+        let count = session.swings.count
+
+        return HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.headline)
+                Text("\(sessionTimeRange(session)) · \(count) swing\(count == 1 ? "" : "s")")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer()
+
+            Button {
+                withAnimation {
+                    if isWholeSessionSelected {
+                        selectedSwings.subtract(ids)
+                    } else {
+                        selectedSwings.formUnion(ids)
+                        isSelecting = true
+                    }
+                }
+            } label: {
+                Text(isWholeSessionSelected ? "Deselect" : "Select")
+                    .font(.subheadline.weight(.medium))
+            }
+            .accessibilityLabel("\(isWholeSessionSelected ? "Deselect" : "Select") \(title) session")
+        }
+        .padding(.horizontal)
+        .padding(.bottom, 8)
+    }
+
+    private func sessionTitle(_ session: SwingSession) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(session.start) {
+            return "Today"
+        }
+        if calendar.isDateInYesterday(session.start) {
+            return "Yesterday"
+        }
+        if calendar.isDate(session.start, equalTo: Date(), toGranularity: .year) {
+            return session.start.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
+        }
+        return session.start.formatted(.dateTime.day().month(.abbreviated).year())
+    }
+
+    private func sessionTimeRange(_ session: SwingSession) -> String {
+        let start = session.start.formatted(date: .omitted, time: .shortened)
+        guard session.swings.count > 1 else { return start }
+        return "\(start) – \(session.end.formatted(date: .omitted, time: .shortened))"
     }
 
     private var selectionBar: some View {
@@ -592,7 +683,7 @@ struct LibraryView: View {
         }
     }
 
-    private func swingCard(_ swing: SavedSwing) -> some View {
+    private func swingCard(_ swing: SavedSwing, reviewSwings: [SavedSwing]? = nil) -> some View {
         let isSelected = selectedSwings.contains(swing.id)
 
         return Group {
@@ -607,7 +698,7 @@ struct LibraryView: View {
                 NavigationLink {
                     SwingDetailView(
                         swing: swing,
-                        reviewSwings: swing.isReference ? referenceSwings : filteredSwings
+                        reviewSwings: reviewSwings ?? referenceSwings
                     )
                 } label: {
                     swingCardContent(swing, isSelected: isSelected)
@@ -724,7 +815,7 @@ struct LibraryView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                 } else {
-                    Text(formatDate(swing.createdAt))
+                    Text(swing.createdAt.formatted(date: .omitted, time: .shortened))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -805,6 +896,25 @@ struct LibraryView: View {
             selectedSwings.remove(swing.id)
         } else {
             selectedSwings.insert(swing.id)
+        }
+    }
+
+    private func beginDragSelection(at point: CGPoint) {
+        guard let id = cardFrames.swingID(at: point),
+              let selection = SwingRangeSelection(
+                orderedIDs: filteredSwings.map(\.id),
+                anchor: id,
+                initialSelection: selectedSwings
+              ) else { return }
+        dragSelection = selection
+        selectedSwings = selection.selection(extendingTo: id)
+    }
+
+    private func extendDragSelection(to point: CGPoint) {
+        guard let dragSelection, let id = cardFrames.swingID(at: point) else { return }
+        let selection = dragSelection.selection(extendingTo: id)
+        if selection != selectedSwings {
+            selectedSwings = selection
         }
     }
 
@@ -988,12 +1098,6 @@ struct LibraryView: View {
     private func formatDuration(_ seconds: Double) -> String {
         let secs = Int(seconds)
         return "\(secs)s"
-    }
-
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        return formatter.string(from: date)
     }
 }
 
@@ -2332,6 +2436,137 @@ private struct ActivityView: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+/// Window-space frames of the visible session cards, for drag selection hit tests.
+/// A plain class so frame updates while scrolling don't re-render the Library.
+private final class LibraryCardFrames {
+    var frames: [UUID: CGRect] = [:]
+
+    func swingID(at point: CGPoint) -> UUID? {
+        frames.first { $0.value.contains(point) }?.key
+    }
+}
+
+/// Photos-style slide to select. A drag that starts sideways on a card selects
+/// instead of scrolling; holding near the top or bottom edge scrolls the grid.
+private struct LibraryDragSelectGesture: UIGestureRecognizerRepresentable {
+    var isEnabled: Bool
+    var canBegin: (CGPoint) -> Bool
+    var onBegan: (CGPoint) -> Void
+    var onChanged: (CGPoint) -> Void
+    var onEnded: () -> Void
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+        let recognizer = UIPanGestureRecognizer()
+        recognizer.maximumNumberOfTouches = 1
+        recognizer.delegate = context.coordinator
+        return recognizer
+    }
+
+    func updateUIGestureRecognizer(_ recognizer: UIPanGestureRecognizer, context: Context) {
+        recognizer.isEnabled = isEnabled
+        context.coordinator.canBegin = canBegin
+        context.coordinator.onChanged = onChanged
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UIPanGestureRecognizer, context: Context) {
+        let point = recognizer.location(in: nil)
+        switch recognizer.state {
+        case .began:
+            context.coordinator.begin(recognizer)
+            onBegan(point)
+        case .changed:
+            context.coordinator.update(recognizer)
+            onChanged(point)
+        default:
+            context.coordinator.end()
+            onEnded()
+        }
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        var canBegin: (CGPoint) -> Bool = { _ in false }
+        var onChanged: (CGPoint) -> Void = { _ in }
+
+        private weak var scrollView: UIScrollView?
+        private weak var recognizer: UIPanGestureRecognizer?
+        private var displayLink: CADisplayLink?
+        private var scrollSpeed: CGFloat = 0
+        private let edgeZone: CGFloat = 80
+        private let maximumScrollSpeed: CGFloat = 900  // points per second
+
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard let pan = gestureRecognizer as? UIPanGestureRecognizer else { return false }
+            let velocity = pan.velocity(in: nil)
+            return abs(velocity.x) > abs(velocity.y) && canBegin(pan.location(in: nil))
+        }
+
+        // Scrolling waits for a sideways drag on a card to fail first.
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer
+        ) -> Bool {
+            (otherGestureRecognizer.view as? UIScrollView)?.panGestureRecognizer === otherGestureRecognizer
+        }
+
+        func begin(_ recognizer: UIPanGestureRecognizer) {
+            self.recognizer = recognizer
+            let point = recognizer.location(in: nil)
+            var view = recognizer.view?.window?.hitTest(point, with: nil)
+            while let current = view, !(current is UIScrollView) {
+                view = current.superview
+            }
+            scrollView = view as? UIScrollView
+        }
+
+        func update(_ recognizer: UIPanGestureRecognizer) {
+            guard let scrollView else { return }
+            let y = recognizer.location(in: scrollView).y - scrollView.contentOffset.y
+            let top = scrollView.adjustedContentInset.top + edgeZone
+            let bottom = scrollView.bounds.height - scrollView.adjustedContentInset.bottom - edgeZone
+            if y < top {
+                scrollSpeed = -maximumScrollSpeed * min(1, (top - y) / edgeZone)
+            } else if y > bottom {
+                scrollSpeed = maximumScrollSpeed * min(1, (y - bottom) / edgeZone)
+            } else {
+                scrollSpeed = 0
+            }
+
+            if scrollSpeed == 0 {
+                displayLink?.invalidate()
+                displayLink = nil
+            } else if displayLink == nil {
+                let link = CADisplayLink(target: self, selector: #selector(autoscroll))
+                link.add(to: .main, forMode: .common)
+                displayLink = link
+            }
+        }
+
+        func end() {
+            displayLink?.invalidate()
+            displayLink = nil
+            scrollSpeed = 0
+        }
+
+        @objc private func autoscroll(_ link: CADisplayLink) {
+            guard let scrollView, let recognizer else { return end() }
+            let minimumY = -scrollView.adjustedContentInset.top
+            let maximumY = max(
+                minimumY,
+                scrollView.contentSize.height + scrollView.adjustedContentInset.bottom - scrollView.bounds.height
+            )
+            let step = scrollSpeed * CGFloat(link.targetTimestamp - link.timestamp)
+            let y = min(maximumY, max(minimumY, scrollView.contentOffset.y + step))
+            guard y != scrollView.contentOffset.y else { return }
+            scrollView.contentOffset.y = y
+            onChanged(recognizer.location(in: nil))
+        }
+    }
 }
 
 #Preview {
