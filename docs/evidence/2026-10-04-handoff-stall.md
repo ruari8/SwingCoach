@@ -1,6 +1,6 @@
 # October 4 handoff stall analysis
 
-**Status: cause identified, fix implemented, not yet device-tested.**
+**Status: fix device-tested in the [October 12 range session](./2026-10-12-range-session-standby-writer.md). The recording-queue stall is gone, but each rollover still drops 1–5 frames.**
 
 The September 14 range-session logs were copied from the iPhone 17 on October 4. Process run `737260DD` (08:24–09:02 UTC) has 19 `swing-saved` events, matching the 19 exported clips. It ran the build with temporary `DEBUG-handoff-*` timings, so the measurements requested in the [September 11 notes](./2026-09-11-auto-cadence-fix.md) exist without another session.
 

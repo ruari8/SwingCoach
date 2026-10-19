@@ -321,6 +321,10 @@ nonisolated final class SwingDetectorV3 {
     func currentObservationTrace() -> [FrameObservationTraceV3] { observationTraces }
     func currentDecisionTrace() -> [SwingDecisionTraceV3] { decisionTraces }
     var configurationName: String { configuration.name }
+    var decisionState: SwingMachineStateV3 { decisionEngine.state }
+    /// The detector is watching an address, a swing or its aftermath, so the
+    /// current footage may end up in a saved clip.
+    var isSwingWindowOpen: Bool { decisionEngine.state != .idle }
     var averageProcessingMS: Double { processedFrameCount > 0 ? totalProcessingMS / Double(processedFrameCount) : 0 }
     var processedFrames: Int { processedFrameCount }
 

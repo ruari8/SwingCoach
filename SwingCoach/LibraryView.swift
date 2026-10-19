@@ -2256,7 +2256,29 @@ struct SwingLibraryExportPayload: Identifiable {
 private struct SwingLibraryExportManifest: Encodable {
     let exportedAt: Date
     let count: Int
+    let app: SwingLibraryExportAppInfo
+    /// Capture diagnostics log, oldest first. Each swing's `capture` is joined from it.
+    let diagnosticsFiles: [String]
     let swings: [SwingLibraryExportManifestItem]
+}
+
+private struct SwingLibraryExportAppInfo: Encodable {
+    let version: String
+    let build: String
+    let os: String
+    let device: String
+
+    static var current: Self {
+        var system = utsname()
+        uname(&system)
+        let device = withUnsafeBytes(of: &system.machine) { String(decoding: $0.prefix { $0 != 0 }, as: UTF8.self) }
+        return Self(
+            version: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown",
+            build: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown",
+            os: ProcessInfo.processInfo.operatingSystemVersionString,
+            device: device
+        )
+    }
 }
 
 private struct SwingLibraryExportManifestItem: Encodable {
@@ -2268,6 +2290,8 @@ private struct SwingLibraryExportManifestItem: Encodable {
     let createdAt: Date
     let notes: String?
     let analyzed: Bool
+    /// Absent for imports, manual recordings, and swings older than the log.
+    var capture: CaptureRecord?
 }
 
 private enum SwingLibraryBatchExportError: LocalizedError {
@@ -2330,10 +2354,23 @@ private enum SwingLibraryBatchExporter {
                 )
             }
 
+            onProgress(swings.count, swings.count, "capture diagnostics")
+            let logURLs = try CaptureCadenceDiagnostics.shared.copyLog(to: exportFolder)
+            itemURLs.append(contentsOf: logURLs)
+            let swingIDs = Set(manifestItems.map(\.swingID.uuidString))
+            let captureRecords = await Task.detached(priority: .userInitiated) {
+                CaptureCadenceDiagnostics.captureRecords(in: logURLs, swingIDs: swingIDs)
+            }.value
+            for index in manifestItems.indices {
+                manifestItems[index].capture = captureRecords[manifestItems[index].swingID.uuidString]
+            }
+
             let manifestURL = exportFolder.appendingPathComponent("metadata.json")
             let manifest = SwingLibraryExportManifest(
                 exportedAt: Date(),
                 count: manifestItems.count,
+                app: .current,
+                diagnosticsFiles: logURLs.map(\.lastPathComponent),
                 swings: manifestItems
             )
             let encoder = JSONEncoder()

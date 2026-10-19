@@ -56,10 +56,39 @@ nonisolated struct CaptureCadenceWindow {
     }
 }
 
-/// One serial writer, at most two 8 MiB files. Used only on the diagnostics queue.
+/// Wall time spent in the live detector per report window. Owned by the analysis queue.
+nonisolated struct DetectorTimingWindow {
+    private var calls = 0
+    private var inferences = 0
+    private var totalInferenceSeconds = 0.0
+    private var maxSeconds = 0.0
+
+    mutating func record(seconds: Double, inferred: Bool) {
+        guard seconds.isFinite, seconds >= 0 else { return }
+        calls += 1
+        maxSeconds = max(maxSeconds, seconds)
+        if inferred {
+            inferences += 1
+            totalInferenceSeconds += seconds
+        }
+    }
+
+    mutating func takeValues() -> [String: Double] {
+        let values = [
+            "calls": Double(calls),
+            "inferences": Double(inferences),
+            "meanInferenceMS": inferences > 0 ? totalInferenceSeconds / Double(inferences) * 1_000 : 0,
+            "maxMS": maxSeconds * 1_000
+        ]
+        self = DetectorTimingWindow()
+        return values
+    }
+}
+
+/// One serial writer, at most two 24 MiB files. Used only on the diagnostics queue.
 nonisolated struct CaptureDiagnosticFile: Sendable {
     let directory: URL
-    var maxBytes = 8_388_608
+    var maxBytes = 25_165_824
 
     func append(_ line: Data) throws {
         guard line.count <= maxBytes else { return }
@@ -135,5 +164,86 @@ nonisolated final class CaptureCadenceDiagnostics: Sendable {
                 Self.logger.error("Could not save capture diagnostics: \(error.localizedDescription, privacy: .public)")
             }
         }
+    }
+}
+
+/// How one saved Auto swing was recorded, read back from the diagnostics log.
+nonisolated struct CaptureRecord: Codable, Sendable {
+    let runID: String
+    let build: String?
+    let recordingPolicy: String?
+    let sourceFPS: Double?
+    let width: Int?
+    let height: Int?
+    let bitRate: Int?
+    /// Seconds since the Auto session started, the timeline of every log event.
+    let sourceStart: Double?
+    let sourceEnd: Double?
+}
+
+nonisolated extension CaptureCadenceDiagnostics {
+    static let exportFilenames = ["capture-diagnostics.previous.jsonl", "capture-diagnostics.jsonl"]
+
+    /// Copies the log, oldest file first, after every event already queued is written.
+    func copyLog(to folder: URL) throws -> [URL] {
+        try queue.sync {
+            let sources = [file.directory.appendingPathComponent("capture.previous.jsonl"),
+                           file.directory.appendingPathComponent("capture.jsonl")]
+            var copied: [URL] = []
+            for (source, name) in zip(sources, Self.exportFilenames)
+            where FileManager.default.fileExists(atPath: source.path) {
+                let destination = folder.appendingPathComponent(name)
+                try FileManager.default.copyItem(at: source, to: destination)
+                copied.append(destination)
+            }
+            return copied
+        }
+    }
+
+    /// Joins each `swing-saved` event to the `writer-start` of its first chunk.
+    static func captureRecords(in logs: [URL], swingIDs: Set<String>) -> [String: CaptureRecord] {
+        var builds: [String: String] = [:]
+        var writers: [String: [String: Any]] = [:]
+        var saved: [(swingID: String, event: [String: Any])] = []
+        for url in logs {
+            guard let text = try? String(contentsOf: url, encoding: .utf8) else { continue }
+            for line in text.split(separator: "\n") {
+                // Most lines are per-second summaries; skip them before parsing.
+                guard line.contains("\"boundary\":\"run\"") || line.contains("\"boundary\":\"writer-start\"")
+                        || line.contains("\"boundary\":\"swing-saved\""),
+                      let event = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any],
+                      let boundary = event["boundary"] as? String else { continue }
+                let state = event["state"] as? [String: String] ?? [:]
+                switch boundary {
+                case "run":
+                    if let runID = event["runID"] as? String { builds[runID] = state["build"] }
+                case "writer-start":
+                    if let id = event["id"] as? String { writers[id] = event }
+                default:
+                    if let swingID = state["swingID"], swingIDs.contains(swingID) { saved.append((swingID, event)) }
+                }
+            }
+        }
+        var records: [String: CaptureRecord] = [:]
+        for (swingID, event) in saved {
+            let values = event["values"] as? [String: Double] ?? [:]
+            let runID = event["runID"] as? String ?? ""
+            let writer = (event["id"] as? String).flatMap { writers[$0] }
+            let writerValues = writer?["values"] as? [String: Double] ?? [:]
+            let writerState = writer?["state"] as? [String: String] ?? [:]
+            let chunkStart = values["chunkStart"]
+            records[swingID] = CaptureRecord(
+                runID: runID,
+                build: builds[runID],
+                recordingPolicy: writerState["recordingPolicy"],
+                sourceFPS: writerValues["sourceFPS"],
+                width: writerValues["width"].map { Int($0) },
+                height: writerValues["height"].map { Int($0) },
+                bitRate: writerValues["bitRate"].map { Int($0) },
+                sourceStart: chunkStart,
+                sourceEnd: chunkStart.flatMap { start in values["end"].map { start + $0 } }
+            )
+        }
+        return records
     }
 }

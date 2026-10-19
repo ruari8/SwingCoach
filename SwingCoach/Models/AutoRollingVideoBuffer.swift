@@ -135,8 +135,17 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
     private var generation = UUID()
     private var latestRelativeTime = -Double.greatestFiniteMagnitude
     private let writerQueue: DispatchQueue
+    /// A rollover drops 1–5 camera frames about 50 ms after the seal (Oct 12
+    /// range session), so it waits for a quiet moment instead of landing in a
+    /// swing. A swing seals its chunk at export anyway; the cap bounds disk use
+    /// when the detector stays engaged without a swing.
     private let chunkDuration = 20.0
+    private let maxChunkDuration = 60.0
+    private let quietMarginDuration = 1.0
     private let retentionDuration = 45.0
+    // Detector engagement, mirrored from the analysis queue.
+    private var swingWindowIsOpen = false
+    private var swingWindowClosedAt = -Double.greatestFiniteMagnitude
     private var inputCadence = CaptureCadenceWindow()
     private var nextInputCadenceReport = 0.0
 
@@ -177,6 +186,24 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
         return standbySlot?.url
     }
 
+    /// Open while the detector sees a golfer at address, swinging or just after
+    /// impact: footage that a saved clip may contain. Rollover waits until the
+    /// window has been closed for `quietMarginDuration`.
+    func setSwingWindowOpen(_ isOpen: Bool) {
+        dispatchPrecondition(condition: .onQueue(writerQueue))
+        guard isOpen != swingWindowIsOpen else { return }
+        swingWindowIsOpen = isOpen
+        if !isOpen { swingWindowClosedAt = latestRelativeTime }
+    }
+
+    private func rolloverReason(for chunk: Chunk, at relativeTime: Double) -> String? {
+        let age = relativeTime - chunk.startRelativeTime
+        if age >= maxChunkDuration { return "rollover-forced" }
+        guard age >= chunkDuration, !swingWindowIsOpen,
+              relativeTime - swingWindowClosedAt >= quietMarginDuration else { return nil }
+        return "rollover"
+    }
+
     func reset(preservingPendingExports: Bool = false) {
         dispatchPrecondition(condition: .onQueue(writerQueue))
         if preservingPendingExports {
@@ -208,6 +235,8 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
         recordingChunk = nil
         discardStandby()
         latestRelativeTime = -Double.greatestFiniteMagnitude
+        swingWindowIsOpen = false
+        swingWindowClosedAt = -Double.greatestFiniteMagnitude
     }
 
     func append(
@@ -236,10 +265,10 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
         if let chunk = recordingChunk {
             if chunk.videoRotationAngle != videoRotationAngle {
                 finish(chunk, reason: "rotation")
-            } else if relativeTime - chunk.startRelativeTime >= chunkDuration {
+            } else if let reason = rolloverReason(for: chunk, at: relativeTime) {
                 // Seal before appending the boundary frame. That frame belongs
                 // only to the next file, not to both sides of the rollover.
-                finish(chunk, reason: "rollover")
+                finish(chunk, reason: reason)
             }
         }
 
@@ -392,7 +421,7 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
                 "sourceFPS": sourceFPS, "bitRate": Double(prepared.averageBitRate),
                 "width": Double(dimensions.width), "height": Double(dimensions.height),
                 "rotation": Double(videoRotationAngle)
-            ], state: ["codec": "h264", "recordingPolicy": "consecutive-v2",
+            ], state: ["codec": "h264", "recordingPolicy": "quiet-rollover-v1",
                        "writerSource": standby == nil ? "inline" : "standby"])
             chunks.append(chunk)
             recordingChunk = chunk
@@ -536,8 +565,9 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
         CaptureCadenceDiagnostics.shared.emit("writer-sealed", id: chunk.id.uuidString, values: [
             "sourceEndPTS": chunk.startSampleTime.seconds + chunk.endRelativeTime - chunk.startRelativeTime,
             "endRelativeTime": chunk.endRelativeTime,
-            "pendingFrames": Double(chunk.pendingSamples.count - chunk.pendingReadIndex)
-        ], state: ["reason": reason])
+            "pendingFrames": Double(chunk.pendingSamples.count - chunk.pendingReadIndex),
+            "chunkSeconds": chunk.endRelativeTime - chunk.startRelativeTime
+        ], state: ["reason": reason, "swingWindow": swingWindowIsOpen ? "open" : "closed"])
         drainPendingSamples(for: chunk)
     }
 
