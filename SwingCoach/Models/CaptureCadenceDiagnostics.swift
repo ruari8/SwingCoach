@@ -182,22 +182,74 @@ nonisolated struct CaptureRecord: Codable, Sendable {
 }
 
 nonisolated extension CaptureCadenceDiagnostics {
-    static let exportFilenames = ["capture-diagnostics.previous.jsonl", "capture-diagnostics.jsonl"]
+    static let exportFilename = "capture-diagnostics.jsonl"
 
-    /// Copies the log, oldest file first, after every event already queued is written.
-    func copyLog(to folder: URL) throws -> [URL] {
-        try queue.sync {
-            let sources = [file.directory.appendingPathComponent("capture.previous.jsonl"),
-                           file.directory.appendingPathComponent("capture.jsonl")]
-            var copied: [URL] = []
-            for (source, name) in zip(sources, Self.exportFilenames)
-            where FileManager.default.fileExists(atPath: source.path) {
-                let destination = folder.appendingPathComponent(name)
-                try FileManager.default.copyItem(at: source, to: destination)
-                copied.append(destination)
+    /// Writes the log lines of every process run that saved one of `swingIDs`
+    /// to `folder`, and returns how each of those swings was recorded. Other
+    /// runs stay on the phone. Diagnostics are optional: on any failure the
+    /// export goes ahead without the log file.
+    func exportLog(for swingIDs: Set<String>, to folder: URL) async -> (file: URL?, records: [String: CaptureRecord]) {
+        let snapshot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("capture-diagnostics-\(UUID().uuidString)")
+        let destination = folder.appendingPathComponent(Self.exportFilename)
+        return await withCheckedContinuation { continuation in
+            queue.async {
+                // Copy under the queue so no event is half written, then filter off it.
+                let sources: [URL]
+                do {
+                    sources = try self.snapshotLog(to: snapshot)
+                } catch {
+                    Self.logger.error("Could not copy capture diagnostics: \(error.localizedDescription, privacy: .public)")
+                    try? FileManager.default.removeItem(at: snapshot)
+                    continuation.resume(returning: (nil, [:]))
+                    return
+                }
+                DispatchQueue.global(qos: .userInitiated).async {
+                    defer { try? FileManager.default.removeItem(at: snapshot) }
+                    let records = Self.captureRecords(in: sources, swingIDs: swingIDs)
+                    let runIDs = Set(records.values.map(\.runID))
+                    guard !runIDs.isEmpty else {
+                        continuation.resume(returning: (nil, records))
+                        return
+                    }
+                    do {
+                        try Self.runLines(in: sources, runIDs: runIDs).write(to: destination, options: .atomic)
+                        continuation.resume(returning: (destination, records))
+                    } catch {
+                        Self.logger.error("Could not export capture diagnostics: \(error.localizedDescription, privacy: .public)")
+                        try? FileManager.default.removeItem(at: destination)
+                        continuation.resume(returning: (nil, records))
+                    }
+                }
             }
-            return copied
         }
+    }
+
+    /// Oldest file first. Call on `queue`.
+    private func snapshotLog(to folder: URL) throws -> [URL] {
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        var copied: [URL] = []
+        for name in ["capture.previous.jsonl", "capture.jsonl"] {
+            let source = file.directory.appendingPathComponent(name)
+            guard FileManager.default.fileExists(atPath: source.path) else { continue }
+            let copy = folder.appendingPathComponent(name)
+            try FileManager.default.copyItem(at: source, to: copy)
+            copied.append(copy)
+        }
+        return copied
+    }
+
+    static func runLines(in logs: [URL], runIDs: Set<String>) throws -> Data {
+        let markers = runIDs.map { "\"runID\":\"\($0)\"" }
+        var output = Data()
+        for url in logs {
+            let text = try String(contentsOf: url, encoding: .utf8)
+            for line in text.split(separator: "\n") where markers.contains(where: { line.contains($0) }) {
+                output.append(contentsOf: line.utf8)
+                output.append(0x0A)
+            }
+        }
+        return output
     }
 
     /// Joins each `swing-saved` event to the `writer-start` of its first chunk.

@@ -36,4 +36,28 @@ final class CaptureDiagnosticsExportTests: XCTestCase {
         XCTAssertEqual(record.sourceStart ?? 0, 207.73, accuracy: 0.0001)
         XCTAssertEqual(record.sourceEnd ?? 0, 210.63, accuracy: 0.0001)
     }
+
+    func testExportedLogKeepsOnlyTheRunsOfTheSelectedSwings() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let previousURL = folder.appendingPathComponent("previous.jsonl")
+        let currentURL = folder.appendingPathComponent("current.jsonl")
+        try """
+        {"runID":"RUN-OLD","boundary":"run","values":{}}
+        {"runID":"RUN-A","boundary":"run","values":{}}
+        """.write(to: previousURL, atomically: true, encoding: .utf8)
+        try """
+        {"runID":"RUN-A","boundary":"camera","values":{}}
+        {"runID":"RUN-OLD","boundary":"camera","values":{}}
+
+        """.write(to: currentURL, atomically: true, encoding: .utf8)
+
+        let data = try CaptureCadenceDiagnostics.runLines(in: [previousURL, currentURL], runIDs: ["RUN-A"])
+        XCTAssertEqual(String(decoding: data, as: UTF8.self), """
+        {"runID":"RUN-A","boundary":"run","values":{}}
+        {"runID":"RUN-A","boundary":"camera","values":{}}
+
+        """)
+    }
 }

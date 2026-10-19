@@ -135,6 +135,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private var detectorTiming = DetectorTimingWindow()
     private var nextDetectorReport = 0.0
     private var lastReportedDetectorState: SwingMachineStateV3?
+    private var lastReportedSwingWindow: Bool?
 
     private var liveSwingDetector = SwingDetectorV3()
     private var recordingStartSampleTime: CMTime?
@@ -560,6 +561,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             self.detectorTiming = DetectorTimingWindow()
             self.nextDetectorReport = 0
             self.lastReportedDetectorState = nil
+            self.lastReportedSwingWindow = nil
         }
 
         DispatchQueue.main.async {
@@ -949,10 +951,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         bufferQueue.async {
             self.autoRollingBuffer.setSwingWindowOpen(isOpen)
         }
-        if state != lastReportedDetectorState {
+        if state != lastReportedDetectorState || isOpen != lastReportedSwingWindow {
             lastReportedDetectorState = state
+            lastReportedSwingWindow = isOpen
             CaptureCadenceDiagnostics.shared.emit("detector-state", values: ["relativeTime": relativeTime],
-                                                  state: ["state": state.rawValue])
+                                                  state: ["state": state.rawValue,
+                                                          "swingWindow": isOpen ? "open" : "closed"])
         }
         let now = ProcessInfo.processInfo.systemUptime
         guard now >= nextDetectorReport else { return }

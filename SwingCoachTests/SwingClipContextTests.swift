@@ -115,6 +115,25 @@ final class SwingClipContextTests: XCTestCase {
         try await assertFrames(try await prepared.makeAsset(), count: 60)
     }
 
+    /// A swing without a target lock leaves the decision engine idle, but the
+    /// pose pattern can still save it, so raised hands hold the window open.
+    func testSwingWindowOpensForRaisedHandsWithoutTargetLock() {
+        let detector = SwingDetectorV3()
+        func windowOpen(at time: Double, handHeight: Double) -> Bool {
+            detector.processObservation(SwingObservationV3(
+                realTime: time, sourceTime: time, detections: [], humanPoseConfidence: 0.9,
+                handHeight: handHeight, wristPoint: nil, torsoHeight: nil, lumaMotion: 0
+            ))
+            return detector.isSwingWindowOpen
+        }
+        XCTAssertFalse(windowOpen(at: 0.0, handHeight: 0.3))
+        XCTAssertFalse(windowOpen(at: 0.5, handHeight: 0.3))
+        XCTAssertTrue(windowOpen(at: 1.0, handHeight: 1.1))
+        XCTAssertEqual(detector.decisionState, .idle)
+        XCTAssertTrue(windowOpen(at: 1.4, handHeight: 0.3))
+        XCTAssertFalse(windowOpen(at: 1.6, handHeight: 0.3))
+    }
+
     func testRolloverWaitsForQuietMomentAndIsCappedWhileSwingWindowStaysOpen() async throws {
         // Open from 15 to 35 s: the 20 s rollover waits for one quiet second.
         let held = try await chunkStarts(seconds: 45, swingWindow: 15..<35)

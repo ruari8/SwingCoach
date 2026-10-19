@@ -2355,14 +2355,13 @@ private enum SwingLibraryBatchExporter {
             }
 
             onProgress(swings.count, swings.count, "capture diagnostics")
-            let logURLs = try CaptureCadenceDiagnostics.shared.copyLog(to: exportFolder)
-            itemURLs.append(contentsOf: logURLs)
-            let swingIDs = Set(manifestItems.map(\.swingID.uuidString))
-            let captureRecords = await Task.detached(priority: .userInitiated) {
-                CaptureCadenceDiagnostics.captureRecords(in: logURLs, swingIDs: swingIDs)
-            }.value
+            let diagnostics = await CaptureCadenceDiagnostics.shared.exportLog(
+                for: Set(manifestItems.map(\.swingID.uuidString)),
+                to: exportFolder
+            )
+            if let file = diagnostics.file { itemURLs.append(file) }
             for index in manifestItems.indices {
-                manifestItems[index].capture = captureRecords[manifestItems[index].swingID.uuidString]
+                manifestItems[index].capture = diagnostics.records[manifestItems[index].swingID.uuidString]
             }
 
             let manifestURL = exportFolder.appendingPathComponent("metadata.json")
@@ -2370,7 +2369,7 @@ private enum SwingLibraryBatchExporter {
                 exportedAt: Date(),
                 count: manifestItems.count,
                 app: .current,
-                diagnosticsFiles: logURLs.map(\.lastPathComponent),
+                diagnosticsFiles: diagnostics.file.map { [$0.lastPathComponent] } ?? [],
                 swings: manifestItems
             )
             let encoder = JSONEncoder()
