@@ -51,6 +51,8 @@ nonisolated final class SwingDetectorV3 {
     private var startupInFlightResolved = false
     private var startupEvaluatedImpactTimes: [Double] = []
     private var lastFullSwingPatternRealTime = -Double.greatestFiniteMagnitude
+    private var latestObservationRealTime = -Double.greatestFiniteMagnitude
+    private var lastRaisedHandsRealTime = -Double.greatestFiniteMagnitude
 
     private let featureRetentionLimit = 4_000
     private let startupInFlightEndRealTime = 2.25
@@ -111,6 +113,8 @@ nonisolated final class SwingDetectorV3 {
         startupInFlightResolved = false
         startupEvaluatedImpactTimes.removeAll(keepingCapacity: true)
         lastFullSwingPatternRealTime = -Double.greatestFiniteMagnitude
+        latestObservationRealTime = -Double.greatestFiniteMagnitude
+        lastRaisedHandsRealTime = -Double.greatestFiniteMagnitude
         targetSelector.reset()
         decisionEngine.reset()
 
@@ -227,6 +231,10 @@ nonisolated final class SwingDetectorV3 {
         let stateBeforeFrame = decisionEngine.state.rawValue
 
         features.append(frame)
+        latestObservationRealTime = realTime
+        if let handHeight = frame.handHeight, handHeight > FullSwingPatternV3.raisedHandHeight {
+            lastRaisedHandsRealTime = realTime
+        }
         if features.count > featureRetentionLimit {
             features.removeFirst(features.count - featureRetentionLimit)
         }
@@ -321,6 +329,13 @@ nonisolated final class SwingDetectorV3 {
     func currentObservationTrace() -> [FrameObservationTraceV3] { observationTraces }
     func currentDecisionTrace() -> [SwingDecisionTraceV3] { decisionTraces }
     var configurationName: String { configuration.name }
+    var decisionState: SwingMachineStateV3 { decisionEngine.state }
+    /// The detector is watching an address, a swing or its aftermath, so the
+    /// current footage may end up in a saved clip. Raised hands cover swings
+    /// without a target lock, which the pose pattern can still save.
+    var isSwingWindowOpen: Bool {
+        decisionEngine.state != .idle || latestObservationRealTime - lastRaisedHandsRealTime <= 0.5
+    }
     var averageProcessingMS: Double { processedFrameCount > 0 ? totalProcessingMS / Double(processedFrameCount) : 0 }
     var processedFrames: Int { processedFrameCount }
 

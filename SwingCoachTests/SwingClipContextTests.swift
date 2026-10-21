@@ -115,6 +115,58 @@ final class SwingClipContextTests: XCTestCase {
         try await assertFrames(try await prepared.makeAsset(), count: 60)
     }
 
+    /// A swing without a target lock leaves the decision engine idle, but the
+    /// pose pattern can still save it, so raised hands hold the window open.
+    func testSwingWindowOpensForRaisedHandsWithoutTargetLock() {
+        let detector = SwingDetectorV3()
+        func windowOpen(at time: Double, handHeight: Double) -> Bool {
+            detector.processObservation(SwingObservationV3(
+                realTime: time, sourceTime: time, detections: [], humanPoseConfidence: 0.9,
+                handHeight: handHeight, wristPoint: nil, torsoHeight: nil, lumaMotion: 0
+            ))
+            return detector.isSwingWindowOpen
+        }
+        XCTAssertFalse(windowOpen(at: 0.0, handHeight: 0.3))
+        XCTAssertFalse(windowOpen(at: 0.5, handHeight: 0.3))
+        XCTAssertTrue(windowOpen(at: 1.0, handHeight: 1.1))
+        XCTAssertEqual(detector.decisionState, .idle)
+        XCTAssertTrue(windowOpen(at: 1.4, handHeight: 0.3))
+        XCTAssertFalse(windowOpen(at: 1.6, handHeight: 0.3))
+    }
+
+    func testRolloverWaitsForQuietMomentAndIsCappedWhileSwingWindowStaysOpen() async throws {
+        // Open from 15 to 35 s: the 20 s rollover waits for one quiet second.
+        let held = try await chunkStarts(seconds: 45, swingWindow: 15..<35)
+        XCTAssertEqual(held.count, 2)
+        XCTAssertEqual(held.last ?? 0, 36, accuracy: 0.05)
+        // Never closes: the 60 s cap still bounds the file.
+        let capped = try await chunkStarts(seconds: 65, swingWindow: 0..<65)
+        XCTAssertEqual(capped.count, 2)
+        XCTAssertEqual(capped.last ?? 0, 60, accuracy: 0.05)
+    }
+
+    /// Source start of each rolling file under one clip covering the whole recording.
+    private func chunkStarts(seconds: Int, swingWindow: Range<Int>) async throws -> [Double] {
+        let queue = DispatchQueue(label: "test.quiet-rollover")
+        let buffer = AutoRollingVideoBuffer(writerQueue: queue)
+        let frames = try SyntheticFrames(fps: 30)
+        let prepared: AutoRollingVideoBuffer.PreparedClip = try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                buffer.prepareClip(in: CMTimeRange(start: .zero, end: self.time(Double(seconds) - 0.5))) {
+                    continuation.resume(with: $0)
+                }
+                for index in 0..<(seconds * 30) {
+                    if index % 30 == 0 { buffer.setSwingWindowOpen(swingWindow.contains(index / 30)) }
+                    frames.append(index, to: buffer)
+                }
+                buffer.reset(preservingPendingExports: true)
+            }
+        }
+        defer { queue.sync { buffer.release(prepared); buffer.reset() } }
+        try await assertFrames(try await prepared.makeAsset(), count: (seconds * 30) - 15)
+        return prepared.segments.map { prepared.sourceStartTime + $0.timelineStart.seconds }
+    }
+
     func testStoppingEarlyFinishesPendingClipAndKeepsItsFilesUntilRelease() async throws {
         let (buffer, queue, prepared) = try await record(seconds: 5, range: CMTimeRange(start: time(1), end: time(20)))
         defer { queue.sync { buffer.release(prepared); buffer.reset() } }

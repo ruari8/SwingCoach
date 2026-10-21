@@ -56,10 +56,39 @@ nonisolated struct CaptureCadenceWindow {
     }
 }
 
-/// One serial writer, at most two 8 MiB files. Used only on the diagnostics queue.
+/// Wall time spent in the live detector per report window. Owned by the analysis queue.
+nonisolated struct DetectorTimingWindow {
+    private var calls = 0
+    private var inferences = 0
+    private var totalInferenceSeconds = 0.0
+    private var maxSeconds = 0.0
+
+    mutating func record(seconds: Double, inferred: Bool) {
+        guard seconds.isFinite, seconds >= 0 else { return }
+        calls += 1
+        maxSeconds = max(maxSeconds, seconds)
+        if inferred {
+            inferences += 1
+            totalInferenceSeconds += seconds
+        }
+    }
+
+    mutating func takeValues() -> [String: Double] {
+        let values = [
+            "calls": Double(calls),
+            "inferences": Double(inferences),
+            "meanInferenceMS": inferences > 0 ? totalInferenceSeconds / Double(inferences) * 1_000 : 0,
+            "maxMS": maxSeconds * 1_000
+        ]
+        self = DetectorTimingWindow()
+        return values
+    }
+}
+
+/// One serial writer, at most two 24 MiB files. Used only on the diagnostics queue.
 nonisolated struct CaptureDiagnosticFile: Sendable {
     let directory: URL
-    var maxBytes = 8_388_608
+    var maxBytes = 25_165_824
 
     func append(_ line: Data) throws {
         guard line.count <= maxBytes else { return }
@@ -135,5 +164,138 @@ nonisolated final class CaptureCadenceDiagnostics: Sendable {
                 Self.logger.error("Could not save capture diagnostics: \(error.localizedDescription, privacy: .public)")
             }
         }
+    }
+}
+
+/// How one saved Auto swing was recorded, read back from the diagnostics log.
+nonisolated struct CaptureRecord: Codable, Sendable {
+    let runID: String
+    let build: String?
+    let recordingPolicy: String?
+    let sourceFPS: Double?
+    let width: Int?
+    let height: Int?
+    let bitRate: Int?
+    /// Seconds since the Auto session started, the timeline of every log event.
+    let sourceStart: Double?
+    let sourceEnd: Double?
+}
+
+nonisolated extension CaptureCadenceDiagnostics {
+    static let exportFilename = "capture-diagnostics.jsonl"
+
+    /// Writes the log lines of every process run that saved one of `swingIDs`
+    /// to `folder`, and returns how each of those swings was recorded. Other
+    /// runs stay on the phone. Diagnostics are optional: on any failure the
+    /// export goes ahead without the log file.
+    func exportLog(for swingIDs: Set<String>, to folder: URL) async -> (file: URL?, records: [String: CaptureRecord]) {
+        let snapshot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("capture-diagnostics-\(UUID().uuidString)")
+        let destination = folder.appendingPathComponent(Self.exportFilename)
+        return await withCheckedContinuation { continuation in
+            queue.async {
+                // Copy under the queue so no event is half written, then filter off it.
+                let sources: [URL]
+                do {
+                    sources = try self.snapshotLog(to: snapshot)
+                } catch {
+                    Self.logger.error("Could not copy capture diagnostics: \(error.localizedDescription, privacy: .public)")
+                    try? FileManager.default.removeItem(at: snapshot)
+                    continuation.resume(returning: (nil, [:]))
+                    return
+                }
+                DispatchQueue.global(qos: .userInitiated).async {
+                    defer { try? FileManager.default.removeItem(at: snapshot) }
+                    let records = Self.captureRecords(in: sources, swingIDs: swingIDs)
+                    let runIDs = Set(records.values.map(\.runID))
+                    guard !runIDs.isEmpty else {
+                        continuation.resume(returning: (nil, records))
+                        return
+                    }
+                    do {
+                        try Self.runLines(in: sources, runIDs: runIDs).write(to: destination, options: .atomic)
+                        continuation.resume(returning: (destination, records))
+                    } catch {
+                        Self.logger.error("Could not export capture diagnostics: \(error.localizedDescription, privacy: .public)")
+                        try? FileManager.default.removeItem(at: destination)
+                        continuation.resume(returning: (nil, records))
+                    }
+                }
+            }
+        }
+    }
+
+    /// Oldest file first. Call on `queue`.
+    private func snapshotLog(to folder: URL) throws -> [URL] {
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        var copied: [URL] = []
+        for name in ["capture.previous.jsonl", "capture.jsonl"] {
+            let source = file.directory.appendingPathComponent(name)
+            guard FileManager.default.fileExists(atPath: source.path) else { continue }
+            let copy = folder.appendingPathComponent(name)
+            try FileManager.default.copyItem(at: source, to: copy)
+            copied.append(copy)
+        }
+        return copied
+    }
+
+    static func runLines(in logs: [URL], runIDs: Set<String>) throws -> Data {
+        let markers = runIDs.map { "\"runID\":\"\($0)\"" }
+        var output = Data()
+        for url in logs {
+            let text = try String(contentsOf: url, encoding: .utf8)
+            for line in text.split(separator: "\n") where markers.contains(where: { line.contains($0) }) {
+                output.append(contentsOf: line.utf8)
+                output.append(0x0A)
+            }
+        }
+        return output
+    }
+
+    /// Joins each `swing-saved` event to the `writer-start` of its first chunk.
+    static func captureRecords(in logs: [URL], swingIDs: Set<String>) -> [String: CaptureRecord] {
+        var builds: [String: String] = [:]
+        var writers: [String: [String: Any]] = [:]
+        var saved: [(swingID: String, event: [String: Any])] = []
+        for url in logs {
+            guard let text = try? String(contentsOf: url, encoding: .utf8) else { continue }
+            for line in text.split(separator: "\n") {
+                // Most lines are per-second summaries; skip them before parsing.
+                guard line.contains("\"boundary\":\"run\"") || line.contains("\"boundary\":\"writer-start\"")
+                        || line.contains("\"boundary\":\"swing-saved\""),
+                      let event = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any],
+                      let boundary = event["boundary"] as? String else { continue }
+                let state = event["state"] as? [String: String] ?? [:]
+                switch boundary {
+                case "run":
+                    if let runID = event["runID"] as? String { builds[runID] = state["build"] }
+                case "writer-start":
+                    if let id = event["id"] as? String { writers[id] = event }
+                default:
+                    if let swingID = state["swingID"], swingIDs.contains(swingID) { saved.append((swingID, event)) }
+                }
+            }
+        }
+        var records: [String: CaptureRecord] = [:]
+        for (swingID, event) in saved {
+            let values = event["values"] as? [String: Double] ?? [:]
+            let runID = event["runID"] as? String ?? ""
+            let writer = (event["id"] as? String).flatMap { writers[$0] }
+            let writerValues = writer?["values"] as? [String: Double] ?? [:]
+            let writerState = writer?["state"] as? [String: String] ?? [:]
+            let chunkStart = values["chunkStart"]
+            records[swingID] = CaptureRecord(
+                runID: runID,
+                build: builds[runID],
+                recordingPolicy: writerState["recordingPolicy"],
+                sourceFPS: writerValues["sourceFPS"],
+                width: writerValues["width"].map { Int($0) },
+                height: writerValues["height"].map { Int($0) },
+                bitRate: writerValues["bitRate"].map { Int($0) },
+                sourceStart: chunkStart,
+                sourceEnd: chunkStart.flatMap { start in values["end"].map { start + $0 } }
+            )
+        }
+        return records
     }
 }

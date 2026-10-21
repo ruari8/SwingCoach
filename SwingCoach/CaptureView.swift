@@ -130,6 +130,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
     private var analysisIsInFlight = false
     private var pendingAnalysisFrame: PendingAnalysisFrame?
+    // Owned by analysisQueue. Detector timing next to the camera drop summary
+    // tells whether an unexplained drop burst coincides with slow inference.
+    private var detectorTiming = DetectorTimingWindow()
+    private var nextDetectorReport = 0.0
+    private var lastReportedDetectorState: SwingMachineStateV3?
+    private var lastReportedSwingWindow: Bool?
 
     private var liveSwingDetector = SwingDetectorV3()
     private var recordingStartSampleTime: CMTime?
@@ -552,6 +558,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             self.autoExportedDetectionIDs = []
             self.liveSwingDetector = SwingDetectorV3(configuration: self.liveV3Configuration())
             self.liveSwingDetector.reset(enabled: detectorEnabled)
+            self.detectorTiming = DetectorTimingWindow()
+            self.nextDetectorReport = 0
+            self.lastReportedDetectorState = nil
+            self.lastReportedSwingWindow = nil
         }
 
         DispatchQueue.main.async {
@@ -909,6 +919,8 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         let orientedImageSize = (orientation == .right || orientation == .left)
             ? CGSize(width: bufferSize.height, height: bufferSize.width)
             : bufferSize
+        let processedBefore = liveSwingDetector.processedFrames
+        let startedAt = ProcessInfo.processInfo.systemUptime
         var snapshot = liveSwingDetector.process(
             sampleBuffer: sampleBuffer,
             recordingTime: relativeTime,
@@ -916,6 +928,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             orientedImageSize: orientedImageSize
         )
         snapshot = liveTelemetrySnapshot(base: snapshot, recordingTime: relativeTime)
+        if autoCaptureIsActive {
+            detectorTiming.record(seconds: ProcessInfo.processInfo.systemUptime - startedAt,
+                                  inferred: liveSwingDetector.processedFrames > processedBefore)
+            reportDetectorState(relativeTime: relativeTime)
+        }
 
         if !autoCaptureIsActive || movieOutput.isRecording {
             DispatchQueue.main.async {
@@ -926,6 +943,27 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         if autoCaptureIsActive, !autoCaptureIsPausedForReview {
             enqueueNewAutoDetections()
         }
+    }
+
+    private func reportDetectorState(relativeTime: Double) {
+        let state = liveSwingDetector.decisionState
+        let isOpen = liveSwingDetector.isSwingWindowOpen
+        bufferQueue.async {
+            self.autoRollingBuffer.setSwingWindowOpen(isOpen)
+        }
+        if state != lastReportedDetectorState || isOpen != lastReportedSwingWindow {
+            lastReportedDetectorState = state
+            lastReportedSwingWindow = isOpen
+            CaptureCadenceDiagnostics.shared.emit("detector-state", values: ["relativeTime": relativeTime],
+                                                  state: ["state": state.rawValue,
+                                                          "swingWindow": isOpen ? "open" : "closed"])
+        }
+        let now = ProcessInfo.processInfo.systemUptime
+        guard now >= nextDetectorReport else { return }
+        nextDetectorReport = now + 1
+        var values = detectorTiming.takeValues()
+        values["relativeTime"] = relativeTime
+        CaptureCadenceDiagnostics.shared.emit("detector", values: values, state: ["state": state.rawValue])
     }
 
     private func enqueueNewAutoDetections() {

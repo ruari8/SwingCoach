@@ -15,6 +15,10 @@
 import Foundation
 
 nonisolated enum FullSwingPatternV3 {
+    /// Hands above this height, in torso units over the hips, are at or near
+    /// the backswing top or the finish.
+    static let raisedHandHeight = 0.6
+
     /// Impact times (realTime seconds) of completed full-swing pose patterns
     /// inside `samples`, ordered ascending. A dip only appears once its
     /// finish evidence (up to 2.5s later) has been observed, so streaming
@@ -45,7 +49,7 @@ nonisolated enum FullSwingPatternV3 {
 
             // Backswing top shortly before, with a fast drop into the dip.
             guard let topIndex = (0..<index).last(where: {
-                pts[$0].t >= t - 1.2 && pts[$0].h > 0.6
+                pts[$0].t >= t - 1.2 && pts[$0].h > raisedHandHeight
             }) else { continue }
             let top = pts[topIndex]
             let dt = t - top.t
