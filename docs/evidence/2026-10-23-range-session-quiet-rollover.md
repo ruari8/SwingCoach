@@ -1,6 +1,6 @@
 # October 23 range session: quiet rollover on the phone
 
-**Status: `quiet-rollover-v1` works. 45 of 48 clips are perfectly smooth, against 35 of 44 on October 12. The 3 remaining clips each lose 2–4 source frames, with a longest pause of 107 ms on the 8× playback timeline (373 ms on October 12). One gap is a forced 60-second rollover that landed at the start of a swing; the other two are small isolated drops. None falls in the downswing or impact. The 11 clips recorded at 120 fps are clean and that session had no drops at any file switch.**
+**Status: `quiet-rollover-v1` works. 45 of 48 clips are perfectly smooth, against 36 of 44 on October 12. The 3 remaining clips each lose 2–4 source frames, with a longest pause of 107 ms on the 8× playback timeline (373 ms on October 12). One gap is a forced 60-second rollover that landed at the start of a swing; the other two are small isolated drops. None falls in the downswing or impact. The 11 clips recorded at 120 fps are clean and that session had no drops at any file switch.**
 
 Following this session, Auto jitter is treated as resolved for now ([AUTO_CAPTURE_CADENCE.md](../AUTO_CAPTURE_CADENCE.md)).
 
@@ -20,7 +20,7 @@ Scripts and the gap contact sheet: `.verification-artifacts/issue-28/2026-10-23-
 | Measurement | September 14 | October 12 | October 23 |
 | --- | ---: | ---: | ---: |
 | Exported clips | 19 | 44 | 48 |
-| Clips with any interval above 41 ms | 2 | 9 | 3 |
+| Clips with any interval above 41 ms | 2 | 8 | 3 |
 | Gaps above 75 ms | 3 | 4 | 3 |
 | Longest gap | 400 ms | 373 ms | 107 ms |
 | Source frames lost across all clips | n/a | ~28 | ~9 |
