@@ -138,9 +138,11 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
     /// A rollover drops 1–5 camera frames about 50 ms after the seal (Oct 12
     /// range session), so it waits for a quiet moment instead of landing in a
     /// swing. A swing seals its chunk at export anyway; the cap bounds disk use
-    /// when the detector stays engaged without a swing.
+    /// (about 750 MB at 240 fps) when the detector stays engaged without a
+    /// swing. On Oct 23 a 60 s cap fired at a takeaway; the longest open
+    /// window that session was 63 s.
     private let chunkDuration = 20.0
-    private let maxChunkDuration = 60.0
+    private let maxChunkDuration = 120.0
     private let quietMarginDuration = 1.0
     private let retentionDuration = 45.0
     // Detector engagement, mirrored from the analysis queue.
@@ -421,7 +423,7 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
                 "sourceFPS": sourceFPS, "bitRate": Double(prepared.averageBitRate),
                 "width": Double(dimensions.width), "height": Double(dimensions.height),
                 "rotation": Double(videoRotationAngle)
-            ], state: ["codec": "h264", "recordingPolicy": "quiet-rollover-v1",
+            ], state: ["codec": "h264", "recordingPolicy": "quiet-rollover-v2",
                        "writerSource": standby == nil ? "inline" : "standby"])
             chunks.append(chunk)
             recordingChunk = chunk

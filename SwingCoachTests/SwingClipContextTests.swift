@@ -139,10 +139,14 @@ final class SwingClipContextTests: XCTestCase {
         let held = try await chunkStarts(seconds: 45, swingWindow: 15..<35)
         XCTAssertEqual(held.count, 2)
         XCTAssertEqual(held.last ?? 0, 36, accuracy: 0.05)
-        // Never closes: the 60 s cap still bounds the file.
-        let capped = try await chunkStarts(seconds: 65, swingWindow: 0..<65)
+        // Open past 60 s, as in a long run of rehearsal swings: still held.
+        let long = try await chunkStarts(seconds: 90, swingWindow: 10..<80)
+        XCTAssertEqual(long.count, 2)
+        XCTAssertEqual(long.last ?? 0, 81, accuracy: 0.05)
+        // Never closes: the 120 s cap still bounds the file.
+        let capped = try await chunkStarts(seconds: 125, swingWindow: 0..<125)
         XCTAssertEqual(capped.count, 2)
-        XCTAssertEqual(capped.last ?? 0, 60, accuracy: 0.05)
+        XCTAssertEqual(capped.last ?? 0, 120, accuracy: 0.05)
     }
 
     /// Source start of each rolling file under one clip covering the whole recording.
