@@ -9,19 +9,30 @@ A change is done when a check that can observe it has gone green. Pick the check
 
 ## 1. Pick the checks
 
-List the files you changed (`git diff --name-only main...`), then take every row whose paths you touched. A shared model (`SwingLibrary`, `SwingClip`, `ClipStorage`) reaches every row that reads it, so follow its callers.
+List the files you changed, committed or not:
+
+```bash
+git diff --name-only $(git merge-base main HEAD); git ls-files --others --exclude-standard
+```
+
+Take every row whose paths or behavior you touched. A shared model (`SwingLibrary`, `SwingClip`, `ClipStorage`) reaches every row that reads it, so follow its callers. A row is a starting point, not a guarantee: if the checks you picked cannot observe the behavior you changed, also drive it yourself (step 3).
 
 | You changed | Run |
 | --- | --- |
 | Pure logic in `SwingCoach/Models/` | The matching unit tests in `SwingCoachTests/` (step 2) |
-| `LibraryView`, sessions, selection, export | `scripts/verify-library-sessions.sh` |
+| `LibraryView` sessions, selection, export | `scripts/verify-library-sessions.sh` |
+| Library filtering, starring, deletion | `scripts/verify-review.sh` |
+| Photos import | No committed check; drive it (step 3) |
 | `SwingReviewPager`, `SwingDetailView`, playback, annotations | `scripts/verify-review.sh` and `scripts/verify-media-playback.sh` |
 | Paging gestures | `scripts/verify-fast-swipes.sh` |
 | Review lock | `scripts/verify-review-lock.sh` |
-| `CaptureView` controls, settings, Auto review | `scripts/verify-capture-controls.sh` |
+| `CaptureView` controls, settings | `scripts/verify-capture-controls.sh` |
+| Auto review annotations | `scripts/verify-capture-controls.sh <artifact-dir> annotations` |
 | Recording audio session | `scripts/verify-capture-audio.sh` |
 | Manual record → Trim handoff | `scripts/verify-manual-trim-cancel.sh` |
-| `TrimView/`, clip export, context padding | `scripts/verify-trim-review.sh` |
+| `TrimView/`, clip export | `scripts/verify-trim-review.sh` |
+| Context padding, rolling-buffer settings | `SWINGCOACH_TRIM_VERIFY_CONTEXT=1 scripts/verify-trim-review.sh <artifact-dir>` |
+| Partial Photos-save failure and retry | `SWINGCOACH_TRIM_VERIFY_PARTIAL=1 scripts/verify-trim-review.sh` |
 | Trim playback timing | `scripts/verify-trim-playback-clock.sh` |
 | Save to Photos, local storage preference | `scripts/verify-save-photos.sh` |
 | `AnalyseView`, `SwingCoachAPI`, coaching display | `scripts/verify-coaching.sh` (local backend with seeded coaching; proves the app flow, not live AI quality) |
@@ -32,19 +43,21 @@ When no row covers the behavior, drive it yourself (step 3).
 
 ## 2. Run them
 
-Each `scripts/verify-*.sh` builds its own disposable Simulator, seeds synthetic media, runs XCUITests, and deletes the Simulator on exit. Read the final lines and the exit status; evidence lands in `.verification-artifacts/`. A run takes several minutes, so run independent checks in the background.
+Most `scripts/verify-*.sh` build their own disposable Simulator, seed synthetic media, run XCUITests, and delete the Simulator on exit. Exceptions: `verify-trim-playback-clock.sh` runs a macOS probe with no Simulator; `verify-media-playback.sh` needs the three private videos in `SwingCoach/ReferenceSwings/`; `verify-coaching.sh` needs one of those videos plus `backend/venv` and `backend/models/pose_landmarker_heavy.task`. Read the final lines and the exit status; evidence lands in `.verification-artifacts/`. A run takes several minutes, so run independent checks in the background.
 
-Unit tests:
+Unit tests, on a Simulator of your own because other agents may be running theirs:
 
 ```bash
+sim=$(xcrun simctl create "SwingCoach unit $$" com.apple.CoreSimulator.SimDeviceType.iPhone-17)
 xcodebuild test -project SwingCoach.xcodeproj -scheme SwingCoach \
-  -destination 'platform=iOS Simulator,name=iPhone 17' \
+  -destination "platform=iOS Simulator,id=$sim" \
   -only-testing:SwingCoachTests CODE_SIGNING_ALLOWED=NO
+xcrun simctl delete "$sim"   # run this even when the tests fail
 ```
 
 Narrow with `-only-testing:SwingCoachTests/<TestClass>` when one file covers your change.
 
-In a git worktree, gitignored assets are missing. Symlink `backend/venv`, `backend/models/pose_landmarker_heavy.task`, and `SwingCoach/ReferenceSwings/*.mp4` from the main checkout before running, and remove the links before committing.
+In a git worktree, gitignored assets are missing. For the checks that need them, symlink `backend/venv`, `backend/models/pose_landmarker_heavy.task`, and `SwingCoach/ReferenceSwings/*.mp4` from the main checkout before running, and remove the links before committing.
 
 Reuse a green result until code it covers changes again.
 
@@ -56,7 +69,7 @@ Reuse a green result until code it covers changes again.
 
 ## 4. Know what the Simulator cannot prove
 
-The Simulator has no camera, no microphone, no real frame timing, and no Vision body pose. Capture fps, audio, orientation, Auto detection timing, swing positions, thermal behavior, and any speed claim need the physical iPhone. Read [references/testing-ladder.md](references/testing-ladder.md) before touching the phone: it requires Ruari's readiness confirmation, holds the device IDs, and forbids uninstalling the app (that deletes Ruari's swings).
+The Simulator has no camera, routes the Mac's microphone instead of the phone's, has no real capture frame timing, and failed Vision body-pose requests on the iOS 26.3 runtime ("Unable to setup request", October 2026). It can check UI orientation policy and audio-session control flow. Camera fps, real recording audio, device rotation, Auto detection timing, swing positions, thermal behavior, and any speed claim need the physical iPhone. Read [references/testing-ladder.md](references/testing-ladder.md) before touching the phone: it requires Ruari's readiness confirmation, holds the device IDs, and forbids uninstalling the app (that deletes Ruari's swings).
 
 Per-area traps (Photos picker, Auto deletion, backend modes) are in [references/feature-notes.md](references/feature-notes.md).
 
