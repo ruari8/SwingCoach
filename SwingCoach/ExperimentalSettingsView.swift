@@ -21,6 +21,7 @@ enum ExperimentalSettingKey {
     static let debugReplaySourceTiming = "experimental.debugReplaySourceTiming"
     static let debugReplayPracticeSwings = "experimental.debugReplayPracticeSwings"
     static let detectorDefaultsRevision = "experimental.detectorDefaultsRevision"
+    static let keepAutoRecordings = "experimental.keepAutoRecordings"
 }
 
 enum ExperimentalDetectorDefaults {
@@ -54,6 +55,9 @@ struct ExperimentalSettingsView: View {
     @AppStorage(ExperimentalSettingKey.customBackendURL) private var customBackendURL = ""
     @AppStorage(ExperimentalSettingKey.useMockAnalysis) private var useMockAnalysis = false
     @AppStorage(ExperimentalSettingKey.showDebugReplayTab) private var showDebugReplayTab = true
+    #if DEBUG
+    @AppStorage(ExperimentalSettingKey.keepAutoRecordings) private var keepAutoRecordings = false
+    #endif
 
     private let detectorSampleOptions = [2.0, 4.0, 8.0, 16.0]
 
@@ -146,6 +150,13 @@ struct ExperimentalSettingsView: View {
                 Toggle("Mock analysis", isOn: $useMockAnalysis)
             } footer: {
                 Text("Current backend: \(SwingCoachAPI.baseURL). Mock analysis calls /mock/analyze; real analysis calls /analyze.")
+            }
+
+            Section {
+                Toggle("Keep Auto recordings", isOn: $keepAutoRecordings)
+                    .accessibilityIdentifier("keep-auto-recordings")
+            } footer: {
+                Text("Keeps everything Auto records in Documents/KeptRecordings instead of deleting it after 45 s, in a new folder each time Auto starts or resumes. About 22 GB an hour at 240 fps. Play a folder back with the -footage-camera launch option. Starts with the next Auto session.")
             }
             #endif
 

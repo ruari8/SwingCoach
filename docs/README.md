@@ -33,6 +33,7 @@ This folder and `backend/docs` are the active documentation set.
 
 - [Frontend Documentation](./FRONTEND.md)
 - [Auto capture cadence evidence and diagnostic collection](./AUTO_CAPTURE_CADENCE.md)
+- [Footage camera: feed recorded video through Auto in place of the camera](./FOOTAGE_CAMERA.md)
 - [Investigation status index](./evidence/README.md)
 - [Persistent UI playground and browser Simulator workflow](./UI_PLAYGROUND.md)
 - [Foundation app performance and verification](./FOUNDATION_PERFORMANCE.md)
