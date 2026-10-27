@@ -84,7 +84,7 @@ nonisolated final class SwingPositionAnalyzer: @unchecked Sendable {
     func analyze(videoURL: URL, timeScale: Double) async throws -> (SwingPositions, Timing) {
         var timing = Timing()
         let started = Date()
-        let (grid, firstTime) = try await poseGrid(videoURL: videoURL, timeScale: timeScale, timing: &timing)
+        let (grid, playableTimes) = try await poseGrid(videoURL: videoURL, timeScale: timeScale, timing: &timing)
         timing.readAndPoseSeconds = Date().timeIntervalSince(started)
         timing.bodySlots = grid.filter { $0 != nil }.count
         guard Double(timing.bodySlots) >= Self.minimumBodyShare * Double(grid.count) else {
@@ -100,30 +100,42 @@ nonisolated final class SwingPositionAnalyzer: @unchecked Sendable {
 
         let positionCount = SwingPositionFeatures.positionCount
         let positions = frames.enumerated().map { index, frame in
-            var slot = Double(frame)
-            if index == 0 { slot += Self.firstPositionOffsetFrames }
-            if index == positionCount - 1 { slot += Self.lastPositionOffsetFrames }
-            let realTime = max(0, slot / SwingPositionFeatures.gridFPS)
             let logit = Double(logits[frame * positionCount + index])
             return SwingPosition(
                 number: index + 1,
-                clipTime: firstTime + realTime * timeScale,
+                clipTime: Self.clipTime(position: index, slot: frame, timeScale: timeScale, playable: playableTimes),
                 confidence: 1 / (1 + exp(-logit))
             )
         }
         return (SwingPositions(model: SwingPositions.currentModel, positions: positions), timing)
     }
 
+    /// Clip time for a decoded slot, with the P1/P10 bias removed. The
+    /// correction can push P1 before the first frame or P10 past the last, so
+    /// the result is clamped to the clip's first and last frame times.
+    static func clipTime(
+        position index: Int,
+        slot frame: Int,
+        timeScale: Double,
+        playable: ClosedRange<Double>
+    ) -> Double {
+        var slot = Double(frame)
+        if index == 0 { slot += firstPositionOffsetFrames }
+        if index == SwingPositionFeatures.positionCount - 1 { slot += lastPositionOffsetFrames }
+        let time = playable.lowerBound + slot / SwingPositionFeatures.gridFPS * timeScale
+        return min(max(time, playable.lowerBound), playable.upperBound)
+    }
+
     // MARK: - Pose grid
 
     /// One pose per 30 fps real-time slot, from the decoded frame nearest the
     /// slot (dataset.py resample_indices). Returns the grid and the
-    /// presentation time of the clip's first frame, which slot 0 maps to.
+    /// presentation times of the clip's first frame (slot 0) and last frame.
     private func poseGrid(
         videoURL: URL,
         timeScale: Double,
         timing: inout Timing
-    ) async throws -> ([SwingPositionPose?], Double) {
+    ) async throws -> ([SwingPositionPose?], ClosedRange<Double>) {
         let asset = AVURLAsset(url: videoURL)
         guard let track = try await asset.loadTracks(withMediaType: .video).first else {
             throw AnalyzerError.noVideoTrack
@@ -189,7 +201,7 @@ nonisolated final class SwingPositionAnalyzer: @unchecked Sendable {
             grid.removeLast(grid.count - slotCount)
         }
         guard grid.count >= SwingPositionFeatures.positionCount else { throw AnalyzerError.tooShort }
-        return (grid, firstTime)
+        return (grid, firstTime...previous.time)
     }
 
     private func detectPose(in buffer: CMSampleBuffer, orientation: CGImagePropertyOrientation) -> SwingPositionPose? {

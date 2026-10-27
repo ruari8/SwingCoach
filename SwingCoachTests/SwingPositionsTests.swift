@@ -67,6 +67,19 @@ final class SwingPositionsTests: XCTestCase {
         XCTAssertNil(SwingPositionFeatures.decode(logits: Array(repeating: 0, count: 90), frameCount: 9))
     }
 
+    func testPositionTimesStayInsideTheClip() {
+        // 24 s clip at 8x: 90 slots, first frame at 0.1 s, last at 24.05 s.
+        let playable = 0.1...24.05
+        func time(_ position: Int, _ slot: Int) -> Double {
+            SwingPositionAnalyzer.clipTime(position: position, slot: slot, timeScale: 8, playable: playable)
+        }
+        XCTAssertEqual(time(6, 45), 0.1 + 45.0 / 30 * 8, accuracy: 1e-9, "middle positions are uncorrected")
+        XCTAssertEqual(time(0, 30), 0.1 + 28.6 / 30 * 8, accuracy: 1e-9, "P1 moves 1.4 slots earlier")
+        XCTAssertEqual(time(0, 0), 0.1, "P1 at slot 0 stays on the first frame")
+        XCTAssertEqual(time(9, 60), 0.1 + 61.8 / 30 * 8, accuracy: 1e-9, "P10 moves 1.8 slots later")
+        XCTAssertEqual(time(9, 89), 24.05, "P10 at the last slot stays on the last frame")
+    }
+
     @MainActor
     func testSavedSwingDecodesWithoutPositionsAndRoundTripsThem() throws {
         let legacy = """
