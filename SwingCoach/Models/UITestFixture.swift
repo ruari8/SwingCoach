@@ -208,8 +208,10 @@ nonisolated enum SyntheticVideo {
         lock.lock()
         defer { lock.unlock() }
         let files = FileManager.default
-        let directory = files.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("ui-test-videos", isDirectory: true)
+        let caches = files.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        // Clips cached before the audio went silent beep through the Mac's speakers.
+        try? files.removeItem(at: caches.appendingPathComponent("ui-test-videos", isDirectory: true))
+        let directory = caches.appendingPathComponent("ui-test-videos-silent", isDirectory: true)
         let url = directory.appendingPathComponent("\(spec.width)x\(spec.height)-\(spec.fps)fps-\(spec.seconds)s.mp4")
         if files.fileExists(atPath: url.path) { return url }
         try files.createDirectory(at: directory, withIntermediateDirectories: true)
