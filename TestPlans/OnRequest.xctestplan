@@ -17,7 +17,8 @@
     {
       "parallelizable" : false,
       "selectedTests" : [
-        "CoachingContractTests"
+        "CoachingContractTests",
+        "FootageCameraTests"
       ],
       "target" : {
         "containerPath" : "container:SwingCoach.xcodeproj",
@@ -29,7 +30,8 @@
       "parallelizable" : false,
       "selectedTests" : [
         "CoachingPipelineUITests",
-        "FastSwipeStressUITests"
+        "FastSwipeStressUITests",
+        "FootageCameraUITests"
       ],
       "target" : {
         "containerPath" : "container:SwingCoach.xcodeproj",

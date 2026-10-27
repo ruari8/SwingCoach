@@ -18,6 +18,8 @@ On request only:
   trim-clock  slow-motion playback clock probe on macOS (no Simulator)
   coach       legacy coaching flow against a local backend (needs backend/venv, the pose
               model and SwingCoach/ReferenceSwings/DaBMIbhpel9_1.mp4)
+  footage     labelled range footage fed through Auto by the footage camera (needs the
+              private .detectorTestV3/ videos; FOOTAGE_VIDEO picks one, default test15)
 
 One build (build/verify/DerivedData, reused between runs) and one new Simulator serve
 every area in a run; the Simulator is deleted on exit. The last line is PASS, FAIL or
@@ -324,6 +326,111 @@ def coach_check(run):
     return "upload, analysis, overlays and source notes persisted with the practice context"
 
 
+# MARK: - Footage camera (on request, private range footage)
+
+FOOTAGE_LABELS = ROOT / "detector_workbench/validation/labels/detector_test_v3_labels.json"
+
+
+def footage_source(video_id):
+    videos = {v["id"]: v for v in json.loads(FOOTAGE_LABELS.read_text())["videos"]}
+    if video_id not in videos:
+        raise Blocked(f"no footage labels for {video_id} in {FOOTAGE_LABELS.relative_to(ROOT)}")
+    video = videos[video_id]
+    main_checkout = Path(sh("git", "-C", str(ROOT), "rev-parse", "--path-format=absolute", "--git-common-dir")).parent
+    for folder in (ROOT, main_checkout):
+        path = folder / ".detectorTestV3" / video["filename"]
+        if path.is_file():
+            return video, path
+    raise Blocked(f"footage needs the private .detectorTestV3/{video['filename']} (main checkout or this one)")
+
+
+def footage_before(run):
+    video, path = footage_source(os.environ.get("FOOTAGE_VIDEO", "test15"))
+    scale = video["source_time_scale"]
+    # Labels are source-timeline seconds; a bucket label covers [start, end].
+    impacts = [(label["start"] + label["end"]) / 2 / scale for label in video["impact_time_labels"]]
+    duration = float(sh("ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(path)))
+    documents = run.container() / "Documents"
+    documents.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(path, documents / video["filename"])
+    run.state["footage_expected"] = video["expected_swing_count"]
+    run.state["test_env"] = {
+        "TEST_RUNNER_FOOTAGE_FILE": video["filename"], "TEST_RUNNER_FOOTAGE_TIME_SCALE": f"{scale:g}",
+        "TEST_RUNNER_FOOTAGE_IMPACTS": ",".join(f"{t:.4f}" for t in impacts),
+        "TEST_RUNNER_FOOTAGE_EXPECTED": str(video["expected_swing_count"]),
+        "TEST_RUNNER_FOOTAGE_SECONDS": str(int(duration / scale) + 1),
+    }
+    privacy(run, "grant", "photos", "photos-add")
+
+
+def footage_check(run):
+    """Every labelled impact is fed and saved, the end of the footage flushes the last
+    clip, and the kept recordings cover the footage."""
+    run.state.pop("test_env", None)
+    expected = run.state["footage_expected"]
+    root = run.container()
+    shutil.copy(root / "Library/Application Support/CaptureDiagnostics/capture.jsonl", run.artifacts / "capture.jsonl")
+    events = [json.loads(line) for line in (run.artifacts / "capture.jsonl").read_text().splitlines()]
+    run_id = [e for e in events if e["boundary"] == "footage-start"][-1]["runID"]
+    events = [e for e in events if e["runID"] == run_id]
+
+    def find(boundary):
+        return [e for e in events if e["boundary"] == boundary]
+
+    end = find("footage-end")
+    assert end, "footage-end missing: the footage did not finish"
+    feed = end[-1]["values"]
+    impacts, saved = find("footage-impact"), find("swing-saved")
+    assert len(impacts) == expected, f"{len(impacts)} labelled impacts fed, expected {expected}"
+    assert len(saved) == expected, f"{len(saved)} swings saved, expected {expected}"
+    for boundary in ("camera", "detector", "writer-start", "export-written"):
+        assert find(boundary), f"no {boundary} events in the diagnostics log"
+    # Each save follows its labelled impact: impact -> export-start (detection id) -> swing-saved (chunk id).
+    starts = {e["state"]["detection"]: e for e in find("export-start")}
+    saved_by_chunk = {e["id"]: e for e in saved}
+    latencies = [round(saved_by_chunk[starts[i["id"]]["id"]]["uptime"] - i["uptime"], 2) for i in impacts]
+    # A swing within its clip's 0.8 s tail of the end completes only through the
+    # end-of-footage flush. Other videos end later and never need it.
+    needs_flush = max(e["values"]["footageTime"] for e in impacts) > feed["footageSeconds"] - 0.8
+    if needs_flush:
+        assert max(e["uptime"] for e in saved) > end[-1]["uptime"], "no clip was saved by the end-of-footage flush"
+
+    kept = sorted((root / "Documents/KeptRecordings").rglob("*.mov"))
+    assert kept, "Keep Auto recordings kept no files"
+    assert not find("keep-recordings-failed"), find("keep-recordings-failed")
+    assert len(find("recording-kept")) == len(kept), (len(find("recording-kept")), len(kept))
+    kept_seconds = sum(float(sh("ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
+                                str(f))) for f in kept)
+    assert kept_seconds >= 0.9 * feed["footageSeconds"], \
+        f"kept recordings cover {kept_seconds:.1f} s of {feed['footageSeconds']:.1f} s of footage"
+
+    label_times = [e["values"]["impactTime"] for e in impacts]
+    candidates = [e["values"]["relativeTime"] for e in find("detector-state") if e["state"]["state"] == "impactCandidate"]
+    dropped = {}
+    for e in find("camera"):
+        for key, value in e["values"].items():
+            if key.startswith("dropped_"):
+                dropped[key[8:]] = dropped.get(key[8:], 0) + value
+    mean_ms = [e["values"].get("meanInferenceMS", 0) for e in find("detector") if e["values"].get("inferences")]
+    total = feed["delivered"] + feed["droppedOutOfBuffers"] + feed["droppedLate"]
+    metrics = {
+        "footageSeconds": round(feed["footageSeconds"], 1), "framesDelivered": int(feed["delivered"]),
+        "framesDroppedOutOfBuffers": int(feed["droppedOutOfBuffers"]), "framesDroppedLate": int(feed["droppedLate"]),
+        "deliveredShare": round(feed["delivered"] / total, 3) if total else 0, "cameraDropSummary": dropped,
+        "swingsExpected": expected, "swingsSaved": len(saved),
+        "detectorImpactCandidates": len(candidates),
+        "labelsWithDetectorCandidateWithin1s": sum(any(abs(c - t) <= 1.0 for c in candidates) for t in label_times),
+        "detectorSwingsAccepted": len(find("detector-swing")), "impactToSavedSeconds": latencies,
+        "detectorMeanInferenceMS": round(sum(mean_ms) / len(mean_ms), 1) if mean_ms else None,
+        "keptRecordings": len(kept), "keptSeconds": round(kept_seconds, 1),
+        "swingPositions": {"stored": len(find("swing-positions")), "failed": len(find("swing-positions-failed"))},
+    }
+    (run.artifacts / "footage-metrics.json").write_text(json.dumps(metrics, indent=2))
+    return (f"{len(saved)}/{expected} labelled swings fed and saved, impact to save {latencies} s, "
+            f"end-of-footage flush {'needed and saved' if needs_flush else 'not needed'}; "
+            f"{len(kept)} kept recordings cover {kept_seconds:.0f} of {feed['footageSeconds']:.0f} s")
+
+
 # MARK: - Areas
 
 AREAS = {
@@ -368,6 +475,8 @@ AREAS = {
     "stress": [Step("stress", [f"{UI}/FastSwipeStressUITests"], plan="OnRequest")],
     "console": [Step("console", [f"{UI}/LibraryPagingUITests"], before=console_before, after=console_check,
                      check_on=f"{UI}/LibraryPagingUITests")],
+    "footage": [Step("footage", [f"{UI}/FootageCameraUITests", f"{UNIT}/FootageCameraTests"], plan="OnRequest",
+                     before=footage_before, after=footage_check, check_on=f"{UI}/FootageCameraUITests")],
     "coach": [Step("coach", [f"{UI}/CoachingPipelineUITests", f"{UNIT}/CoachingContractTests"], plan="OnRequest",
                    before=coach_before, after=coach_check, check_on=f"{UI}/CoachingPipelineUITests")],
 }
@@ -432,7 +541,8 @@ def run_step(run, step, tests):
                 "-testPlan", step.plan, "-destination", f"platform=iOS Simulator,id={run.device}",
                 "-derivedDataPath", str(DERIVED_DATA), "-parallel-testing-enabled", "NO",
                 "-resultBundlePath", str(result), *[f"-only-testing:{t}" for t in tests],
-                "CODE_SIGNING_ALLOWED=NO", "test-without-building", check=False, log=log)
+                "CODE_SIGNING_ALLOWED=NO", "test-without-building", check=False, log=log,
+                env={**os.environ, **run.state.get("test_env", {})})
     entry = {"step": step.name, "tests": tests}
     if not result.exists():
         raise Failed(f"{step.name}: xcodebuild exited {status} without a result bundle; see {log}")
@@ -484,11 +594,13 @@ def run_trim_clock(run):
 
 
 def preflight(areas):
-    needs = {"xcodebuild": True, "ffprobe": "trim" in areas,
+    needs = {"xcodebuild": True, "ffprobe": bool({"trim", "footage"} & set(areas)),
              "ffmpeg": bool({"trim", "coach", "trim-clock"} & set(areas))}
     for tool, needed in needs.items():
         if needed and not shutil.which(tool):
             raise Blocked(f"{tool} is not installed")
+    if "footage" in areas:
+        footage_source(os.environ.get("FOOTAGE_VIDEO", "test15"))
     if "coach" in areas:
         for path in (BACKEND_PYTHON, POSE_MODEL, COACH_VIDEO):
             if not path.exists():
@@ -619,6 +731,7 @@ def main():
         reason = f"terminated ({error.code})"
     finally:
         server = run.state.pop("coach_server", None)
+        run.state.pop("test_env", None)
         for process in (server, run.state.pop("console", None)):
             if process and process.poll() is None:
                 process.terminate()

@@ -36,6 +36,7 @@ Take every row whose paths or behavior you touched. A shared model (`SwingLibrar
 | Partial Photos-save failure and retry | `scripts/verify.sh trim --only TrimReviewUITests/testPartialSaveKeepsFailedClipReachableForRetry` |
 | Trim playback timing | `scripts/verify.sh trim-clock` |
 | Save to Photos, local storage preference | `scripts/verify.sh storage` |
+| `FootageCamera`, `CaptureView` `handleVideoFrame`, rolling-buffer keep setting | `scripts/verify.sh footage` (on request; needs the private `.detectorTestV3/` videos) |
 | `AnalyseView`, `SwingCoachAPI`, coaching display | `scripts/verify.sh coach` (local backend with seeded coaching; proves the app flow, not live AI quality) |
 | `backend/` | The backend tests listed in AGENTS.md |
 | Docs, comments, Git only | Nothing |
@@ -44,7 +45,7 @@ When no row covers the behavior, drive it yourself (step 3).
 
 ## 2. Run them
 
-`scripts/verify.sh <area>...` builds once, creates a disposable Simulator, seeds synthetic media through DEBUG launch fixtures, runs the area's XCUITests and unit tests plus its file and Photos checks, and deletes the Simulator on exit. Pass several areas to one run: runs in one checkout share a build, and a second concurrent run reports BLOCKED. `scripts/verify.sh all` runs every default area; `--help` lists them. Exceptions: `trim-clock` runs a macOS probe with no Simulator; `coach` needs `SwingCoach/ReferenceSwings/DaBMIbhpel9_1.mp4` plus `backend/venv` and `backend/models/pose_landmarker_heavy.task`, and reports BLOCKED without them. Read the final `PASS`, `FAIL` or `BLOCKED <reason>` line and the exit status; evidence lands in `.verification-artifacts/verify/`. A run takes minutes, so run it in the background.
+`scripts/verify.sh <area>...` builds once, creates a disposable Simulator, seeds synthetic media through DEBUG launch fixtures, runs the area's XCUITests and unit tests plus its file and Photos checks, and deletes the Simulator on exit. Pass several areas to one run: runs in one checkout share a build, and a second concurrent run reports BLOCKED. `scripts/verify.sh all` runs every default area; `--help` lists them. Exceptions: `trim-clock` runs a macOS probe with no Simulator; `footage` needs the private `.detectorTestV3/` videos (it finds them in the main checkout); `coach` needs `SwingCoach/ReferenceSwings/DaBMIbhpel9_1.mp4` plus `backend/venv` and `backend/models/pose_landmarker_heavy.task`, and reports BLOCKED without them. Read the final `PASS`, `FAIL` or `BLOCKED <reason>` line and the exit status; evidence lands in `.verification-artifacts/verify/`. A run takes minutes, so run it in the background.
 
 Unit tests, on a Simulator of your own because other agents may be running theirs:
 

@@ -26,7 +26,8 @@
       "parallelizable" : false,
       "skippedTests" : [
         "CoachingPipelineUITests",
-        "FastSwipeStressUITests"
+        "FastSwipeStressUITests",
+        "FootageCameraUITests"
       ],
       "target" : {
         "containerPath" : "container:SwingCoach.xcodeproj",
