@@ -2,8 +2,9 @@
 
 Foundation task: [Capture UI and persistent playground #20](https://github.com/ruari8/SwingCoach/issues/20).
 
-Ruari prefers reviewing native iOS UI through the browser Simulator mirror. Use
-this route for future iOS design iterations and when showing Simulator work.
+Ruari reviews native iOS UI by watching a live Simulator. In T3 Code, open it
+in the Device panel (`device_list`, then `device_open`). Elsewhere, use this
+browser mirror.
 The playground is a maintained development tool, checked into main so it can be
 reopened and extended across tasks. Its simulated state resets on relaunch.
 

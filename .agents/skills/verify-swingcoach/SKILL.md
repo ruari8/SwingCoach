@@ -1,82 +1,71 @@
 ---
 name: verify-swingcoach
-description: Verify SwingCoach's user-facing iOS behavior when asked to launch, drive, reproduce, test, or capture proof for Library, Capture, Trim, Coach, or DEBUG workflows on Simulator or a connected iPhone.
+description: Prove a SwingCoach iOS change works before calling it done. Use after changing app code under SwingCoach/, when asked to test, reproduce, or show the app on Simulator or a connected iPhone, or when choosing which tests a change needs.
 ---
 
 # Verify SwingCoach
 
-Verify the real SwiftUI app through the smallest route capable of proving the claim. Read [features/README.md](features/README.md), then open the feature file for the requested behavior before driving it.
+A change is done when a check that can observe it has gone green. Pick the checks your change can reach, run them, and report the verdict. A check for an area your change cannot reach proves nothing and costs minutes, so skip it.
 
-For camera, Photos, a connected iPhone, iPhone Mirroring, seeded media, or a manual reproduction, read [references/testing-ladder.md](references/testing-ladder.md) before choosing the route.
+## 1. Pick the checks
 
-## Requirements
+List the files you changed (`git diff --name-only main...`), then take every row whose paths you touched. A shared model (`SwingLibrary`, `SwingClip`, `ClipStorage`) reaches every row that reads it, so follow its callers.
 
-- Run from the SwingCoach repository on macOS with Xcode, `xcodebuild`, and `xcrun simctl` available.
-- Use XCUITest as the baseline driver. An accessibility-capable device driver is also suitable when available.
-- Use a physical iPhone for camera frame rate, audio, orientation, Photos interoperability, and detector performance claims. The Simulator can verify navigation, labels, local reference playback when its ignored fixtures are installed, and non-hardware UI states.
-- Treat physical-iPhone and iPhone Mirroring readiness as user-provided session state. A device appearing in Xcode or `devicectl` proves discoverability, not that the phone is nearby, unlocked, mirrored, or ready for prompts. If the user has not confirmed the required route is ready in the current session, ask and pause before touching the phone. Simulator routes need no such handshake.
+| You changed | Run |
+| --- | --- |
+| Pure logic in `SwingCoach/Models/` | The matching unit tests in `SwingCoachTests/` (step 2) |
+| `LibraryView`, sessions, selection, export | `scripts/verify-library-sessions.sh` |
+| `SwingReviewPager`, `SwingDetailView`, playback, annotations | `scripts/verify-review.sh` and `scripts/verify-media-playback.sh` |
+| Paging gestures | `scripts/verify-fast-swipes.sh` |
+| Review lock | `scripts/verify-review-lock.sh` |
+| `CaptureView` controls, settings, Auto review | `scripts/verify-capture-controls.sh` |
+| Recording audio session | `scripts/verify-capture-audio.sh` |
+| Manual record → Trim handoff | `scripts/verify-manual-trim-cancel.sh` |
+| `TrimView/`, clip export, context padding | `scripts/verify-trim-review.sh` |
+| Trim playback timing | `scripts/verify-trim-playback-clock.sh` |
+| Save to Photos, local storage preference | `scripts/verify-save-photos.sh` |
+| `AnalyseView`, `SwingCoachAPI`, coaching display | `scripts/verify-coaching.sh` (local backend with seeded coaching; proves the app flow, not live AI quality) |
+| `backend/` | The backend tests listed in AGENTS.md |
+| Docs, comments, Git only | Nothing |
 
-## Launch and prove the baseline
+When no row covers the behavior, drive it yourself (step 3).
 
-Run:
+## 2. Run them
+
+Each `scripts/verify-*.sh` builds its own disposable Simulator, seeds synthetic media, runs XCUITests, and deletes the Simulator on exit. Read the final lines and the exit status; evidence lands in `.verification-artifacts/`. A run takes several minutes, so run independent checks in the background.
+
+Unit tests:
 
 ```bash
-./.agents/skills/verify-swingcoach/scripts/verify-library-paging.sh
+xcodebuild test -project SwingCoach.xcodeproj -scheme SwingCoach \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
+  -only-testing:SwingCoachTests CODE_SIGNING_ALLOWED=NO
 ```
 
-Pass an explicit artifact directory when a caller needs a stable location:
+Narrow with `-only-testing:SwingCoachTests/<TestClass>` when one file covers your change.
 
-```bash
-./.agents/skills/verify-swingcoach/scripts/verify-library-paging.sh \
-  .verification-artifacts/library-paging/<run-id>
-```
+In a git worktree, gitignored assets are missing. Symlink `backend/venv`, `backend/models/pose_landmarker_heavy.task`, and `SwingCoach/ReferenceSwings/*.mp4` from the main checkout before running, and remove the links before committing.
 
-The helper first requires the three ignored local fixtures documented in `SwingCoach/ReferenceSwings/README.md`. It then copies the Xcode project and app sources to a scratch directory, adds a verification-only XCUITest there, creates a new iPhone 17 simulator, builds Debug, installs and launches `Pear.ai.SwingCoach`, runs the doctor, drives `Capture tab -> Library tab -> Reference swing 1 -> horizontal page swipe`, captures evidence, and cleans up. A missing fixture, failed build, or failed assertion makes the command fail.
+Reuse a green result until code it covers changes again.
 
-Set `SWINGCOACH_VERIFY_DEVICE_TYPE` to another available simulator device type identifier when iPhone 17 is unavailable. Set `SWINGCOACH_VERIFY_RUNTIME` to an installed runtime identifier when the newest compatible runtime is not the intended target.
+## 3. Drive it when no check exists
 
-Readiness is reached only when the disposable simulator is `Booted`, `Pear.ai.SwingCoach` is installed, `simctl launch` returns a PID, and the doctor reports the running bundle from the Debug build.
+- Write a focused XCUITest that performs the new behavior and asserts the user-visible result. Keep it in `SwingCoachUITests/` when the behavior is worth protecting; otherwise delete it after the run.
+- To let Ruari watch, open the Simulator in T3's Device panel (`device_list`, then `device_open`) and drive it with the returned CLI. Without T3 device tools, use the browser mirror in `docs/UI_PLAYGROUND.md`.
+- Seed Photos with `xcrun simctl addmedia <udid> <video>`.
 
-## Doctor
+## 4. Know what the Simulator cannot prove
 
-The helper writes `doctor.txt` before UI driving. Require all of these:
+The Simulator has no camera, no microphone, no real frame timing, and no Vision body pose. Capture fps, audio, orientation, Auto detection timing, swing positions, thermal behavior, and any speed claim need the physical iPhone. Read [references/testing-ladder.md](references/testing-ladder.md) before touching the phone: it requires Ruari's readiness confirmation, holds the device IDs, and forbids uninstalling the app (that deletes Ruari's swings).
 
-- the owned simulator UUID is booted;
-- the installed app reports bundle ID `Pear.ai.SwingCoach` and configuration `Debug`;
-- the app process appears in the simulator's launch services;
-- the source Git revision and dirty state are recorded;
-- Photos authorization rows are recorded as raw TCC values, or as `notDetermined` when no row exists.
+Per-area traps (Photos picker, Auto deletion, backend modes) are in [references/feature-notes.md](references/feature-notes.md).
 
-Treat a missing field or unexpected bundle ID as the wrong instance. Stop and clean up before retrying.
+## 5. Report
 
-## Drive
+State one verdict per check:
 
-Prefer accessibility labels and identifiers from the feature map. For the baseline, the scratch XCUITest launches the normal app entry point, handles any first-launch system prompt, taps the `Library` tab, opens `Reference swing 1`, reads `swing-position`, swipes `swing-review-page`, and requires `swing-position` to change.
+- **Pass**: name the assertion that observed the change, plus the artifact path.
+- **Fail**: the failing assertion and log line. Fix and rerun that check only.
+- **Blocked**: the missing condition (fixture, phone readiness, backend), and what was verified instead.
 
-Use the same disposable-simulator pattern for other mapped features. A path without a committed driver or required fixture remains unverified. Record that gap instead of substituting a nearby path.
-
-## Evidence
-
-Store each run under `.verification-artifacts/<feature>/<run-id>/`. Keep:
-
-- `route.txt` with the device, OS, driver, build revision, readiness confirmation, and any human action;
-- `doctor.txt` for instance, build, process, and authorization identity;
-- `build.log` and `test.log` for commands, console output, and exit status;
-- `test-summary.json` and the `.xcresult` bundle for XCTest assertions;
-- `screenshots/` for the action and result attachments;
-- `launch.png` for the launched app and `final-simulator.png` for the post-test simulator state;
-- `cleanup.txt` for teardown confirmation.
-
-The paging test reads the original accessibility value and asserts a different value after the swipe. This second read-only UI observation is the result proof. Screenshots support the assertion but do not replace it. For exploratory device sessions, pair the screen capture with the relevant log interval and mark any user-driven action in `route.txt`.
-
-## Isolation and cleanup
-
-Each helper run owns one uniquely named simulator, one `mktemp` scratch directory, one DerivedData directory inside that scratch directory, and one artifact directory. Xcode test cloning is disabled so every action stays on the owned simulator. Concurrent runs may use different artifact directories.
-
-The exit trap terminates only `Pear.ai.SwingCoach` on the owned simulator, shuts down and deletes only that simulator UUID, and removes only the `mktemp` directory. It preserves the artifact directory. `cleanup.txt` must say that the simulator is absent after deletion.
-
-If a manual run uses an existing simulator, require exclusive use and record its pre-run app and permission state. Restore that state rather than erasing or deleting the simulator.
-
-## Helper
-
-`scripts/verify-library-paging.sh [artifact-directory]` runs the full isolated baseline. It has no partial lifecycle modes. Read its final `PASS` or `FAIL` line and the artifact path. The bundled XCTest source in `assets/SwingCoachVerificationUITests.swift` is copied only into the scratch project and never changes product code. The required reference MP4s remain ignored local inputs and are never verification artifacts to commit.
+List phone-only claims as unverified rather than inferring them from the Simulator.

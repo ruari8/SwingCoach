@@ -39,9 +39,11 @@ Domain documentation uses the single-context layout. See `docs/agents/domain.md`
 
 ### UI playground and Simulator demos
 
-For UI design iterations or showing Simulator work, read [UI playground](./docs/UI_PLAYGROUND.md). Ruari prefers the native browser mirror; preserve and extend the repo's reusable playground.
+For UI design iterations, read [UI playground](./docs/UI_PLAYGROUND.md); preserve and extend the repo's reusable playground. To show Simulator work, open it in T3's Device panel (`device_open`) when T3 device tools are available, otherwise use the playground's browser mirror.
 
-Default to one automated UI verification pass when the implementation is PR-ready, before committing. Reuse passing results. Run earlier or repeat only the affected checks when a specific bug, meaningful behavior change, or new evidence warrants it. Documentation edits, Git operations without behavior changes, and screenshot-capture adjustments do not justify rerunning the full suite.
+### Verifying changes
+
+Before calling an iOS change done, load the `verify-swingcoach` skill and run the checks it maps to the files you changed. Run only those: a check for an area the change cannot reach proves nothing. Reuse a green result until code it covers changes again. Backend changes run the backend tests below; docs-only and Git-only changes need no runtime checks.
 
 ### Physical iPhone
 
@@ -76,7 +78,8 @@ SwingCoach/
 ├── scripts/                       # verify-*.sh UI checks, diagnostics, profiling, knowledge viewer
 ├── playgrounds/                   # UI playground
 ├── tools/
-└── .agents/skills/verify-swingcoach/   # verification skill + testing ladder
+├── .agents/skills/verify-swingcoach/   # verification skill + testing ladder
+└── .claude/skills/                # links to .agents/skills so Claude Code finds them
 ```
 
 ## Where Things Live

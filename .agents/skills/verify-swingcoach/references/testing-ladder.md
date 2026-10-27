@@ -32,7 +32,7 @@ xcrun simctl addmedia <simulator-udid> \
 
 `simctl addmedia` accepts photos and videos. Record the fixture path and verify that the intended asset is visible in the picker; a successful command alone does not prove the app selected it. When locally installed, the ignored files under `SwingCoach/ReferenceSwings/` are suitable disposable video inputs, but they are not substitutes for deliberately varied trim and orientation fixtures.
 
-Use XCUITest or an available accessibility driver for repeatable actions and assertions. A Simulator mirror in the Codex browser is useful when the user wants to watch the run, but the driver and assertions remain the source of proof.
+Use XCUITest for repeatable actions and assertions. When Ruari wants to watch, open the Simulator in T3's Device panel (`device_open`), or the browser mirror in `docs/UI_PLAYGROUND.md` without T3 device tools. The assertions remain the proof; watching is not.
 
 Simulator cannot establish real camera input, supported capture frame rates, microphone behavior, device rotation behavior, rolling-buffer timing, thermal performance, or on-device detector performance.
 
@@ -123,16 +123,6 @@ Device/build: <iPhone model + iOS; build or approximate time>
 
 The user should not have to reconstruct logs or write a full narrative. Correlate the supplied time with app/device logs, reproduce the same path on the cheapest capable route, and return a precise result: reproduced, not reproduced, or blocked by a named missing condition.
 
-## Evidence contract
+## Evidence for phone runs
 
-For every route, write `route.txt` beside the other artifacts with:
-
-- route and driver;
-- readiness state and the time of user confirmation, or `not-needed` for Simulator;
-- simulator UUID or physical-device model and OS;
-- source revision and dirty state;
-- fixture identity and permission state;
-- automated and human-driven actions;
-- timestamps that align screenshots or recordings with logs.
-
-A passing run names the user-visible assertion it observed after the action. A screenshot without a before/after assertion is supporting evidence, and a user-driven step is valid exploratory evidence when it is disclosed.
+Record the device model and OS, the build revision, the time of Ruari's readiness confirmation, and every step a human performed, so screenshots and recordings can be matched to logs. A passing run names the user-visible assertion it observed after the action; a disclosed human-driven step is valid exploratory evidence.
