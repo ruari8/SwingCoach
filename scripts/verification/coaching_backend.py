@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Local storage adapter for exercising the production analysis API.
 
-verify-coaching.sh runs it with no model access. scripts/run-local-backend.sh runs
+`scripts/verify.sh coach` runs it with no model access. scripts/run-local-backend.sh runs
 it for the app on a phone, with SWINGCOACH_COACH_PROVIDER=codex for model calls.
 No R2 or API-billed model requests leave this process; OPENAI_API_KEY is cleared.
 Pose detection, metrics, rendering, async runs and response assembly are real.

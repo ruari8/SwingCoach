@@ -41,7 +41,7 @@ python3 scripts/profile_detector.py --video /absolute/path/to/test7.mp4 --end 60
   --output .verification-artifacts/foundation/detector-after \
   --compare .verification-artifacts/foundation/detector-before/report.json
 
-bash scripts/verify-review.sh .verification-artifacts/foundation/ui
+scripts/verify.sh library review
 python3 detector_workbench/validation/test_swing_detector_v3_evidence.py --build
 ```
 
@@ -61,7 +61,7 @@ The original full local evidence is in the original checkout under `.verificatio
 
 ## Generated fixtures and remaining work
 
-Generated video fixtures are short deterministic moving patterns with known dimensions, rate, and duration. `verify-review.sh` makes six separate local clip files from one such pattern. They exercise playback, filtering, review gestures, orientation, deletion, and persistence without needing private recordings, Photos originals, or the backend. They cannot validate swing recognition or golf coaching. Use reviewed real golf footage for those questions.
+Generated video fixtures are short deterministic moving patterns with known dimensions, rate, and duration. The app writes these in DEBUG (`SyntheticVideo` in `SwingCoach/Models/UITestFixture.swift`), and each seed copies one into separate local clip files. They exercise playback, filtering, review gestures, orientation, deletion, and persistence without needing private recordings, Photos originals, or the backend. They cannot validate swing recognition or golf coaching. Use reviewed real golf footage for those questions.
 
 Favouriting still rewrites the collection on the main thread: roughly 3 ms at 1,000 records and 15 ms at 5,000 in this probe. Local copies of 1 and 128 MiB both took under 1 ms on the Mac-hosted Simulator; APFS copy behavior makes that unsuitable evidence of physical-phone storage cost. Background persistence or import-copy changes need device measurements and an explicit ordering/durability design before implementation.
 

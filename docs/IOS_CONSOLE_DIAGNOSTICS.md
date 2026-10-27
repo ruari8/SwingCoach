@@ -44,15 +44,16 @@ relationship to the native context-menu machinery remains unverified.
 Run the repeatable check from the repository root:
 
 ```bash
-./scripts/verify-media-playback.sh
+scripts/verify.sh console
 ```
 
-The script requires the three ignored reference fixtures, owns a disposable
-simulator, captures targeted framework logs, and verifies paging, transport and
-drawing gestures, advancing review playback, and returning to Library. It rejects missing/skipped
-tests, a missing log stream, the reproduced frame-analysis diagnostics, and the
-Trim compiler warning. It preserves logs, screenshots, and XCTest results and
-removes its simulator and scratch build directory. This is simulator playback
+It runs `LibraryPagingUITests` on a disposable Simulator while capturing targeted
+framework logs: paging, transport and drawing gestures, advancing review playback,
+and returning to Library. It rejects failed or skipped tests, a missing log stream,
+the reproduced frame-analysis diagnostics, and the Trim compiler warning. Since
+October 2026 it plays seeded synthetic clips rather than the private reference
+videos the counts above came from, so a clean scan there is weaker evidence for
+real footage. This is simulator playback
 proof, not physical-camera or Photos interoperability proof.
 
 ## Startup messages and limits

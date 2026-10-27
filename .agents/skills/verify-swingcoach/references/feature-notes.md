@@ -26,7 +26,7 @@ Traps by area that a check or a hand-driven run can hit. Accessibility labels li
 
 ## Coach
 
-- `scripts/verify-coaching.sh` runs a local backend with seeded coaching. It proves upload, progress, and result display; live AI quality needs the VPS backend described in AGENTS.md.
+- `scripts/verify.sh coach` runs a local backend with seeded coaching. It proves upload, progress, and result display; live AI quality needs the VPS backend described in AGENTS.md.
 - DEBUG `Mock analysis` still calls `/mock/analyze` on the backend. It is not an offline stub.
 - From Simulator the local backend is `127.0.0.1`. A physical iPhone needs the Mac's LAN URL and local-network permission.
 - Analysis runs and uploads create remote state. Use a disposable clip and record run IDs.

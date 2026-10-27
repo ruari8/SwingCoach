@@ -1,10 +1,11 @@
 import XCTest
 
+/// scripts/verify.sh capture also checks that cancelled recordings leave no
+/// temporary files.
 final class ManualTrimCancelUITests: XCTestCase {
     func testCancelReturnsToManualAndAllowsAnotherRecording() {
         continueAfterFailure = false
-        let app = XCUIApplication()
-        app.launch()
+        let app = XCUIApplication.launched(seed: "empty", Fixture.syntheticCamera)
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         for _ in 0..<4 {
             let alert = springboard.alerts.firstMatch

@@ -1,10 +1,24 @@
 import XCTest
 
+/// A 310-second synthetic Manual recording with swings detected at 2, 150 and
+/// 300 seconds; Trim, export and Photos are production code. Analysis requests
+/// are recorded instead of uploaded. scripts/verify.sh trim also checks the
+/// saved clips' files, durations and audio after each test.
 final class TrimReviewUITests: XCTestCase {
+    private func fixture(frameRate: Int, context: Bool = false) -> [String] {
+        var arguments = Fixture.syntheticCamera + [
+            "-ui-testing-recording-seconds", "310", "-ui-testing-detections", "2,150,300",
+            "-ui-testing-frame-rate", "\(frameRate)", "-ui-testing-record-analysis",
+        ]
+        // One second either side of each 1-second swing makes 3-second clips.
+        if !context { arguments += ["-capture.extraSecondsBeforeSwing", "1", "-capture.extraSecondsAfterSwing", "1"] }
+        return arguments
+    }
+
     func testManualTrimSelectionReviewExportOnlyThenSubsetAnalysis() {
         continueAfterFailure = false
-        let app = XCUIApplication()
-        app.launch()
+        let arguments = fixture(frameRate: 30)
+        let app = XCUIApplication.launched(seed: "empty", arguments)
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         for _ in 0..<3 {
             guard springboard.alerts.firstMatch.waitForExistence(timeout: 1) else { break }
@@ -67,8 +81,7 @@ final class TrimReviewUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Start recording"].isHittable)
         XCTAssertTrue(app.tabBars.buttons["Capture"].isSelected)
         attach("export-only-returned-to-capture")
-        app.terminate()
-        app.launch()
+        app.relaunch(arguments)
         XCTAssertTrue(manual.waitForExistence(timeout: 10))
         manual.tap()
         openTrim(app)
@@ -86,9 +99,7 @@ final class TrimReviewUITests: XCTestCase {
 
     func testPartialSaveKeepsFailedClipReachableForRetry() {
         continueAfterFailure = false
-        let app = XCUIApplication()
-        app.launchArguments = ["-trim-save-failure"]
-        app.launch()
+        let app = XCUIApplication.launched(seed: "empty", fixture(frameRate: 30) + ["-ui-testing-save-failure"])
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         for _ in 0..<3 {
             guard springboard.alerts.firstMatch.waitForExistence(timeout: 1) else { break }
@@ -117,9 +128,8 @@ final class TrimReviewUITests: XCTestCase {
 
     func testContextSettingsPersistAndTrimClockMatchesPlayback() {
         continueAfterFailure = false
-        let app = XCUIApplication()
-        app.launchArguments = ["-trim-context-clock", "-trim-context-reset"]
-        app.launch()
+        let arguments = fixture(frameRate: 240, context: true)
+        let app = XCUIApplication.launched(seed: "empty", arguments)
         app.tabBars.buttons["Library"].tap()
         app.buttons["Experimental settings"].tap()
         let before = app.textFields["swing-context-before"]
@@ -135,9 +145,7 @@ final class TrimReviewUITests: XCTestCase {
         before.tap()
         XCTAssertEqual(after.value as? String, "2.25")
         attach("independent-extra-footage-settings")
-        app.terminate()
-        app.launchArguments = ["-trim-context-clock"]
-        app.launch()
+        app.relaunch(arguments)
         app.tabBars.buttons["Library"].tap()
         app.buttons["Experimental settings"].tap()
         XCTAssertTrue(before.waitForExistence(timeout: 5))

@@ -34,4 +34,4 @@ legacy event module's P numbering must not be reused for coaching P4/P7 labels.
 
 Tests: `test_grounded_coaching.py` checks known image geometry and confidence
 omission; `test_pipeline_3d.py` checks the complete no-pose pipeline and decoded
-video. Real-video and iOS evidence is recorded by `scripts/verify-coaching.sh`.
+video. Real-video and iOS evidence is recorded by `scripts/verify.sh coach`.

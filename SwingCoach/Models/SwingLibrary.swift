@@ -565,6 +565,10 @@ class SwingLibrary: ObservableObject {
     }
 
     private func installBundledReferenceSwings() {
+        #if DEBUG
+        // UI tests seed their own synthetic references.
+        if UITestFixture.isActive { return }
+        #endif
         struct ReferenceDefinition {
             let id: UUID
             let filename: String
@@ -669,7 +673,10 @@ class SwingLibrary: ObservableObject {
 extension PHPhotoLibrary {
     /// Save video and return the asset identifier
     static func saveVideoAndGetID(url: URL) async -> String? {
-        await withCheckedContinuation { continuation in
+        #if DEBUG
+        if UITestFixture.shouldFailPhotosSave() { return nil }
+        #endif
+        return await withCheckedContinuation { continuation in
             var assetID: String?
             
             PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in

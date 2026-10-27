@@ -1,30 +1,31 @@
 import XCTest
 
+/// Save to Photos with the synthetic camera and real exports, Library and
+/// PhotoKit. scripts/verify.sh storage revokes Photos access before the OFF test,
+/// grants it before the ON test, and checks the app's files and the Simulator's
+/// Photos rows after each.
 final class SavePhotosUITests: XCTestCase {
+    private let oneDetectedSwing = Fixture.syntheticCamera + ["-ui-testing-detections", "0"]
+    private let autoExport = Fixture.syntheticCamera + ["-ui-testing-auto-export"]
+
     override func setUp() { continueAfterFailure = false }
 
     func testOffPersistsAndSavesManualTrimAndAutoLocally() {
-        let app = XCUIApplication()
-        app.launch()
+        let app = XCUIApplication.launched(seed: "empty", Fixture.syntheticCamera)
         openSettings(app)
         let toggle = app.switches["save-to-photos"]
         XCTAssertEqual(toggle.value as? String, "1", "New installs retain existing ON behavior")
         toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
         XCTAssertEqual(toggle.value as? String, "0")
         attach("save-to-photos-off")
-        app.terminate()
-        app.launch()
+        app.relaunch(Fixture.syntheticCamera)
         openSettings(app)
         XCTAssertEqual(toggle.value as? String, "0", "Preference survives process relaunch")
         app.buttons["Done"].tap()
         saveManual(app, range: false)
-        app.terminate()
-        app.launchArguments = ["-storage-range"]
-        app.launch()
+        app.relaunch(oneDetectedSwing)
         saveManual(app, range: true)
-        app.terminate()
-        app.launchArguments = ["-storage-auto"]
-        app.launch()
+        app.relaunch(autoExport)
         let review = app.buttons["capture-saved-swings"]
         XCTAssertTrue(review.waitForExistence(timeout: 20))
         let saved = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "Review 1 saved swings"), object: review)
@@ -37,9 +38,7 @@ final class SavePhotosUITests: XCTestCase {
         app.buttons["Delete from SwingCoach"].tap()
         XCTAssertTrue(app.staticTexts["No Session Swings"].waitForExistence(timeout: 10))
         app.buttons["Close swing review"].tap()
-        app.terminate()
-        app.launchArguments = []
-        app.launch()
+        app.relaunch(Fixture.syntheticCamera)
         app.tabBars.buttons["Library"].tap()
         let card = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "DTL")).firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 10))
@@ -55,30 +54,33 @@ final class SavePhotosUITests: XCTestCase {
     }
 
     func testOnCreatesPhotosCopiesForManualTrimAndAuto() {
-        let app = XCUIApplication()
-        app.launch()
+        allowPhotosAccessWhenAsked()
+        let app = XCUIApplication.launched(seed: "empty", Fixture.syntheticCamera)
         openSettings(app)
-        let toggle = app.switches["save-to-photos"]
-        // This check also runs independently on a fresh ON-by-default install.
-        if toggle.value as? String == "0" {
-            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-        }
-        XCTAssertEqual(toggle.value as? String, "1")
+        XCTAssertEqual(app.switches["save-to-photos"].value as? String, "1", "New installs save to Photos")
         app.buttons["Done"].tap()
         saveManual(app, range: false)
-        app.terminate()
-        app.launchArguments = ["-storage-range"]
-        app.launch()
+        app.relaunch(oneDetectedSwing)
         saveManual(app, range: true)
-        app.terminate()
-        app.launchArguments = ["-storage-auto"]
-        app.launch()
+        app.relaunch(autoExport)
         let review = app.buttons["capture-saved-swings"]
         let saved = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "Review 1 saved swings"), object: review)
         XCTAssertEqual(XCTWaiter.wait(for: [saved], timeout: 20), .completed)
         review.tap()
         assertPlayback(app)
         attach("auto-photos-playback")
+    }
+
+    /// The verify runner grants Photos access up front; this covers a plain
+    /// `xcodebuild test` on a Simulator that has not been asked yet.
+    private func allowPhotosAccessWhenAsked() {
+        addUIInterruptionMonitor(withDescription: "Photos access") { alert in
+            for label in ["Allow Full Access", "Allow Access to All Photos", "Allow"] where alert.buttons[label].exists {
+                alert.buttons[label].tap()
+                return true
+            }
+            return false
+        }
     }
 
     private func openSettings(_ app: XCUIApplication) {

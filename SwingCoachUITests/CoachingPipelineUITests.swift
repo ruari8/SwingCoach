@@ -1,6 +1,6 @@
 import XCTest
 
-/// Uses the disposable local backend and seeded clips from verify-coaching.sh.
+/// Uses the disposable local backend and seeded clips from `scripts/verify.sh coach`.
 final class CoachingPipelineUITests: XCTestCase {
     func testRealUploadAnalysisAndSourceNotesPersist() throws {
         let app = XCUIApplication()

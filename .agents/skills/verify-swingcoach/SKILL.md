@@ -20,22 +20,23 @@ Take every row whose paths or behavior you touched. A shared model (`SwingLibrar
 | You changed | Run |
 | --- | --- |
 | Pure logic in `SwingCoach/Models/` | The matching unit tests in `SwingCoachTests/` (step 2) |
-| `LibraryView` sessions, selection, export | `scripts/verify-library-sessions.sh` |
-| Library filtering, starring, deletion | `scripts/verify-review.sh` |
+| App launch, tab shell, navigation between tabs | `scripts/verify.sh smoke` |
+| `LibraryView` sessions, selection, export | `scripts/verify.sh library` |
+| Library filtering, starring, deletion | `scripts/verify.sh library` |
 | Photos import | No committed check; drive it (step 3) |
-| `SwingReviewPager`, `SwingDetailView`, playback, annotations | `scripts/verify-review.sh` and `scripts/verify-media-playback.sh` |
-| Paging gestures | `scripts/verify-fast-swipes.sh` |
-| Review lock | `scripts/verify-review-lock.sh` |
-| `CaptureView` controls, settings | `scripts/verify-capture-controls.sh` |
-| Auto review annotations | `scripts/verify-capture-controls.sh <artifact-dir> annotations` |
-| Recording audio session | `scripts/verify-capture-audio.sh` |
-| Manual record → Trim handoff | `scripts/verify-manual-trim-cancel.sh` |
-| `TrimView/`, clip export | `scripts/verify-trim-review.sh` |
-| Context padding, rolling-buffer settings | `SWINGCOACH_TRIM_VERIFY_CONTEXT=1 scripts/verify-trim-review.sh <artifact-dir>` |
-| Partial Photos-save failure and retry | `SWINGCOACH_TRIM_VERIFY_PARTIAL=1 scripts/verify-trim-review.sh` |
-| Trim playback timing | `scripts/verify-trim-playback-clock.sh` |
-| Save to Photos, local storage preference | `scripts/verify-save-photos.sh` |
-| `AnalyseView`, `SwingCoachAPI`, coaching display | `scripts/verify-coaching.sh` (local backend with seeded coaching; proves the app flow, not live AI quality) |
+| `SwingReviewPager`, `SwingDetailView`, playback, annotations | `scripts/verify.sh library review` (add `console` to scan playback for framework diagnostics) |
+| Paging gestures | `scripts/verify.sh review` (`scripts/verify.sh stress` repeats the flicks over 171 clips) |
+| Review lock | `scripts/verify.sh review --only ReviewLockUITests` |
+| `CaptureView` controls, settings | `scripts/verify.sh capture` |
+| Auto review annotations | `scripts/verify.sh capture --only AutoReviewAnnotationUITests` |
+| Recording audio session | `scripts/verify.sh capture --only CaptureAudioUITests --only CaptureRecordingAudioSessionTests` |
+| Manual record → Trim handoff | `scripts/verify.sh capture --only ManualTrimCancelUITests` |
+| `TrimView/`, clip export | `scripts/verify.sh trim` |
+| Context padding, rolling-buffer settings | `scripts/verify.sh trim --only TrimReviewUITests/testContextSettingsPersistAndTrimClockMatchesPlayback --only SwingClipContextTests --only AutoCaptureReviewSessionTests` |
+| Partial Photos-save failure and retry | `scripts/verify.sh trim --only TrimReviewUITests/testPartialSaveKeepsFailedClipReachableForRetry` |
+| Trim playback timing | `scripts/verify.sh trim-clock` |
+| Save to Photos, local storage preference | `scripts/verify.sh storage` |
+| `AnalyseView`, `SwingCoachAPI`, coaching display | `scripts/verify.sh coach` (local backend with seeded coaching; proves the app flow, not live AI quality) |
 | `backend/` | The backend tests listed in AGENTS.md |
 | Docs, comments, Git only | Nothing |
 
@@ -43,7 +44,7 @@ When no row covers the behavior, drive it yourself (step 3).
 
 ## 2. Run them
 
-Most `scripts/verify-*.sh` build their own disposable Simulator, seed synthetic media, run XCUITests, and delete the Simulator on exit. Exceptions: `verify-trim-playback-clock.sh` runs a macOS probe with no Simulator; `verify-media-playback.sh` needs the three private videos in `SwingCoach/ReferenceSwings/`; `verify-coaching.sh` needs one of those videos plus `backend/venv` and `backend/models/pose_landmarker_heavy.task`. Read the final lines and the exit status; evidence lands in `.verification-artifacts/`. A run takes several minutes, so run independent checks in the background.
+`scripts/verify.sh <area>...` builds once, creates a disposable Simulator, seeds synthetic media through DEBUG launch fixtures, runs the area's XCUITests and unit tests plus its file and Photos checks, and deletes the Simulator on exit. Pass several areas to one run: runs in one checkout share a build, and a second concurrent run reports BLOCKED. `scripts/verify.sh all` runs every default area; `--help` lists them. Exceptions: `trim-clock` runs a macOS probe with no Simulator; `coach` needs `SwingCoach/ReferenceSwings/DaBMIbhpel9_1.mp4` plus `backend/venv` and `backend/models/pose_landmarker_heavy.task`, and reports BLOCKED without them. Read the final `PASS`, `FAIL` or `BLOCKED <reason>` line and the exit status; evidence lands in `.verification-artifacts/verify/`. A run takes minutes, so run it in the background.
 
 Unit tests, on a Simulator of your own because other agents may be running theirs:
 

@@ -1,5 +1,7 @@
 import XCTest
 
+/// Review-session Lock through Library and the Auto review fixture, over three
+/// synthetic references.
 final class ReviewLockUITests: XCTestCase {
     override func setUp() {
         super.setUp()
@@ -7,9 +9,7 @@ final class ReviewLockUITests: XCTestCase {
     }
 
     func testLibraryLockPersistsAcrossPaging() {
-        let app = XCUIApplication()
-        app.launchArguments = ["-ui-testing-library"]
-        app.launch()
+        let app = XCUIApplication.launched(seed: "references", ["-ui-testing-library"])
         openFirstReference(app)
         exerciseLockAcrossPages(app)
 
@@ -22,9 +22,7 @@ final class ReviewLockUITests: XCTestCase {
     }
 
     func testAutoLockPersistsAcrossPaging() {
-        let app = XCUIApplication()
-        app.launchArguments = ["-ui-testing-auto-review"]
-        app.launch()
+        let app = XCUIApplication.launched(seed: "references", ["-ui-testing-auto-review"])
         // Test paging independently of which clip Auto selects on entry.
         let position = app.staticTexts["swing-position"]
         XCTAssertTrue(position.waitForExistence(timeout: 10))
@@ -44,7 +42,7 @@ final class ReviewLockUITests: XCTestCase {
 
     private func openFirstReference(_ app: XCUIApplication) {
         let reference = app.buttons.containing(.staticText, identifier: "Reference swing 1").firstMatch
-        XCTAssertTrue(reference.waitForExistence(timeout: 10), "Requires the synthetic fixtures from verify-review-lock.sh")
+        XCTAssertTrue(reference.waitForExistence(timeout: 10))
         let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: reference)
         XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed)
         reference.tap()
