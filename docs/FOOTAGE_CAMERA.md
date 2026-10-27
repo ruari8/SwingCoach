@@ -13,6 +13,8 @@ Code: `SwingCoach/Models/FootageCamera.swift`, wired in `CaptureView.swift`.
 | `-footage-camera-buffers <n>` | Frame pool size. Default 15. |
 | `-footage-camera-impacts <t,t,…>` | Labelled impacts, in real seconds from the start of the footage. Auto saves these instead of the detector's swings. The detector still runs, and each swing it accepts is logged as `detector-swing`. Use this on the Simulator, where Vision pose can't run. |
 
+When the footage ends, any clip still waiting for footage after its swing is saved with what was recorded, as stopping Auto does. Each frame carries its own file's rotation, so a kept session recorded across a phone rotation replays upright.
+
 The Capture tab shows the footage instead of the camera preview, with a yellow status line: file, position, frames delivered, and frames dropped. The frame-rate menu follows the footage's real frame rate and can't be changed.
 
 ## How it behaves like the camera
@@ -30,10 +32,10 @@ The Capture tab shows the footage instead of the camera preview, with a yellow s
 
 ## Keeping range footage to replay
 
-Library > gear > Experiments > **Keep Auto recordings** (DEBUG builds). Auto's rolling recordings normally last 45 s. With this on, each finished recording moves to `Documents/KeptRecordings/<start time>/`, with a new folder each time Auto starts or resumes after review. Files are named by their start on the session timeline, so name order is recording order.
+Library > gear > Experiments > **Keep Auto recordings** (DEBUG builds). Auto's rolling recordings normally last 45 s. With this on, each finished recording moves to `Documents/KeptRecordings/<start time>-<id>/`, with a new folder each time Auto starts or resumes after review. Files are named by their start on the session timeline, so name order is recording order.
 
 - **Size:** about 22 GB an hour at 240 fps (50 Mbit/s). The folder is excluded from iCloud backup.
-- **Diagnostics:** each kept file logs `recording-kept`; failures log `keep-recordings-failed`.
+- **Diagnostics:** each kept file logs `recording-kept`. A failed move logs `keep-recordings-failed` with the file's tmp path and leaves the file there rather than deleting it.
 - **Replay:** copy a folder off the phone, or leave it on the phone, and play it with `-footage-camera KeptRecordings/<folder>` (time scale 1).
 
 Copy kept recordings off the phone:

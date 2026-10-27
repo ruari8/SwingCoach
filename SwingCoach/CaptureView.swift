@@ -205,6 +205,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         }
         footage.onStatus = { [weak self] status in self?.footageStatus = status }
         footage.onPreview = { [weak self] image in self?.footagePreview = image }
+        footage.onFinish = { [weak self] in self?.finishFootage() }
         footageCamera = footage
         footageStatus = FootageCamera.Status()
         // Record and export at the footage's real frame rate.
@@ -777,7 +778,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         if shouldProcessAuto { declareLabelledImpacts(in: sampleBuffer, relativeTime: relativeTime) }
         #endif
 
-        let rotationAngle = currentCardinalCaptureRotationAngle()
+        var rotationAngle = currentCardinalCaptureRotationAngle()
+        #if DEBUG
+        if let rotation = CMGetAttachment(sampleBuffer, key: FootageCamera.rotationKey, attachmentModeOut: nil) as? NSNumber {
+            rotationAngle = CGFloat(rotation.doubleValue)
+        }
+        #endif
         if shouldProcessAuto {
             let sourceFPS = captureMode.targetFPS
             let enqueuedAt = ProcessInfo.processInfo.systemUptime
@@ -1070,6 +1076,18 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     #if DEBUG
+    /// No frames follow the end of the footage, so clips still waiting for
+    /// footage after their swing would wait forever. Save them with what was
+    /// recorded, as stopping Auto does. Runs on qualityQueue after the last
+    /// frame, then after queued analysis, so late detections are included.
+    private func finishFootage() {
+        analysisQueue.async {
+            self.bufferQueue.async {
+                self.autoRollingBuffer.finishPendingClips()
+            }
+        }
+    }
+
     /// Declares each labelled footage impact once the frame after it arrives,
     /// as the detector would, converted onto this Auto session's timeline.
     private func declareLabelledImpacts(in sampleBuffer: CMSampleBuffer, relativeTime: Double) {

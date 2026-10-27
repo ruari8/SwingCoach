@@ -238,7 +238,8 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
                 continue
             }
 
-            if chunk.keepDirectory != nil, !chunk.isFinished {
+            // A failed writer can't finish; cancel and delete it as before.
+            if chunk.keepDirectory != nil, !chunk.isFinished, chunk.writer.status == .writing {
                 // Finish rather than cancel, so the footage up to the reset is kept.
                 finish(chunk, reason: "stop")
                 finishingKeptChunks.append(chunk)
@@ -312,6 +313,13 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
 
         resolvePendingClips()
         cleanupOldChunks(currentTime: relativeTime)
+    }
+
+    /// Prepares every waiting clip from the footage recorded so far, without
+    /// waiting for its end. Used when a DEBUG footage feed runs out.
+    func finishPendingClips() {
+        dispatchPrecondition(condition: .onQueue(writerQueue))
+        resolvePendingClips(stopping: true)
     }
 
     func prepareClip(in range: CMTimeRange,
@@ -711,7 +719,9 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
         formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
         var root = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("KeptRecordings", isDirectory: true)
-        let directory = root.appendingPathComponent(formatter.string(from: Date()), isDirectory: true)
+        // The suffix keeps two resets within one second in separate folders.
+        let name = formatter.string(from: Date()) + "-" + generation.uuidString.prefix(4)
+        let directory = root.appendingPathComponent(name, isDirectory: true)
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             // Tens of gigabytes an hour: never send these to iCloud backup.
@@ -738,8 +748,11 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
                 ], state: ["file": directory.lastPathComponent + "/" + name])
                 return
             } catch {
+                // Leave the recording in tmp rather than delete footage the
+                // user asked to keep; the system clears tmp eventually.
                 CaptureCadenceDiagnostics.shared.emit("keep-recordings-failed", id: chunk.id.uuidString,
-                                                      state: ["error": error.localizedDescription])
+                                                      state: ["error": error.localizedDescription, "file": chunk.url.path])
+                return
             }
         }
         try? FileManager.default.removeItem(at: chunk.url)

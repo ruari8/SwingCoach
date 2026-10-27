@@ -88,11 +88,15 @@ nonisolated final class FootageCamera: @unchecked Sendable {
     /// Each delivered sample buffer carries its time on the footage timeline
     /// (real seconds from the start of the first file) under this key.
     static let footageTimeKey = "SwingCoachFootageTime" as CFString
+    /// Each delivered sample buffer carries its file's display rotation in
+    /// degrees under this key: kept recordings change files when the phone
+    /// rotated, so one rotation for the whole feed would be wrong.
+    static let rotationKey = "SwingCoachFootageRotation" as CFString
 
     let configuration: Configuration
     /// Real-time frame rate of the footage, e.g. 240 for 30 fps slowed 8×.
     let sourceFPS: Double
-    /// Display rotation of the first file, as the camera's capture rotation.
+    /// Display rotation of the first file, until frames arrive.
     let rotationAngle: CGFloat
 
     /// Called on the delivery queue for each frame, like captureOutput(didOutput:).
@@ -103,15 +107,18 @@ nonisolated final class FootageCamera: @unchecked Sendable {
     var onStatus: ((Status) -> Void)?
     /// Called on the main queue with a downscaled frame about four times a second.
     var onPreview: ((UIImage) -> Void)?
+    /// Called on the delivery queue after the last frame of the last file.
+    var onFinish: (() -> Void)?
 
     private let deliveryQueue: DispatchQueue
     private let previewQueue = DispatchQueue(label: "footage-camera.preview", qos: .utility)
     private let lock = NSLock()
     private var thread: Thread?
     private var isStopping = false
-    /// Where playback resumes after stop(): file index and source time.
+    /// Where playback resumes after stop(): file index and the source time of
+    /// the last frame played, or nil to start that file from its first frame.
     private var resumeFile = 0
-    private var resumeSourceTime = 0.0
+    private var resumeSourceTime: Double?
     /// Real seconds of footage already played, carried across stop/start.
     private var playedSeconds = 0.0
     private var status = Status()
@@ -125,8 +132,7 @@ nonisolated final class FootageCamera: @unchecked Sendable {
         guard let firstFile = files.first ?? nil else { return nil }
         sourceFPS = firstFile.nominalFPS * configuration.timeScale
         let transform = firstFile.transform
-        let degrees = (Int((atan2(transform.b, transform.a) * 180 / .pi).rounded()) + 360) % 360
-        rotationAngle = CGFloat(degrees)
+        rotationAngle = Self.rotation(of: transform)
         status.totalSeconds = files.reduce(0) { $0 + ($1?.duration ?? 0) / configuration.timeScale }
     }
 
@@ -138,6 +144,10 @@ nonisolated final class FootageCamera: @unchecked Sendable {
         let duration: Double
         let nominalFPS: Double
         let transform: CGAffineTransform
+    }
+
+    private static func rotation(of transform: CGAffineTransform) -> CGFloat {
+        CGFloat((Int((atan2(transform.b, transform.a) * 180 / .pi).rounded()) + 360) % 360)
     }
 
     private final class Box<T>: @unchecked Sendable { var value: T? }
@@ -165,6 +175,10 @@ nonisolated final class FootageCamera: @unchecked Sendable {
         isStopping = false
         // A stopping feed thread sees isStopping cleared and restarts itself.
         guard thread == nil, !status.isFinished else { return }
+        launchThreadLocked()
+    }
+
+    private func launchThreadLocked() {
         let thread = Thread { [weak self] in self?.run() }
         thread.name = "footage-camera"
         thread.qualityOfService = .userInitiated
@@ -206,7 +220,7 @@ nonisolated final class FootageCamera: @unchecked Sendable {
                 break
             }
             let track = file.track
-            if resumeSourceTime > 0 {
+            if let resumeSourceTime {
                 reader.timeRange = CMTimeRange(start: CMTime(seconds: resumeSourceTime, preferredTimescale: 600),
                                                end: CMTime(seconds: file.start + file.duration, preferredTimescale: 600))
             }
@@ -220,8 +234,10 @@ nonisolated final class FootageCamera: @unchecked Sendable {
                 break
             }
             let fileStart = file.start
-            // Footage seconds before this file started.
-            let fileOffset = playedSeconds - (resumeSourceTime - fileStart) / configuration.timeScale
+            let rotation = Self.rotation(of: file.transform)
+            // Footage seconds at the file's first frame. A track can start
+            // after zero (edit-list pre-roll), so measure from its own start.
+            let fileOffset = playedSeconds - ((resumeSourceTime ?? fileStart) - fileStart) / configuration.timeScale
             var fileEnd = playedSeconds
             updateStatus { $0.file = url.lastPathComponent }
 
@@ -263,6 +279,8 @@ nonisolated final class FootageCamera: @unchecked Sendable {
                 }
                 CMSetAttachment(buffer, key: Self.footageTimeKey, value: NSNumber(value: footageTime),
                                 attachmentMode: kCMAttachmentMode_ShouldNotPropagate)
+                CMSetAttachment(buffer, key: Self.rotationKey, value: NSNumber(value: Double(rotation)),
+                                attachmentMode: kCMAttachmentMode_ShouldNotPropagate)
                 deliveryQueue.async { [weak self] in self?.onFrame?(buffer) }
                 lastDelivered = now
 
@@ -273,7 +291,6 @@ nonisolated final class FootageCamera: @unchecked Sendable {
                 }
                 if onPreview != nil, now - lastPreview >= 0.25 {
                     lastPreview = now
-                    let rotation = rotationAngle
                     previewQueue.async { [weak self] in
                         guard let image = Self.previewImage(frame, rotation: rotation, context: ciContext) else { return }
                         DispatchQueue.main.async { self?.onPreview?(image) }
@@ -286,17 +303,23 @@ nonisolated final class FootageCamera: @unchecked Sendable {
             }
             playedSeconds = fileEnd
             resumeFile += 1
-            resumeSourceTime = 0
+            resumeSourceTime = nil
         }
 
         lock.lock()
-        thread = nil
         let finished = resumeFile >= configuration.urls.count
-        let restart = !isStopping && !finished && status.error == nil
-        lock.unlock()
-        if restart {
-            start()
+        if !isStopping, !finished, status.error == nil {
+            // start() cleared a stop while this thread was winding down.
+            // Relaunch under the lock so a later stop() still applies.
+            launchThreadLocked()
+            lock.unlock()
             return
+        }
+        thread = nil
+        lock.unlock()
+        if finished {
+            // Queued after every delivered frame on the same serial queue.
+            deliveryQueue.async { [weak self] in self?.onFinish?() }
         }
         let final = updateStatus { $0.isFinished = finished || $0.error != nil }
         publish(final)
