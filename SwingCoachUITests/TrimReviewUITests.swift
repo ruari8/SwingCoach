@@ -174,15 +174,18 @@ final class TrimReviewUITests: XCTestCase {
     }
 
     private func allowPhotosIfRequested(_ app: XCUIApplication) {
-        // Xcode can reinstall the app after the simctl pregrant. Accept the
-        // actual runtime upgrade prompt too, instead of assuming TCC persisted.
+        // scripts/verify.sh grants Photos access first, but Xcode can reinstall
+        // the app, and a plain `xcodebuild test` starts unasked. Accept the
+        // add-only or full-access prompt when one appears.
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         for host in [springboard, app] {
-            let allow = host.buttons["Allow Full Access"]
-            if allow.waitForExistence(timeout: 5), allow.isHittable {
-                attach("photos-full-access-prompt")
-                allow.tap()
-                return
+            for label in ["Allow Full Access", "Allow Access to All Photos", "Allow"] {
+                let allow = host.buttons[label]
+                if allow.waitForExistence(timeout: label == "Allow Full Access" ? 5 : 1), allow.isHittable {
+                    attach("photos-access-prompt")
+                    allow.tap()
+                    return
+                }
             }
         }
     }

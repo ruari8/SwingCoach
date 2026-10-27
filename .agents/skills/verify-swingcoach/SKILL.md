@@ -28,7 +28,7 @@ Take every row whose paths or behavior you touched. A shared model (`SwingLibrar
 | Paging gestures | `scripts/verify.sh review` (`scripts/verify.sh stress` repeats the flicks over 171 clips) |
 | Review lock | `scripts/verify.sh review --only ReviewLockUITests` |
 | `CaptureView` controls, settings | `scripts/verify.sh capture` |
-| Auto review annotations | `scripts/verify.sh capture --only AutoReviewAnnotationUITests` |
+| Auto review annotations | `scripts/verify.sh capture --only AutoReviewAnnotationUITests --only CaptureControlsUITests/testSavedReviewStillPlaysPagesAndDeletes` |
 | Recording audio session | `scripts/verify.sh capture --only CaptureAudioUITests --only CaptureRecordingAudioSessionTests` |
 | Manual record → Trim handoff | `scripts/verify.sh capture --only ManualTrimCancelUITests` |
 | `TrimView/`, clip export | `scripts/verify.sh trim` |

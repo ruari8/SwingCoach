@@ -753,6 +753,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     private func finishLiveSwingDetection() -> (items: [DetectedSwing], summary: LiveSwingDetectionSnapshot) {
+        #if DEBUG
+        if UITestFixture.camera != nil, !UITestFixture.detectionStarts.isEmpty {
+            return fixtureDetections()
+        }
+        #endif
         let recordingTime = lastLiveSwingSampleTime.isFinite ? lastLiveSwingSampleTime : nil
         let finalTime = recordingTime ?? 0
 
@@ -1282,6 +1287,7 @@ extension CameraSession {
         liveSwingDetection = fixtureSnapshot(manual: true)
     }
 
+    /// Delivers a synthetic file through the production recording delegate.
     private func stopFixtureRecording() {
         queue.async {
             let url = FileManager.default.temporaryDirectory
@@ -1291,19 +1297,18 @@ extension CameraSession {
             } catch {
                 fatalError("Synthetic recording failed: \(error)")
             }
-            let detections = UITestFixture.detectionStarts.map { start in
-                DetectedSwing(startTime: CMTime(seconds: start, preferredTimescale: 600),
-                              endTime: CMTime(seconds: start + 1, preferredTimescale: 600),
-                              confidence: 1, impactTime: start + 0.5, declaredAt: start + 1)
-            }
-            DispatchQueue.main.async {
-                self.recordingError = nil
-                self.lastRecordingSwingDetections = detections
-                self.lastRecordingSwingDetectionSummary = detections.isEmpty ? nil
-                    : LiveSwingDetectionSnapshot(status: .swingDetected, detectedSwingCount: detections.count)
-                self.lastRecordingURL = url
-            }
+            self.fileOutput(self.movieOutput, didFinishRecordingTo: url, from: [], error: nil)
         }
+    }
+
+    /// The detector's result for a recording, from `-ui-testing-detections`.
+    private func fixtureDetections() -> (items: [DetectedSwing], summary: LiveSwingDetectionSnapshot) {
+        let detections = UITestFixture.detectionStarts.map { start in
+            DetectedSwing(startTime: CMTime(seconds: start, preferredTimescale: 600),
+                          endTime: CMTime(seconds: start + 1, preferredTimescale: 600),
+                          confidence: 1, impactTime: start + 0.5, declaredAt: start + 1)
+        }
+        return (detections, LiveSwingDetectionSnapshot(status: .swingDetected, detectedSwingCount: detections.count))
     }
 
     private func startFixtureAutoCapture() {

@@ -364,7 +364,7 @@ Coach results use explicit Original, Annotated, and Coach Notes buttons. The rem
 
 ### Auto review annotation verification
 
-`scripts/verify.sh capture --only AutoReviewAnnotationUITests` runs these Simulator checks. The synthetic camera's Auto session shows seeded synthetic references, and the test drives the production Capture review and Library UI. It verifies drawing, undo, paging isolation, reopening, disk persistence after relaunch, portrait Library controls after device rotation, clearing from either entry point, playback, and review deletion. Camera input, live detection, capture restart timing, and physical Photos deletion still require an iPhone.
+`scripts/verify.sh capture --only AutoReviewAnnotationUITests --only CaptureControlsUITests/testSavedReviewStillPlaysPagesAndDeletes` runs these Simulator checks. The synthetic camera's Auto session shows seeded synthetic references, and the test drives the production Capture review and Library UI. It verifies drawing, undo, paging isolation, reopening, disk persistence after relaunch, portrait Library controls after device rotation, clearing from either entry point, playback, and review deletion. Camera input, live detection, capture restart timing, and physical Photos deletion still require an iPhone.
 
 ## Grounded coaching foundation
 

@@ -171,6 +171,10 @@ def photos_assets(run):
         return {row[0].upper() for row in db.execute("SELECT ZUUID FROM ZASSET WHERE ZTRASHEDSTATE = 0")}
 
 
+def grant_photos(run):
+    privacy(run, "grant", "photos", "photos-add")
+
+
 def storage_before(phase):
     def before(run):
         if "photos_baseline" not in run.state:
@@ -278,8 +282,9 @@ record = dict(id='10000000-0000-0000-0000-000000000002', swingID=swings[1]['id']
 
 def coach_before(run):
     storage = run.artifacts / "coach-storage"
-    # No model calls: neither API billing nor the Codex provider.
-    env = {k: v for k, v in os.environ.items() if k not in ("OPENAI_API_KEY", "SWINGCOACH_COACH_PROVIDER")}
+    # No model calls: neither API billing nor the Codex provider. Empty values,
+    # not removed ones, so backend/.env cannot restore them through load_dotenv.
+    env = {**os.environ, "OPENAI_API_KEY": "", "SWINGCOACH_COACH_PROVIDER": ""}
     log = open(run.artifacts / "coach-backend.log", "w")
     server = subprocess.Popen([str(BACKEND_PYTHON), str(ROOT / "scripts/verification/coaching_backend.py"),
                                "--storage", str(storage), "--port", str(COACH_PORT)],
@@ -330,19 +335,18 @@ AREAS = {
                                  f"{UI}/ManualTrimCancelUITests", f"{UI}/AutoReviewAnnotationUITests",
                                  f"{UNIT}/CaptureRecordingAudioSessionTests", f"{UNIT}/CaptureDiagnosticsExportTests",
                                  f"{UNIT}/InterfaceOrientationPolicyTests"],
-                     before=lambda run: privacy(run, "grant", "photos", "photos-add"),
-                     after=assert_no_fixture_recordings, check_on=f"{UI}/ManualTrimCancelUITests")],
+                     before=grant_photos, after=assert_no_fixture_recordings, check_on=f"{UI}/ManualTrimCancelUITests")],
     "trim": [
         Step("trim-export", [f"{UI}/TrimReviewUITests/testManualTrimSelectionReviewExportOnlyThenSubsetAnalysis",
                              f"{UNIT}/TrimClipPreparationTests"],
-             before=lambda run: privacy(run, "grant", "photos", "photos-add"), after=trim_check("export"),
+             before=grant_photos, after=trim_check("export"),
              check_on=f"{UI}/TrimReviewUITests/testManualTrimSelectionReviewExportOnlyThenSubsetAnalysis"),
         Step("trim-partial-save", [f"{UI}/TrimReviewUITests/testPartialSaveKeepsFailedClipReachableForRetry"],
-             after=trim_check("partial"),
+             before=grant_photos, after=trim_check("partial"),
              check_on=f"{UI}/TrimReviewUITests/testPartialSaveKeepsFailedClipReachableForRetry"),
         Step("trim-context", [f"{UI}/TrimReviewUITests/testContextSettingsPersistAndTrimClockMatchesPlayback",
                               f"{UNIT}/SwingClipContextTests", f"{UNIT}/AutoCaptureReviewSessionTests"],
-             after=trim_check("context"),
+             before=grant_photos, after=trim_check("context"),
              check_on=f"{UI}/TrimReviewUITests/testContextSettingsPersistAndTrimClockMatchesPlayback"),
     ],
     "storage": [
@@ -548,8 +552,9 @@ def main():
     only = [only_selector(o) for o in args.only] if args.only else None
     plan = [(step, narrowed(step, only)) for area in areas for step in AREAS.get(area, [])]
     plan = [(step, tests) for step, tests in plan if tests]
-    if only and not plan:
-        parser.error(f"--only {' '.join(args.only)} is not part of {' '.join(areas)}")
+    for wanted in only or []:
+        if not any(within(t, wanted) or within(wanted, t) for _, tests in plan for t in tests):
+            parser.error(f"--only {wanted.split('/', 1)[1]} is not part of {' '.join(areas)}")
     simulator_needed = bool(plan)
     if only:
         areas = [a for a in areas if a not in MAC_ONLY_AREAS]
