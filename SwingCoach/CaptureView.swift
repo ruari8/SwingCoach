@@ -168,13 +168,56 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     /// The mode that was active when recording started (for correct playback rate)
     private(set) var recordedMode: SloMoMode = .ultra
 
+    #if DEBUG
+    /// Set by the `-footage-camera` launch option: recorded footage replaces
+    /// the camera. See FootageCamera.swift.
+    private var footageCamera: FootageCamera?
+    /// Next labelled footage impact to declare; owned by qualityQueue.
+    private var nextLabelledImpact = 0
+    /// The footage ended during analysis; flush waiting clips once the
+    /// in-flight and pending frames are done. Owned by qualityQueue.
+    private var flushClipsWhenAnalysisDrains = false
+    @Published private(set) var footageStatus: FootageCamera.Status?
+    @Published private(set) var footagePreview: UIImage?
+    #endif
+
     override init() {
         super.init()
         NotificationCenter.default.addObserver(
             self, selector: #selector(captureSessionRuntimeError(_:)),
             name: AVCaptureSession.runtimeErrorNotification, object: session
         )
+        #if DEBUG
+        configureFootageCamera()
+        #endif
     }
+
+    #if DEBUG
+    private func configureFootageCamera() {
+        guard let configuration = FootageCamera.Configuration.fromLaunchArguments() else { return }
+        guard let footage = FootageCamera(configuration: configuration, deliveryQueue: qualityQueue) else {
+            footageStatus = FootageCamera.Status(error: "no readable video in the -footage-camera path")
+            return
+        }
+        footage.onFrame = { [weak self] sampleBuffer in
+            // Footage frames are not stabilized: report it as off.
+            self?.handleVideoFrame(sampleBuffer, stabilizationMode: AVCaptureVideoStabilizationMode.off.rawValue)
+        }
+        footage.onDrop = { [weak self] reason in
+            self?.recordDroppedFrame(reason: reason, stabilizationMode: AVCaptureVideoStabilizationMode.off.rawValue)
+        }
+        footage.onStatus = { [weak self] status in self?.footageStatus = status }
+        footage.onPreview = { [weak self] image in self?.footagePreview = image }
+        footage.onFinish = { [weak self] in self?.finishFootage() }
+        footageCamera = footage
+        footageStatus = FootageCamera.Status()
+        // Record and export at the footage's real frame rate.
+        let mode: SloMoMode = [.normal, .smooth, .standard, .ultra]
+            .min { abs($0.targetFPS - footage.sourceFPS) < abs($1.targetFPS - footage.sourceFPS) } ?? .ultra
+        captureMode = mode
+        recordedMode = mode
+    }
+    #endif
 
     deinit {
         NotificationCenter.default.removeObserver(self)
@@ -312,6 +355,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
     /// Switch capture mode without stopping the session (prevents errors)
     func switchMode(to mode: SloMoMode) {
+        #if DEBUG
+        // Footage has one frame rate; the mode follows it.
+        if footageCamera != nil { return }
+        #endif
         queue.async {
             guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else { return }
 
@@ -358,6 +405,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     func start() {
+        #if DEBUG
+        if let footageCamera {
+            footageCamera.start()
+            return
+        }
+        #endif
         queue.async {
             switch AVCaptureDevice.authorizationStatus(for: .video) {
             case .authorized:
@@ -432,6 +485,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     func stop() {
+        #if DEBUG
+        footageCamera?.stop()
+        #endif
         queue.async {
             if self.session.isRunning {
                 self.session.stopRunning()
@@ -508,7 +564,14 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 )
             }
             self.resetLiveSwingDetection(reviewSessionID: reviewSessionID)
+            #if DEBUG
+            self.footageCamera?.emitStart()
+            let keepsRecordings = UserDefaults.standard.bool(forKey: ExperimentalSettingKey.keepAutoRecordings)
+            #endif
             self.bufferQueue.async {
+                #if DEBUG
+                self.autoRollingBuffer.keepsRecordings = keepsRecordings
+                #endif
                 self.autoRollingBuffer.reset(preservingPendingExports: true)
             }
         }
@@ -689,6 +752,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        handleVideoFrame(sampleBuffer, stabilizationMode: connection.activeVideoStabilizationMode.rawValue)
+    }
+
+    /// Every video frame enters here on qualityQueue, from the camera or, in
+    /// DEBUG, from FootageCamera.
+    private func handleVideoFrame(_ sampleBuffer: CMSampleBuffer, stabilizationMode: Int) {
         let shouldProcessAuto = autoCaptureIsActive && !autoCaptureIsPausedForReview
         guard !captureOutputIsPaused,
               shouldProcessAuto || (movieOutput.isRecording && isLiveSwingDetectionEnabled)
@@ -697,7 +766,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         let sampleTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
         if shouldProcessAuto {
             captureCadence.record(pts: sampleTime.seconds, expectedFPS: captureMode.targetFPS)
-            reportCaptureCadence(connection: connection)
+            reportCaptureCadence(stabilizationMode: stabilizationMode)
         }
         if recordingStartSampleTime == nil {
             recordingStartSampleTime = sampleTime
@@ -708,8 +777,16 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         let relativeTime = CMTimeGetSeconds(CMTimeSubtract(sampleTime, recordingStartSampleTime))
         guard relativeTime.isFinite else { return }
         lastLiveSwingSampleTime = relativeTime
+        #if DEBUG
+        if shouldProcessAuto { declareLabelledImpacts(in: sampleBuffer, relativeTime: relativeTime) }
+        #endif
 
-        let rotationAngle = currentCardinalCaptureRotationAngle()
+        var rotationAngle = currentCardinalCaptureRotationAngle()
+        #if DEBUG
+        if let rotation = CMGetAttachment(sampleBuffer, key: FootageCamera.rotationKey, attachmentModeOut: nil) as? NSNumber {
+            rotationAngle = CGFloat(rotation.doubleValue)
+        }
+        #endif
         if shouldProcessAuto {
             let sourceFPS = captureMode.targetFPS
             let enqueuedAt = ProcessInfo.processInfo.systemUptime
@@ -731,7 +808,6 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        guard autoCaptureIsActive, !autoCaptureIsPausedForReview, !captureOutputIsPaused else { return }
         let reason = CMGetAttachment(sampleBuffer, key: kCMSampleBufferAttachmentKey_DroppedFrameReason, attachmentModeOut: nil)
         let name: String
         let rawReason = reason as? String
@@ -744,11 +820,16 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         } else {
             name = "unknown"
         }
-        droppedFrameReasons[name, default: 0] += 1
-        reportCaptureCadence(connection: connection)
+        recordDroppedFrame(reason: name, stabilizationMode: connection.activeVideoStabilizationMode.rawValue)
     }
 
-    private func reportCaptureCadence(connection: AVCaptureConnection) {
+    private func recordDroppedFrame(reason: String, stabilizationMode: Int) {
+        guard autoCaptureIsActive, !autoCaptureIsPausedForReview, !captureOutputIsPaused else { return }
+        droppedFrameReasons[reason, default: 0] += 1
+        reportCaptureCadence(stabilizationMode: stabilizationMode)
+    }
+
+    private func reportCaptureCadence(stabilizationMode: Int) {
         let now = ProcessInfo.processInfo.systemUptime
         guard now >= nextCadenceReport else { return }
         nextCadenceReport = now + 1
@@ -756,7 +837,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             "requestedFPS": captureMode.targetFPS,
             "coalescedAnalysisFrames": Double(coalescedAnalysisFrames),
             "thermalState": Double(ProcessInfo.processInfo.thermalState.rawValue),
-            "stabilizationMode": Double(connection.activeVideoStabilizationMode.rawValue)
+            "stabilizationMode": Double(stabilizationMode)
         ]
         for (reason, count) in droppedFrameReasons { values["dropped_" + reason] = Double(count) }
         var state: [String: String] = [:]
@@ -774,12 +855,22 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             state["pressure"] = device.systemPressureState.level.rawValue
             state["camera"] = device.deviceType.rawValue
         }
+        #if DEBUG
+        if let footageCamera {
+            state["camera"] = "footage"
+            values["footageTimeScale"] = footageCamera.configuration.timeScale
+            values["footageBuffers"] = Double(footageCamera.configuration.bufferCount)
+        }
+        #endif
         CaptureCadenceDiagnostics.shared.emit("camera", cadence: captureCadence.takeSummary(), values: values, state: state)
         droppedFrameReasons = [:]
         coalescedAnalysisFrames = 0
     }
 
     private func currentCardinalCaptureRotationAngle() -> CGFloat {
+        #if DEBUG
+        if let footageCamera { return footageCamera.rotationAngle }
+        #endif
         let rawAngle = rotationCoordinator?.videoRotationAngleForHorizonLevelCapture ?? 0
         let normalized = rawAngle.truncatingRemainder(dividingBy: 360)
         let positive = normalized < 0 ? normalized + 360 : normalized
@@ -893,6 +984,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                     self.processAnalysis(pending)
                 } else {
                     self.analysisIsInFlight = false
+                    #if DEBUG
+                    if self.flushClipsWhenAnalysisDrains {
+                        self.flushClipsWhenAnalysisDrains = false
+                        self.flushWaitingClips()
+                    }
+                    #endif
                 }
             }
         }
@@ -975,9 +1072,71 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
         for detection in newDetections {
             autoExportedDetectionIDs.insert(detection.id)
+            #if DEBUG
+            if let footageCamera, !footageCamera.configuration.impacts.isEmpty {
+                // Labelled impacts drive saving; log what the detector found.
+                CaptureCadenceDiagnostics.shared.emit("detector-swing", id: detection.id.uuidString,
+                                                      values: ["impactTime": detection.impactTime ?? -1])
+                continue
+            }
+            #endif
             prepareAutoClip(detection)
         }
     }
+
+    #if DEBUG
+    /// No frames follow the end of the footage, so clips still waiting for
+    /// footage after their swing would wait forever. Save them with what was
+    /// recorded, as stopping Auto does. Runs on qualityQueue after the last
+    /// frame; waits for the detector to finish the last frames first.
+    private func finishFootage() {
+        if analysisIsInFlight {
+            flushClipsWhenAnalysisDrains = true
+        } else {
+            flushWaitingClips()
+        }
+    }
+
+    /// Behind analysisQueue, so clip requests from the last analysis and
+    /// labelled impacts reach the buffer before the flush.
+    private func flushWaitingClips() {
+        analysisQueue.async {
+            self.bufferQueue.async {
+                self.autoRollingBuffer.finishPendingClips()
+            }
+        }
+    }
+
+    /// Declares each labelled footage impact once the frame after it arrives,
+    /// as the detector would, converted onto this Auto session's timeline.
+    private func declareLabelledImpacts(in sampleBuffer: CMSampleBuffer, relativeTime: Double) {
+        guard let impacts = footageCamera?.configuration.impacts, nextLabelledImpact < impacts.count,
+              let footageTime = (CMGetAttachment(sampleBuffer, key: FootageCamera.footageTimeKey,
+                                                 attachmentModeOut: nil) as? NSNumber)?.doubleValue
+        else { return }
+        let configuration = liveV3Configuration()
+        while nextLabelledImpact < impacts.count, impacts[nextLabelledImpact] <= footageTime {
+            let label = impacts[nextLabelledImpact]
+            nextLabelledImpact += 1
+            let impact = relativeTime - (footageTime - label)
+            // Labels before this Auto session started have no recorded footage.
+            guard impact - configuration.impactPreRoll >= 0 else { continue }
+            let detection = DetectedSwing(
+                startTime: CMTime(seconds: impact - configuration.impactPreRoll, preferredTimescale: 600),
+                endTime: CMTime(seconds: impact + configuration.impactPostRoll, preferredTimescale: 600),
+                confidence: 1,
+                impactTime: impact,
+                declaredAt: relativeTime
+            )
+            CaptureCadenceDiagnostics.shared.emit("footage-impact", id: detection.id.uuidString,
+                                                  values: ["footageTime": label, "impactTime": impact])
+            analysisQueue.async {
+                self.autoExportedDetectionIDs.insert(detection.id)
+                self.prepareAutoClip(detection)
+            }
+        }
+    }
+    #endif
 
     /// Snapshot the clip context once per accepted detection. The buffer completes
     /// this request when its last frame arrives, or with available footage on stop.
@@ -1161,6 +1320,16 @@ struct CaptureView: View {
             .ignoresSafeArea()
             .background(.black)
 
+            #if DEBUG
+            if let preview = camera.footagePreview {
+                Image(uiImage: preview)
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            }
+            #endif
+
             LinearGradient(stops: [
                 .init(color: .black.opacity(0.52), location: 0),
                 .init(color: .clear, location: 0.27),
@@ -1183,6 +1352,21 @@ struct CaptureView: View {
             }
         }
         .preferredColorScheme(.dark)
+        #if DEBUG
+        .overlay(alignment: .top) {
+            if let status = camera.footageStatus {
+                Text(status.summary)
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.yellow)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.black.opacity(0.6), in: .rect(cornerRadius: 6))
+                    .padding(.top, 56)
+                    .allowsHitTesting(false)
+                    .accessibilityIdentifier("footage-camera-status")
+            }
+        }
+        #endif
         .onAppear {
             ExperimentalDetectorDefaults.migrateIfNeeded()
             camera.isLiveSwingDetectionEnabled = liveAutoSwingDetectionEnabled

@@ -104,6 +104,8 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
         var nextCadenceReport = 0.0
         var sealedAt: Double?
         let sourceFPS: Double
+        /// DEBUG keep-recordings folder for this chunk's file, if keeping.
+        var keepDirectory: URL?
 
         init(
             url: URL,
@@ -150,6 +152,15 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
     private var swingWindowClosedAt = -Double.greatestFiniteMagnitude
     private var inputCadence = CaptureCadenceWindow()
     private var nextInputCadenceReport = 0.0
+
+    /// DEBUG "Keep Auto recordings": finished chunks move to
+    /// Documents/KeptRecordings/<buffer start time>/ instead of being deleted,
+    /// so a range session can be fed back through FootageCamera. Read at reset.
+    var keepsRecordings = false
+    private var keepDirectory: URL?
+    /// Unfinished chunks sealed by a reset, kept alive until their file is
+    /// complete and moved.
+    private var finishingKeptChunks: [Chunk] = []
 
     /// An opened writer waiting to receive the next chunk's first frame.
     /// Opening a writer and closing its predecessor each block for tens of
@@ -227,14 +238,29 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
                 continue
             }
 
+            // Keep a chunk still writing, or completed with its callback still
+            // queued here; move it once that callback has run. A failed or
+            // cancelled writer has nothing to keep: cancel and delete as before.
+            if chunk.keepDirectory != nil, !chunk.isFinished,
+               chunk.writer.status == .writing || chunk.writer.status == .completed {
+                // Finish rather than cancel, so the footage up to the reset is kept.
+                finish(chunk, reason: "stop")
+                finishingKeptChunks.append(chunk)
+                chunk.completionHandlers.append { [weak self, unowned chunk] in
+                    self?.removeFile(of: chunk)
+                    self?.finishingKeptChunks.removeAll { $0 === chunk }
+                }
+                continue
+            }
             if !chunk.isFinishing && !chunk.isFinished {
                 chunk.pendingSamples.removeAll(keepingCapacity: false)
                 chunk.writer.cancelWriting()
             }
-            try? FileManager.default.removeItem(at: chunk.url)
+            removeFile(of: chunk)
         }
         chunks = preservedChunks
         recordingChunk = nil
+        keepDirectory = nil
         discardStandby()
         latestRelativeTime = -Double.greatestFiniteMagnitude
         swingWindowIsOpen = false
@@ -290,6 +316,13 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
 
         resolvePendingClips()
         cleanupOldChunks(currentTime: relativeTime)
+    }
+
+    /// Prepares every waiting clip from the footage recorded so far, without
+    /// waiting for its end. Used when a DEBUG footage feed runs out.
+    func finishPendingClips() {
+        dispatchPrecondition(condition: .onQueue(writerQueue))
+        resolvePendingClips(stopping: true)
     }
 
     func prepareClip(in range: CMTimeRange,
@@ -417,6 +450,7 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
                 videoRotationAngle: videoRotationAngle,
                 sourceFPS: sourceFPS
             )
+            chunk.keepDirectory = currentKeepDirectory()
             let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
             CaptureCadenceDiagnostics.shared.emit("writer-start", id: chunk.id.uuidString, values: [
                 "sourcePTS": sampleTime.seconds, "relativeTime": relativeTime,
@@ -675,9 +709,56 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
             guard !pendingClips.contains(where: {
                 $0.range.start.seconds < chunk.endRelativeTime && $0.range.end.seconds > chunk.startRelativeTime
             }) else { return false }
-            try? FileManager.default.removeItem(at: chunk.url)
+            removeFile(of: chunk)
             return true
         }
+    }
+
+    private func currentKeepDirectory() -> URL? {
+        guard keepsRecordings else { return nil }
+        if let keepDirectory { return keepDirectory }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        var root = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("KeptRecordings", isDirectory: true)
+        // The suffix keeps two resets within one second in separate folders.
+        let name = formatter.string(from: Date()) + "-" + generation.uuidString.prefix(4)
+        let directory = root.appendingPathComponent(name, isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            // Tens of gigabytes an hour: never send these to iCloud backup.
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = true
+            try root.setResourceValues(values)
+        } catch {
+            CaptureCadenceDiagnostics.shared.emit("keep-recordings-failed", state: ["error": error.localizedDescription])
+            return nil
+        }
+        keepDirectory = directory
+        return directory
+    }
+
+    /// Deletes a chunk's file, or moves a completed one into its keep folder.
+    /// Names sort in recording order: the chunk's start on the capture timeline.
+    private func removeFile(of chunk: Chunk) {
+        if let directory = chunk.keepDirectory, chunk.isFinished, chunk.writer.status == .completed {
+            let name = String(format: "%010.3f.mov", max(0, chunk.startRelativeTime))
+            do {
+                try FileManager.default.moveItem(at: chunk.url, to: directory.appendingPathComponent(name))
+                CaptureCadenceDiagnostics.shared.emit("recording-kept", id: chunk.id.uuidString, values: [
+                    "startRelativeTime": chunk.startRelativeTime, "endRelativeTime": chunk.endRelativeTime,
+                ], state: ["file": directory.lastPathComponent + "/" + name])
+                return
+            } catch {
+                // Leave the recording in tmp rather than delete footage the
+                // user asked to keep; the system clears tmp eventually.
+                CaptureCadenceDiagnostics.shared.emit("keep-recordings-failed", id: chunk.id.uuidString,
+                                                      state: ["error": error.localizedDescription, "file": chunk.url.path])
+                return
+            }
+        }
+        try? FileManager.default.removeItem(at: chunk.url)
     }
 
     /// Round each boundary to the nearest tick. Truncating a floating-point

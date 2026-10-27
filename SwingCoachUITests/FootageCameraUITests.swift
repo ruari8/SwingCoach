@@ -1,0 +1,55 @@
+import XCTest
+
+/// Feeds recorded range footage through Auto in place of the camera and checks
+/// that each labelled swing is saved. Run it through
+/// scripts/verify-footage-camera.sh, which copies the footage into the app and
+/// passes its labels in TEST_RUNNER_FOOTAGE_* variables.
+final class FootageCameraUITests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        continueAfterFailure = false
+    }
+
+    func testAutoSavesEachLabelledSwingFromFootage() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let file = environment["FOOTAGE_FILE"], let expectedText = environment["FOOTAGE_EXPECTED"],
+              let expected = Int(expectedText) else {
+            throw XCTSkip("Run through scripts/verify-footage-camera.sh, which supplies the footage and labels.")
+        }
+        let footageSeconds = Double(environment["FOOTAGE_SECONDS"] ?? "") ?? 120
+
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-footage-camera", file,
+            "-footage-camera-time-scale", environment["FOOTAGE_TIME_SCALE"] ?? "1",
+            "-footage-camera-impacts", environment["FOOTAGE_IMPACTS"] ?? "",
+        ]
+        app.launch()
+
+        let status = app.staticTexts["footage-camera-status"]
+        XCTAssertTrue(status.waitForExistence(timeout: 20), "Capture did not show the footage camera")
+        XCTAssertFalse(status.label.contains("Footage camera:"), "Footage camera failed: \(status.label)")
+        XCTAssertEqual(app.staticTexts["capture-status-title"].label, "Auto is on")
+
+        let finished = NSPredicate(format: "label BEGINSWITH %@", "Footage finished")
+        expectation(for: finished, evaluatedWith: status)
+        waitForExpectations(timeout: footageSeconds + 60)
+        let footage = XCTAttachment(string: status.label)
+        footage.name = "footage-status"
+        footage.lifetime = .keepAlways
+        add(footage)
+
+        // The last swing's clip finishes after the footage does.
+        let saved = app.buttons["capture-saved-swings"]
+        let allSaved = NSPredicate(format: "label == %@", "Review \(expected) saved swings")
+        expectation(for: allSaved, evaluatedWith: saved)
+        waitForExpectations(timeout: 60)
+        XCTAssertEqual(app.staticTexts["capture-status-detail"].label, "Swings save automatically",
+                       "Auto reported an error or is still saving")
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "footage-finished"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+}
