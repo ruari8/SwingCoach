@@ -48,12 +48,16 @@ Most `scripts/verify-*.sh` build their own disposable Simulator, seed synthetic 
 Unit tests, on a Simulator of your own because other agents may be running theirs:
 
 ```bash
-sim=$(xcrun simctl create "SwingCoach unit $$" com.apple.CoreSimulator.SimDeviceType.iPhone-17)
-xcodebuild test -project SwingCoach.xcodeproj -scheme SwingCoach \
-  -destination "platform=iOS Simulator,id=$sim" \
-  -only-testing:SwingCoachTests CODE_SIGNING_ALLOWED=NO
-xcrun simctl delete "$sim"   # run this even when the tests fail
+(
+  sim=$(xcrun simctl create "SwingCoach unit $$" com.apple.CoreSimulator.SimDeviceType.iPhone-17)
+  trap 'xcrun simctl delete "$sim"' EXIT
+  xcodebuild test -project SwingCoach.xcodeproj -scheme SwingCoach \
+    -destination "platform=iOS Simulator,id=$sim" \
+    -only-testing:SwingCoachTests CODE_SIGNING_ALLOWED=NO
+)
 ```
+
+The subshell exits with the test status and deletes its Simulator either way.
 
 Narrow with `-only-testing:SwingCoachTests/<TestClass>` when one file covers your change.
 
