@@ -1062,6 +1062,7 @@ struct TrimView: View {
                         let saved = try await SwingLibrary.shared.saveExportedSwing(
                             from: url, vantage: clip.vantage,
                             duration: clip.duration * displayTimeScale,
+                            sourceTimeScale: sourceCaptureMode?.sourceTimeScale,
                             initialThumbnail: thumbnail
                         )
                         savedSwings[clip.id] = saved
@@ -1167,6 +1168,7 @@ struct TrimView: View {
                     from: outputURL,
                     vantage: fullClip.vantage,
                     duration: fullClip.duration * displayTimeScale,
+                    sourceTimeScale: sourceCaptureMode?.sourceTimeScale,
                     initialThumbnail: thumbnail
                 )
 

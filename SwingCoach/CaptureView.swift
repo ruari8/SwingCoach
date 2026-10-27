@@ -830,8 +830,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 from: outputURL,
                 vantage: clip.vantage,
                 duration: clip.duration * recordedMode.sourceTimeScale,
+                sourceTimeScale: recordedMode.sourceTimeScale,
                 initialThumbnail: thumbnail
             )
+            await SwingPositionProcessor.shared.findPositionsIfNeeded(for: savedSwing)
             // Library batch export renames files but preserves SavedSwing.id in
             // metadata.json. Keep that stable join plus the exact source range.
             CaptureCadenceDiagnostics.shared.emit("swing-saved", id: diagnosticID, values: [

@@ -15,6 +15,7 @@ struct SwingDetailView: View {
     @StateObject private var library = SwingLibrary.shared
     @StateObject private var analysisLibrary = AnalysisLibrary.shared
     @StateObject private var reviewAnalysis = SwingReviewAnalysis()
+    @StateObject private var positionProcessor = SwingPositionProcessor.shared
 
     @State private var currentSwingID: UUID
     @State private var reviewSwingIDs: [UUID]
@@ -102,6 +103,7 @@ struct SwingDetailView: View {
         }
         .onAppear {
             preparePlaybackWindow()
+            positionProcessor.findPositionsIfNeeded(for: currentSwing)
             Task {
                 await library.loadThumbnails()
             }
@@ -109,6 +111,7 @@ struct SwingDetailView: View {
         .onChange(of: currentSwingID) { _, _ in
             resetReviewState()
             preparePlaybackWindow()
+            positionProcessor.findPositionsIfNeeded(for: currentSwing)
         }
     }
 
@@ -501,10 +504,12 @@ struct SwingDetailView: View {
 
     private var metadataSheet: some View {
         NavigationStack {
-            metadataContent
-                .padding()
-                .navigationTitle("Swing Info")
-                .navigationBarTitleDisplayMode(.inline)
+            ScrollView {
+                metadataContent
+                    .padding()
+            }
+            .navigationTitle("Swing Info")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 
@@ -519,7 +524,57 @@ struct SwingDetailView: View {
                 metadataRow("Saved", formatDate(currentSwing.createdAt))
                 metadataRow("Analysis", savedAnalysis == nil ? "Not analyzed" : "Complete")
             }
+
+            swingPositionsSection
         }
+    }
+
+    @ViewBuilder
+    private var swingPositionsSection: some View {
+        if SwingPositionProcessor.canFindPositions(for: currentSwing) {
+            Text("Swing positions")
+                .font(.subheadline.weight(.semibold))
+                .padding(.top, 8)
+
+            if let positions = currentSwing.swingPositions?.positions {
+                VStack(spacing: 8) {
+                    ForEach(positions, id: \.number) { position in
+                        swingPositionRow(position)
+                    }
+                }
+                .accessibilityIdentifier("swing-positions")
+                Text("Times are on the clip's slow-motion timeline. Faded rows are positions the model was unsure of.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            } else if positionProcessor.failed.contains(currentSwing.id) {
+                Text("Swing positions could not be found for this clip.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            } else {
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text("Finding swing positions…")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+    }
+
+    private func swingPositionRow(_ position: SwingPosition) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("\(position.label) \(position.name)")
+                .font(.subheadline)
+            Spacer(minLength: 12)
+            Text(String(format: "%.2fs", position.clipTime))
+                .font(.subheadline.weight(.medium).monospacedDigit())
+            Text("\(Int((position.confidence * 100).rounded()))%")
+                .font(.caption.monospacedDigit())
+                .foregroundColor(.secondary)
+                .frame(width: 40, alignment: .trailing)
+        }
+        // Below 0.5 the model found no clear peak for this position.
+        .opacity(position.confidence < 0.5 ? 0.45 : 1)
     }
 
     private var shouldShowAnalysisAction: Bool {

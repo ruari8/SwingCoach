@@ -26,6 +26,12 @@ struct SavedSwing: Identifiable, Codable, Equatable {
     // Filename (not full path) of an app-owned copy of the clip, if one exists.
     // Lets playback open the local file directly instead of resolving Photos.
     var localVideoFilename: String? = nil
+    /// How many times slower than real time the clip plays (8 for 240 fps
+    /// exported at 30 fps). Set only for clips captured in the app; nil for
+    /// imports, whose real-time rate is unknown.
+    var sourceTimeScale: Double? = nil
+    /// P1-P10 found after capture (down-the-line clips only).
+    var swingPositions: SwingPositions? = nil
 
     // Not persisted - loaded at runtime
     var thumbnail: UIImage?
@@ -42,7 +48,8 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         isFavorite: Bool = false,
         isReference: Bool = false,
         title: String? = nil,
-        localVideoFilename: String? = nil
+        localVideoFilename: String? = nil,
+        sourceTimeScale: Double? = nil
     ) {
         self.id = id
         self.photoAssetID = photoAssetID
@@ -55,10 +62,12 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         self.isReference = isReference
         self.title = title
         self.localVideoFilename = localVideoFilename
+        self.sourceTimeScale = sourceTimeScale
     }
 
     enum CodingKeys: String, CodingKey {
         case id, photoAssetID, vantage, duration, createdAt, notes, analyzed, isFavorite, isReference, title, localVideoFilename
+        case sourceTimeScale, swingPositions
     }
 
     init(from decoder: Decoder) throws {
@@ -74,6 +83,8 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         isReference = try container.decodeIfPresent(Bool.self, forKey: .isReference) ?? false
         title = try container.decodeIfPresent(String.self, forKey: .title)
         localVideoFilename = try container.decodeIfPresent(String.self, forKey: .localVideoFilename)
+        sourceTimeScale = try container.decodeIfPresent(Double.self, forKey: .sourceTimeScale)
+        swingPositions = try container.decodeIfPresent(SwingPositions.self, forKey: .swingPositions)
     }
 
     // Custom Equatable (ignore non-codable properties)
@@ -88,7 +99,9 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         lhs.isFavorite == rhs.isFavorite &&
         lhs.isReference == rhs.isReference &&
         lhs.title == rhs.title &&
-        lhs.localVideoFilename == rhs.localVideoFilename
+        lhs.localVideoFilename == rhs.localVideoFilename &&
+        lhs.sourceTimeScale == rhs.sourceTimeScale &&
+        lhs.swingPositions == rhs.swingPositions
     }
 }
 
@@ -220,6 +233,7 @@ class SwingLibrary: ObservableObject {
         from sourceURL: URL,
         vantage: Vantage,
         duration: Double,
+        sourceTimeScale: Double? = nil,
         initialThumbnail: UIImage? = nil
     ) async throws -> SavedSwing {
         let savesToPhotos = ClipStoragePreference.savesToPhotos
@@ -240,7 +254,8 @@ class SwingLibrary: ObservableObject {
             var swing = SavedSwing(
                 id: id, photoAssetID: photoAssetID, vantage: vantage,
                 duration: duration, createdAt: Date(), notes: nil,
-                analyzed: false, localVideoFilename: filename
+                analyzed: false, localVideoFilename: filename,
+                sourceTimeScale: sourceTimeScale
             )
             swing.thumbnail = initialThumbnail
             // Persist before publishing success or allowing temp-file cleanup.
@@ -303,6 +318,12 @@ class SwingLibrary: ObservableObject {
                 try? FileManager.default.removeItem(at: videosDirectory.appendingPathComponent(name))
             }
         }
+        saveToDisk()
+    }
+
+    func setSwingPositions(_ positions: SwingPositions, for id: UUID) {
+        guard let index = swings.firstIndex(where: { $0.id == id }) else { return }
+        swings[index].swingPositions = positions
         saveToDisk()
     }
 

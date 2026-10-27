@@ -176,6 +176,7 @@ Implemented feature set:
 - Display original and analyzed swing playback using the shared playback chrome, including timeline, compact cycle-through playback speed control, and full-screen viewing.
 - Generated backend annotations are currently reset. When `annotated_video.layers` and track data are empty, the analyzed-video slide plays clean video and hides the annotation/manual rail.
 - Show swing metadata and local analysis status in the detail info sheet or video overlay instead of reserving persistent space beside the footage.
+- The info sheet lists P1–P10 for down-the-line swings captured in the app, with each position's time on the clip and the model's confidence. Opening a swing without current positions queues them. See [SWING_POSITIONS.md](./SWING_POSITIONS.md).
 - Run the current R2-backed analysis flow for a single swing, with retry controls reserved for failed analysis attempts.
 - Attach completed analysis to the swing through `AnalysisLibrary`.
 - Analysis requests and progress belong to the submitted swing. Moving to another video keeps the first request running without moving its result or progress to the new video. Swiping back to a video with a pending request shows that request and prevents duplicate submission; failed requests remain retryable.
@@ -241,7 +242,7 @@ Implemented feature set:
 ### Swing metadata
 
 - `SavedSwing` model: [SwingLibrary.swift](../SwingCoach/Models/SwingLibrary.swift)
-- Fields include: `photoAssetID`, `vantage`, `duration`, timestamps, notes, analyzed flag, favourite state, reference state, optional title, and local video filename.
+- Fields include: `photoAssetID`, `vantage`, `duration`, timestamps, notes, analyzed flag, favourite state, reference state, optional title, local video filename, `sourceTimeScale` (slow-motion factor, set for clips captured in the app) and `swingPositions` (P1–P10).
 - Persisted to app Documents as `swing_library.json`.
 
 ### Vantage model
