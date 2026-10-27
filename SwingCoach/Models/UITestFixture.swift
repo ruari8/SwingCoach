@@ -191,7 +191,8 @@ extension UITestFixture {
 }
 
 /// Deterministic test videos: a bar moving over a changing background, with a
-/// 440 Hz tone. Files are cached by spec in Caches, which seeding keeps.
+/// silent audio track (the Simulator plays clip audio through the Mac's
+/// speakers). Files are cached by spec in Caches, which seeding keeps.
 nonisolated enum SyntheticVideo {
     struct Spec: Hashable, Sendable {
         var width = 360
@@ -271,10 +272,10 @@ nonisolated enum SyntheticVideo {
             }
         }
         done.enter()
-        audio.requestMediaDataWhenReady(on: DispatchQueue(label: "synthetic-video.tone")) {
+        audio.requestMediaDataWhenReady(on: DispatchQueue(label: "synthetic-video.audio")) {
             while audio.isReadyForMoreMediaData, !audioFeed.finished {
                 let end = min(audioFeed.next + chunk, sampleCount)
-                guard audioFeed.next < end, let sample = try? tone(samples: audioFeed.next..<end, format: audioFormat),
+                guard audioFeed.next < end, let sample = try? silence(samples: audioFeed.next..<end, format: audioFormat),
                       audio.append(sample) else {
                     audioFeed.finish(audio, done)
                     return
@@ -322,8 +323,8 @@ nonisolated enum SyntheticVideo {
         }
     }
 
-    private static func tone(samples range: Range<Int>, format: CMAudioFormatDescription) throws -> CMSampleBuffer {
-        let values = range.map { Int16(sin(2 * Double.pi * 440 * Double($0) / Double(sampleRate)) * 8_000) }
+    private static func silence(samples range: Range<Int>, format: CMAudioFormatDescription) throws -> CMSampleBuffer {
+        let values = [Int16](repeating: 0, count: range.count)
         let byteCount = values.count * 2
         var block: CMBlockBuffer?
         CMBlockBufferCreateWithMemoryBlock(allocator: nil, memoryBlock: nil, blockLength: byteCount,
