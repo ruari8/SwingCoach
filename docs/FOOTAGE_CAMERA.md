@@ -59,10 +59,11 @@ The script asserts that every labelled swing is saved and that the diagnostics l
 - time from impact to saved clip
 - swing-position results
 
-First Simulator run, test15 (Oct 27, 2026):
-- **Saves:** 3/3 labelled swings saved.
-- **Detector:** reached an impact candidate at all 3 labels, but rejected each one because Vision found no golfer.
-- **Frames:** about 70% delivered. Most of the drops were the feeder falling behind while the Simulator encoded 240 fps in software.
+Simulator run of the script, test15 (Oct 27, 2026):
+- **Saves:** 3/3 labelled swings saved, 1.7–1.9 s after each impact. That includes the clip's 0.8 s after impact.
+- **Detector:** reached an impact candidate within 1 s of all 3 labels (8 candidates in total), but accepted none, because Vision found no golfer.
+- **Frames:** 66% delivered (11,278). The rest were 4,610 skipped by a feeder running behind and 1,234 pool drops. This is the Simulator encoding 240 fps in software while YOLO runs on its CPU, not phone behaviour.
+- **Swing positions:** failed on all 3 with "no golfer", as expected in the Simulator.
 
 ## On a phone
 
