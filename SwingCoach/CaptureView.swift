@@ -174,6 +174,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private var footageCamera: FootageCamera?
     /// Next labelled footage impact to declare; owned by qualityQueue.
     private var nextLabelledImpact = 0
+    /// The footage ended during analysis; flush waiting clips once the
+    /// in-flight and pending frames are done. Owned by qualityQueue.
+    private var flushClipsWhenAnalysisDrains = false
     @Published private(set) var footageStatus: FootageCamera.Status?
     @Published private(set) var footagePreview: UIImage?
     #endif
@@ -981,6 +984,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                     self.processAnalysis(pending)
                 } else {
                     self.analysisIsInFlight = false
+                    #if DEBUG
+                    if self.flushClipsWhenAnalysisDrains {
+                        self.flushClipsWhenAnalysisDrains = false
+                        self.flushWaitingClips()
+                    }
+                    #endif
                 }
             }
         }
@@ -1079,8 +1088,18 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     /// No frames follow the end of the footage, so clips still waiting for
     /// footage after their swing would wait forever. Save them with what was
     /// recorded, as stopping Auto does. Runs on qualityQueue after the last
-    /// frame, then after queued analysis, so late detections are included.
+    /// frame; waits for the detector to finish the last frames first.
     private func finishFootage() {
+        if analysisIsInFlight {
+            flushClipsWhenAnalysisDrains = true
+        } else {
+            flushWaitingClips()
+        }
+    }
+
+    /// Behind analysisQueue, so clip requests from the last analysis and
+    /// labelled impacts reach the buffer before the flush.
+    private func flushWaitingClips() {
         analysisQueue.async {
             self.bufferQueue.async {
                 self.autoRollingBuffer.finishPendingClips()

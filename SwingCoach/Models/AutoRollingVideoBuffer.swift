@@ -238,8 +238,11 @@ nonisolated final class AutoRollingVideoBuffer: @unchecked Sendable {
                 continue
             }
 
-            // A failed writer can't finish; cancel and delete it as before.
-            if chunk.keepDirectory != nil, !chunk.isFinished, chunk.writer.status == .writing {
+            // Keep a chunk still writing, or completed with its callback still
+            // queued here; move it once that callback has run. A failed or
+            // cancelled writer has nothing to keep: cancel and delete as before.
+            if chunk.keepDirectory != nil, !chunk.isFinished,
+               chunk.writer.status == .writing || chunk.writer.status == .completed {
                 // Finish rather than cancel, so the footage up to the reset is kept.
                 finish(chunk, reason: "stop")
                 finishingKeptChunks.append(chunk)
