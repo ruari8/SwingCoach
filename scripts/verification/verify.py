@@ -154,8 +154,13 @@ def trim_check(variant):
             probe = json.loads(sh("ffprobe", "-v", "error", "-show_streams", "-show_format", "-of", "json", str(video)))
             assert {stream["codec_type"] for stream in probe["streams"]} == {"video", "audio"}, probe
             assert abs(float(probe["format"]["duration"]) - expected_seconds) < 0.15, probe
+            # Fixture audio is silent; the Simulator plays it through the Mac's speakers.
+            levels = subprocess.run(["ffmpeg", "-v", "info", "-i", str(video), "-af", "volumedetect", "-f", "null", "-"],
+                                    capture_output=True, text=True).stderr
+            peak = next(line.split("max_volume:")[1].split()[0] for line in levels.splitlines() if "max_volume:" in line)
+            assert peak == "-inf" or float(peak) <= -60, f"{video.name} audio peaks at {peak} dB"
         assert_no_fixture_recordings(run)
-        return f"{len(personal)} saved clips with video and audio, {expected_seconds:g} s each; analysis ids {ids}"
+        return f"{len(personal)} saved clips with silent audio and video, {expected_seconds:g} s each; analysis ids {ids}"
     return check
 
 
@@ -480,7 +485,7 @@ def run_trim_clock(run):
 
 def preflight(areas):
     needs = {"xcodebuild": True, "ffprobe": "trim" in areas,
-             "ffmpeg": bool({"coach", "trim-clock"} & set(areas))}
+             "ffmpeg": bool({"trim", "coach", "trim-clock"} & set(areas))}
     for tool, needed in needs.items():
         if needed and not shutil.which(tool):
             raise Blocked(f"{tool} is not installed")
