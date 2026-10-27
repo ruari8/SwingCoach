@@ -57,7 +57,20 @@ final class SavePhotosUITests: XCTestCase {
         allowPhotosAccessWhenAsked()
         let app = XCUIApplication.launched(seed: "empty", Fixture.syntheticCamera)
         openSettings(app)
-        XCTAssertEqual(app.switches["save-to-photos"].value as? String, "1", "New installs save to Photos")
+        let toggle = app.switches["save-to-photos"]
+        XCTAssertEqual(toggle.value as? String, "1", "New installs save to Photos")
+        // Two clips saved locally with Photos OFF must survive switching it ON;
+        // scripts/verify.sh storage checks their records and files afterwards.
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        XCTAssertEqual(toggle.value as? String, "0")
+        app.buttons["Done"].tap()
+        saveManual(app, range: false)
+        app.relaunch(oneDetectedSwing)
+        saveManual(app, range: true)
+        app.relaunch(Fixture.syntheticCamera)
+        openSettings(app)
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        XCTAssertEqual(toggle.value as? String, "1")
         app.buttons["Done"].tap()
         saveManual(app, range: false)
         app.relaunch(oneDetectedSwing)

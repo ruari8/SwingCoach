@@ -185,7 +185,8 @@ def storage_before(phase):
 
 
 def storage_check(phase):
-    """OFF keeps every clip local with Photos denied; ON adds exactly one Photos asset per clip."""
+    """OFF keeps every clip local with Photos denied. ON keeps the two clips saved
+    locally before switching ON, and adds exactly one Photos asset per new clip."""
     def check(run):
         root, swings, videos = library(run)
         tcc = Path.home() / f"Library/Developer/CoreSimulator/Devices/{run.device}/data/Library/TCC/TCC.db"
@@ -196,7 +197,8 @@ def storage_check(phase):
         local = [s for s in personal if not s["photoAssetID"]]
         in_photos = [s for s in personal if s["photoAssetID"]]
         # OFF: Manual full and ranged clips stay; the Auto clip is deleted in the test.
-        assert len(local) == (2 if phase == "off" else 0), personal
+        # ON: the same two clips, saved before switching ON, stay local.
+        assert len(local) == 2, personal
         assert len(in_photos) == (3 if phase == "on" else 0), personal
         for swing in personal:
             clip = videos / swing["localVideoFilename"]
