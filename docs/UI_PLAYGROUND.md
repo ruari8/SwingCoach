@@ -69,9 +69,9 @@ Xcode project conversion to use the browser mirror.
 
 For assertions against the production app, use
 [the project verification skill](../.agents/skills/verify-swingcoach/SKILL.md)
-and `./scripts/verify-capture-controls.sh`. Simulator UI evidence does not prove
+and `scripts/verify.sh capture`. Simulator UI evidence does not prove
 camera frame rate, live detector accuracy or Photos interoperability on a phone.
-The Capture driver scrolls the settings list to reveal diagnostics after the storage and extra-footage controls. To repeat only settings persistence and disabled-detection checks, use `./scripts/verify-capture-controls.sh <artifact-directory> settings`.
+The Capture driver scrolls the settings list to reveal diagnostics after the storage and extra-footage controls. To repeat only settings persistence and disabled-detection checks, use `scripts/verify.sh capture --only CaptureControlsUITests/testStatsDefaultOffPersistAndFollowBothCaptureModes --only CaptureControlsUITests/testDisabledDetectionDoesNotClaimToBeRunning`.
 For landscape XCTest evidence, capture `XCUIScreen.main.screenshot()`;
 `app.screenshot()` cropped the rotated application during this task.
 

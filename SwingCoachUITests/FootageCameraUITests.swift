@@ -1,9 +1,10 @@
 import XCTest
 
-/// Feeds recorded range footage through Auto in place of the camera and checks
-/// that each labelled swing is saved. Run it through
-/// scripts/verify-footage-camera.sh, which copies the footage into the app and
-/// passes its labels in TEST_RUNNER_FOOTAGE_* variables.
+/// Feeds recorded range footage through Auto in place of the camera, with Keep
+/// Auto recordings on, and checks that each labelled swing is saved. Run it with
+/// `scripts/verify.sh footage`, which copies the footage into the app, passes
+/// its labels in TEST_RUNNER_FOOTAGE_* variables, and checks the diagnostics log
+/// and kept recordings afterwards.
 final class FootageCameraUITests: XCTestCase {
     override func setUp() {
         super.setUp()
@@ -14,7 +15,7 @@ final class FootageCameraUITests: XCTestCase {
         let environment = ProcessInfo.processInfo.environment
         guard let file = environment["FOOTAGE_FILE"], let expectedText = environment["FOOTAGE_EXPECTED"],
               let expected = Int(expectedText) else {
-            throw XCTSkip("Run through scripts/verify-footage-camera.sh, which supplies the footage and labels.")
+            throw XCTSkip("Run through scripts/verify.sh footage, which supplies the footage and labels.")
         }
         let footageSeconds = Double(environment["FOOTAGE_SECONDS"] ?? "") ?? 120
 
@@ -23,6 +24,7 @@ final class FootageCameraUITests: XCTestCase {
             "-footage-camera", file,
             "-footage-camera-time-scale", environment["FOOTAGE_TIME_SCALE"] ?? "1",
             "-footage-camera-impacts", environment["FOOTAGE_IMPACTS"] ?? "",
+            "-experimental.keepAutoRecordings", "YES",
         ]
         app.launch()
 
@@ -51,5 +53,13 @@ final class FootageCameraUITests: XCTestCase {
         screenshot.name = "footage-finished"
         screenshot.lifetime = .keepAlways
         add(screenshot)
+
+        // Leaving Capture stops Auto, which keeps the recordings still inside
+        // the rolling window. Give the chunk being written time to finish;
+        // the runner then checks the kept files cover the footage.
+        app.tabBars.buttons["Library"].tap()
+        let settle = XCTestExpectation(description: "kept recordings finish")
+        settle.isInverted = true
+        wait(for: [settle], timeout: 3)
     }
 }

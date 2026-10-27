@@ -1,14 +1,12 @@
 import XCTest
 
-/// Camera output is substituted by the capture verification script. Both review
-/// entry points, the line canvas, and disk persistence use production code.
+/// The synthetic camera's Auto session shows the three seeded references. Both
+/// review entry points, the line canvas, and disk persistence use production code.
 final class AutoReviewAnnotationUITests: XCTestCase {
     func testLinesFollowSavedClipFromCaptureToLibraryAfterRelaunch() {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .portrait
-        let app = XCUIApplication()
-        app.launchArguments = ["-capture-controls-reset"]
-        app.launch()
+        let app = XCUIApplication.launched(seed: "references", Fixture.syntheticCamera)
         let saved = app.buttons["capture-saved-swings"]
         XCTAssertTrue(saved.waitForExistence(timeout: 5))
         openFirstAutoSwing(saved, app)
@@ -41,9 +39,7 @@ final class AutoReviewAnnotationUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Undo last line"].exists, "Reopening Auto review must retain the line")
         app.buttons["Close swing review"].tap()
 
-        app.terminate()
-        app.launchArguments = ["-ui-testing-library"]
-        app.launch()
+        app.relaunch(["-ui-testing-library"] + Fixture.syntheticCamera)
         let card = app.staticTexts["Reference swing 1"]
         XCTAssertTrue(card.waitForExistence(timeout: 5))
         card.tap()

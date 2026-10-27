@@ -220,7 +220,7 @@ Run both library and coach checks with:
 python -m unittest test_knowledge_library test_grounded_coaching
 ```
 
-From the repository root, `bash scripts/verify-coaching.sh` tests real local upload,
+From the repository root, `scripts/verify.sh coach` tests real local upload,
 pose analysis, overlay controls and saved notes in a disposable Simulator. A clearly
 labelled saved fixture checks sourced cue rendering; it is not a live model diagnosis.
 See [implementation evidence](../docs/coaching-knowledge/implementation.md).

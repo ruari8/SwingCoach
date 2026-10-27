@@ -32,6 +32,8 @@ def main():
         return result.stdout.strip()
     try:
         sources = [ROOT / "SwingCoach/Models/SwingClip.swift", ROOT / "SwingCoach/Models/SwingLibrary.swift",
+                   ROOT / "SwingCoach/Models/ClipStoragePreference.swift",
+                   ROOT / "SwingCoach/Models/SwingPositions/SwingPositions.swift",
                    ROOT / "scripts/performance/LibraryPerformanceProbe.swift"]
         source_dir = output / "source"
         source_dir.mkdir()

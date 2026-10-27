@@ -9,6 +9,12 @@ import SwiftUI
 
 @main
 struct SwingCoachApp: App {
+    #if DEBUG
+    init() {
+        UITestFixture.prepareLaunch()
+    }
+    #endif
+
     var body: some Scene {
         WindowGroup {
             AppRootView()

@@ -64,6 +64,8 @@ SwingCoach/
 │   ├── TrimView/
 │   └── MLModels/                  # Core ML: SwingObjectsYOLO11n, SwingPositionTCN
 ├── SwingCoachTests/
+├── SwingCoachUITests/             # UI tests; app state comes from DEBUG launch fixtures
+├── TestPlans/                     # SwingCoach (default), Unit, OnRequest
 ├── backend/
 │   ├── main.py                    # FastAPI endpoints
 │   ├── analysis/                  # live analysis pipeline (see below)
@@ -75,7 +77,7 @@ SwingCoach/
 │   ├── coaching-knowledge/        # sourced coaching cases used by the backend
 │   ├── adr/  audits/  research/
 │   └── agents/                    # issue tracker, triage, domain conventions
-├── scripts/                       # verify-*.sh UI checks, diagnostics, profiling, knowledge viewer
+├── scripts/                       # verify.sh test runner, diagnostics, profiling, knowledge viewer
 ├── playgrounds/                   # UI playground
 ├── tools/
 ├── .agents/skills/verify-swingcoach/   # verification skill + testing ladder

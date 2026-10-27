@@ -1,10 +1,13 @@
 import XCTest
 
+/// Real capture-session setup, with camera access granted, must leave the
+/// shared audio policy and microphone alone on launch and on every tab entry.
 final class CaptureAudioUITests: XCTestCase {
+    private let audioCamera = ["-ui-testing-camera", "audio"]
+
     func testLaunchAndTabReentryLeaveAudioPolicyAndMicrophoneUntouched() {
         continueAfterFailure = false
-        let app = XCUIApplication()
-        app.launch()
+        let app = XCUIApplication.launched(seed: "empty", audioCamera)
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         for _ in 0..<4 {
             let alert = springboard.alerts.firstMatch
@@ -22,8 +25,7 @@ final class CaptureAudioUITests: XCTestCase {
         app.tabBars.buttons["Library"].tap()
         app.tabBars.buttons["Capture"].tap()
         assertAudioUnchanged(app, start: 4)
-        app.terminate()
-        app.launch()
+        app.relaunch(audioCamera)
         assertAudioUnchanged(app, start: 1)
     }
 

@@ -1,7 +1,8 @@
 import XCTest
 
-/// Run with scripts/verify-capture-controls.sh. The scratch build substitutes
-/// camera output and telemetry, while settings, capture controls and review are real.
+/// The synthetic camera replaces camera output and detector telemetry, while
+/// settings, capture controls and review are real. Auto's session shows the
+/// three seeded references.
 final class CaptureControlsUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -28,9 +29,7 @@ final class CaptureControlsUITests: XCTestCase {
         assertStats("8.0 fps / 56 ms", in: app)
         attach(app, "auto-stats-enabled")
 
-        app.terminate()
-        app.launchArguments = []
-        app.launch()
+        app.relaunch(Fixture.syntheticCamera)
         assertStats("8.0 fps / 56 ms", in: app)
         let topRow = app.buttons["capture-frame-rate"].frame
         app.segmentedControls.buttons["Manual"].tap()
@@ -94,15 +93,16 @@ final class CaptureControlsUITests: XCTestCase {
     }
 
     func testWaitingAndErrorsKeepCaptureStateHonest() {
-        let waiting = launch(extra: ["-capture-controls-waiting", "-capture-controls-stats"])
+        let stats = ["-\(showStatsKey)", "YES"]
+        let waiting = launch(extra: ["-ui-testing-detector", "waiting"] + stats)
         assertStats("Waiting for model…", in: waiting)
         waiting.terminate()
-        let unavailable = launch(extra: ["-capture-controls-unavailable", "-capture-controls-stats"])
+        let unavailable = launch(extra: ["-ui-testing-detector", "unavailable"] + stats)
         XCTAssertTrue(unavailable.staticTexts["Detection unavailable"].waitForExistence(timeout: 5))
         XCTAssertFalse(unavailable.staticTexts["capture-model-stats"].exists)
         attach(unavailable, "detector-unavailable")
         unavailable.terminate()
-        let error = launch(extra: ["-capture-controls-error"])
+        let error = launch(extra: ["-ui-testing-auto-error"])
         XCTAssertTrue(error.staticTexts["Auto needs attention"].waitForExistence(timeout: 5))
         XCTAssertEqual(error.staticTexts["capture-status-detail"].label, "Enable Photos add access in Settings before the range session.")
         XCTAssertTrue(error.buttons["capture-saved-swings"].isHittable)
@@ -203,11 +203,10 @@ final class CaptureControlsUITests: XCTestCase {
         }
     }
 
+    private let showStatsKey = "experimental.showCaptureModelStats"
+
     private func launch(extra: [String] = []) -> XCUIApplication {
-        let app = XCUIApplication()
-        app.launchArguments = ["-capture-controls-reset"] + extra
-        app.launch()
-        return app
+        XCUIApplication.launched(seed: "references", Fixture.syntheticCamera + extra)
     }
 
     private func openSettings(_ app: XCUIApplication) {

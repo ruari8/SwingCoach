@@ -1,14 +1,12 @@
 import XCTest
 
-/// Drives Library session selection, slide-to-select and batch export against
-/// the seeded library written by verify-library-sessions.sh (6 swings today, 3 yesterday).
+/// Drives Library session selection, slide-to-select and batch export over a
+/// seeded Library of six swings today and three yesterday.
 final class LibrarySessionsUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
     func testSessionSelectSlideSelectAndExport() {
-        let app = XCUIApplication()
-        app.launchArguments = ["-ui-testing-library"]
-        app.launch()
+        let app = XCUIApplication.launched(seed: "sessions", ["-ui-testing-library"])
 
         let selectToday = app.buttons["Select Today session"]
         XCTAssertTrue(selectToday.waitForExistence(timeout: 15))

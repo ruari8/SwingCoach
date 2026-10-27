@@ -1,0 +1,40 @@
+{
+  "configurations" : [
+    {
+      "id" : "6A1C2E3F-0B1D-4E7A-9C11-5F2A8D3B0001",
+      "name" : "Default",
+      "options" : {}
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:SwingCoach.xcodeproj",
+      "identifier" : "9B7EC8A52EB6312D00BE1B9C",
+      "name" : "SwingCoach"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:SwingCoach.xcodeproj",
+        "identifier" : "9B7EC8B22EB6312F00BE1B9C",
+        "name" : "SwingCoachTests"
+      }
+    },
+    {
+      "parallelizable" : false,
+      "skippedTests" : [
+        "CoachingPipelineUITests",
+        "FastSwipeStressUITests",
+        "FootageCameraUITests"
+      ],
+      "target" : {
+        "containerPath" : "container:SwingCoach.xcodeproj",
+        "identifier" : "9B7EC8BC2EB6312F00BE1B9C",
+        "name" : "SwingCoachUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

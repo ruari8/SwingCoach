@@ -161,6 +161,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     @Published var liveSwingDetection = LiveSwingDetectionSnapshot.idle
     @Published var autoCaptureStatus = AutoCaptureStatus.idle
     @Published private(set) var autoSessionSwings: [SavedSwing] = []
+    #if DEBUG
+    @Published var fixtureAudioReadout = "pending"
+    private var fixtureCameraStarts = 0
+    #endif
     var isLiveSwingDetectionEnabled = true
     var liveModelDetectorSampleFPS = 8.0
     var capturesPracticeSwings = false
@@ -406,6 +410,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
     func start() {
         #if DEBUG
+        if UITestFixture.camera != nil {
+            startFixtureCamera()
+            return
+        }
         if let footageCamera {
             footageCamera.start()
             return
@@ -500,6 +508,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     func startRecording() {
+        #if DEBUG
+        if UITestFixture.camera != nil {
+            startFixtureRecording()
+            return
+        }
+        #endif
         queue.async {
             guard !self.manualRecordingIsPending, !self.movieOutput.isRecording else { return }
             guard self.session.isRunning else {
@@ -527,6 +541,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     func stopRecording() {
+        #if DEBUG
+        if UITestFixture.camera != nil {
+            stopFixtureRecording()
+            return
+        }
+        #endif
         queue.async {
             guard self.movieOutput.isRecording else { return }
             self.movieOutput.stopRecording()
@@ -534,6 +554,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     func startAutoCapture() {
+        #if DEBUG
+        if UITestFixture.camera == .synthetic {
+            startFixtureAutoCapture()
+            return
+        }
+        #endif
         queue.async {
             guard !self.autoCaptureIsActive else { return }
             guard !self.manualRecordingIsPending, !self.movieOutput.isRecording else {
@@ -674,6 +700,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     func resumeAutoCaptureAfterReview() {
+        #if DEBUG
+        if UITestFixture.camera == .synthetic {
+            liveSwingDetection = fixtureSnapshot(manual: false)
+            return
+        }
+        #endif
         queue.async {
             guard self.autoCaptureIsActive, self.autoCaptureIsPausedForReview else { return }
             self.autoCaptureIsPausedForReview = false
@@ -721,6 +753,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     private func finishLiveSwingDetection() -> (items: [DetectedSwing], summary: LiveSwingDetectionSnapshot) {
+        #if DEBUG
+        if UITestFixture.camera != nil, !UITestFixture.detectionStarts.isEmpty {
+            return fixtureDetections()
+        }
+        #endif
         let recordingTime = lastLiveSwingSampleTime.isFinite ? lastLiveSwingSampleTime : nil
         let finalTime = recordingTime ?? 0
 
@@ -1221,6 +1258,122 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
 }
 
+#if DEBUG
+/// The UI-test camera (see `UITestFixture`). Settings, capture controls, Trim,
+/// export, review and the Library stay production code; only camera hardware,
+/// detector input and the Photos prompt are replaced.
+extension CameraSession {
+    private func startFixtureCamera() {
+        guard UITestFixture.camera == .audio else { return }
+        // Real session setup with camera access granted. The Simulator has no
+        // camera, so this proves only that setup leaves audio alone.
+        queue.async {
+            self.configureAndStartSession()
+            self.fixtureCameraStarts += 1
+            let microphones = self.session.inputs.compactMap { $0 as? AVCaptureDeviceInput }
+                .filter { $0.device.hasMediaType(.audio) }.count
+            let unchanged = UITestFixture.currentAudioPolicy() == UITestFixture.launchAudioPolicy
+            let readout = "unchanged=\(unchanged) microphones=\(microphones) starts=\(self.fixtureCameraStarts)"
+            DispatchQueue.main.async { self.fixtureAudioReadout = readout }
+        }
+    }
+
+    private func startFixtureRecording() {
+        switch UITestFixture.recordedFrameRate {
+        case 30: recordedMode = .normal
+        case 240: recordedMode = .ultra
+        default: recordedMode = captureMode
+        }
+        liveSwingDetection = fixtureSnapshot(manual: true)
+    }
+
+    /// Delivers a synthetic file through the production recording delegate.
+    private func stopFixtureRecording() {
+        queue.async {
+            let url = FileManager.default.temporaryDirectory
+                .appendingPathComponent("ui-fixture-recording-\(UUID().uuidString).mp4")
+            do {
+                try FileManager.default.copyItem(at: SyntheticVideo.url(for: UITestFixture.recordingVideo), to: url)
+            } catch {
+                fatalError("Synthetic recording failed: \(error)")
+            }
+            self.fileOutput(self.movieOutput, didFinishRecordingTo: url, from: [], error: nil)
+        }
+    }
+
+    /// The detector's result for a recording, from `-ui-testing-detections`.
+    private func fixtureDetections() -> (items: [DetectedSwing], summary: LiveSwingDetectionSnapshot) {
+        let detections = UITestFixture.detectionStarts.map { start in
+            DetectedSwing(startTime: CMTime(seconds: start, preferredTimescale: 600),
+                          endTime: CMTime(seconds: start + 1, preferredTimescale: 600),
+                          confidence: 1, impactTime: start + 0.5, declaredAt: start + 1)
+        }
+        return (detections, LiveSwingDetectionSnapshot(status: .swingDetected, detectedSwingCount: detections.count))
+    }
+
+    private func startFixtureAutoCapture() {
+        guard !autoCaptureIsActive else { return }
+        autoCaptureIsActive = true
+        guard !UITestFixture.exportsAutoClip else {
+            exportFixtureAutoClip()
+            return
+        }
+        // The Library's reference swings stand in for this Auto session.
+        autoSessionSwings = SwingLibrary.shared.swings.filter(\.isReference)
+        autoSavedSwingCount = autoSessionSwings.count
+        liveSwingDetection = fixtureSnapshot(manual: false)
+        autoCaptureStatus = AutoCaptureStatus(
+            isActive: true,
+            savedSwingCount: autoSavedSwingCount,
+            pendingSwingCount: 0,
+            message: "Auto watching",
+            lastErrorMessage: UITestFixture.showsAutoError
+                ? "Enable Photos add access in Settings before the range session." : nil
+        )
+    }
+
+    /// One detected swing exported through the production Auto exporter.
+    private func exportFixtureAutoClip() {
+        let second = CMTime(seconds: 1, preferredTimescale: 600)
+        let reviewSessionID = autoReviewSessionID
+        Task {
+            let url = try SyntheticVideo.url(for: UITestFixture.recordingVideo)
+            await exportAutoDetectedSwing(
+                detection: DetectedSwing(startTime: .zero, endTime: second, confidence: 1),
+                preparedClip: AutoRollingVideoBuffer.PreparedClip(
+                    segments: [.init(chunkID: UUID(), url: url, range: CMTimeRange(start: .zero, duration: second),
+                                     timelineStart: .zero)],
+                    sourceStartTime: 0, duration: second),
+                recordedMode: .normal,
+                reviewSessionID: reviewSessionID
+            )
+        }
+    }
+
+    private func fixtureSnapshot(manual: Bool) -> LiveSwingDetectionSnapshot {
+        if manual && !isLiveSwingDetectionEnabled {
+            return LiveSwingDetectionSnapshot(status: .disabled)
+        }
+        switch UITestFixture.detectorState {
+        case "unavailable":
+            return LiveSwingDetectionSnapshot(status: .unavailable, primaryMessage: "Model could not load")
+        case "waiting":
+            return .idle
+        default:
+            return LiveSwingDetectionSnapshot(
+                status: .searchingBall,
+                detectedSwingCount: manual ? 2 : 3,
+                processedFrameCount: 80,
+                targetSampleFPS: 8,
+                effectiveSampleFPS: manual ? 12.5 : 8,
+                averageProcessingTimeMS: manual ? 42 : 56,
+                lastProcessingTimeMS: 55
+            )
+        }
+    }
+}
+#endif
+
 final class CameraPreviewView: UIView {
     override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
 
@@ -1351,6 +1504,14 @@ struct CaptureView: View {
                 captureControls
             }
         }
+        #if DEBUG
+        .overlay {
+            if UITestFixture.camera == .audio {
+                Text(camera.fixtureAudioReadout)
+                    .accessibilityIdentifier("capture-audio-verification")
+            }
+        }
+        #endif
         .preferredColorScheme(.dark)
         #if DEBUG
         .overlay(alignment: .top) {
@@ -1673,6 +1834,9 @@ struct CaptureView: View {
     }
 
     private func requestAutoCapturePhotosAccess() {
+        #if DEBUG
+        if UITestFixture.camera != nil { return }
+        #endif
         guard ClipStoragePreference.savesToPhotos else { return }
         PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
             guard status == .authorized else {

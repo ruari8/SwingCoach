@@ -291,6 +291,12 @@ struct AnalyseView: View {
     }
 
     private func startAnalysis(for swings: [SavedSwing]) {
+        #if DEBUG
+        if UITestFixture.recordsAnalysisRequests {
+            UITestFixture.recordAnalysisRequest(ids: swings.map(\.id))
+            return
+        }
+        #endif
         // Add new analyses
         let newAnalyses = swings.map { SwingAnalysis(swing: $0, status: .pending) }
         analyses.insert(contentsOf: newAnalyses, at: 0)

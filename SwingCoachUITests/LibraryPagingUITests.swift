@@ -1,5 +1,6 @@
 import XCTest
 
+/// Library and Auto review paging and transport over three synthetic references.
 final class LibraryPagingUITests: XCTestCase {
     override func setUp() {
         super.setUp()
@@ -26,9 +27,7 @@ final class LibraryPagingUITests: XCTestCase {
         for autoReview in [false, true] {
             let app: XCUIApplication
             if autoReview {
-                app = XCUIApplication()
-                app.launchArguments = ["-ui-testing-auto-review"]
-                app.launch()
+                app = XCUIApplication.launched(seed: "references", ["-ui-testing-auto-review"])
             } else {
                 app = try launchFirstReferenceSwing()
             }
@@ -99,13 +98,8 @@ final class LibraryPagingUITests: XCTestCase {
     }
 
     func testAutoReviewPagingAndDeletion() throws {
-        let app = XCUIApplication()
-        app.launchArguments = ["-ui-testing-auto-review"]
-        app.launch()
-        guard app.staticTexts["swing-position"].waitForExistence(timeout: 5),
-              app.staticTexts["swing-position"].label != "0 of 0" else {
-            throw XCTSkip("Requires ignored local reference videos")
-        }
+        let app = XCUIApplication.launched(seed: "references", ["-ui-testing-auto-review"])
+        XCTAssertTrue(app.staticTexts["swing-position"].waitForExistence(timeout: 5))
         let speedButton = app.buttons.matching(NSPredicate(format: "label == %@", "Change playback speed")).firstMatch
         XCTAssertTrue(speedButton.waitForExistence(timeout: 5))
         XCTAssertGreaterThanOrEqual(speedButton.frame.minY, app.buttons["Close swing review"].frame.minY - 8)
@@ -248,15 +242,10 @@ final class LibraryPagingUITests: XCTestCase {
     }
 
     private func launchFirstReferenceSwing(number: Int = 1) throws -> XCUIApplication {
-        let app = XCUIApplication()
-        app.launchArguments.append("-ui-testing-library")
-        app.launch()
-
-        let firstReference = app.staticTexts["Reference swing \(number)"]
-        guard firstReference.waitForExistence(timeout: 5) else {
-            throw XCTSkip("Requires ignored local fixtures from SwingCoach/ReferenceSwings/README.md")
-        }
-        firstReference.tap()
+        let app = XCUIApplication.launched(seed: "references", ["-ui-testing-library"])
+        let reference = app.staticTexts["Reference swing \(number)"]
+        XCTAssertTrue(reference.waitForExistence(timeout: 10))
+        reference.tap()
         return app
     }
 }
