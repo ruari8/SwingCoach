@@ -365,7 +365,7 @@ def footage_before(run):
 
 def footage_check(run):
     """Every labelled impact is fed and saved, the end of the footage flushes the last
-    clip, and the kept recordings cover the footage."""
+    clip when it must, and once Auto stops the kept recordings cover the footage."""
     run.state.pop("test_env", None)
     expected = run.state["footage_expected"]
     root = run.container()

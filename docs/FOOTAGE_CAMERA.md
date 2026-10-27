@@ -54,7 +54,7 @@ xcrun devicectl device copy from --device CD21BEF7-8C46-5763-8024-1312A7C79D5F \
 2. It copies the private video from `.detectorTestV3/` (this checkout or the main one) into the app. Without it the run reports `BLOCKED`.
 3. It runs `SwingCoachUITests/FootageCameraUITests` with the labelled impacts and Keep Auto recordings on, plus `FootageCameraTests`.
 
-Afterwards it checks the diagnostics log: every labelled impact was fed and saved, `footage-end` was logged, and the log has camera, detector, writer and export events. When the last swing falls within its clip's 0.8 s tail of the end, a clip must also be saved after `footage-end`, through the end-of-footage flush; test15 ends too late to need it. It also checks that the kept recordings have no failed moves, one `recording-kept` event per file, and together cover at least 90% of the footage played. It then writes `footage-metrics.json`:
+Afterwards it checks the diagnostics log: every labelled impact was fed and saved, `footage-end` was logged, and the log has camera, detector, writer and export events. When the last swing falls within its clip's 0.8 s tail of the end, a clip must also be saved after `footage-end`, through the end-of-footage flush; test15 ends too late to need it. The test then leaves Capture, which stops Auto and keeps the recordings still in the rolling window. The runner checks that the kept recordings have no failed moves and one `recording-kept` event per file, and that together they cover at least 90% of the footage played. It then writes `footage-metrics.json`:
 
 - frames delivered and dropped
 - the detector's impact candidates against the labels

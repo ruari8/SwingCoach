@@ -53,5 +53,13 @@ final class FootageCameraUITests: XCTestCase {
         screenshot.name = "footage-finished"
         screenshot.lifetime = .keepAlways
         add(screenshot)
+
+        // Leaving Capture stops Auto, which keeps the recordings still inside
+        // the rolling window. Give the chunk being written time to finish;
+        // the runner then checks the kept files cover the footage.
+        app.tabBars.buttons["Library"].tap()
+        let settle = XCTestExpectation(description: "kept recordings finish")
+        settle.isInverted = true
+        wait(for: [settle], timeout: 3)
     }
 }
