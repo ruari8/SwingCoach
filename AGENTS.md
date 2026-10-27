@@ -62,7 +62,7 @@ SwingCoach/
 ├── SwingCoach/                    # iOS app (flat; there is no Views/ folder)
 │   ├── Models/                    # detectors, capture buffer, library, API client
 │   ├── TrimView/
-│   └── MLModels/                  # Core ML: SwingObjectsYOLO11n
+│   └── MLModels/                  # Core ML: SwingObjectsYOLO11n, SwingPositionTCN
 ├── SwingCoachTests/
 ├── backend/
 │   ├── main.py                    # FastAPI endpoints
@@ -105,6 +105,10 @@ SwingCoach/
 ### Swing detection
 
 The live detector is `SwingCoach/Models/SwingDetectorV3/` (used by `CaptureView`, `DebugReplayView`, and `SwingDetectorV3AssetDetector`). Candidate scoring and traces (`SwingEvidence.swift`, `SwingCandidateTrace.swift`) live in that folder too. The retired V2 detector and `ModelBackedSwingDetector.swift` are outside the app target in `detector_workbench/legacy/`, used only by workbench evaluators. Current design: [SWING_DETECTOR_V3.md](./docs/SWING_DETECTOR_V3.md); older detector docs are marked historical.
+
+### Swing positions
+
+After an Auto save, `SwingCoach/Models/SwingPositions/` finds P1–P10 on the phone with `SwingPositionTCN` (detectSwings `tcn_vision_v2`, Apple Vision pose in) and stores them on the swing; Swing Info lists them. Down-the-line only. Design, accuracy and the parity harness: [SWING_POSITIONS.md](./docs/SWING_POSITIONS.md).
 
 ### Backend live path
 

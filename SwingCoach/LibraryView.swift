@@ -2476,7 +2476,9 @@ private struct ActivityView: UIViewControllerRepresentable {
 
 /// Window-space frames of the visible session cards, for drag selection hit tests.
 /// A plain class so frame updates while scrolling don't re-render the Library.
-private final class LibraryCardFrames {
+/// Nonisolated so its deinit doesn't hop to the main actor: that isolated
+/// deinit aborted in swift_task_deinitOnExecutorImpl on iOS 26.3.
+private nonisolated final class LibraryCardFrames {
     var frames: [UUID: CGRect] = [:]
 
     func swingID(at point: CGPoint) -> UUID? {
