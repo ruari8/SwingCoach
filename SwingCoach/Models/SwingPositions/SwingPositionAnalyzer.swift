@@ -136,9 +136,9 @@ nonisolated final class SwingPositionAnalyzer: @unchecked Sendable {
 
     /// Runs pose and the position model once on blank input, so the first
     /// real swing doesn't pay for loading them.
-    func warmUp() {
+    func warmUp(width: Int = 1920, height: Int = 1080) {
         var pixelBuffer: CVPixelBuffer?
-        CVPixelBufferCreate(nil, 1920, 1080, kCVPixelFormatType_420YpCbCr8BiPlanarFullRange,
+        CVPixelBufferCreate(nil, width, height, kCVPixelFormatType_420YpCbCr8BiPlanarFullRange,
                             [kCVPixelBufferIOSurfacePropertiesKey: [:]] as CFDictionary, &pixelBuffer)
         if let pixelBuffer {
             try? VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .right, options: [:])

@@ -53,11 +53,12 @@ The camera gets each frame back at once: the live path makes its own small copy 
 
 The live run fails, and the saved clip is read as before, when:
 - the swing starts within 1.6 s of Auto starting, before the oldest copy
-- a copy is missing from the window (slots must be every 0.033 s)
-- the window hasn't filled 3 s after the swing was declared, e.g. Auto stopped or paused for review
+- a copy is missing anywhere in the window, edges included (slots must be every 0.033 s)
+- Auto stops, pauses for review or restarts detection before the window fills (the recording timeline restarts at 0)
+- no result 3 s after the swing was declared; this timeout doesn't wait behind pose calls
 - Vision finds a body in fewer than half the slots
 
-Each failure logs `swing-positions-failed` with `path` `live-copy`.
+Each failure logs `swing-positions-failed` with `path` `live-copy` and the reason. The copies take about 17–26 MB: 3 s at 30 per second, plus any older copies an open window still needs.
 
 ## Timing
 
@@ -87,7 +88,7 @@ Debug launch options:
 | Option | Effect |
 | --- | --- |
 | `-positions-live off\|copy\|pose` | `copy` is the default. `off` uses only the saved-clip path. `pose` runs pose on every copy straight away instead of after a swing is declared. |
-| `-positions-live-width <px>` | Width of the live copies. Default 480; 0 keeps full size. |
+| `-positions-live-width <px>` | Width of the live copies. Default 480; 0 keeps full size, about 3 MB per copy at 1080p, so up to ~400 MB. |
 | `-positions-live-after <s>` | Ends the live window this many seconds after impact instead of 0.8. |
 
 The runs below also tried options removed afterwards because they gained little: task priority (`utility`, `userInitiated`, `high`), loading the models when Auto starts, starting the saved-clip run at export or on the rolling recording, and running the saved-clip path beside the live one to compare.
@@ -103,7 +104,7 @@ Results on the iPhone 17 (Oct 30, 2026; three swings per run; phone thermal stat
 | `live pose` or `live copy`, widths 480, 960 and full size | 0.78–0.81 s |
 | `live`, window ends 0.7 s after impact | 0.68–0.71 s |
 
-Live positions are ready as soon as the window's last frame arrives. Compared on the same swings with `-positions-live-compare`, live and saved-clip positions differ by 3 frames on average (240 fps). Both pick from a grid of one frame every 8, and the two grids start at slightly different frames, so a gap under 8 frames is grid offset, not error. The saved-clip path also moves by one slot (8 frames) between runs of the same footage. Width 480, 960 and full size gave the same positions. Ending the window 0.6 or 0.5 s after impact moved P10 early by 7–22 frames; 0.7 s moved it by 15 frames once in six swings.
+Live positions are ready as soon as the window's last frame arrives. Compared on the same swings (with a compare option since removed), live and saved-clip positions differ by 3 frames on average (240 fps). Both pick from a grid of one frame every 8, and the two grids start at slightly different frames, so a gap under 8 frames is grid offset, not error. The saved-clip path also moves by one slot (8 frames) between runs of the same footage. Width 480, 960 and full size gave the same positions. Ending the window 0.6 or 0.5 s after impact moved P10 early by 7–22 frames; 0.7 s moved it by 15 frames once in six swings.
 
 Guard metrics stayed level with live pose on: footage frames dropped late 14–32 per 17,100 (control runs 12–29), recorded-frame gaps 5–10 per run, and detector inference 34–37 ms (control 37 ms). `copy` mode ran pose about 72 times per swing; `pose` mode ran it 30 times a second for the whole session. One `copy` run showed 6 out-of-buffer drops; the others showed none. These runs use the footage camera, which decodes video on the phone; a real camera session at the range still has to confirm cadence and heat.
 

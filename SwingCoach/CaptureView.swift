@@ -129,8 +129,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     private var analysisIsInFlight = false
-    /// Poses on live Auto frames for P1-P10; reset at each Auto start.
+    /// Poses on live Auto frames for P1-P10; reset whenever the recording
+    /// timeline restarts or Auto stops.
     private let livePoses = LiveSwingPoses.fromSettings()
+    /// Host-clock seconds of the recording's start, as seen by the analysis
+    /// queue; owned by analysisQueue.
+    private var analysisRecordingStart: Double?
     private var pendingAnalysisFrame: PendingAnalysisFrame?
     // Owned by analysisQueue. Detector timing next to the camera drop summary
     // tells whether an unexplained drop burst coincides with slow inference.
@@ -615,7 +619,6 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 )
             }
             self.resetLiveSwingDetection(reviewSessionID: reviewSessionID)
-            self.livePoses?.reset()
             #if DEBUG
             self.footageCamera?.emitStart()
             let keepsRecordings = UserDefaults.standard.bool(forKey: ExperimentalSettingKey.keepAutoRecordings)
@@ -669,8 +672,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             self.analysisIsInFlight = false
             self.pendingAnalysisFrame = nil
         }
+        // Recording times restart at 0: open live requests can't be filled.
+        livePoses?.reset()
         analysisQueue.async {
             if let reviewSessionID { self.autoDetectionReviewSessionID = reviewSessionID }
+            self.analysisRecordingStart = nil
             self.autoExportedDetectionIDs = []
             self.liveSwingDetector = SwingDetectorV3(configuration: self.liveV3Configuration())
             self.liveSwingDetector.reset(enabled: detectorEnabled)
@@ -851,10 +857,6 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             rotationAngle = CGFloat(rotation.doubleValue)
         }
         #endif
-        if shouldProcessAuto, let livePoses {
-            livePoses.offer(sampleBuffer, relativeTime: relativeTime,
-                            orientation: Self.imageOrientation(forRotationAngle: rotationAngle))
-        }
         if shouldProcessAuto {
             let sourceFPS = captureMode.targetFPS
             let enqueuedAt = ProcessInfo.processInfo.systemUptime
@@ -873,6 +875,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             relativeTime: relativeTime,
             rotationAngle: rotationAngle
         )
+        // After the recorder and detector handoffs, which come first.
+        if shouldProcessAuto, let livePoses {
+            livePoses.offer(sampleBuffer, relativeTime: relativeTime,
+                            orientation: Self.imageOrientation(forRotationAngle: rotationAngle))
+        }
     }
 
     func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
@@ -1027,6 +1034,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             savedSwingForReview = savedSwing
         } catch {
             lastErrorMessage = error.localizedDescription
+            if livePositions { await SwingPositionProcessor.shared.discardLive(detection.id) }
         }
 
         await MainActor.run {
@@ -1102,6 +1110,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         rotationAngle: CGFloat
     ) {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        analysisRecordingStart = CMSampleBufferGetPresentationTimeStamp(sampleBuffer).seconds - relativeTime
 
         // Match the device orientation so YOLO and the pose gate see upright
         // golfers in landscape too, not just portrait.
@@ -1252,8 +1261,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     /// this request when its last frame arrives, or with available footage on stop.
     private func prepareAutoClip(_ detection: DetectedSwing) {
         // Anchors "seconds since impact" for every later step of this swing.
-        if let start = recordingStartSampleTime {
-            let now = CMTimeGetSeconds(CMTimeSubtract(CMClockGetTime(CMClockGetHostTimeClock()), start))
+        // Meaningless in every-frame footage mode, which runs behind the clock.
+        if let start = analysisRecordingStart {
+            let now = CMClockGetTime(CMClockGetHostTimeClock()).seconds - start
             CaptureCadenceDiagnostics.shared.emit("swing-declared", id: detection.id.uuidString, values: [
                 "impactTime": detection.impactTime ?? -1,
                 "declaredAt": detection.declaredAt ?? -1,
@@ -1296,6 +1306,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                     }
                 case .failure(let error):
                     DispatchQueue.main.async {
+                        if livePositions { SwingPositionProcessor.shared.discardLive(detection.id) }
                         self.finishAutoReviewRequest(sessionID: reviewSessionID, savedSwing: nil,
                                                      errorMessage: error.localizedDescription)
                     }

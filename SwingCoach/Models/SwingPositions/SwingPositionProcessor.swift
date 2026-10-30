@@ -31,6 +31,8 @@ final class SwingPositionProcessor: ObservableObject {
     private var liveOwners: [UUID: (swing: UUID, offset: Double, scale: Double)] = [:]
     /// Live results that arrived before their swing was saved.
     private var liveResults: [UUID: SwingPositions?] = [:]
+    /// Live requests whose swing was never saved; their results are dropped.
+    private var discardedLive: Set<UUID> = []
 
     private init() {}
 
@@ -55,7 +57,7 @@ final class SwingPositionProcessor: ObservableObject {
     /// times onto the clip with (time - offset) * scale.
     func attach(_ token: UUID, to swing: SavedSwing, offset: Double, scale: Double) {
         guard Self.canFindPositions(for: swing) else {
-            liveResults[token] = nil
+            discardLive(token)
             return
         }
         liveOwners[token] = (swing.id, offset, scale)
@@ -65,11 +67,17 @@ final class SwingPositionProcessor: ObservableObject {
         }
     }
 
+    /// Drops live request `token`'s result, now or when it arrives: its
+    /// swing wasn't saved, or can't have positions.
+    func discardLive(_ token: UUID) {
+        if liveResults.removeValue(forKey: token) == nil { discardedLive.insert(token) }
+    }
+
     /// Result of live request `token`, nil if it failed. Every request delivers
     /// once; a failure falls back to reading the saved clip.
     func deliverLive(_ token: UUID, _ positions: SwingPositions?) {
         guard let owner = liveOwners.removeValue(forKey: token) else {
-            liveResults[token] = .some(positions)
+            if discardedLive.remove(token) == nil { liveResults[token] = .some(positions) }
             return
         }
         pending.remove(owner.swing)
