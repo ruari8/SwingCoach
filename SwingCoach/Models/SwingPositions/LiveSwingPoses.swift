@@ -32,22 +32,26 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
     }
 
     /// Picks one frame per slot and numbers it by the nearest slot. A frame
-    /// is taken once it's no more than half a 240 fps frame before its slot's
-    /// time, so the pick stays on every 8th frame. Missed frames, and copies
-    /// the queue couldn't take, leave their slot's number unused, so they show
-    /// as gaps. The grid is anchored at the recording's first frame and only
-    /// restarts when the timeline does; dense frames keep picks within half a
-    /// frame of their slot however long the recording.
+    /// is taken once it's no more than half a frame interval before its
+    /// slot's time (capped at half a slot), so at 240 fps the pick stays on
+    /// every 8th frame and at 30 fps every frame counts. Missed frames, and
+    /// copies the queue couldn't take, leave their slot's number unused, so
+    /// they show as gaps. The grid is anchored at the recording's first frame
+    /// and only restarts when the timeline does.
     struct SlotSchedule {
         private(set) var grid = 0
         private var anchor = 0.0
         private var last: Int?
+        private var previous: Double?
 
         mutating func take(_ time: Double) -> Slot? {
+            let interval = previous.map { time - $0 } ?? 0
+            previous = time
             if let last, time >= Slot(grid: grid, index: last, anchor: anchor).target - LiveSwingPoses.slot {
                 let index = Int(((time - anchor) / LiveSwingPoses.slot).rounded())
                 let slot = Slot(grid: grid, index: index, anchor: anchor)
-                guard index > last, time >= slot.target - 1.0 / 480 else { return nil }
+                let early = min(LiveSwingPoses.slot / 2, max(1.0 / 480, interval / 2))
+                guard index > last, time >= slot.target - early else { return nil }
                 self.last = index
                 return slot
             }

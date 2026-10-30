@@ -102,6 +102,27 @@ final class LiveSwingPosesTests: XCTestCase {
         XCTAssertEqual(late?.grid, 1)
     }
 
+    func testThirtyFPSKeepsTakingFramesWhenOffsetFromTheGrid() {
+        // Review example: first frame at 0, then every frame 3 ms early.
+        let times = [0.0] + (1..<300).map { Double($0) / 30 - 0.003 }
+        XCTAssertEqual(take(times).map(\.index), Array(0..<300))
+    }
+
+    func testDriftingThirtyFPSRarelySkipsASlot() {
+        // 30.003 fps for 200 s drifts 0.6 of a slot; every frame still counts.
+        let times = (0..<6000).map { Double($0) / 30.003 }
+        let indices = take(times).map(\.index)
+        XCTAssertGreaterThanOrEqual(indices.count, 5998)
+        XCTAssertEqual(Set(indices).count, indices.count)
+    }
+
+    func testOtherFrameRatesReachEverySlot() {
+        for fps in [60.0, 120.0, 240.0] {
+            let times = (0..<Int(fps * 60)).map { Double($0) / fps + 0.0007 * sin(Double($0)) }
+            XCTAssertEqual(take(times).map(\.index), Array(0..<1800), "\(fps) fps")
+        }
+    }
+
     func testRestartStartsANewGrid() {
         let slots = take(frames(count: 240) + frames(count: 240))
         XCTAssertEqual(Set(slots.map(\.grid)), [1, 2])
