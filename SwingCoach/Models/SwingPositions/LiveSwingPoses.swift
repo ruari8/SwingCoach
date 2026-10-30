@@ -20,15 +20,43 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
     }
 
     /// A copy's place on the 30 fps schedule: slot `index` of the grid
-    /// anchored at `anchor` (recording seconds). A gap long enough to skip a
-    /// slot starts a new grid. Copies the queue couldn't take still use up
-    /// their index, so a missing copy shows as a missing index.
+    /// anchored at `anchor` (recording seconds), one grid per recording.
     struct Slot: Equatable {
         let grid: Int
         let index: Int
         let anchor: Double
 
+        /// Every comparison against a window uses this one expression.
         var target: Double { anchor + Double(index) * LiveSwingPoses.slot }
+        var next: Slot { Slot(grid: grid, index: index + 1, anchor: anchor) }
+    }
+
+    /// Picks one frame per slot and numbers it by the nearest slot. A frame
+    /// is taken once it's no more than half a 240 fps frame before its slot's
+    /// time, so the pick stays on every 8th frame. Missed frames, and copies
+    /// the queue couldn't take, leave their slot's number unused, so they show
+    /// as gaps. The grid is anchored at the recording's first frame and only
+    /// restarts when the timeline does; dense frames keep picks within half a
+    /// frame of their slot however long the recording.
+    struct SlotSchedule {
+        private(set) var grid = 0
+        private var anchor = 0.0
+        private var last: Int?
+
+        mutating func take(_ time: Double) -> Slot? {
+            if let last, time >= Slot(grid: grid, index: last, anchor: anchor).target - LiveSwingPoses.slot {
+                let index = Int(((time - anchor) / LiveSwingPoses.slot).rounded())
+                let slot = Slot(grid: grid, index: index, anchor: anchor)
+                guard index > last, time >= slot.target - 1.0 / 480 else { return nil }
+                self.last = index
+                return slot
+            }
+            // First frame, or the recording timeline restarted.
+            grid += 1
+            anchor = time
+            last = 0
+            return Slot(grid: grid, index: 0, anchor: anchor)
+        }
     }
 
     private struct Entry {
@@ -85,10 +113,7 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
     private var modelUnavailable = false
 
     // Video queue.
-    private var nextSlot = -Double.infinity
-    private var grid = 0
-    private var gridAnchor = 0.0
-    private var slotIndex = 0
+    private var schedule = SlotSchedule()
     private var transfer: VTPixelTransferSession?
     private var pool: CVPixelBufferPool?
     private var poolFormat: (width: Int, height: Int, pixelFormat: OSType)?
@@ -159,21 +184,7 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
     /// Video queue: takes one frame per 30 fps slot.
     func offer(_ sampleBuffer: CMSampleBuffer, relativeTime: Double, orientation: CGImagePropertyOrientation) {
         let epoch = Self.epoch(of: sampleBuffer, relativeTime: relativeTime)
-        // A new Auto session restarts the recording timeline.
-        if relativeTime < nextSlot - Self.slot { nextSlot = -.infinity }
-        // Half a 240 fps frame of slack keeps the pick on every 8th frame.
-        guard relativeTime >= nextSlot - 1.0 / 480 else { return }
-        if relativeTime - nextSlot > Self.slot {
-            // First frame, a restart, or a gap: anchor a new grid here.
-            grid += 1
-            gridAnchor = relativeTime
-            slotIndex = 0
-        } else {
-            slotIndex += 1
-        }
-        let slot = Slot(grid: grid, index: slotIndex, anchor: gridAnchor)
-        nextSlot = slot.target + Self.slot
-        guard let source = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        guard let slot = schedule.take(relativeTime), let source = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         lock.lock()
         let unavailable = modelUnavailable
         let busy = !unavailable && inFlight >= Self.maxInFlight
@@ -305,15 +316,20 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
     private func fulfil() {
         // Timed out: nothing left to deliver.
         requests.removeAll { $0.deliver.isDone }
-        guard let latest = entries.last?.slot.target else { return }
+        guard let latest = entries.last?.slot else { return }
         requests.removeAll { request in
-            // The last slot inside the window is due, taken or not.
-            guard latest >= request.window.upperBound - Self.slot else { return false }
+            guard Self.isDue(request.window, latest: latest) else { return false }
             let slots = entries.filter { Self.inWindow($0.slot, request.window) }
             guard slots.allSatisfy(\.posed) else { return false }
             complete(request, slots: slots)
             return true
         }
+    }
+
+    /// True once every slot of `window` is due, taken or not: the slot after
+    /// the latest copy is at or past the window's end.
+    static func isDue(_ window: ClosedRange<Double>, latest: Slot) -> Bool {
+        latest.next.target >= window.upperBound
     }
 
     /// A slot belongs to a window when its scheduled time is in
@@ -327,7 +343,7 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
     /// at or after the window's start to the last before its end.
     static func coversWindow(_ slots: [Slot], window: ClosedRange<Double>) -> Bool {
         guard let first = slots.first, slots.allSatisfy({ $0.grid == first.grid }) else { return false }
-        func target(_ index: Int) -> Double { first.anchor + Double(index) * slot }
+        func target(_ index: Int) -> Double { Slot(grid: first.grid, index: index, anchor: first.anchor).target }
         var expected = Int(((window.lowerBound - first.anchor) / slot).rounded(.up))
         while target(expected) < window.lowerBound { expected += 1 }
         while target(expected - 1) >= window.lowerBound { expected -= 1 }
@@ -344,7 +360,11 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
         // The model expects one pose per slot across the whole window.
         guard let first = slots.first, let last = slots.last,
               Self.coversWindow(slots.map(\.slot), window: request.window) else {
-            fail(request.deliver, "live window has gaps", id: request.diagnosticID)
+            lock.lock()
+            let skipped = skippedCopies - request.skippedBefore
+            lock.unlock()
+            fail(request.deliver, "live window has gaps: \(slots.count) copies, \(skipped) skipped since the swing",
+                 id: request.diagnosticID)
             return
         }
         guard let analyzer else {

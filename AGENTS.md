@@ -110,7 +110,7 @@ The live detector is `SwingCoach/Models/SwingDetectorV3/` (used by `CaptureView`
 
 ### Swing positions
 
-After an Auto save, `SwingCoach/Models/SwingPositions/` finds P1–P10 on the phone with `SwingPositionTCN` (detectSwings `tcn_vision_v2`, Apple Vision pose in) and stores them on the swing; Swing Info lists them. Down-the-line only. Design, accuracy and the parity harness: [SWING_POSITIONS.md](./docs/SWING_POSITIONS.md).
+During Auto, `SwingCoach/Models/SwingPositions/` finds P1–P10 on the phone from live frames, about 0.8 s after impact (saved clip as fallback), with `SwingPositionTCN` (detectSwings `tcn_vision_v2`, Apple Vision pose in) and stores them on the swing; Swing Info lists them. Down-the-line only. Design, accuracy and the parity harness: [SWING_POSITIONS.md](./docs/SWING_POSITIONS.md).
 
 ### Backend live path
 
