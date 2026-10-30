@@ -25,6 +25,8 @@ final class FootageCameraUITests: XCTestCase {
             "-footage-camera-time-scale", environment["FOOTAGE_TIME_SCALE"] ?? "1",
             "-footage-camera-impacts", environment["FOOTAGE_IMPACTS"] ?? "",
             "-experimental.keepAutoRecordings", "YES",
+            // Real time with drops, as on a phone, so the run lasts as long as the footage.
+            "-footage-camera-every-frame", "NO",
         ]
         app.launch()
 

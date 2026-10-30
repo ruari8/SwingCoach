@@ -11,13 +11,22 @@ Code: `SwingCoach/Models/FootageCamera.swift`, wired in `CaptureView.swift`.
 | `-footage-camera <path>` | A video file, a folder of `.mov`/`.mp4` files played in name order, or comma-separated files. Relative paths resolve against the app's Documents folder. |
 | `-footage-camera-time-scale <n>` | How many times slower than real time the footage plays. Default 1. Use 8 for 240 fps footage exported at 30 fps (the labelled range videos and saved Auto clips). |
 | `-footage-camera-buffers <n>` | Frame pool size. Default 15. |
+| `-footage-camera-every-frame YES\|NO` | Deliver every frame, waiting for the app instead of dropping. Default YES on the Simulator, NO on a phone. See [Two pacing modes](#two-pacing-modes). |
 | `-footage-camera-impacts <t,t,…>` | Labelled impacts, in real seconds from the start of the footage. Auto saves these instead of the detector's swings. The detector still runs, and each swing it accepts is logged as `detector-swing`. Use this on the Simulator, where Vision pose can't run. |
+
+Saved clips go to the app's library but never to Photos while the footage camera is on, whatever the Save to Photos setting says. Add `-footage-camera-photos YES` to send them to Photos for a test that needs it.
 
 When the footage ends, any clip still waiting for footage after its swing is saved with what was recorded, as stopping Auto does. Each frame carries its own file's rotation, so a kept session recorded across a phone rotation replays upright.
 
-The Capture tab shows the footage instead of the camera preview, with a yellow status line: file, position, frames delivered, and frames dropped. The frame-rate menu follows the footage's real frame rate and can't be changed.
+The Capture tab shows the footage instead of the camera preview, with a yellow status line: file, position, frames delivered, and either frames dropped (real time) or playback speed (every frame). When the footage finishes, **Replay** on the status line plays it again from the start in the same Auto session, labelled impacts included. The frame-rate menu follows the footage's real frame rate and can't be changed.
 
-## How it behaves like the camera
+## Two pacing modes
+
+**Every frame** (Simulator default) gives the app a perfect stream: nothing is dropped or skipped. Each frame waits for a free buffer and for the detector to finish the previous frame, and is stamped with its own moment on the footage timeline. When the machine can't keep up, the footage plays slower than real time instead; the status line shows the speed. The detector then samples at its full 8 or 16 fps of footage time, as on a phone that keeps up. Wall-clock timings, such as impact to saved clip, mean nothing in this mode.
+
+**Real time** (phone default) behaves like the camera, drops included, as described below. On a phone, drops are real findings. On the Simulator they mostly measure the Simulator: it has no Neural Engine, so YOLO and body pose run on the CPU and a detector check takes 160–230 ms, against about 36 ms on an iPhone 17. It can't keep up in real time. `scripts/verify.sh footage` uses real time so the run lasts as long as the footage.
+
+## How real time behaves like the camera
 
 - **Real clock.** Frames are delivered at their real-time moment and stamped on the host clock, as camera frames are. Footage plays only while the Capture tab is open, and resumes where it stopped.
 - **Fixed buffer pool.** Each frame is copied into a pool of 15 buffers. If the app still holds all of them, the frame is dropped and logged as `dropped_outOfBuffers`, the same reason the camera reports. The September jitter came from exactly this starvation. The camera's real pool size isn't documented. 15 is an assumption; change it with `-footage-camera-buffers`.
@@ -28,7 +37,7 @@ The Capture tab shows the footage instead of the camera preview, with a yellow s
 - **Camera hardware:** exposure, focus, stabilization, rotation and sound.
 - **Extra load:** decoding the footage and copying each frame use CPU and memory bandwidth that a real camera doesn't. On a phone this makes the test slightly harsher than the range.
 - **Heat:** a phone on a desk and charger stays cooler than one in the sun.
-- **Simulator:** Vision body pose fails ("Unable to setup request"), so the detector rejects every swing because it sees no golfer, and swing positions end in "could not be found". The Simulator also encodes the rolling recording in software, so its drop counts say nothing about a phone.
+- **Simulator:** Vision body pose fails ("Unable to setup request") because the Simulator's copy of iOS leaves out the pose model's weights file. The detector then rejects every swing because it sees no golfer, and swing positions end in "could not be found". Without a Neural Engine its detector is also several times slower than a phone's, so its timings and drop counts say nothing about a phone.
 
 ## Keeping range footage to replay
 
@@ -64,7 +73,7 @@ Afterwards it checks the diagnostics log: every labelled impact was fed and save
 Simulator run of the script, test15 (Oct 27, 2026):
 - **Saves:** 3/3 labelled swings saved, 1.7–1.9 s after each impact. That includes the clip's 0.8 s after impact.
 - **Detector:** reached an impact candidate within 1 s of all 3 labels (8 candidates in total), but accepted none, because Vision found no golfer.
-- **Frames:** 66% delivered (11,278). The rest were 4,610 skipped by a feeder running behind and 1,234 pool drops. This is the Simulator encoding 240 fps in software while YOLO runs on its CPU, not phone behaviour.
+- **Frames:** 66% delivered (11,278). The rest were 4,610 skipped by a feeder running behind and 1,234 pool drops. This is the Simulator running YOLO on its CPU, not phone behaviour.
 - **Swing positions:** failed on all 3 with "no golfer", as expected in the Simulator.
 
 ## On a phone

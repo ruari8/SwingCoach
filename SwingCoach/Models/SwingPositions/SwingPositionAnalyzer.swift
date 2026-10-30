@@ -40,7 +40,12 @@ nonisolated final class SwingPositionAnalyzer: @unchecked Sendable {
         var poseCalls = 0
         var bodySlots = 0
         var readAndPoseSeconds = 0.0
+        /// Inside readAndPoseSeconds: waiting on the decoder, and in Vision.
+        var decodeSeconds = 0.0
+        var poseSeconds = 0.0
         var modelSeconds = 0.0
+        /// Model slot of each position, P1 first.
+        var slots: [Int] = []
     }
 
     /// Mean decode error of tcn_vision_v2 on the frozen bench's range clips
@@ -80,16 +85,34 @@ nonisolated final class SwingPositionAnalyzer: @unchecked Sendable {
     }
 
     /// `timeScale` is how many times slower than real time the clip plays
-    /// (8 for a 240 fps capture exported at 30 fps).
-    func analyze(videoURL: URL, timeScale: Double) async throws -> (SwingPositions, Timing) {
+    /// (8 for a 240 fps capture exported at 30 fps). `window` limits the
+    /// search to part of the clip's timeline, e.g. leaving out extra footage.
+    func analyze(videoURL: URL, timeScale: Double, window: ClosedRange<Double>? = nil) async throws -> (SwingPositions, Timing) {
+        try await analyze(asset: AVURLAsset(url: videoURL), timeScale: timeScale, window: window)
+    }
+
+    func analyze(asset: AVAsset, timeScale: Double, window: ClosedRange<Double>? = nil) async throws -> (SwingPositions, Timing) {
         var timing = Timing()
         let started = Date()
-        let (grid, playableTimes) = try await poseGrid(videoURL: videoURL, timeScale: timeScale, timing: &timing)
+        let (grid, playableTimes) = try await poseGrid(asset: asset, timeScale: timeScale, window: window, timing: &timing)
         timing.readAndPoseSeconds = Date().timeIntervalSince(started)
+        let positions = try positions(grid: grid, playable: playableTimes, timeScale: timeScale, timing: &timing)
+        return (positions, timing)
+    }
+
+    /// P1-P10 from one pose per 30 fps real-time slot. `playable` is the time
+    /// of slot 0 and of the last frame, on the timeline the results use.
+    func positions(
+        grid: [SwingPositionPose?],
+        playable playableTimes: ClosedRange<Double>,
+        timeScale: Double,
+        timing: inout Timing
+    ) throws -> SwingPositions {
         timing.bodySlots = grid.filter { $0 != nil }.count
         guard Double(timing.bodySlots) >= Self.minimumBodyShare * Double(grid.count) else {
             throw AnalyzerError.noGolfer
         }
+        guard grid.count >= SwingPositionFeatures.positionCount else { throw AnalyzerError.tooShort }
 
         let modelStarted = Date()
         let logits = try predictLogits(SwingPositionFeatures.build(grid), frameCount: grid.count)
@@ -97,6 +120,7 @@ nonisolated final class SwingPositionAnalyzer: @unchecked Sendable {
         guard let frames = SwingPositionFeatures.decode(logits: logits, frameCount: grid.count) else {
             throw AnalyzerError.tooShort
         }
+        timing.slots = frames
 
         let positionCount = SwingPositionFeatures.positionCount
         let positions = frames.enumerated().map { index, frame in
@@ -107,7 +131,22 @@ nonisolated final class SwingPositionAnalyzer: @unchecked Sendable {
                 confidence: 1 / (1 + exp(-logit))
             )
         }
-        return (SwingPositions(model: SwingPositions.currentModel, positions: positions), timing)
+        return SwingPositions(model: SwingPositions.currentModel, positions: positions)
+    }
+
+    /// Runs pose and the position model once on blank input, so the first
+    /// real swing doesn't pay for loading them.
+    func warmUp(width: Int = 1920, height: Int = 1080) {
+        var pixelBuffer: CVPixelBuffer?
+        CVPixelBufferCreate(nil, width, height, kCVPixelFormatType_420YpCbCr8BiPlanarFullRange,
+                            [kCVPixelBufferIOSurfacePropertiesKey: [:]] as CFDictionary, &pixelBuffer)
+        if let pixelBuffer {
+            try? VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .right, options: [:])
+                .perform([poseRequest])
+        }
+        let frameCount = 72
+        _ = try? predictLogits([Float](repeating: 0, count: frameCount * SwingPositionFeatures.featureCount),
+                               frameCount: frameCount)
     }
 
     /// Clip time for a decoded slot, with the P1/P10 bias removed. The
@@ -132,11 +171,11 @@ nonisolated final class SwingPositionAnalyzer: @unchecked Sendable {
     /// slot (dataset.py resample_indices). Returns the grid and the
     /// presentation times of the clip's first frame (slot 0) and last frame.
     private func poseGrid(
-        videoURL: URL,
+        asset: AVAsset,
         timeScale: Double,
+        window: ClosedRange<Double>?,
         timing: inout Timing
     ) async throws -> ([SwingPositionPose?], ClosedRange<Double>) {
-        let asset = AVURLAsset(url: videoURL)
         guard let track = try await asset.loadTracks(withMediaType: .video).first else {
             throw AnalyzerError.noVideoTrack
         }
@@ -147,6 +186,10 @@ nonisolated final class SwingPositionAnalyzer: @unchecked Sendable {
         ])
         output.alwaysCopiesSampleData = false
         reader.add(output)
+        if let window {
+            reader.timeRange = CMTimeRange(start: CMTime(seconds: window.lowerBound, preferredTimescale: 600),
+                                           end: CMTime(seconds: window.upperBound, preferredTimescale: 600))
+        }
         guard reader.startReading() else { throw AnalyzerError.unreadable }
 
         var grid: [SwingPositionPose?] = []
@@ -157,13 +200,19 @@ nonisolated final class SwingPositionAnalyzer: @unchecked Sendable {
 
         func pose(at frame: (time: Double, buffer: CMSampleBuffer)) -> SwingPositionPose? {
             if let lastPose, lastPose.time == frame.time { return lastPose.pose }
+            let poseStarted = Date()
             let result = detectPose(in: frame.buffer, orientation: orientation)
+            timing.poseSeconds += Date().timeIntervalSince(poseStarted)
             timing.poseCalls += 1
             lastPose = (frame.time, result)
             return result
         }
 
-        while let buffer = output.copyNextSampleBuffer() {
+        while true {
+            let decodeStarted = Date()
+            let next = output.copyNextSampleBuffer()
+            timing.decodeSeconds += Date().timeIntervalSince(decodeStarted)
+            guard let buffer = next else { break }
             guard CMSampleBufferGetImageBuffer(buffer) != nil else { continue }
             let time = CMSampleBufferGetPresentationTimeStamp(buffer).seconds
             guard time.isFinite else { continue }
@@ -206,6 +255,10 @@ nonisolated final class SwingPositionAnalyzer: @unchecked Sendable {
 
     private func detectPose(in buffer: CMSampleBuffer, orientation: CGImagePropertyOrientation) -> SwingPositionPose? {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(buffer) else { return nil }
+        return pose(in: pixelBuffer, orientation: orientation)
+    }
+
+    func pose(in pixelBuffer: CVPixelBuffer, orientation: CGImagePropertyOrientation) -> SwingPositionPose? {
         let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: orientation, options: [:])
         guard (try? handler.perform([poseRequest])) != nil,
               let observation = poseRequest.results?.first,

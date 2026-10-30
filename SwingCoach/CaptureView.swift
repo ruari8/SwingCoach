@@ -129,6 +129,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     private var analysisIsInFlight = false
+    /// Poses on live Auto frames for P1-P10; reset whenever the recording
+    /// timeline restarts or Auto stops.
+    private let livePoses = LiveSwingPoses.fromSettings()
+    /// Host-clock seconds of the recording's start, as seen by the analysis
+    /// queue; owned by analysisQueue.
+    private var analysisRecordingStart: Double?
     private var pendingAnalysisFrame: PendingAnalysisFrame?
     // Owned by analysisQueue. Detector timing next to the camera drop summary
     // tells whether an unexplained drop burst coincides with slow inference.
@@ -178,11 +184,15 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private var footageCamera: FootageCamera?
     /// Next labelled footage impact to declare; owned by qualityQueue.
     private var nextLabelledImpact = 0
+    /// Last rotation sent to the preview; owned by the footage feed thread.
+    private var lastFootageRotation: CGFloat = 0
     /// The footage ended during analysis; flush waiting clips once the
     /// in-flight and pending frames are done. Owned by qualityQueue.
     private var flushClipsWhenAnalysisDrains = false
     @Published private(set) var footageStatus: FootageCamera.Status?
-    @Published private(set) var footagePreview: UIImage?
+    /// Shows the footage in place of the camera preview.
+    let footageDisplayLayer = AVSampleBufferDisplayLayer()
+    @Published private(set) var footageRotation: CGFloat = 0
     #endif
 
     override init() {
@@ -211,8 +221,27 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             self?.recordDroppedFrame(reason: reason, stabilizationMode: AVCaptureVideoStabilizationMode.off.rawValue)
         }
         footage.onStatus = { [weak self] status in self?.footageStatus = status }
-        footage.onPreview = { [weak self] image in self?.footagePreview = image }
+        footage.onPreviewFrame = { [weak self] sampleBuffer, rotation in
+            guard let self else { return }
+            let renderer = self.footageDisplayLayer.sampleBufferRenderer
+            if renderer.status == .failed { renderer.flush() }
+            CMSetAttachment(sampleBuffer, key: kCMSampleAttachmentKey_DisplayImmediately, value: kCFBooleanTrue,
+                            attachmentMode: kCMAttachmentMode_ShouldPropagate)
+            renderer.enqueue(sampleBuffer)
+            if rotation != self.lastFootageRotation {
+                self.lastFootageRotation = rotation
+                DispatchQueue.main.async { self.footageRotation = rotation }
+            }
+        }
+        footageRotation = footage.rotationAngle
+        lastFootageRotation = footage.rotationAngle
         footage.onFinish = { [weak self] in self?.finishFootage() }
+        // Every-frame mode: hold each frame until the detector has finished the
+        // last one, so none is coalesced away.
+        footage.isReadyForFrame = { [weak self] in
+            guard let self else { return true }
+            return self.qualityQueue.sync { !self.analysisIsInFlight }
+        }
         footageCamera = footage
         footageStatus = FootageCamera.Status()
         // Record and export at the footage's real frame rate.
@@ -607,6 +636,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         queue.async {
             self.autoCaptureIsActive = false
             self.autoCaptureIsPausedForReview = false
+            self.livePoses?.reset()
             self.bufferQueue.async {
                 self.autoRollingBuffer.reset(preservingPendingExports: true)
             }
@@ -642,8 +672,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             self.analysisIsInFlight = false
             self.pendingAnalysisFrame = nil
         }
+        // Recording times restart at 0: open live requests can't be filled.
+        livePoses?.reset()
         analysisQueue.async {
             if let reviewSessionID { self.autoDetectionReviewSessionID = reviewSessionID }
+            self.analysisRecordingStart = nil
             self.autoExportedDetectionIDs = []
             self.liveSwingDetector = SwingDetectorV3(configuration: self.liveV3Configuration())
             self.liveSwingDetector.reset(enabled: detectorEnabled)
@@ -842,6 +875,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             relativeTime: relativeTime,
             rotationAngle: rotationAngle
         )
+        // After the recorder and detector handoffs, which come first.
+        if shouldProcessAuto, let livePoses {
+            livePoses.offer(sampleBuffer, relativeTime: relativeTime,
+                            orientation: Self.imageOrientation(forRotationAngle: rotationAngle))
+        }
     }
 
     func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
@@ -919,7 +957,8 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         detection: DetectedSwing,
         preparedClip: AutoRollingVideoBuffer.PreparedClip,
         recordedMode: SloMoMode,
-        reviewSessionID: UUID
+        reviewSessionID: UUID,
+        livePositions: Bool
     ) async {
         let diagnosticID = preparedClip.chunkID.uuidString
         CaptureCadenceDiagnostics.shared.emit("export-start", id: diagnosticID, values: [
@@ -929,6 +968,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         ], state: ["detection": detection.id.uuidString])
         var savedSwingForReview: SavedSwing?
         var lastErrorMessage: String?
+
+        // The detector's swing, without the Extra swing footage, on the
+        // recording's real-time timeline.
+        let swingStart = max(0, detection.startTime.seconds - preparedClip.sourceStartTime)
+        let swingEnd = min(preparedClip.duration.seconds, detection.endTime.seconds - preparedClip.sourceStartTime)
 
         do {
             let asset = try await preparedClip.makeAsset()
@@ -953,25 +997,44 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
             CaptureCadenceDiagnostics.shared.emit("export-written", id: diagnosticID,
                 state: ["file": outputURL.lastPathComponent])
+            let thumbnailStart = ProcessInfo.processInfo.systemUptime
             let thumbnail = try? await autoTrimmer.generateThumbnail(for: asset, at: clip.startCMTime)
+            // The same swing on the saved clip's slow-motion timeline.
+            let swingWindow = swingStart < swingEnd
+                ? (swingStart * recordedMode.sourceTimeScale)...(swingEnd * recordedMode.sourceTimeScale) : nil
+            let libraryStart = ProcessInfo.processInfo.systemUptime
+            let savesToPhotos = ClipStoragePreference.savesToPhotos
             let savedSwing = try await SwingLibrary.shared.saveExportedSwing(
                 from: outputURL,
                 vantage: clip.vantage,
                 duration: clip.duration * recordedMode.sourceTimeScale,
                 sourceTimeScale: recordedMode.sourceTimeScale,
+                swingWindow: swingWindow,
                 initialThumbnail: thumbnail
             )
-            await SwingPositionProcessor.shared.findPositionsIfNeeded(for: savedSwing)
+            let libraryEnd = ProcessInfo.processInfo.systemUptime
+            if livePositions {
+                // Live poses have a request open for this swing; their times
+                // are on the recording since Auto started.
+                await SwingPositionProcessor.shared.attach(detection.id, to: savedSwing,
+                    offset: preparedClip.sourceStartTime, scale: recordedMode.sourceTimeScale)
+            } else {
+                await SwingPositionProcessor.shared.findPositionsIfNeeded(for: savedSwing)
+            }
             // Library batch export renames files but preserves SavedSwing.id in
             // metadata.json. Keep that stable join plus the exact source range.
             CaptureCadenceDiagnostics.shared.emit("swing-saved", id: diagnosticID, values: [
                 "chunkStart": preparedClip.sourceStartTime,
                 "start": preparedClip.startTime.seconds, "end": preparedClip.endTime.seconds,
-                "slowMotionFactor": recordedMode.sourceTimeScale
-            ], state: ["swingID": savedSwing.id.uuidString, "file": outputURL.lastPathComponent])
+                "slowMotionFactor": recordedMode.sourceTimeScale,
+                "thumbnailSeconds": libraryStart - thumbnailStart,
+                "librarySaveSeconds": libraryEnd - libraryStart
+            ], state: ["swingID": savedSwing.id.uuidString, "file": outputURL.lastPathComponent,
+                       "photos": savesToPhotos ? "on" : "off"])
             savedSwingForReview = savedSwing
         } catch {
             lastErrorMessage = error.localizedDescription
+            if livePositions { await SwingPositionProcessor.shared.discardLive(detection.id) }
         }
 
         await MainActor.run {
@@ -1032,12 +1095,22 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         }
     }
 
+    static func imageOrientation(forRotationAngle rotationAngle: CGFloat) -> CGImagePropertyOrientation {
+        switch Int(rotationAngle.rounded()) % 360 {
+        case 90: .right
+        case 180: .down
+        case 270: .left
+        default: .up
+        }
+    }
+
     private func processLiveModelSwingFrame(
         _ sampleBuffer: CMSampleBuffer,
         relativeTime: Double,
         rotationAngle: CGFloat
     ) {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        analysisRecordingStart = LiveSwingPoses.epoch(of: sampleBuffer, relativeTime: relativeTime)
 
         // Match the device orientation so YOLO and the pose gate see upright
         // golfers in landscape too, not just portrait.
@@ -1144,6 +1217,15 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         }
     }
 
+    /// Plays the footage again from the start, labels included.
+    func replayFootage() {
+        qualityQueue.async {
+            self.nextLabelledImpact = 0
+            self.footageCamera?.replay()
+            self.footageCamera?.emitStart()
+        }
+    }
+
     /// Declares each labelled footage impact once the frame after it arrives,
     /// as the detector would, converted onto this Auto session's timeline.
     private func declareLabelledImpacts(in sampleBuffer: CMSampleBuffer, relativeTime: Double) {
@@ -1178,6 +1260,36 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     /// Snapshot the clip context once per accepted detection. The buffer completes
     /// this request when its last frame arrives, or with available footage on stop.
     private func prepareAutoClip(_ detection: DetectedSwing) {
+        // Anchors "seconds since impact" for every later step of this swing.
+        // Meaningless in every-frame footage mode, which runs behind the clock.
+        if let start = analysisRecordingStart {
+            let now = CMClockGetTime(CMClockGetHostTimeClock()).seconds - start
+            CaptureCadenceDiagnostics.shared.emit("swing-declared", id: detection.id.uuidString, values: [
+                "impactTime": detection.impactTime ?? -1,
+                "declaredAt": detection.declaredAt ?? -1,
+                "now": now,
+                "sinceImpact": detection.impactTime.map { now - $0 } ?? -1,
+            ])
+        }
+        // The recording this swing was declared on; live copies from any
+        // other recording can't fill its request.
+        let recording = analysisRecordingStart
+        let livePositions = livePoses != nil && recording != nil
+        if let livePoses, let recording {
+            let token = detection.id
+            var end = detection.endTime.seconds
+            #if DEBUG
+            // `-positions-live-after <s>` ends the window that long after impact.
+            if let after = UserDefaults.standard.string(forKey: "positions-live-after").flatMap(Double.init),
+               let impact = detection.impactTime {
+                end = impact + after
+            }
+            #endif
+            livePoses.positions(token: token, epoch: recording, window: detection.startTime.seconds...end,
+                                diagnosticID: token.uuidString) { positions in
+                Task { @MainActor in SwingPositionProcessor.shared.deliverLive(token, positions) }
+            }
+        }
         let range = SwingClipContext.load().range(for: detection)
         let mode = recordedMode
         let reviewSessionID = autoDetectionReviewSessionID
@@ -1192,11 +1304,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                     Task {
                         await self.exportAutoDetectedSwing(
                             detection: detection, preparedClip: preparedClip, recordedMode: mode,
-                            reviewSessionID: reviewSessionID
+                            reviewSessionID: reviewSessionID, livePositions: livePositions
                         )
                     }
                 case .failure(let error):
                     DispatchQueue.main.async {
+                        if livePositions { SwingPositionProcessor.shared.discardLive(detection.id) }
                         self.finishAutoReviewRequest(sessionID: reviewSessionID, savedSwing: nil,
                                                      errorMessage: error.localizedDescription)
                     }
@@ -1345,7 +1458,8 @@ extension CameraSession {
                                      timelineStart: .zero)],
                     sourceStartTime: 0, duration: second),
                 recordedMode: .normal,
-                reviewSessionID: reviewSessionID
+                reviewSessionID: reviewSessionID,
+                livePositions: false
             )
         }
     }
@@ -1370,6 +1484,51 @@ extension CameraSession {
                 lastProcessingTimeMS: 55
             )
         }
+    }
+}
+#endif
+
+#if DEBUG
+/// Full-resolution footage camera frames, rotated upright and filling the
+/// view as the camera preview does.
+struct FootagePreview: UIViewRepresentable {
+    let layer: AVSampleBufferDisplayLayer
+    let rotation: CGFloat
+
+    final class View: UIView {
+        var displayLayer: AVSampleBufferDisplayLayer? {
+            didSet {
+                oldValue?.removeFromSuperlayer()
+                if let displayLayer { layer.addSublayer(displayLayer) }
+            }
+        }
+        var rotation: CGFloat = 0 { didSet { setNeedsLayout() } }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            guard let displayLayer else { return }
+            let quarterTurn = Int(rotation) % 180 == 90
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            displayLayer.videoGravity = .resizeAspectFill
+            displayLayer.setAffineTransform(.identity)
+            displayLayer.bounds = CGRect(origin: .zero, size: quarterTurn
+                ? CGSize(width: bounds.height, height: bounds.width) : bounds.size)
+            displayLayer.position = CGPoint(x: bounds.midX, y: bounds.midY)
+            displayLayer.setAffineTransform(CGAffineTransform(rotationAngle: rotation * .pi / 180))
+            CATransaction.commit()
+        }
+    }
+
+    func makeUIView(context: Context) -> View {
+        let view = View()
+        view.backgroundColor = .black
+        view.displayLayer = layer
+        return view
+    }
+
+    func updateUIView(_ view: View, context: Context) {
+        view.rotation = rotation
     }
 }
 #endif
@@ -1474,10 +1633,8 @@ struct CaptureView: View {
             .background(.black)
 
             #if DEBUG
-            if let preview = camera.footagePreview {
-                Image(uiImage: preview)
-                    .resizable()
-                    .scaledToFill()
+            if camera.footageStatus != nil {
+                FootagePreview(layer: camera.footageDisplayLayer, rotation: camera.footageRotation)
                     .ignoresSafeArea()
                     .allowsHitTesting(false)
             }
@@ -1516,15 +1673,24 @@ struct CaptureView: View {
         #if DEBUG
         .overlay(alignment: .top) {
             if let status = camera.footageStatus {
-                Text(status.summary)
-                    .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.yellow)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(.black.opacity(0.6), in: .rect(cornerRadius: 6))
-                    .padding(.top, 56)
-                    .allowsHitTesting(false)
-                    .accessibilityIdentifier("footage-camera-status")
+                HStack(spacing: 8) {
+                    Text(status.summary)
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.yellow)
+                        .accessibilityIdentifier("footage-camera-status")
+                    if status.isFinished, status.error == nil {
+                        Button("Replay", systemImage: "arrow.counterclockwise") {
+                            camera.replayFootage()
+                        }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.yellow)
+                        .accessibilityIdentifier("footage-camera-replay")
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(.black.opacity(0.6), in: .rect(cornerRadius: 6))
+                .padding(.top, 56)
             }
         }
         #endif

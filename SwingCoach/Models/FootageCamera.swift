@@ -11,27 +11,33 @@
 //    -footage-camera-time-scale <n>   source seconds per real second (default 1;
 //                                     8 for 240 fps footage slowed to 30 fps)
 //    -footage-camera-buffers <n>      frame pool size (default 15)
+//    -footage-camera-every-frame YES|NO  deliver every frame, waiting for the
+//                                     app instead of dropping (default YES on
+//                                     the Simulator, NO on a phone)
 //    -footage-camera-impacts <t,t,...> labelled impacts, in real seconds on the
 //                                     footage timeline. Auto saves these instead
 //                                     of the detector's swings; the detector still
-//                                     runs and its decisions are logged. For the
-//                                     Simulator, where Vision pose cannot run and
-//                                     the detector rejects every swing.
+//                                     runs and its decisions are logged.
 //
 //  Relative paths resolve against the app's Documents folder. A directory
 //  plays its .mov/.mp4 files in name order, e.g. a KeptRecordings session.
 //
-//  Like AVCaptureVideoDataOutput, each frame is copied into a small fixed pool.
-//  If the app still holds every buffer, the frame is dropped as
-//  `outOfBuffers`, so camera-starvation bugs still show. If decoding falls
-//  behind the clock, late frames are skipped as `footageLate` to catch up,
-//  but at least 30 frames a second are still delivered, late, so a feeder
-//  that never catches up degrades the frame rate rather than stopping it.
+//  Real time (the phone default): like AVCaptureVideoDataOutput, each frame is
+//  copied into a small fixed pool. If the app still holds every buffer, the
+//  frame is dropped as `outOfBuffers`, so camera-starvation bugs still show.
+//  If decoding falls behind the clock, late frames are skipped as
+//  `footageLate` to catch up, but at least 30 frames a second are still
+//  delivered, late, so a feeder that never catches up degrades the frame rate
+//  rather than stopping it.
+//
+//  Every frame (the Simulator default): nothing is dropped. The feed waits for
+//  a free buffer and for the detector to finish the previous frame, and
+//  frames are stamped on the footage's own clock, so the app sees a perfect
+//  stream that plays slower than real time when the machine can't keep up.
 //
 
 #if DEBUG
 import AVFoundation
-import CoreImage
 import UIKit
 
 nonisolated final class FootageCamera: @unchecked Sendable {
@@ -40,6 +46,7 @@ nonisolated final class FootageCamera: @unchecked Sendable {
         let timeScale: Double
         let bufferCount: Int
         let impacts: [Double]
+        let everyFrame: Bool
 
         static func fromLaunchArguments(_ defaults: UserDefaults = .standard) -> Configuration? {
             guard let raw = defaults.string(forKey: "footage-camera"), !raw.isEmpty else { return nil }
@@ -62,8 +69,16 @@ nonisolated final class FootageCamera: @unchecked Sendable {
             let bufferCount = defaults.integer(forKey: "footage-camera-buffers")
             let impacts = (defaults.string(forKey: "footage-camera-impacts") ?? "")
                 .split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }.sorted()
+            #if targetEnvironment(simulator)
+            let everyFrameByDefault = true
+            #else
+            let everyFrameByDefault = false
+            #endif
+            let everyFrame = defaults.object(forKey: "footage-camera-every-frame") == nil
+                ? everyFrameByDefault : defaults.bool(forKey: "footage-camera-every-frame")
             return Configuration(urls: urls, timeScale: timeScale > 0 ? timeScale : 1,
-                                 bufferCount: bufferCount > 0 ? bufferCount : 15, impacts: impacts)
+                                 bufferCount: bufferCount > 0 ? bufferCount : 15, impacts: impacts,
+                                 everyFrame: everyFrame)
         }
     }
 
@@ -76,12 +91,17 @@ nonisolated final class FootageCamera: @unchecked Sendable {
         var droppedLate = 0
         var isFinished = false
         var error: String?
+        /// Every-frame mode: footage seconds played per real second.
+        var speed: Double?
 
         var summary: String {
             if let error { return "Footage camera: \(error)" }
             let state = isFinished ? "finished" : file
-            return String(format: "Footage %@ · %.0f/%.0f s · %d frames · dropped %d pool, %d late",
-                          state, seconds, totalSeconds, delivered, droppedOutOfBuffers, droppedLate)
+            let head = String(format: "Footage %@ · %.0f/%.0f s · %d frames", state, seconds, totalSeconds, delivered)
+            if let speed {
+                return head + String(format: " · every frame, %.2g× speed", speed)
+            }
+            return head + String(format: " · dropped %d pool, %d late", droppedOutOfBuffers, droppedLate)
         }
     }
 
@@ -105,13 +125,17 @@ nonisolated final class FootageCamera: @unchecked Sendable {
     var onDrop: ((String) -> Void)?
     /// Called on the main queue about twice a second and at the end.
     var onStatus: ((Status) -> Void)?
-    /// Called on the main queue with a downscaled frame about four times a second.
-    var onPreview: ((UIImage) -> Void)?
+    /// Called on the feed thread with the full decoded frame, up to 60 times a
+    /// real second, and its display rotation in degrees. The frame is the
+    /// decoder's own buffer, so the preview never holds the app's pool.
+    var onPreviewFrame: ((CMSampleBuffer, CGFloat) -> Void)?
     /// Called on the delivery queue after the last frame of the last file.
     var onFinish: (() -> Void)?
+    /// Every-frame mode: polled on the feed thread before each frame; the
+    /// frame waits until it returns true.
+    var isReadyForFrame: (() -> Bool)?
 
     private let deliveryQueue: DispatchQueue
-    private let previewQueue = DispatchQueue(label: "footage-camera.preview", qos: .utility)
     private let lock = NSLock()
     private var thread: Thread?
     private var isStopping = false
@@ -186,6 +210,19 @@ nonisolated final class FootageCamera: @unchecked Sendable {
         thread.start()
     }
 
+    /// Plays the footage again from the start after it finished.
+    func replay() {
+        lock.lock()
+        defer { lock.unlock() }
+        guard thread == nil, status.isFinished, status.error == nil else { return }
+        resumeFile = 0
+        resumeSourceTime = nil
+        playedSeconds = 0
+        status = Status(totalSeconds: status.totalSeconds)
+        isStopping = false
+        launchThreadLocked()
+    }
+
     func stop() {
         lock.lock()
         isStopping = true
@@ -210,7 +247,7 @@ nonisolated final class FootageCamera: @unchecked Sendable {
         var lastStatus = 0.0
         var lastPreview = 0.0
         var lastDelivered = -Double.infinity
-        let ciContext = CIContext()
+        let everyFrame = configuration.everyFrame
 
         fileLoop: while resumeFile < configuration.urls.count {
             let url = configuration.urls[resumeFile]
@@ -255,12 +292,14 @@ nonisolated final class FootageCamera: @unchecked Sendable {
                 resumeSourceTime = sourceTime
                 playedSeconds = footageTime
 
-                // Wait for this frame's moment on the real clock.
+                // Wait for this frame's moment on the real clock. Every-frame
+                // mode never runs ahead of it either, but when behind it
+                // delivers each frame, still stamped with its own moment.
                 let due = anchorHost + footageTime - anchorPlayed
-                let now = CMClockGetTime(hostClock).seconds
+                var now = CMClockGetTime(hostClock).seconds
                 if due > now {
                     Thread.sleep(forTimeInterval: due - now)
-                } else if now - due > max(2 * frameDuration, 0.02), now - lastDelivered < 1.0 / 30 {
+                } else if !everyFrame, now - due > max(2 * frameDuration, 0.02), now - lastDelivered < 1.0 / 30 {
                     updateStatus { $0.droppedLate += 1; $0.seconds = footageTime }
                     deliveryQueue.async { [weak self] in self?.onDrop?("footageLate") }
                     continue
@@ -271,8 +310,14 @@ nonisolated final class FootageCamera: @unchecked Sendable {
                     pool = Self.makePool(width: width, height: height)
                     poolSize = (width, height)
                 }
-                guard let pool, let frame = Self.copy(decoded, from: pool, limit: configuration.bufferCount),
-                      let buffer = Self.sampleBuffer(frame, time: due, duration: frameDuration) else {
+                guard let pool else { continue }
+                var copied = Self.copy(decoded, from: pool, limit: configuration.bufferCount)
+                while everyFrame, copied == nil, !shouldStop {
+                    Thread.sleep(forTimeInterval: 0.002)
+                    copied = Self.copy(decoded, from: pool, limit: configuration.bufferCount)
+                }
+                guard let frame = copied, let buffer = Self.sampleBuffer(frame, time: due, duration: frameDuration) else {
+                    if everyFrame { continue }
                     updateStatus { $0.droppedOutOfBuffers += 1; $0.seconds = footageTime }
                     deliveryQueue.async { [weak self] in self?.onDrop?("outOfBuffers") }
                     continue
@@ -281,20 +326,34 @@ nonisolated final class FootageCamera: @unchecked Sendable {
                                 attachmentMode: kCMAttachmentMode_ShouldNotPropagate)
                 CMSetAttachment(buffer, key: Self.rotationKey, value: NSNumber(value: Double(rotation)),
                                 attachmentMode: kCMAttachmentMode_ShouldNotPropagate)
-                deliveryQueue.async { [weak self] in self?.onFrame?(buffer) }
+                if everyFrame {
+                    while !(isReadyForFrame?() ?? true), !shouldStop {
+                        Thread.sleep(forTimeInterval: 0.001)
+                    }
+                    if shouldStop { continue }
+                    // Synchronous, so the app has taken this frame before the
+                    // next readiness check.
+                    deliveryQueue.sync { onFrame?(buffer) }
+                    now = CMClockGetTime(hostClock).seconds
+                } else {
+                    deliveryQueue.async { [weak self] in self?.onFrame?(buffer) }
+                }
                 lastDelivered = now
 
-                let delivered = updateStatus { $0.delivered += 1; $0.seconds = footageTime }
+                let speed = everyFrame ? (footageTime - anchorPlayed) / max(now - anchorHost, 0.001) : nil
+                let delivered = updateStatus {
+                    $0.delivered += 1
+                    $0.seconds = footageTime
+                    $0.speed = speed.map { min($0, 1) }
+                }
                 if now - lastStatus >= 0.5 {
                     lastStatus = now
                     publish(delivered)
                 }
-                if onPreview != nil, now - lastPreview >= 0.25 {
+                if let onPreviewFrame, now - lastPreview >= 1.0 / 60,
+                   let preview = Self.sampleBuffer(decoded, time: due, duration: frameDuration) {
                     lastPreview = now
-                    previewQueue.async { [weak self] in
-                        guard let image = Self.previewImage(frame, rotation: rotation, context: ciContext) else { return }
-                        DispatchQueue.main.async { self?.onPreview?(image) }
-                    }
+                    onPreviewFrame(preview, rotation)
                 }
             }
             if reader.status == .failed {
@@ -420,21 +479,6 @@ nonisolated final class FootageCamera: @unchecked Sendable {
                                                        formatDescription: format, sampleTiming: &timing,
                                                        sampleBufferOut: &sample) == noErr else { return nil }
         return sample
-    }
-
-    private static func previewImage(_ pixelBuffer: CVPixelBuffer, rotation: CGFloat, context: CIContext) -> UIImage? {
-        let image = CIImage(cvPixelBuffer: pixelBuffer)
-        let scale = 480 / max(image.extent.width, image.extent.height)
-        let scaled = image.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
-        guard let cgImage = context.createCGImage(scaled, from: scaled.extent) else { return nil }
-        let orientation: UIImage.Orientation
-        switch Int(rotation) {
-        case 90: orientation = .right
-        case 180: orientation = .down
-        case 270: orientation = .left
-        default: orientation = .up
-        }
-        return UIImage(cgImage: cgImage, scale: 1, orientation: orientation)
     }
 }
 #endif
