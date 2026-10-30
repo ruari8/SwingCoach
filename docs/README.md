@@ -15,7 +15,7 @@ This folder and `backend/docs` are the active documentation set.
 - [Swing detector reconstruction proposal: observable evidence, real-time limits, and validation](./SWING_DETECTOR_RECONSTRUCTION.md)
 - [Swing detector reconstruction execution plan: models, runtime flow, modules, experiments, and gates](./SWING_DETECTOR_RECONSTRUCTION_EXECUTION.md)
 - [SwingDetectorV3: implemented runtime, relationships, validation, and limits](./SWING_DETECTOR_V3.md)
-- [Swing positions: P1–P10 found on the phone after an Auto save](./SWING_POSITIONS.md)
+- [Swing positions: P1–P10 found on the phone during Auto, about 0.8 s after impact](./SWING_POSITIONS.md)
 - [Research supporting real-time swing detection and event-model causality](./research/swing-detector-realtime-evidence.md)
 - [Swing Detector Restart Design](./SWING_DETECTOR_DESIGN.md)
 - [Swing Detector V2 Implementation Plan](./SWING_DETECTOR_V2_IMPLEMENTATION_PLAN.md)

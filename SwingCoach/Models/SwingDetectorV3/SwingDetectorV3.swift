@@ -66,7 +66,14 @@ nonisolated final class SwingDetectorV3 {
     ) {
         self.configuration = configuration
         self.modelURL = modelURL
-        self.computeUnits = computeUnits
+        #if targetEnvironment(simulator)
+        // The Simulator has no Neural Engine, and its translated GPU runs this
+        // model at half the speed of its CPU (58 vs 29 ms a frame).
+        self.computeUnits = .cpuOnly
+        #else
+        // On a Mac the GPU path stops the app with an MPSGraph assertion.
+        self.computeUnits = ProcessInfo.processInfo.isiOSAppOnMac ? .cpuAndNeuralEngine : computeUnits
+        #endif
         self.targetSelector = TargetSelectorV3()
         self.decisionEngine = SwingDecisionEngineV3(configuration: configuration)
         self.scorer = configuration.scorer

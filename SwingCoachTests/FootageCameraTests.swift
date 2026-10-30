@@ -20,6 +20,11 @@ final class FootageCameraTests: XCTestCase {
         XCTAssertEqual(folderConfiguration.timeScale, 1)
         XCTAssertEqual(folderConfiguration.bufferCount, 15)
         XCTAssertEqual(folderConfiguration.impacts, [])
+        #if targetEnvironment(simulator)
+        XCTAssertTrue(folderConfiguration.everyFrame, "every frame by default on the Simulator")
+        #else
+        XCTAssertFalse(folderConfiguration.everyFrame, "real time by default on a phone")
+        #endif
 
         defaults.set(folder.appendingPathComponent("clip.MP4").path + "," + folder.appendingPathComponent("missing.mov").path,
                      forKey: "footage-camera")
@@ -31,5 +36,10 @@ final class FootageCameraTests: XCTestCase {
         XCTAssertEqual(fileConfiguration.timeScale, 8)
         XCTAssertEqual(fileConfiguration.bufferCount, 6)
         XCTAssertEqual(fileConfiguration.impacts, [19.5, 41.3])
+
+        defaults.set("NO", forKey: "footage-camera-every-frame")
+        XCTAssertEqual(FootageCamera.Configuration.fromLaunchArguments(defaults)?.everyFrame, false)
+        defaults.set("YES", forKey: "footage-camera-every-frame")
+        XCTAssertEqual(FootageCamera.Configuration.fromLaunchArguments(defaults)?.everyFrame, true)
     }
 }

@@ -32,6 +32,10 @@ struct SavedSwing: Identifiable, Codable, Equatable {
     var sourceTimeScale: Double? = nil
     /// P1-P10 found after capture (down-the-line clips only).
     var swingPositions: SwingPositions? = nil
+    /// The swing itself on the clip's timeline, without the extra footage
+    /// before and after. Swing positions are found only here; nil means the
+    /// whole clip (imports, and swings saved before this was recorded).
+    var swingWindow: ClosedRange<Double>? = nil
 
     // Not persisted - loaded at runtime
     var thumbnail: UIImage?
@@ -67,7 +71,7 @@ struct SavedSwing: Identifiable, Codable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case id, photoAssetID, vantage, duration, createdAt, notes, analyzed, isFavorite, isReference, title, localVideoFilename
-        case sourceTimeScale, swingPositions
+        case sourceTimeScale, swingPositions, swingWindow
     }
 
     init(from decoder: Decoder) throws {
@@ -85,6 +89,7 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         localVideoFilename = try container.decodeIfPresent(String.self, forKey: .localVideoFilename)
         sourceTimeScale = try container.decodeIfPresent(Double.self, forKey: .sourceTimeScale)
         swingPositions = try container.decodeIfPresent(SwingPositions.self, forKey: .swingPositions)
+        swingWindow = try container.decodeIfPresent(ClosedRange<Double>.self, forKey: .swingWindow)
     }
 
     // Custom Equatable (ignore non-codable properties)
@@ -101,7 +106,8 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         lhs.title == rhs.title &&
         lhs.localVideoFilename == rhs.localVideoFilename &&
         lhs.sourceTimeScale == rhs.sourceTimeScale &&
-        lhs.swingPositions == rhs.swingPositions
+        lhs.swingPositions == rhs.swingPositions &&
+        lhs.swingWindow == rhs.swingWindow
     }
 }
 
@@ -234,6 +240,7 @@ class SwingLibrary: ObservableObject {
         vantage: Vantage,
         duration: Double,
         sourceTimeScale: Double? = nil,
+        swingWindow: ClosedRange<Double>? = nil,
         initialThumbnail: UIImage? = nil
     ) async throws -> SavedSwing {
         let savesToPhotos = ClipStoragePreference.savesToPhotos
@@ -257,6 +264,7 @@ class SwingLibrary: ObservableObject {
                 analyzed: false, localVideoFilename: filename,
                 sourceTimeScale: sourceTimeScale
             )
+            swing.swingWindow = swingWindow
             swing.thumbnail = initialThumbnail
             // Persist before publishing success or allowing temp-file cleanup.
             let updated = [swing] + swings
