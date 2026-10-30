@@ -21,6 +21,8 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
 
     private struct Entry {
         let time: Double
+        /// Host-clock start of the recording this copy belongs to.
+        let epoch: Double
         var buffer: CVPixelBuffer?
         var pose: SwingPositionPose?
         var posed = false
@@ -51,6 +53,7 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
 
     private struct Request {
         let token: UUID
+        let epoch: Double
         let window: ClosedRange<Double>
         let diagnosticID: String
         let registeredAt: Double
@@ -59,7 +62,6 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
 
     let mode: Mode
     private let width: Int
-    private let analyzer: SwingPositionAnalyzer
     private let queue = DispatchQueue(label: "swing-positions.live", qos: .userInitiated)
     private let lock = NSLock()
     private var inFlight = 0
@@ -72,6 +74,10 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
     private var poolFormat: (width: Int, height: Int, pixelFormat: OSType)?
 
     // Live queue.
+    /// Loaded on the live queue, so the Capture tab doesn't wait for it.
+    private var analyzer: SwingPositionAnalyzer?
+    /// Recording the current copies belong to; nil after a reset.
+    private var epoch: Double?
     private var entries: [Entry] = []
     private var requests: [Request] = []
     /// Bumped whenever entries are cleared, so queued pose work for old
@@ -100,22 +106,31 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
         }
         width = defaults.string(forKey: "positions-live-width").flatMap(Int.init) ?? width
         #endif
-        return try? LiveSwingPoses(mode: mode, width: width)
+        return LiveSwingPoses(mode: mode, width: width)
     }
 
-    init(mode: Mode, width: Int) throws {
+    init(mode: Mode, width: Int) {
         self.mode = mode
         self.width = width
-        analyzer = try SwingPositionAnalyzer()
         queue.async {
+            self.analyzer = try? SwingPositionAnalyzer()
             // Landscape 1080p scaled to the copy width.
             let warmWidth = width > 0 ? width : 1920
-            self.analyzer.warmUp(width: warmWidth, height: (warmWidth * 9 / 16) & ~1)
+            self.analyzer?.warmUp(width: warmWidth, height: (warmWidth * 9 / 16) & ~1)
         }
     }
 
+    /// Host-clock start of the recording a frame at `relativeTime` belongs
+    /// to. Identifies the recording timeline across queues.
+    static func epoch(of sampleBuffer: CMSampleBuffer, relativeTime: Double) -> Double {
+        CMSampleBufferGetPresentationTimeStamp(sampleBuffer).seconds - relativeTime
+    }
+
+    private static func sameRecording(_ a: Double, _ b: Double) -> Bool { abs(a - b) < 0.001 }
+
     /// Video queue: takes one frame per 30 fps slot.
     func offer(_ sampleBuffer: CMSampleBuffer, relativeTime: Double, orientation: CGImagePropertyOrientation) {
+        let epoch = Self.epoch(of: sampleBuffer, relativeTime: relativeTime)
         // A new Auto session restarts the recording timeline.
         if relativeTime < nextSlot - Self.slot { nextSlot = relativeTime }
         // Half a 240 fps frame of slack keeps the pick on every 8th frame.
@@ -132,15 +147,16 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
             return
         }
         queue.async {
-            self.append(Entry(time: relativeTime, buffer: copy, orientation: orientation))
+            self.append(Entry(time: relativeTime, epoch: epoch, buffer: copy, orientation: orientation))
             self.lock.lock(); self.inFlight -= 1; self.lock.unlock()
         }
     }
 
-    /// Any queue: positions for `window` (recording seconds), delivered once
-    /// its last slot is posed; nil if they can't be found. Every request
-    /// delivers exactly once, at the latest after `requestTimeout`.
-    func positions(token: UUID, window: ClosedRange<Double>, diagnosticID: String,
+    /// Any queue: positions for `window` (seconds on the recording that
+    /// started at `epoch`), delivered once its last slot is posed; nil if they
+    /// can't be found. Every request delivers exactly once, at the latest
+    /// after `requestTimeout`.
+    func positions(token: UUID, epoch: Double, window: ClosedRange<Double>, diagnosticID: String,
                    completion: @escaping (SwingPositions?) -> Void) {
         let registeredAt = ProcessInfo.processInfo.systemUptime
         let deliver = Delivery(completion)
@@ -148,11 +164,16 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
             if deliver(nil) { self.logFailure("live window timed out", id: diagnosticID) }
         }
         queue.async {
+            // Declared on a recording that has since restarted.
+            if let current = self.epoch, !Self.sameRecording(current, epoch) {
+                self.fail(deliver, "recording timeline restarted", id: diagnosticID)
+                return
+            }
             if let first = self.entries.first, first.time > window.lowerBound + Self.slot {
                 self.fail(deliver, "swing starts before the oldest live copy", id: diagnosticID)
                 return
             }
-            self.requests.append(Request(token: token, window: window, diagnosticID: diagnosticID,
+            self.requests.append(Request(token: token, epoch: epoch, window: window, diagnosticID: diagnosticID,
                                          registeredAt: registeredAt, deliver: deliver))
             if self.mode == .copy {
                 // Pose the backlog one frame per block so new frames interleave.
@@ -176,6 +197,7 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
         for request in requests { fail(request.deliver, reason, id: request.diagnosticID) }
         requests.removeAll()
         entries.removeAll()
+        epoch = nil
         generation += 1
     }
 
@@ -190,9 +212,18 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
 
     private func append(_ entry: Entry) {
         var entry = entry
-        // The recording timeline restarted without a reset: the open requests
-        // and copies belong to the old one.
-        if let last = entries.last, entry.time < last.time { clear(reason: "recording timeline restarted") }
+        // A new recording: the copies, and requests declared on the old one,
+        // can't be used. Requests that registered after a reset but came from
+        // the old recording are failed here too.
+        if let current = epoch, !Self.sameRecording(current, entry.epoch) {
+            clear(reason: "recording timeline restarted")
+        }
+        epoch = entry.epoch
+        requests.removeAll { request in
+            guard !Self.sameRecording(request.epoch, entry.epoch) else { return false }
+            fail(request.deliver, "recording timeline restarted", id: request.diagnosticID)
+            return true
+        }
         let wanted = mode == .pose || requests.contains { $0.window.contains(entry.time) && !$0.deliver.isDone }
         if wanted, let buffer = entry.buffer {
             entry.pose = timedPose(buffer, orientation: entry.orientation)
@@ -209,7 +240,9 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
     }
 
     private func poseEntry(at time: Double, generation: Int) {
+        // Skipped once no open request needs it, e.g. after a timeout.
         guard generation == self.generation,
+              requests.contains(where: { !$0.deliver.isDone && $0.window.contains(time) }),
               let index = entries.firstIndex(where: { $0.time == time }), !entries[index].posed,
               let buffer = entries[index].buffer else { return }
         entries[index].pose = timedPose(buffer, orientation: entries[index].orientation)
@@ -218,6 +251,7 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
     }
 
     private func timedPose(_ buffer: CVPixelBuffer, orientation: CGImagePropertyOrientation) -> SwingPositionPose? {
+        guard let analyzer else { return nil }
         let started = ProcessInfo.processInfo.systemUptime
         let pose = analyzer.pose(in: buffer, orientation: orientation)
         poseSeconds += ProcessInfo.processInfo.systemUptime - started
@@ -239,15 +273,26 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
         }
     }
 
+    /// True if `times` (sorted copy times inside `window`) hold every 30 fps
+    /// slot of the window. Whatever the grid's offset, a window holds at least
+    /// floor(length / slot) slots, so a copy missing at an edge shows in the
+    /// count; spacing catches one missing between.
+    static func coversWindow(_ times: [Double], window: ClosedRange<Double>) -> Bool {
+        guard let first = times.first, let last = times.last else { return false }
+        let length = window.upperBound - window.lowerBound
+        let slots = Int((length / slot + 0.01).rounded(.down))
+        return times.count >= slots && times.count == Int(((last - first) / slot).rounded()) + 1
+    }
+
     private func complete(_ request: Request, slots: [Entry]) {
-        // The model expects one pose per slot across the whole window: no
-        // missing copy at either edge or in between.
-        let window = request.window
+        // The model expects one pose per slot across the whole window.
         guard let first = slots.first, let last = slots.last,
-              first.time < window.lowerBound + 1.5 * Self.slot,
-              last.time > window.upperBound - 1.5 * Self.slot,
-              slots.count == Int(((last.time - first.time) / Self.slot).rounded()) + 1 else {
+              Self.coversWindow(slots.map(\.time), window: request.window) else {
             fail(request.deliver, "live window has gaps", id: request.diagnosticID)
+            return
+        }
+        guard let analyzer else {
+            fail(request.deliver, "pose model failed to load", id: request.diagnosticID)
             return
         }
         var timing = SwingPositionAnalyzer.Timing()
@@ -300,7 +345,8 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
             ]
             pool = nil
             CVPixelBufferPoolCreate(nil, nil, attributes as CFDictionary, &pool)
-            poolFormat = (targetWidth, targetHeight, pixelFormat)
+            // Left unset on failure, so the next frame tries again.
+            poolFormat = pool == nil ? nil : (targetWidth, targetHeight, pixelFormat)
         }
         if transfer == nil {
             VTPixelTransferSessionCreate(allocator: nil, pixelTransferSessionOut: &transfer)

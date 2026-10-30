@@ -54,8 +54,8 @@ The camera gets each frame back at once: the live path makes its own small copy 
 The live run fails, and the saved clip is read as before, when:
 - the swing starts within 1.6 s of Auto starting, before the oldest copy
 - a copy is missing anywhere in the window, edges included (slots must be every 0.033 s)
-- Auto stops, pauses for review or restarts detection before the window fills (the recording timeline restarts at 0)
-- no result 3 s after the swing was declared; this timeout doesn't wait behind pose calls
+- Auto stops or detection restarts before the window fills; each copy and request carries its recording's start time, so a request from an earlier recording is never filled with a later one's copies
+- no result 3 s after the swing was declared, e.g. Auto paused for review; this timeout doesn't wait behind pose calls
 - Vision finds a body in fewer than half the slots
 
 Each failure logs `swing-positions-failed` with `path` `live-copy` and the reason. The copies take about 17–26 MB: 3 s at 30 per second, plus any older copies an open window still needs.

@@ -1110,7 +1110,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         rotationAngle: CGFloat
     ) {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-        analysisRecordingStart = CMSampleBufferGetPresentationTimeStamp(sampleBuffer).seconds - relativeTime
+        analysisRecordingStart = LiveSwingPoses.epoch(of: sampleBuffer, relativeTime: relativeTime)
 
         // Match the device orientation so YOLO and the pose gate see upright
         // golfers in landscape too, not just portrait.
@@ -1271,8 +1271,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 "sinceImpact": detection.impactTime.map { now - $0 } ?? -1,
             ])
         }
-        let livePositions = livePoses != nil
-        if let livePoses {
+        // The recording this swing was declared on; live copies from any
+        // other recording can't fill its request.
+        let recording = analysisRecordingStart
+        let livePositions = livePoses != nil && recording != nil
+        if let livePoses, let recording {
             let token = detection.id
             var end = detection.endTime.seconds
             #if DEBUG
@@ -1282,7 +1285,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 end = impact + after
             }
             #endif
-            livePoses.positions(token: token, window: detection.startTime.seconds...end,
+            livePoses.positions(token: token, epoch: recording, window: detection.startTime.seconds...end,
                                 diagnosticID: token.uuidString) { positions in
                 Task { @MainActor in SwingPositionProcessor.shared.deliverLive(token, positions) }
             }
