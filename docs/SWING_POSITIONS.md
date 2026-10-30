@@ -52,11 +52,13 @@ Checked on the frozen bench before building:
 The camera gets each frame back at once: the live path makes its own small copy (480 × 270) and runs pose on that, so it never holds camera buffers. A swing's positions are ready when the copy of its last slot arrives, 0.8 s after impact, because the detector's window ends there. Pose on the swing's 72 copies (about 0.4 s) runs while that last 0.52 s is still being recorded.
 
 The live run fails, and the saved clip is read as before, when:
-- the swing starts within 1.6 s of Auto starting, before the oldest copy
-- a copy is missing anywhere in the window, edges included (slots must be every 0.033 s)
+- the window starts before the oldest kept copy (about 3 s back). A swing in Auto's first 1.6 s still works: the detector starts its window at 0, so it's just shorter
+- any slot of the window has no copy, edges included. Each copy is numbered by its place on the 0.033 s schedule, so a copy the app couldn't take, or a gap in the frames, shows as a missing number
 - Auto stops or detection restarts before the window fills; each copy and request carries its recording's start time, so a request from an earlier recording is never filled with a later one's copies
 - no result 3 s after the swing was declared, e.g. Auto paused for review; this timeout doesn't wait behind pose calls
 - Vision finds a body in fewer than half the slots
+
+- the pose model failed to load; this is logged once and nothing is copied
 
 Each failure logs `swing-positions-failed` with `path` `live-copy` and the reason. The copies take about 17–26 MB: 3 s at 30 per second, plus any older copies an open window still needs.
 

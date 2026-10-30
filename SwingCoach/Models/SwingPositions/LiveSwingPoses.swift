@@ -19,8 +19,21 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
         case pose, copy
     }
 
+    /// A copy's place on the 30 fps schedule: slot `index` of the grid
+    /// anchored at `anchor` (recording seconds). A gap long enough to skip a
+    /// slot starts a new grid. Copies the queue couldn't take still use up
+    /// their index, so a missing copy shows as a missing index.
+    struct Slot: Equatable {
+        let grid: Int
+        let index: Int
+        let anchor: Double
+
+        var target: Double { anchor + Double(index) * LiveSwingPoses.slot }
+    }
+
     private struct Entry {
         let time: Double
+        let slot: Slot
         /// Host-clock start of the recording this copy belongs to.
         let epoch: Double
         var buffer: CVPixelBuffer?
@@ -57,6 +70,8 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
         let window: ClosedRange<Double>
         let diagnosticID: String
         let registeredAt: Double
+        /// `skippedCopies` when the request registered.
+        let skippedBefore: Int
         let deliver: Delivery
     }
 
@@ -66,9 +81,14 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
     private let lock = NSLock()
     private var inFlight = 0
     private var skippedCopies = 0
+    /// Set if the pose model failed to load; then nothing is copied.
+    private var modelUnavailable = false
 
     // Video queue.
     private var nextSlot = -Double.infinity
+    private var grid = 0
+    private var gridAnchor = 0.0
+    private var slotIndex = 0
     private var transfer: VTPixelTransferSession?
     private var pool: CVPixelBufferPool?
     private var poolFormat: (width: Int, height: Int, pixelFormat: OSType)?
@@ -86,7 +106,7 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
     private var poseSeconds = 0.0
     private var poseCalls = 0
 
-    private static let slot = 1.0 / SwingPositionFeatures.gridFPS
+    static let slot = 1.0 / SwingPositionFeatures.gridFPS
     private static let keepSeconds = 3.0
     private static let maxInFlight = 45
     /// A request still open this long after the swing was declared fails,
@@ -113,7 +133,15 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
         self.mode = mode
         self.width = width
         queue.async {
-            self.analyzer = try? SwingPositionAnalyzer()
+            do {
+                self.analyzer = try SwingPositionAnalyzer()
+            } catch {
+                self.lock.withLock { self.modelUnavailable = true }
+                CaptureCadenceDiagnostics.shared.emit("swing-positions-failed", state: [
+                    "error": "pose model failed to load: \(error.localizedDescription)", "path": "live-\(mode.rawValue)",
+                ])
+                return
+            }
             // Landscape 1080p scaled to the copy width.
             let warmWidth = width > 0 ? width : 1920
             self.analyzer?.warmUp(width: warmWidth, height: (warmWidth * 9 / 16) & ~1)
@@ -132,22 +160,32 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
     func offer(_ sampleBuffer: CMSampleBuffer, relativeTime: Double, orientation: CGImagePropertyOrientation) {
         let epoch = Self.epoch(of: sampleBuffer, relativeTime: relativeTime)
         // A new Auto session restarts the recording timeline.
-        if relativeTime < nextSlot - Self.slot { nextSlot = relativeTime }
+        if relativeTime < nextSlot - Self.slot { nextSlot = -.infinity }
         // Half a 240 fps frame of slack keeps the pick on every 8th frame.
         guard relativeTime >= nextSlot - 1.0 / 480 else { return }
-        nextSlot = relativeTime - nextSlot > Self.slot ? relativeTime + Self.slot : nextSlot + Self.slot
+        if relativeTime - nextSlot > Self.slot {
+            // First frame, a restart, or a gap: anchor a new grid here.
+            grid += 1
+            gridAnchor = relativeTime
+            slotIndex = 0
+        } else {
+            slotIndex += 1
+        }
+        let slot = Slot(grid: grid, index: slotIndex, anchor: gridAnchor)
+        nextSlot = slot.target + Self.slot
         guard let source = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         lock.lock()
-        let busy = inFlight >= Self.maxInFlight
-        if busy { skippedCopies += 1 } else { inFlight += 1 }
+        let unavailable = modelUnavailable
+        let busy = !unavailable && inFlight >= Self.maxInFlight
+        if busy { skippedCopies += 1 } else if !unavailable { inFlight += 1 }
         lock.unlock()
-        guard !busy else { return }
+        guard !busy, !unavailable else { return }
         guard let copy = scaledCopy(of: source) else {
             lock.lock(); inFlight -= 1; lock.unlock()
             return
         }
         queue.async {
-            self.append(Entry(time: relativeTime, epoch: epoch, buffer: copy, orientation: orientation))
+            self.append(Entry(time: relativeTime, slot: slot, epoch: epoch, buffer: copy, orientation: orientation))
             self.lock.lock(); self.inFlight -= 1; self.lock.unlock()
         }
     }
@@ -163,24 +201,29 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
         DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + Self.requestTimeout) {
             if deliver(nil) { self.logFailure("live window timed out", id: diagnosticID) }
         }
+        let skippedBefore = lock.withLock { skippedCopies }
         queue.async {
+            guard self.analyzer != nil else {
+                self.fail(deliver, "pose model failed to load", id: diagnosticID)
+                return
+            }
             // Declared on a recording that has since restarted.
             if let current = self.epoch, !Self.sameRecording(current, epoch) {
                 self.fail(deliver, "recording timeline restarted", id: diagnosticID)
                 return
             }
-            if let first = self.entries.first, first.time > window.lowerBound + Self.slot {
+            if let first = self.entries.first, first.slot.target >= window.lowerBound + Self.slot {
                 self.fail(deliver, "swing starts before the oldest live copy", id: diagnosticID)
                 return
             }
             self.requests.append(Request(token: token, epoch: epoch, window: window, diagnosticID: diagnosticID,
-                                         registeredAt: registeredAt, deliver: deliver))
+                                         registeredAt: registeredAt, skippedBefore: skippedBefore, deliver: deliver))
             if self.mode == .copy {
                 // Pose the backlog one frame per block so new frames interleave.
                 let generation = self.generation
-                for entry in self.entries where window.contains(entry.time) && !entry.posed {
-                    let time = entry.time
-                    self.queue.async { self.poseEntry(at: time, generation: generation) }
+                for entry in self.entries where Self.inWindow(entry.slot, window) && !entry.posed {
+                    let slot = entry.slot
+                    self.queue.async { self.poseEntry(at: slot, generation: generation) }
                 }
             }
             self.fulfil()
@@ -224,7 +267,7 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
             fail(request.deliver, "recording timeline restarted", id: request.diagnosticID)
             return true
         }
-        let wanted = mode == .pose || requests.contains { $0.window.contains(entry.time) && !$0.deliver.isDone }
+        let wanted = mode == .pose || requests.contains { Self.inWindow(entry.slot, $0.window) && !$0.deliver.isDone }
         if wanted, let buffer = entry.buffer {
             entry.pose = timedPose(buffer, orientation: entry.orientation)
             entry.posed = true
@@ -239,11 +282,11 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
         fulfil()
     }
 
-    private func poseEntry(at time: Double, generation: Int) {
+    private func poseEntry(at slot: Slot, generation: Int) {
         // Skipped once no open request needs it, e.g. after a timeout.
         guard generation == self.generation,
-              requests.contains(where: { !$0.deliver.isDone && $0.window.contains(time) }),
-              let index = entries.firstIndex(where: { $0.time == time }), !entries[index].posed,
+              requests.contains(where: { !$0.deliver.isDone && Self.inWindow(slot, $0.window) }),
+              let index = entries.firstIndex(where: { $0.slot == slot }), !entries[index].posed,
               let buffer = entries[index].buffer else { return }
         entries[index].pose = timedPose(buffer, orientation: entries[index].orientation)
         entries[index].posed = true
@@ -262,32 +305,45 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
     private func fulfil() {
         // Timed out: nothing left to deliver.
         requests.removeAll { $0.deliver.isDone }
-        guard let latest = entries.last?.time else { return }
+        guard let latest = entries.last?.slot.target else { return }
         requests.removeAll { request in
-            // The last slot inside the window has arrived.
+            // The last slot inside the window is due, taken or not.
             guard latest >= request.window.upperBound - Self.slot else { return false }
-            let slots = entries.filter { $0.time >= request.window.lowerBound && $0.time < request.window.upperBound }
+            let slots = entries.filter { Self.inWindow($0.slot, request.window) }
             guard slots.allSatisfy(\.posed) else { return false }
             complete(request, slots: slots)
             return true
         }
     }
 
-    /// True if `times` (sorted copy times inside `window`) hold every 30 fps
-    /// slot of the window. Whatever the grid's offset, a window holds at least
-    /// floor(length / slot) slots, so a copy missing at an edge shows in the
-    /// count; spacing catches one missing between.
-    static func coversWindow(_ times: [Double], window: ClosedRange<Double>) -> Bool {
-        guard let first = times.first, let last = times.last else { return false }
-        let length = window.upperBound - window.lowerBound
-        let slots = Int((length / slot + 0.01).rounded(.down))
-        return times.count >= slots && times.count == Int(((last - first) / slot).rounded()) + 1
+    /// A slot belongs to a window when its scheduled time is in
+    /// [lower, upper); the copy's own timestamp may be off by half a frame.
+    static func inWindow(_ slot: Slot, _ window: ClosedRange<Double>) -> Bool {
+        slot.target >= window.lowerBound && slot.target < window.upperBound
+    }
+
+    /// True if `slots` (the copies inside `window`, in order) are every slot
+    /// the window needs: one grid, and consecutive indices from the first slot
+    /// at or after the window's start to the last before its end.
+    static func coversWindow(_ slots: [Slot], window: ClosedRange<Double>) -> Bool {
+        guard let first = slots.first, slots.allSatisfy({ $0.grid == first.grid }) else { return false }
+        func target(_ index: Int) -> Double { first.anchor + Double(index) * slot }
+        var expected = Int(((window.lowerBound - first.anchor) / slot).rounded(.up))
+        while target(expected) < window.lowerBound { expected += 1 }
+        while target(expected - 1) >= window.lowerBound { expected -= 1 }
+        // The window starts before this grid: its first slots were never taken.
+        guard expected >= 0 else { return false }
+        for slot in slots {
+            guard slot.index == expected else { return false }
+            expected += 1
+        }
+        return target(expected) >= window.upperBound
     }
 
     private func complete(_ request: Request, slots: [Entry]) {
         // The model expects one pose per slot across the whole window.
         guard let first = slots.first, let last = slots.last,
-              Self.coversWindow(slots.map(\.time), window: request.window) else {
+              Self.coversWindow(slots.map(\.slot), window: request.window) else {
             fail(request.deliver, "live window has gaps", id: request.diagnosticID)
             return
         }
@@ -308,7 +364,7 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
         }
         guard request.deliver(positions) else { return }
         lock.lock()
-        let skipped = skippedCopies
+        let skipped = skippedCopies - request.skippedBefore
         lock.unlock()
         CaptureCadenceDiagnostics.shared.emit("swing-positions", id: request.diagnosticID, values: [
             "poseCalls": Double(poseCalls),
