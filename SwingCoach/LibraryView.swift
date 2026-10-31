@@ -1152,6 +1152,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     // Timeline drag: the finger's last x and the unsnapped scrubber fraction,
     // so a drag can continue at quarter speed once the finger leaves the bar.
     @State private var scrubLastX: CGFloat?
+    @GestureState private var timelineDragActive = false
     @State private var scrubFraction: Double = 0
     @State private var isFineScrubbing = false
     @State private var positionBadgeTask: Task<Void, Never>?
@@ -1332,9 +1333,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                             .transition(.opacity.combined(with: .move(edge: .bottom)))
                         }
                     }
-                    // The strip appears when paging to a swing with positions,
-                    // or when Auto's positions land; ease the controls up.
-                    .animation(.easeInOut(duration: 0.2), value: visiblePositions == nil)
                     .transition(.opacity)
 
                     // The rail spans the width so it can dock on either side.
@@ -1357,6 +1355,9 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     }
                 }
             }
+            // The strip appears when paging to a swing with positions, or when
+            // Auto's positions land: ease the controls, accessory and gradient.
+            .animation(.easeInOut(duration: 0.2), value: visiblePositions == nil)
         }
     }
 
@@ -1764,12 +1765,19 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     let fraction = isFineScrubbing ? scrubFraction : snappedFraction(scrubFraction, width: width, mapping: mapping)
                     seek(to: CMTime(seconds: mapping.time(at: fraction), preferredTimescale: 600))
                 }
-                .onEnded { _ in
-                    scrubLastX = nil
-                    isFineScrubbing = false
-                    endScrubbing()
-                }
+                .updating($timelineDragActive) { _, active, _ in active = true }
+                .onEnded { _ in finishTimelineDrag() }
         )
+        // A cancelled drag never calls onEnded; its gesture state still resets.
+        .onChange(of: timelineDragActive) { _, active in
+            if !active, scrubLastX != nil { finishTimelineDrag() }
+        }
+    }
+
+    private func finishTimelineDrag() {
+        scrubLastX = nil
+        isFineScrubbing = false
+        endScrubbing()
     }
 
     /// Pulls the scrubber onto a position marker within 7 points of it.

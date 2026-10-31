@@ -280,7 +280,7 @@ struct PlayerToolRail: View {
     // Gesture state resets itself if the system cancels the drag; the reset
     // springs, so a docking release animates from where the finger let go.
     @GestureState(resetTransaction: Transaction(animation: .spring(response: 0.35, dampingFraction: 0.82)))
-    private var dragTranslation: CGSize = .zero
+    private var drag = FoldDrag()
     @State private var labelsVisible = false
     @State private var labelsToken = 0
     @State private var peekedToolID: String?
@@ -288,8 +288,14 @@ struct PlayerToolRail: View {
     static let buttonSize: CGFloat = 38
     static let spacing: CGFloat = 10
 
-    private var isDragging: Bool { hypot(dragTranslation.width, dragTranslation.height) > 6 }
-    private var dragOffset: CGSize { isDragging ? dragTranslation : .zero }
+    /// Once the finger moves 6 points the press stays a drag until release.
+    private struct FoldDrag: Equatable {
+        var translation: CGSize = .zero
+        var started = false
+    }
+
+    private var isDragging: Bool { drag.started }
+    private var dragOffset: CGSize { drag.started ? drag.translation : .zero }
     /// A single tool is not worth a fold button.
     private var isFoldable: Bool { tools.count > 1 }
 
@@ -353,8 +359,9 @@ struct PlayerToolRail: View {
             // translation would stay near zero.
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .global)
-                    .updating($dragTranslation) { value, translation, _ in
-                        translation = value.translation
+                    .updating($drag) { value, drag, _ in
+                        drag.translation = value.translation
+                        if hypot(value.translation.width, value.translation.height) > 6 { drag.started = true }
                     }
                     .onEnded { value in
                         if hypot(value.translation.width, value.translation.height) > 6 {
@@ -364,6 +371,9 @@ struct PlayerToolRail: View {
                         }
                     }
             )
+            .onChange(of: drag.started) { _, started in
+                if started { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+            }
             .accessibilityElement(children: .ignore)
             .accessibilityIdentifier("player-tools-fold")
             .accessibilityLabel(isOpen ? "Hide player tools" : "Show player tools")
@@ -466,38 +476,45 @@ private struct RailToolRow: View {
                 DragGesture(minimumDistance: 0)
                     .updating($isPressed) { _, pressed, _ in pressed = true }
                     .onChanged { _ in
+                        // One hold timer per press: a drifting finger keeps
+                        // calling onChanged, and must not restart it.
                         guard holdTask == nil else { return }
                         didPeek = false
                         holdTask = Task { @MainActor in
                             try? await Task.sleep(nanoseconds: 400_000_000)
-                            guard !Task.isCancelled else { return }
-                            // A cancelled gesture never ends, so the task clears itself.
-                            holdTask = nil
-                            guard isPressed else { return }
+                            guard !Task.isCancelled, isPressed else { return }
                             didPeek = true
                             withAnimation(.easeOut(duration: 0.15)) { peekedToolID = tool.id }
                         }
                     }
                     .onEnded { value in
-                        holdTask?.cancel()
-                        holdTask = nil
-                        if didPeek {
-                            let id = tool.id
-                            Task { @MainActor in
-                                try? await Task.sleep(nanoseconds: 700_000_000)
-                                guard peekedToolID == id else { return }
-                                withAnimation(.easeIn(duration: 0.25)) { peekedToolID = nil }
-                            }
-                        } else if hypot(value.translation.width, value.translation.height) < 24 {
+                        if !didPeek, hypot(value.translation.width, value.translation.height) < 24 {
                             tool.action()
                         }
+                        endPress()
                     }
             )
+            // A cancelled press never calls onEnded; its gesture state still resets.
+            .onChange(of: isPressed) { _, pressed in
+                if !pressed, holdTask != nil { endPress() }
+            }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(tool.accessibilityLabel)
             .accessibilityValue(tool.accessibilityValue ?? "")
             .accessibilityAddTraits(.isButton)
             .accessibilityAction { tool.action() }
+    }
+
+    private func endPress() {
+        holdTask?.cancel()
+        holdTask = nil
+        guard peekedToolID == tool.id else { return }
+        let id = tool.id
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            guard peekedToolID == id else { return }
+            withAnimation(.easeIn(duration: 0.25)) { peekedToolID = nil }
+        }
     }
 
     @ViewBuilder
