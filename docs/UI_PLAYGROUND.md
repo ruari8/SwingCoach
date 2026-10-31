@@ -93,6 +93,14 @@ the native playground is the reference for Apple's actual controls and materials
   controls and copies the shared pager/player into ignored build output on every
   build. Changes to the source extraction markers fail the build for repair.
 - `playgrounds/ui/web/index.html`: original five-concept comparison.
+- `playgrounds/ui/web/positions.html`: the accepted P1–P10 player (pose strip,
+  Balanced scrubber, foldable tool rail that docks left or right). Open it
+  straight from disk. Query options: `screen=auto`, `side=l`, `rail=closed`,
+  `pos=off`, `labels=1`. It needs local `media/positions/p1.jpg`–`p10.jpg` and
+  `sprite.jpg` (frames from a private sample clip, not in Git).
+- `playgrounds/ui/web/positions-scrub-lab.html`: the scrubber-spacing lab behind
+  the Balanced choice (Time, Even and Balanced bars at phone width, every frame
+  drawn as a tick, `?fps=240` for Auto clips).
 - `playgrounds/ui/media/`: ignored, optional local media. `camera.jpg` supplies
   the camera background; `sample-001.mp4` through `sample-003.mp4` supply playback.
 - `playgrounds/ui/.build/`: generated app, shared-player copies and module cache.

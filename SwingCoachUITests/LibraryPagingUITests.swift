@@ -39,12 +39,16 @@ final class LibraryPagingUITests: XCTestCase {
             let speedFrame = speed.frame
             let timelineFrame = timeline.frame
             if !autoReview {
+                // The tool rail continues the star's column: same centre, same gaps.
                 let star = app.buttons["Remove star"].frame
+                let fold = app.buttons["player-tools-fold"].frame
                 let info = app.buttons["Show swing metadata"].frame
-                XCTAssertEqual(star.midX, info.midX, accuracy: 1)
+                XCTAssertEqual(star.midX, fold.midX, accuracy: 1)
+                XCTAssertEqual(fold.midX, info.midX, accuracy: 1)
                 XCTAssertEqual(info.midX, speedFrame.midX, accuracy: 1)
-                XCTAssertEqual(info.minY - star.maxY, speedFrame.minY - info.maxY, accuracy: 1)
-                XCTAssertGreaterThan(info.minY - star.maxY, 0)
+                XCTAssertEqual(fold.minY - star.maxY, info.minY - fold.maxY, accuracy: 1)
+                XCTAssertEqual(info.minY - fold.maxY, speedFrame.minY - info.maxY, accuracy: 1)
+                XCTAssertGreaterThan(fold.minY - star.maxY, 0)
             }
 
             for page in app.otherElements.matching(identifier: "swing-review-page").allElementsBoundByIndex {
@@ -238,7 +242,8 @@ final class LibraryPagingUITests: XCTestCase {
         XCTAssertTrue(drawButton.waitForExistence(timeout: 5))
         XCTAssertTrue(lockButton.waitForExistence(timeout: 5))
         XCTAssertFalse(drawButton.frame.intersects(lockButton.frame))
-        XCTAssertLessThan(drawButton.frame.midX, lockButton.frame.midX)
+        // Draw lives in the tool rail at the top; Lock stays in the transport row.
+        XCTAssertLessThan(drawButton.frame.maxY, lockButton.frame.minY)
     }
 
     private func launchFirstReferenceSwing(number: Int = 1) throws -> XCUIApplication {

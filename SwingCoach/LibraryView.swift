@@ -1116,6 +1116,11 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     // The review presentation owns Lock; nil omits the control for standalone players.
     let controlsLocked: Binding<Bool>?
     let infoAction: (() -> Void)?
+    /// P1-P10 for this clip. When present, the player shows the pose strip,
+    /// marks the positions on the timeline, and offers the positions toggle.
+    let swingPositions: SwingPositions?
+    /// Line drawing for this clip; nil omits the Draw tool.
+    let drawing: Binding<Bool>?
 
     private let header: Header
     private let overlayAccessory: OverlayAccessory
@@ -1123,6 +1128,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
     @Environment(\.reviewPlaybackControlsPlacement) private var reviewControlsPlacement
     @Environment(\.reviewCornerControlsInNavigation) private var cornerControlsInNavigation
+    @Environment(\.reviewToolRailTrailingTop) private var toolRailTrailingTop
 
     @State private var player: AVPlayer?
     @State private var isPlaying = false
@@ -1142,6 +1148,15 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     // Only the edge press-and-hold zones surface the on-screen scrub bubble;
     // the control-bar frame-step buttons leave it nil so it stays hidden.
     @State private var scrubFeedbackDirection: Int?
+    @AppStorage("playerShowsSwingPositions") private var showsSwingPositions = true
+    // Timeline drag: the finger's last x and the unsnapped scrubber fraction,
+    // so a drag can continue at quarter speed once the finger leaves the bar.
+    @State private var scrubLastX: CGFloat?
+    @GestureState private var timelineDragActive = false
+    @State private var scrubFraction: Double = 0
+    @State private var isFineScrubbing = false
+    @State private var positionBadgeTask: Task<Void, Never>?
+    @State private var showsPositionBadge = false
 
     private let speedOptions: [Float] = [0.25, 0.5, 0.75, 1.0]
 
@@ -1157,6 +1172,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         edgeToEdge: Bool = false,
         controlsLocked: Binding<Bool>? = nil,
         infoAction: (() -> Void)? = nil,
+        swingPositions: SwingPositions? = nil,
+        drawing: Binding<Bool>? = nil,
         contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
         @ViewBuilder header: () -> Header,
         @ViewBuilder overlayAccessory: () -> OverlayAccessory
@@ -1172,6 +1189,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         self.edgeToEdge = edgeToEdge
         self.controlsLocked = controlsLocked
         self.infoAction = infoAction
+        self.swingPositions = swingPositions
+        self.drawing = drawing
         self.header = header()
         self.overlayAccessory = overlayAccessory()
         self.contentOverlay = contentOverlay
@@ -1190,8 +1209,9 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         )
         .preference(
             key: ReviewPlaybackCornerControlsKey.self,
-            value: cornerControlsInNavigation && reviewControlsPlacement != .otherPage
-                ? AnyView(playerCornerControls) : nil
+            value: cornerControlsInNavigation && reviewControlsPlacement != .otherPage && !isDrawing
+                ? AnyView(toolRail(trailingTop: toolRailTrailingTop ?? navigationToolRailTop,
+                                   leadingTop: navigationToolRailTop)) : nil
         )
         .onAppear {
             setupPlayer()
@@ -1263,6 +1283,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             // the bottom-right transport slot.
             let accessoryBottomPadding = max(34, geometry.safeAreaInsets.bottom + 34)
                 + (controlsLocked == nil ? 0 : 80)
+                + (visiblePositions == nil ? 0 : positionStripLift(bottomControlPadding: bottomControlPadding))
 
             ZStack {
                 if controlsVisible {
@@ -1274,10 +1295,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                             header
 
                             Spacer(minLength: 0)
-
-                            if !cornerControlsInNavigation {
-                                playerCornerControls
-                            }
                         }
                         .padding(.horizontal, 12)
                         .padding(.top, topControlPadding)
@@ -1289,7 +1306,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                                 .padding(.bottom, isScrubbing ? 16 : 30)
                         }
 
-                        if isScrubbing {
+                        if isScrubbing || showsPositionBadge {
                             scrubTimeBadge
                                 .padding(.bottom, 10)
                         }
@@ -1303,9 +1320,28 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
                         transportControlBar
                             .padding(.horizontal, 22)
-                            .padding(.bottom, bottomControlPadding + 10)
+                            .padding(.bottom, visiblePositions == nil ? bottomControlPadding + 10 : 8)
+
+                        if let positions = visiblePositions {
+                            SwingPositionStrip(
+                                positions: positions,
+                                selectedNumber: currentPositionNumber,
+                                onSelect: jump(to:)
+                            )
+                            .padding(.horizontal, 12)
+                            .padding(.bottom, positionStripBottomPadding(bottomControlPadding: bottomControlPadding))
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        }
                     }
                     .transition(.opacity)
+
+                    // The rail spans the width so it can dock on either side.
+                    if !cornerControlsInNavigation, !isDrawing {
+                        toolRail(trailingTop: 0, leadingTop: inlineLeadingToolRailTop)
+                            .padding(.horizontal, 12)
+                            .padding(.top, topControlPadding)
+                            .transition(.opacity)
+                    }
 
                     VStack {
                         Spacer()
@@ -1319,6 +1355,9 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     }
                 }
             }
+            // The strip appears when paging to a swing with positions, or when
+            // Auto's positions land: ease the controls, accessory and gradient.
+            .animation(.easeInOut(duration: 0.2), value: visiblePositions == nil)
         }
     }
 
@@ -1355,7 +1394,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .frame(height: 160)
+            .frame(height: visiblePositions == nil ? 160 : 230)
         }
         .allowsHitTesting(false)
     }
@@ -1432,52 +1471,106 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             .accessibilityLabel(direction < 0 ? "Step back one frame" : "Step forward one frame")
     }
 
-    private var playerCornerControls: some View {
-        VStack(spacing: 10) {
-            if let infoAction {
-                Button {
-                    infoAction()
-                } label: {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(width: 38, height: 38)
-                        .background(Circle().fill(Color.black.opacity(0.45)))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Show swing metadata")
-            }
+    // MARK: - Tool rail and positions
 
-            if showsSpeedControls {
-                Button {
-                    cyclePlaybackSpeed()
-                } label: {
-                    Text(speedLabel(playbackSpeed))
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                        .fixedSize()
-                        .frame(width: 38, height: 38)
-                        .background(Circle().fill(Color.black.opacity(0.45)))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Change playback speed")
-                .accessibilityValue(speedLabel(playbackSpeed))
-            }
+    static var positionStripHeight: CGFloat { 56 }
 
-            if allowsFullscreen {
-                Button {
-                    showsFullscreen = true
-                } label: {
-                    Image(systemName: "arrow.up.left.and.arrow.down.right")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 38, height: 38)
-                        .background(Circle().fill(Color.black.opacity(0.45)))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open full screen")
-            }
+    private func positionStripBottomPadding(bottomControlPadding: CGFloat) -> CGFloat {
+        max(8, bottomControlPadding - 16)
+    }
+
+    /// How far the strip raises the timeline and transport row.
+    private func positionStripLift(bottomControlPadding: CGFloat) -> CGFloat {
+        positionStripBottomPadding(bottomControlPadding: bottomControlPadding) + Self.positionStripHeight + 8
+            - (bottomControlPadding + 10)
+    }
+    /// Hosted by the review screen, the rail starts one gap under its corner
+    /// buttons (Library's star or Back, Auto's Done).
+    private var navigationToolRailTop: CGFloat { PlayerToolRail.buttonSize + PlayerToolRail.spacing }
+    /// Inline, the rail takes the empty top-right slot, or docks under the
+    /// header's leading button (Done, Back) on the left.
+    private var inlineLeadingToolRailTop: CGFloat { PlayerToolRail.buttonSize + PlayerToolRail.spacing }
+
+    private var isDrawing: Bool { drawing?.wrappedValue ?? false }
+
+    /// Positions to show, or nil when the clip has none or the user hid them.
+    private var visiblePositions: [SwingPosition]? {
+        guard showsSwingPositions, let positions = swingPositions?.positions, !positions.isEmpty else { return nil }
+        return positions
+    }
+
+    private var scrubMapping: PositionScrubMapping {
+        PositionScrubMapping(duration: seconds(duration), positionTimes: visiblePositions?.map(\.clipTime))
+    }
+
+    /// The position the playhead is on, within a frame and a half.
+    private var currentPositionNumber: Int? {
+        guard let positions = visiblePositions else { return nil }
+        let now = seconds(currentTime)
+        let tolerance = max(seconds(frameStep) * 1.5, 0.01)
+        return positions
+            .filter { abs($0.clipTime - now) <= tolerance }
+            .min { abs($0.clipTime - now) < abs($1.clipTime - now) }?
+            .number
+    }
+
+    private func seconds(_ time: CMTime) -> Double {
+        let value = CMTimeGetSeconds(time)
+        return value.isFinite ? value : 0
+    }
+
+    private var playerTools: [PlayerTool] {
+        var tools: [PlayerTool] = []
+        if let infoAction {
+            tools.append(PlayerTool(id: "info", title: "Info", accessibilityLabel: "Show swing metadata",
+                                    icon: .system("info.circle"), action: infoAction))
+        }
+        if showsSpeedControls {
+            tools.append(PlayerTool(id: "speed", title: "Speed", accessibilityLabel: "Change playback speed",
+                                    accessibilityValue: speedLabel(playbackSpeed),
+                                    icon: .text(speedLabel(playbackSpeed)), action: cyclePlaybackSpeed))
+        }
+        if let drawing {
+            tools.append(PlayerTool(id: "draw", title: "Draw", accessibilityLabel: "Draw straight lines",
+                                    icon: .system("pencil.and.outline")) {
+                player?.pause()
+                isPlaying = false
+                drawing.wrappedValue = true
+            })
+        }
+        if swingPositions?.positions.isEmpty == false {
+            tools.append(PlayerTool(id: "positions", title: "Positions",
+                                    accessibilityLabel: showsSwingPositions ? "Hide swing positions" : "Show swing positions",
+                                    isOn: showsSwingPositions, icon: .positionMarks) {
+                withAnimation(.easeInOut(duration: 0.2)) { showsSwingPositions.toggle() }
+            })
+        }
+        if allowsFullscreen {
+            tools.append(PlayerTool(id: "fullscreen", title: "Full screen", accessibilityLabel: "Open full screen",
+                                    icon: .system("arrow.up.left.and.arrow.down.right")) {
+                showsFullscreen = true
+            })
+        }
+        return tools
+    }
+
+    private func toolRail(trailingTop: CGFloat, leadingTop: CGFloat) -> some View {
+        PlayerToolRail(tools: playerTools, trailingTop: trailingTop, leadingTop: leadingTop)
+    }
+
+    private func jump(to position: SwingPosition) {
+        if isPlaying {
+            player?.pause()
+            isPlaying = false
+        }
+        showControls()
+        seek(to: CMTime(seconds: position.clipTime, preferredTimescale: 600))
+        showsPositionBadge = true
+        positionBadgeTask?.cancel()
+        positionBadgeTask = Task {
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run { showsPositionBadge = false }
         }
     }
 
@@ -1589,19 +1682,41 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     }
 
     private var scrubTimeBadge: some View {
-        Text("\(formatTime(currentTime))/\(formatTime(duration))")
-            .font(.system(size: 12, weight: .semibold, design: .monospaced))
-            .foregroundColor(.white)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
-            .background(
-                Capsule()
-                    .fill(Color.black.opacity(0.7))
-            )
+        HStack(spacing: 0) {
+            if let number = currentPositionNumber, let position = visiblePositions?.first(where: { $0.number == number }) {
+                Text(position.confidence < 0.5 ? "\(position.label) \(position.name)?" : "\(position.label) \(position.name)")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.swingPositionAccent)
+                Text(" · ")
+                    .font(.system(size: 12, weight: .semibold))
+            }
+            Text("\(formatTime(currentTime))/\(formatTime(duration))")
+                .font(.system(size: 12, weight: .semibold, design: .monospaced))
+            if isFineScrubbing {
+                Text("¼ speed")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(Capsule().fill(Color.swingPositionAccent))
+                    .padding(.leading, 6)
+            }
+        }
+        .foregroundColor(.white)
+        .lineLimit(1)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background(
+            Capsule()
+                .fill(Color.black.opacity(0.7))
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("playback-scrub-badge")
     }
 
     private func integratedTimeline(width: CGFloat) -> some View {
-        ZStack(alignment: .leading) {
+        let mapping = scrubMapping
+        return ZStack(alignment: .leading) {
             Capsule()
                 .fill(Color.white.opacity(0.28))
                 .frame(height: 4)
@@ -1609,6 +1724,17 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             Capsule()
                 .fill(Color.yellow)
                 .frame(width: progressWidth(in: width), height: 4)
+
+            if let positions = visiblePositions {
+                ForEach(positions, id: \.number) { position in
+                    let current = position.number == currentPositionNumber
+                    Circle()
+                        .fill(current ? Color.swingPositionAccent : Color.white.opacity(0.75))
+                        .frame(width: current ? 5 : 4, height: current ? 5 : 4)
+                        .offset(x: CGFloat(mapping.fraction(at: position.clipTime)) * width - (current ? 2.5 : 2), y: 8)
+                }
+                .allowsHitTesting(false)
+            }
 
             Circle()
                 .fill(Color.white)
@@ -1626,14 +1752,42 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             DragGesture(minimumDistance: 0)
                 .onChanged { value in
                     beginScrubbing()
-                    let fraction = max(0, min(1, value.location.x / width))
-                    let newTime = CMTimeMultiplyByFloat64(duration, multiplier: Float64(fraction))
-                    seek(to: newTime)
+                    if let lastX = scrubLastX {
+                        // Moving the finger well above or below the bar scrubs at
+                        // quarter speed for frame-level work.
+                        isFineScrubbing = abs(value.location.y - 14) > 44
+                        let delta = Double((value.location.x - lastX) / width) * (isFineScrubbing ? 0.25 : 1)
+                        scrubFraction = min(max(scrubFraction + delta, 0), 1)
+                    } else {
+                        scrubFraction = min(max(Double(value.location.x / width), 0), 1)
+                    }
+                    scrubLastX = value.location.x
+                    let fraction = isFineScrubbing ? scrubFraction : snappedFraction(scrubFraction, width: width, mapping: mapping)
+                    seek(to: CMTime(seconds: mapping.time(at: fraction), preferredTimescale: 600))
                 }
-                .onEnded { _ in
-                    endScrubbing()
-                }
+                .updating($timelineDragActive) { _, active, _ in active = true }
+                .onEnded { _ in finishTimelineDrag() }
         )
+        // A cancelled drag never calls onEnded; its gesture state still resets.
+        .onChange(of: timelineDragActive) { _, active in
+            if !active, scrubLastX != nil { finishTimelineDrag() }
+        }
+    }
+
+    private func finishTimelineDrag() {
+        scrubLastX = nil
+        isFineScrubbing = false
+        endScrubbing()
+    }
+
+    /// Pulls the scrubber onto a position marker within 7 points of it.
+    private func snappedFraction(_ fraction: Double, width: CGFloat, mapping: PositionScrubMapping) -> Double {
+        guard let positions = visiblePositions, width > 0 else { return fraction }
+        let nearest = positions
+            .map { mapping.fraction(at: $0.clipTime) }
+            .min { abs($0 - fraction) < abs($1 - fraction) }
+        guard let nearest, abs(nearest - fraction) * Double(width) < 7 else { return fraction }
+        return nearest
     }
 
     private func setupPlayer() {
@@ -1686,6 +1840,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         player = nil
         stopContinuousStep()
         autoHideTask?.cancel()
+        positionBadgeTask?.cancel()
     }
 
     private func togglePlayback() {
@@ -1892,16 +2047,14 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     }
 
     private func progressWidth(in totalWidth: CGFloat) -> CGFloat {
-        guard CMTimeGetSeconds(duration) > 0 else { return 0 }
-        let fraction = CMTimeGetSeconds(currentTime) / CMTimeGetSeconds(duration)
-        return CGFloat(fraction) * totalWidth
+        guard seconds(duration) > 0 else { return 0 }
+        return CGFloat(scrubMapping.fraction(at: seconds(currentTime))) * totalWidth
     }
 
     private func playheadOffset(in totalWidth: CGFloat) -> CGFloat {
-        guard CMTimeGetSeconds(duration) > 0 else { return 0 }
-        let fraction = CMTimeGetSeconds(currentTime) / CMTimeGetSeconds(duration)
+        guard seconds(duration) > 0 else { return 0 }
         let thumbRadius: CGFloat = isScrubbing ? 8 : 6
-        return CGFloat(fraction) * totalWidth - thumbRadius
+        return CGFloat(scrubMapping.fraction(at: seconds(currentTime))) * totalWidth - thumbRadius
     }
 
     private func formatTime(_ time: CMTime) -> String {

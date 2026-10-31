@@ -47,6 +47,9 @@ nonisolated enum UITestFixture {
         case stress
         /// Six clips today and three yesterday.
         case sessions
+        /// One personal DTL clip and three references, all with P1-P10
+        /// (P8 below the model's 0.5 confidence line).
+        case positions
     }
 
     private static let arguments = ProcessInfo.processInfo.arguments
@@ -174,6 +177,10 @@ extension UITestFixture {
             let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
             for index in 0..<6 { personal(index + 1, title: nil, createdAt: today.addingTimeInterval(Double(120 * index))) }
             for index in 0..<3 { personal(index + 7, title: nil, createdAt: yesterday.addingTimeInterval(Double(120 * index))) }
+        case .positions:
+            personal(1, title: "Positions DTL", createdAt: Date())
+            references(3)
+            for index in swings.indices { swings[index].swingPositions = fixturePositions }
         }
 
         let files = FileManager.default
@@ -188,6 +195,15 @@ extension UITestFixture {
         }
         try! JSONEncoder().encode(swings).write(to: documents.appendingPathComponent("swing_library.json"))
     }
+
+    /// Positions on the 3-second fixture clip, bunched through the downswing
+    /// like a real swing.
+    static let fixturePositions = SwingPositions(
+        model: SwingPositions.currentModel,
+        positions: zip([0.4, 0.9, 1.15, 1.6, 1.85, 1.9, 1.95, 2.05, 2.15, 2.7], 1...10).map { time, number in
+            SwingPosition(number: number, clipTime: time, confidence: number == 8 ? 0.42 : 0.9)
+        }
+    )
 }
 
 /// Deterministic test videos: a bar moving over a changing background, with a

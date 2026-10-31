@@ -83,12 +83,12 @@ struct SwingDetailView: View {
 
             reviewPager
 
-            if shouldShowAnalysisAction {
+            if shouldShowAnalysisAction, !isDrawingLines {
                 analysisFloatingLayer
             }
 
-            if selectedPage == 0, videoAspectRatios[currentSwingID] != nil {
-                drawingToolRail
+            if selectedPage == 0, isDrawingLines, videoAspectRatios[currentSwingID] != nil {
+                drawingToolBar
             }
         }
         .overlayPreferenceValue(ReviewPlaybackCornerControlsKey.self) { cornerControls in
@@ -107,6 +107,9 @@ struct SwingDetailView: View {
             Task {
                 await library.loadThumbnails()
             }
+        }
+        .onChange(of: selectedPage) { _, page in
+            if page != 0 { isDrawingLines = false }
         }
         .onChange(of: currentSwingID) { _, _ in
             resetReviewState()
@@ -179,34 +182,35 @@ struct SwingDetailView: View {
 
                 Spacer()
 
-                VStack(spacing: 10) {
-                    Button {
-                        library.toggleFavorite(currentSwing)
-                    } label: {
-                        Image(systemName: currentSwing.isFavorite ? "star.fill" : "star")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(currentSwing.isFavorite ? .yellow : .white)
-                            .frame(width: 38, height: 38)
-                            .background(Circle().fill(Color.black.opacity(0.45)))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(currentSwing.isFavorite ? "Remove star" : "Star swing")
-                    cornerControls
+                Button {
+                    library.toggleFavorite(currentSwing)
+                } label: {
+                    Image(systemName: currentSwing.isFavorite ? "star.fill" : "star")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(currentSwing.isFavorite ? .yellow : .white)
+                        .frame(width: 38, height: 38)
+                        .background(Circle().fill(Color.black.opacity(0.45)))
                 }
-                .fixedSize(horizontal: false, vertical: true)
-                // The stack extends below the navigation row without moving
-                // the back button, count, or analysis page picker.
-                .frame(height: 38, alignment: .top)
+                .buttonStyle(.plain)
+                .accessibilityLabel(currentSwing.isFavorite ? "Remove star" : "Star swing")
             }
             .padding(.horizontal, 14)
 
-            if savedAnalysis != nil {
+            // The drawing bar takes this spot while drawing.
+            if savedAnalysis != nil, !isDrawingLines {
                 analysisPagePicker
             }
 
             Spacer(minLength: 0)
         }
         .padding(.top, 6)
+        // The player's tool rail starts one gap under the star, or under Back
+        // when docked left, without moving the navigation row.
+        .overlay {
+            cornerControls
+                .padding(.horizontal, 14)
+                .padding(.top, 6)
+        }
     }
 
     private var analysisPagePicker: some View {
@@ -248,8 +252,9 @@ struct SwingDetailView: View {
         VStack(spacing: 12) {
             analysisOverlayButton
 
+            // Clear of the tool rail, which can dock on either side.
             analysisInlineStatus
-                .padding(.horizontal, 28)
+                .padding(.horizontal, 14 + PlayerToolRail.buttonSize + PlayerToolRail.spacing)
 
             Spacer(minLength: 0)
         }
@@ -380,6 +385,8 @@ struct SwingDetailView: View {
                 edgeToEdge: true,
                 controlsLocked: $controlsLocked,
                 infoAction: { showMetadata = true },
+                swingPositions: swing.swingPositions,
+                drawing: videoAspectRatios[swing.id] != nil ? $isDrawingLines : nil,
                 contentOverlay: { currentTime, _ in
                     AnyView(
                         SwingLineOverlay(
@@ -433,17 +440,15 @@ struct SwingDetailView: View {
         }
     }
 
-    private var drawingToolRail: some View {
-        HStack {
-            SwingLineControls(
-                annotationID: currentSwing.manualAnnotationID,
-                isDrawing: $isDrawingLines,
-                draft: $draftLine
-            )
-            Spacer(minLength: 0)
-        }
-        .padding(.leading, 14)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    /// Sits where Analyze Swing does; that button hides while drawing.
+    private var drawingToolBar: some View {
+        SwingLineControls(
+            annotationID: currentSwing.manualAnnotationID,
+            isDrawing: $isDrawingLines,
+            draft: $draftLine
+        )
+        .padding(.top, 60)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     private var analysisOverlayButton: some View {
@@ -543,7 +548,7 @@ struct SwingDetailView: View {
                     }
                 }
                 .accessibilityIdentifier("swing-positions")
-                Text("Times are on the clip's slow-motion timeline. Faded rows are positions the model was unsure of.")
+                Text("Times are on the clip's slow-motion timeline. A ? marks positions the model was unsure of.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             } else if positionProcessor.failed.contains(currentSwing.id) {
@@ -563,7 +568,8 @@ struct SwingDetailView: View {
 
     private func swingPositionRow(_ position: SwingPosition) -> some View {
         HStack(alignment: .firstTextBaseline) {
-            Text("\(position.label) \(position.name)")
+            // Below 0.5 the model found no clear peak for this position.
+            Text(position.confidence < 0.5 ? "\(position.label)? \(position.name)" : "\(position.label) \(position.name)")
                 .font(.subheadline)
             Spacer(minLength: 12)
             Text(String(format: "%.2fs", position.clipTime))
@@ -573,8 +579,6 @@ struct SwingDetailView: View {
                 .foregroundColor(.secondary)
                 .frame(width: 40, alignment: .trailing)
         }
-        // Below 0.5 the model found no clear peak for this position.
-        .opacity(position.confidence < 0.5 ? 0.45 : 1)
     }
 
     private var shouldShowAnalysisAction: Bool {

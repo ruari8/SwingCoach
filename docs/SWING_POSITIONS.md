@@ -1,6 +1,6 @@
 # Swing positions (P1–P10)
 
-During Auto, the app finds the ten swing positions on the phone from live camera frames, about 0.8 s after impact, and stores them on the swing when it's saved. Swing Info lists them. When the live run can't finish, the app reads the saved clip instead.
+During Auto, the app finds the ten swing positions on the phone from live camera frames, about 0.8 s after impact, and stores them on the swing when it's saved. Swing Info lists them, and the review player shows them as a pose strip and timeline marks for jumping between positions (see [FRONTEND.md](./FRONTEND.md)). When the live run can't finish, the app reads the saved clip instead.
 
 Down-the-line clips only. Face-on clips and imported videos are skipped.
 
@@ -24,7 +24,7 @@ Stored per swing in `swing_library.json` under `swingPositions`:
 - the model name
 - for each position: number, time on the clip's own slow-motion timeline, and confidence (the model's score through a sigmoid)
 
-Swing Info fades positions under 50% confidence.
+Swing Info and the player mark positions under 50% confidence with a `?` (`P8?`).
 
 ## Accuracy
 
