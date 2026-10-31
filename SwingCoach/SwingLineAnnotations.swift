@@ -6,7 +6,8 @@ extension SavedSwing {
     var manualAnnotationID: String { "swing-\(id.uuidString)" }
 }
 
-/// Original-video line tools shared by Library and Auto review.
+/// Line tools shown while drawing on the original video, shared by Library
+/// and Auto review. The player's tool rail starts drawing; Done ends it.
 struct SwingLineControls: View {
     let annotationID: String
     @Binding var isDrawing: Bool
@@ -14,49 +15,60 @@ struct SwingLineControls: View {
     @ObservedObject private var manualStore = ManualAnnotationStore.shared
 
     var body: some View {
-        VStack(spacing: 8) {
-            Button {
-                isDrawing.toggle()
-                draft = nil
-            } label: {
-                Image(systemName: isDrawing ? "checkmark" : "pencil.and.outline")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(isDrawing ? .black : .white)
-                    .frame(width: 44, height: 44)
-                    .background(Circle().fill(isDrawing ? Color.yellow : Color.black.opacity(0.54)))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(isDrawing ? "Finish drawing lines" : "Draw straight lines")
+        if isDrawing {
+            HStack(spacing: 4) {
+                Label("Line", systemImage: "line.diagonal")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 11)
+                    .frame(height: 36)
+                    .background(Capsule().fill(Color.white))
+                    .accessibilityHidden(true)
 
-            if isDrawing, !manualStore.annotations(for: annotationID).isEmpty {
-                Button {
-                    manualStore.undoLast(for: annotationID)
-                } label: {
-                    Image(systemName: "arrow.uturn.backward")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 38, height: 38)
-                        .background(Circle().fill(Color.black.opacity(0.54)))
+                if !manualStore.annotations(for: annotationID).isEmpty {
+                    Button {
+                        manualStore.undoLast(for: annotationID)
+                    } label: {
+                        Image(systemName: "arrow.uturn.backward")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 36, height: 36)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Undo last line")
+
+                    Button {
+                        manualStore.clear(for: annotationID)
+                        draft = nil
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 36, height: 36)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Clear all lines")
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Undo last line")
 
                 Button {
-                    manualStore.clear(for: annotationID)
+                    isDrawing = false
                     draft = nil
                 } label: {
-                    Image(systemName: "trash")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 38, height: 38)
-                        .background(Circle().fill(Color.red.opacity(0.72)))
+                    Text("Done")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 14)
+                        .frame(height: 36)
+                        .background(Capsule().fill(Color.swingPositionAccent))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Clear all lines")
+                .accessibilityLabel("Finish drawing lines")
             }
+            .padding(4)
+            .background(.ultraThinMaterial, in: Capsule())
+            .background(Capsule().fill(Color.black.opacity(0.35)))
+            .environment(\.colorScheme, .dark)
         }
-        .padding(6)
-        .background(Capsule().fill(Color.black.opacity(0.34)))
     }
 }
 
@@ -92,7 +104,7 @@ struct SwingLineOverlay: View {
     }
 }
 
-/// The selected page owns its draft; review renders the rail outside the scroll strip.
+/// The selected page owns its draft; review renders the bar outside the scroll strip.
 struct SwingLineControlsKey: PreferenceKey {
     static var defaultValue: AnyView? { nil }
 

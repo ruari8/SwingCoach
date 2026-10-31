@@ -14,6 +14,10 @@ private struct ReviewCornerControlsInNavigationKey: EnvironmentKey {
     static let defaultValue = false
 }
 
+private struct ReviewToolRailTrailingTopKey: EnvironmentKey {
+    static let defaultValue: CGFloat? = nil
+}
+
 extension EnvironmentValues {
     var reviewPlaybackControlsPlacement: ReviewPlaybackControlsPlacement {
         get { self[ReviewPlaybackControlsPlacementKey.self] }
@@ -23,6 +27,13 @@ extension EnvironmentValues {
     var reviewCornerControlsInNavigation: Bool {
         get { self[ReviewCornerControlsInNavigationKey.self] }
         set { self[ReviewCornerControlsInNavigationKey.self] = newValue }
+    }
+
+    /// Where a navigation-hosted tool rail starts on the right: under the
+    /// top-right button by default, or 0 to take an empty top-right slot.
+    var reviewToolRailTrailingTop: CGFloat? {
+        get { self[ReviewToolRailTrailingTopKey.self] }
+        set { self[ReviewToolRailTrailingTopKey.self] = newValue }
     }
 }
 

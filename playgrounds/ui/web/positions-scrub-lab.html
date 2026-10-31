@@ -1,0 +1,291 @@
+<!doctype html>
+<!-- Round 2 of the P-positions player study (accepted design: positions.html).
+     Section 1 is the evidence for the scrubber's Balanced spacing; section 2 is superseded.
+     1. Scrub feel: the same trimmed clip on three scrubber mappings, with every frame drawn as a tick.
+     2. A + D hybrid: pose strip + tool rail, lock in the transport row, left-handed mirror.
+     Media: ../media/positions/p1..p10.jpg and sprite.jpg (171 frames, 30 fps, 2.2-7.9 s of sample-001.mp4). -->
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SwingCoach · P positions round 2</title>
+<style id="standalone">html{background:#0e100f;color:#ecefea}body{max-width:1180px;margin:0 auto;padding:24px}</style>
+<style>
+:root{--fg:var(--foreground,#ecefea);--mute:var(--muted-foreground,#9aa29a);--cardbg:var(--card,#181b19);--line:var(--border,#2a2f2b);--acc:#d8f36a;--good:#7fd88a;--warn:#f2b453}
+*{box-sizing:border-box}
+body{font-family:var(--font-sans,-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif);color:var(--fg);margin:0}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+h1{font-size:17px;margin:0 0 3px;font-weight:650}
+.lede{font-size:12px;color:var(--mute);margin:0 0 14px;line-height:1.45}
+.card{background:var(--cardbg);border:1px solid var(--line);border-radius:var(--radius,14px);padding:14px;margin-bottom:14px}
+.card h2{font-size:14px;margin:0 0 3px;font-weight:650}
+.card .sub{font-size:12px;color:var(--mute);margin:0 0 12px;line-height:1.4}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;padding:3px;border:1px solid var(--line);border-radius:18px;font-size:12px}
+.seg button{padding:5px 11px;border-radius:14px;color:var(--mute)}
+.seg button.on{background:var(--fg);color:#111}
+.seglab{font-size:11px;color:var(--mute);margin-right:2px}
+/* lab */
+.lab{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:start}
+.prev{width:150px;height:324px;border-radius:12px;overflow:hidden;background:#000 no-repeat;position:relative}
+.prev .tag{position:absolute;left:6px;bottom:6px;right:6px;font-size:11px;font-weight:650;background:#000a;color:#fff;border-radius:8px;padding:4px 6px;font-variant-numeric:tabular-nums;line-height:1.3}
+.tracks{display:flex;flex-direction:column;gap:14px;min-width:0}
+.trk h3{font-size:13px;margin:0;font-weight:650;display:flex;gap:8px;align-items:baseline}
+.trk h3 span{font-size:11px;color:var(--mute);font-weight:500}
+.bar{position:relative;height:58px;width:346px;max-width:100%;margin-top:2px;touch-action:none;cursor:pointer;user-select:none;-webkit-user-select:none}
+.bar canvas{position:absolute;left:0;top:22px;width:100%;height:16px}
+.bar .base{position:absolute;left:0;right:0;top:29px;height:2px;background:#ffffff26;border-radius:1px}
+.bar .pm{position:absolute;top:18px;width:2px;height:24px;margin-left:-1px;background:var(--acc);border-radius:1px}
+.bar .pl{position:absolute;top:2px;transform:translateX(-50%);font-size:10px;font-weight:700;color:var(--acc);white-space:nowrap;font-variant-numeric:tabular-nums}
+.bar .th{position:absolute;top:20px;width:20px;height:20px;margin-left:-10px;border-radius:50%;background:#fff;box-shadow:0 1px 5px #000a}
+.bar .fine{position:absolute;right:0;top:44px;font-size:10px;font-weight:700;color:#111;background:var(--acc);border-radius:6px;padding:1px 5px;display:none}
+.bar.isfine .fine{display:block}
+.stats{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--mute);font-variant-numeric:tabular-nums}
+.stats b{font-weight:650}.ok{color:var(--good)}.bad{color:var(--warn)}
+.verdict{font-size:12px;line-height:1.5;color:var(--mute);margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.verdict b{color:var(--fg)}
+/* phone */
+.hy{display:grid;grid-template-columns:minmax(0,330px) 1fr;gap:20px;align-items:start}
+.pw{width:100%;aspect-ratio:390/844;position:relative}
+.phone{position:absolute;left:0;top:0;width:390px;height:844px;transform-origin:0 0;border-radius:52px;overflow:hidden;background:#000;color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;box-shadow:0 0 0 6px #050605,0 0 0 7px #333;user-select:none;-webkit-user-select:none;touch-action:none}
+.media{position:absolute;inset:0;background:#000 no-repeat}
+.media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(#000a 0,#0000 17%,#0000 62%,#000b 86%,#000e 100%)}
+.sb{position:absolute;top:0;left:0;right:0;height:54px;display:flex;justify-content:space-between;align-items:center;padding:6px 34px 0 40px;font-size:16px;font-weight:600;z-index:5}
+.island{position:absolute;top:11px;left:50%;margin-left:-62px;width:124px;height:36px;border-radius:20px;background:#000}
+.home{position:absolute;bottom:8px;left:50%;margin-left:-68px;width:136px;height:5px;border-radius:3px;background:#fff;opacity:.9;z-index:9}
+.circ{width:40px;height:40px;border-radius:50%;background:#0000006b;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;border:.5px solid #ffffff22;flex:none}
+.circ svg,.ic{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tb{position:absolute;top:60px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:flex-start;z-index:6}
+.count{margin-top:4px;font-size:13px;font-weight:600;padding:7px 12px;border-radius:16px;background:#00000073}
+.done{height:38px;padding:0 16px;border-radius:19px;background:#ffffff2e;font-weight:600;font-size:15px;border:.5px solid #ffffff33}
+.analyze{position:absolute;top:112px;left:50%;transform:translateX(-50%);height:40px;padding:0 18px;border-radius:20px;background:#f6cf3c;color:#1c1700;font-weight:650;font-size:16px;display:flex;align-items:center;gap:8px;z-index:6;white-space:nowrap}
+.analyze svg{stroke:#1c1700;width:18px;height:18px}
+.phone.auto .libonly,.phone:not(.auto) .autoonly,.phone.drawing .analyze{display:none}
+.rail{position:absolute;right:14px;top:168px;z-index:7;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.phone.lefty .rail{right:auto;left:14px;align-items:flex-start}
+.ritem{display:flex;align-items:center;gap:10px;height:42px}
+.phone.lefty .ritem{flex-direction:row-reverse}
+.ritem .rl{font-size:14px;font-weight:600;text-shadow:0 1px 3px #000c;opacity:0;transition:.18s;white-space:nowrap}
+.rail.exp .ritem .rl{opacity:1}
+.ritem.on .circ{background:var(--acc)}.ritem.on .circ svg{stroke:#111}.ritem.on .circ b{color:#111}
+.ritem b{font-size:13px;font-weight:700}
+.phone.drawing .rail{display:none}
+.pscrub{position:absolute;left:22px;right:22px;bottom:146px;height:34px;z-index:7;touch-action:none;cursor:pointer}
+.pscrub .tr{position:absolute;left:0;right:0;top:14px;height:4px;border-radius:2px;background:#ffffff40}
+.pscrub .fill{position:absolute;left:0;top:14px;height:4px;border-radius:2px;background:#f6cf3c}
+.pscrub .dot{position:absolute;top:23px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:#fff;opacity:.85}
+.pscrub .th{position:absolute;top:7px;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:#fff;box-shadow:0 1px 4px #0008}
+.pscrub .fine{position:absolute;left:50%;top:-24px;transform:translateX(-50%);font-size:12px;font-weight:700;color:#111;background:var(--acc);border-radius:8px;padding:2px 8px;display:none}
+.pscrub.isfine .fine{display:block}
+.trans{position:absolute;left:22px;right:18px;bottom:94px;height:44px;display:flex;align-items:center;justify-content:space-between;z-index:7}
+.phone.lefty .trans{flex-direction:row-reverse;left:18px;right:22px}
+.phone.lefty .readout{text-align:right}
+.trans .mid{display:flex;gap:30px;align-items:center}
+.readout{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;width:100px}
+.readout em{font-style:normal;color:var(--acc)}
+.tbtn svg{width:24px;height:24px;fill:#fff;stroke:none}
+.play svg{width:30px;height:30px}
+.lockb{width:38px;height:38px}.lockb svg{width:18px;height:18px}
+.lockb.on{background:#fff}.lockb.on svg{stroke:#111}
+.strip{position:absolute;left:12px;right:12px;bottom:30px;height:56px;display:flex;justify-content:space-between;align-items:center;z-index:7;padding:0 2px;border-radius:28px;background:#0000005c;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:.5px solid #ffffff1f;touch-action:none}
+.chip{width:34px;height:46px;border-radius:17px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.chip svg{width:30px;height:30px}
+.phone.lefty .chip svg{transform:scaleX(-1)}
+.chip .n{font-size:9px;font-weight:700;opacity:.7;margin-top:-1px}
+.chip.on{background:#fff;color:#111}.chip.on .n{opacity:1}
+.chip.unsure{opacity:.42}.chip.unsure.on{opacity:1}
+.chip.unsure:after{content:"";position:absolute;top:3px;right:4px;width:5px;height:5px;border-radius:50%;background:#f6cf3c}
+.phone.nopos .strip{display:none}.phone.nopos .pscrub{bottom:84px}.phone.nopos .trans{bottom:34px}
+.g-body{stroke:currentColor;stroke-width:3.1;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.g-head{fill:currentColor}.g-club{stroke:var(--acc);stroke-width:2.1;stroke-linecap:round;fill:none}
+.chip.on .g-club{stroke:#5d7d00}.g-ball{fill:currentColor;opacity:.75}
+.drawbar{position:absolute;top:112px;left:50%;transform:translateX(-50%);z-index:8;display:none;align-items:center;gap:4px;padding:4px;border-radius:24px;background:#0000008a;backdrop-filter:blur(14px);border:.5px solid #ffffff22;font-size:13px;font-weight:600;white-space:nowrap}
+.phone.drawing .drawbar{display:flex}
+.drawbar button{height:36px;padding:0 11px;border-radius:18px;display:flex;align-items:center;gap:5px}
+.drawbar button.on{background:#fff;color:#111}.drawbar button.ok{background:var(--acc);color:#111}
+.drawbar svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lines{position:absolute;inset:0;z-index:4;pointer-events:none}
+.phone.drawing .lines{pointer-events:auto;cursor:crosshair}
+.lines line{stroke:var(--acc);stroke-width:3.5;stroke-linecap:round}.lines line.pinned{stroke:#58d3ff}
+.notes{font-size:12px;line-height:1.5;color:var(--mute);margin:0;padding-left:16px}
+.notes li{margin-bottom:6px}.notes b{color:var(--fg);font-weight:600}
+.ctrls{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+#pool{display:none}
+@media(max-width:620px){.lab{grid-template-columns:1fr}.prev{margin:0 auto}.hy{grid-template-columns:1fr}}
+</style></head><body>
+<div id="pool"><img src="../media/positions/p1.jpg" alt=""><img src="../media/positions/p2.jpg" alt=""><img src="../media/positions/p3.jpg" alt=""><img src="../media/positions/p4.jpg" alt=""><img src="../media/positions/p5.jpg" alt=""><img src="../media/positions/p6.jpg" alt=""><img src="../media/positions/p7.jpg" alt=""><img src="../media/positions/p8.jpg" alt=""><img src="../media/positions/p9.jpg" alt=""><img src="../media/positions/p10.jpg" alt=""><img id="sprite" src="../media/positions/sprite.jpg" alt=""></div>
+
+<h1>P positions, round 2</h1>
+<p class="lede">Same trimmed clip (5.7 s), every frame drawn as a tick. Bars are phone scrubber width (346 pt). Drag any of them; all three follow. Drag your finger well above or below a bar to scrub at ¼ speed.</p>
+
+<div class="card">
+  <h2>1 · Scrub feel</h2>
+  <p class="sub">Each tick is a frame. Where ticks bunch up, one point of drag skips several frames; where they spread out, the scrubber jumps from frame to frame. Switch the clip to 240 fps to see what Auto clips do.</p>
+  <div class="row" style="margin-bottom:12px"><span class="seglab">Clip</span><div class="seg" id="fps"><button data-fps="1">30 fps sample</button><button data-fps="8">240 fps Auto</button></div></div>
+  <div class="lab">
+    <div class="prev" id="prev"><div class="tag" id="ptag"></div></div>
+    <div class="tracks" id="tracks"></div>
+  </div>
+  <div class="verdict"><b>At 30 fps</b>, Even does what you feared: P6→P7 is 2 frames spread over 35 pt, so it jumps 17 pt per frame. <b>At 240 fps</b> (what Auto records) it flips: the downswing feels fine, but P9→P10 packs 384 frames into 35 pt. <b>Time</b> is the same everywhere, but P5–P9 sit inside about 16 pt, too tight to aim at. <b>Balanced</b> sits between them. No spacing gives frame-level control over 1,368 frames on a 346 pt bar, so ¼-speed fine scrub and the frame-step buttons are needed whichever we pick. <b>So:</b> keep the scrubber on Time and let the pose strip handle position jumps.</div>
+</div>
+
+<div class="card">
+  <h2>2 · A + D hybrid</h2>
+  <p class="sub">Pose strip for jumping, time scrubber for frames, tool rail for tools. The lock stays in the transport row.</p>
+  <div class="hy">
+    <div><div class="pw" id="pw"></div></div>
+    <div>
+      <div class="ctrls">
+        <div class="row"><span class="seglab">Golfer</span><div class="seg" id="hand"><button data-h="r" class="on">Right-handed</button><button data-h="l">Left-handed</button></div></div>
+        <div class="row"><span class="seglab">Scrubber</span><div class="seg" id="smap"><button data-m="time" class="on">Time</button><button data-m="bal">Balanced</button></div></div>
+        <div class="row"><span class="seglab">Screen</span><div class="seg" id="chrome"><button data-c="lib" class="on">Library</button><button data-c="auto">Auto review</button></div></div>
+      </div>
+      <ul class="notes">
+        <li><b>Strip jumps, scrubber scrubs.</b> Dragging across the strip moves in whole positions, so the 2-frame P5→P6 gap and the 48-frame P9→P10 gap feel the same: one notch. Frame-level work stays on the scrubber.</li>
+        <li><b>Scrubber dots</b> mark where each P sits in real time. Drag above the bar for ¼ speed through the downswing.</li>
+        <li><b>Rail:</b> labels, draw, speed, positions on/off, info. <b>Lock</b> and frame steps stay in the transport row; star or delete stay top right.</li>
+        <li><b>Left-handed</b> mirrors the rail, its labels, the transport row and the pose glyphs. P1→P10 still reads left to right, because it's time order.</li>
+        <li><b>Setting:</b> one Handedness choice in Settings drives this. A separate tool-side override can come later if left-handers who hold the phone in their right hand ask for it.</li>
+        <li><b>Draw:</b> lines show on every frame, or pin one to the current P (blue). Try a line at P1, then tap P6.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- clip model: frame indices on the 30 fps sample (171 frames)
+const NF=171, PF=[9,30,42,84,102,104,106,110,114,162]; // P1..P10 frame index
+const SHORT=["Address","Takeaway","Arm parallel","Top","Arm down","Shaft down","Impact","Shaft through","Arm through","Finish"];
+const UNSURE=new Set([7]);
+const pool=document.getElementById('pool'), SPR=()=>document.getElementById('sprite').src, PIMG=i=>pool.children[i].src;
+let M=+(new URLSearchParams(location.search).get('fps')==='240'?8:1); // frame multiplier: 1 = 30 fps, 8 = 240 fps
+const B=()=>[0,...PF,NF-1].map(f=>f*M); // segment boundaries in frames
+const lastF=()=> (NF-1)*M;
+// mappings: boundaries -> x in [0,1]
+const MAPS={
+ time:{name:'Time',d:'true time, like today',xs:b=>b.map(f=>f/b[b.length-1])},
+ even:{name:'Even',d:'concept 2: P stops equally spaced',xs:b=>{const xs=[0,.05];for(let i=1;i<=9;i++)xs.push(.05+.9*i/9);xs.push(1);return xs}},
+ bal:{name:'Balanced',d:'square-root spacing: short gaps get room, long gaps stay longer',xs:b=>{const w=[];for(let i=0;i<b.length-1;i++){let s=Math.sqrt(Math.max(b[i+1]-b[i],.5));if(i===0||i===b.length-2)s*=.6;w.push(s)}const T=w.reduce((a,c)=>a+c,0);const xs=[0];w.forEach(v=>xs.push(xs[xs.length-1]+v/T));return xs}}};
+function xOf(map,f){const b=B(),xs=MAPS[map].xs(b);for(let i=0;i<b.length-1;i++)if(f<=b[i+1])return xs[i]+(f-b[i])/(b[i+1]-b[i]||1)*(xs[i+1]-xs[i]);return 1}
+function fOf(map,x){const b=B(),xs=MAPS[map].xs(b);x=Math.max(0,Math.min(1,x));for(let i=0;i<b.length-1;i++)if(x<=xs[i+1])return b[i]+(x-xs[i])/(xs[i+1]-xs[i]||1)*(b[i+1]-b[i]);return b[b.length-1]}
+
+// shared playhead in 30 fps-sample frame units (float)
+let F=PF[3];
+const nearP=()=>{for(let i=0;i<10;i++)if(Math.abs(F-PF[i])<.5/M)return i;return -1};
+const curP=()=>{let best=0;for(let i=1;i<10;i++)if(Math.abs(F-PF[i])<Math.abs(F-PF[best]))best=i;return best};
+const spriteStyle=(el,w,h)=>{const k=Math.max(0,Math.min(NF-1,Math.round(F)));el.style.backgroundImage=`url(${SPR()})`;el.style.backgroundSize=`${12*w}px ${15*h}px`;el.style.backgroundPosition=`${-(k%12)*w}px ${-Math.floor(k/12)*h}px`};
+
+// ---------- glyphs + icons (same set as round 1)
+const P=[
+ [[20,8.6],[20,13],[20,24],[16.8,14.2],[23.2,13.8],[20.6,26],[18.4,36.4],[16.6,30.6],[15.6,37],[23.4,30.6],[24.4,37],[19,37.2]],
+ [[19.8,8.6],[19.8,13],[20,24],[17.6,13.4],[22.2,14.6],[16.6,25.6],[6.4,25.2],[16.6,30.6],[15.6,37],[23,30.8],[24.4,37],[19,37.2]],
+ [[19.6,8.6],[19.6,13],[19.8,24],[18,13.2],[21.4,14.8],[11.2,18.4],[9.6,6.6],[16.4,30.6],[15.6,37],[22.2,31],[24.4,37],[19,37.2]],
+ [[19.4,8.8],[19.4,13.2],[19.6,24],[17.8,13],[21,15],[14,8.2],[28.6,4.6],[16.4,30.6],[15.6,37],[21.8,31.2],[24.4,37],[19,37.2]],
+ [[19.6,8.8],[19.8,13.2],[21,24.2],[17.4,13.6],[22,14.8],[12.8,19.6],[13.2,7.4],[17,30.8],[15.6,37],[24,30.6],[24.4,37],[19,37.2]],
+ [[19.8,9],[20,13.4],[21.6,24.4],[17.2,14.4],[22.8,14.2],[16.8,25],[7.2,21.6],[17.6,31],[15.8,37],[24.4,30.6],[24.4,37],[19,37.2]],
+ [[19.4,9],[20,13.4],[22.6,24],[17.4,15],[23.6,13.8],[23,26.4],[20.4,36.4],[20.2,30.6],[17.2,35.8],[25.4,30.4],[25,37],[26.5,35.6]],
+ [[20.2,9.2],[20.6,13.4],[22.2,24],[18.6,14.6],[23.4,13.6],[25.6,24.8],[35,22.6],[19.6,31],[17.4,36.4],[24.6,30.6],[24.4,37],null],
+ [[20.6,9],[21,13.2],[22.2,24],[19.2,14.2],[23.4,13.2],[29,17.4],[30.6,5.8],[20,31],[17.6,36.2],[24.6,30.6],[24.4,37],null],
+ [[22.2,8.2],[22.2,12.4],[22.4,23.6],[20,13],[24.6,12.6],[25.4,6.8],[11.4,12.8],[21.6,30.4],[18.4,36.2],[24.4,30.2],[24.6,37],null]];
+function glyph(i){const [h,n,hp,tS,lS,ha,cl,tK,tF,lK,lF,ball]=P[i];const p=a=>a.join(',');
+ return `<svg viewBox="4 3 32 36" aria-hidden="true">${ball?`<circle class="g-ball" cx="${ball[0]}" cy="${ball[1]}" r="1.1"/>`:''}<line class="g-club" x1="${ha[0]}" y1="${ha[1]}" x2="${cl[0]}" y2="${cl[1]}"/><circle cx="${cl[0]}" cy="${cl[1]}" r="1.4" style="fill:var(--acc)"/><polyline class="g-body" points="${p(tF)} ${p(tK)} ${p(hp)} ${p(lK)} ${p(lF)}"/><line class="g-body" x1="${n[0]}" y1="${n[1]}" x2="${hp[0]}" y2="${hp[1]}"/><polyline class="g-body" points="${p(ha)} ${p(tS)} ${p(n)} ${p(lS)} ${p(ha)}" style="stroke-width:2.6"/><circle class="g-head" cx="${h[0]}" cy="${h[1]}" r="3.6"/></svg>`}
+const I={back:'<path d="M15 5l-7 7 7 7"/>',star:'<path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.6l5.8-.8z"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.1"/>',
+ pencil:'<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/>',trash:'<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>',lockO:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 017.5-2"/>',
+ lockC:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>',undo:'<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/>',
+ up:'<path d="M6 15l6-6 6 6"/>',down:'<path d="M6 9l6 6 6-6"/>',line:'<path d="M5 19L19 5"/><circle cx="5" cy="19" r="1.5"/><circle cx="19" cy="5" r="1.5"/>',pin:'<path d="M12 21v-6M7 4h10l-2 5 3 4H6l3-4z"/>',
+ fig:'<circle cx="12" cy="4.5" r="2"/><path d="M12 7v7l-3 6M12 14l3 6M8 10l4 2 4-2"/><path d="M16 10l3 9"/>'};
+const ic=n=>`<svg class="ic" viewBox="0 0 24 24">${I[n]}</svg>`;
+const FI={play:'<path d="M8 5v14l11-7z"/>',pause:'<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>',bk:'<path d="M5 5h2.5v14H5zM19 5v14L9 12z"/>',fw:'<path d="M16.5 5H19v14h-2.5zM5 5v14l10-7z"/>'};
+const fi=n=>`<svg viewBox="0 0 24 24">${FI[n]}</svg>`;
+
+// ---------- generic drag with ¼-speed fine scrub (finger moved >44 px off the bar)
+function scrubber(el,getMap,onMove,fineEl){
+ let d=null;
+ el.addEventListener('pointerdown',e=>{const r=el.getBoundingClientRect();let x=(e.clientX-r.left)/r.width;
+  x=snap(getMap(),x,r.width);F=fOf(getMap(),x*1)/M;d={x,cx:e.clientX};el.setPointerCapture(e.pointerId);e.preventDefault();stopPlay();onMove()});
+ el.addEventListener('pointermove',e=>{if(!d)return;const r=el.getBoundingClientRect(),mid=r.top+r.height/2,fine=Math.abs(e.clientY-mid)>44;
+  el.classList.toggle('isfine',fine);d.x=Math.max(0,Math.min(1,d.x+(e.clientX-d.cx)/r.width*(fine?.25:1)));d.cx=e.clientX;
+  F=fOf(getMap(),fine?d.x:snap(getMap(),d.x,r.width))/M;onMove()});
+ const end=()=>{d=null;el.classList.remove('isfine')};el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end)}
+function snap(map,x,w){if(map==='time')return x;for(const f of PF){const xp=xOf(map,f*M);if(Math.abs(xp-x)*w<7)return xp}return x}
+
+// ---------- lab
+const LAB=['time','even','bal'];
+const tracksEl=document.getElementById('tracks');
+tracksEl.innerHTML=LAB.map(k=>`<div class="trk" data-k="${k}"><h3>${MAPS[k].name}<span>${MAPS[k].d}</span></h3><div class="bar"><div class="base"></div><canvas></canvas><div class="pms"></div><div class="th"></div><span class="fine">¼ speed</span></div><div class="stats"></div></div>`).join('');
+function drawLab(){
+ document.querySelectorAll('.trk').forEach(t=>{const k=t.dataset.k,bar=t.querySelector('.bar'),cv=t.querySelector('canvas'),W=bar.clientWidth,dpr=devicePixelRatio||1;
+  cv.width=W*dpr;cv.height=16*dpr;const c=cv.getContext('2d');c.scale(dpr,dpr);c.clearRect(0,0,W,16);c.fillStyle='rgba(255,255,255,.55)';
+  for(let f=0;f<=lastF();f++){const x=Math.round(xOf(k,f)*(W-1));c.fillRect(x,0,1,16)}
+  // P markers with grouped labels
+  const xs=PF.map(f=>xOf(k,f*M)*W);let groups=[];xs.forEach((x,i)=>{const g=groups[groups.length-1];if(g&&x-g.x1<15){g.to=i;g.x1=x}else groups.push({from:i,to:i,x0:x,x1:x})});
+  t.querySelector('.pms').innerHTML=xs.map(x=>`<i class="pm" style="left:${x}px"></i>`).join('')+groups.map(g=>`<span class="pl" style="left:${(g.x0+g.x1)/2}px">${g.from===g.to?'P'+(g.from+1):'P'+(g.from+1)+'–'+(g.to+1)}</span>`).join('');
+  const seg=(a,b,label)=>{const n=(PF[b]-PF[a])*M,px=(xOf(k,PF[b]*M)-xOf(k,PF[a]*M))*W,per=px/n;
+   const okk=per>=1&&per<=14;return `<span>${label}: <b class="${okk?'ok':'bad'}">${n} frames in ${px.toFixed(0)} pt</b> = ${per>=1?per.toFixed(1)+' pt per frame':(1/per).toFixed(1)+' frames per pt'}</span>`};
+  t.querySelector('.stats').innerHTML=seg(5,6,'P6→P7')+seg(8,9,'P9→P10')+seg(0,1,'P1→P2')});
+ renderLab()}
+function renderLab(){
+ document.querySelectorAll('.trk').forEach(t=>{const k=t.dataset.k,W=t.querySelector('.bar').clientWidth;t.querySelector('.th').style.left=xOf(k,F*M)*W+'px'});
+ const pv=document.getElementById('prev');spriteStyle(pv,150,324);
+ const p=nearP(),fr=Math.round(F*M);
+ document.getElementById('ptag').innerHTML=`${p>=0?`<span style="color:var(--acc)">P${p+1} ${SHORT[p]}</span><br>`:''}frame ${fr} / ${lastF()}${M>1?'<br><span style="opacity:.7">preview at 30 fps</span>':''}`}
+document.querySelectorAll('.trk').forEach(t=>scrubber(t.querySelector('.bar'),()=>t.dataset.k,()=>{renderLab();renderPhone()}));
+document.getElementById('fps').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;M=+b.dataset.fps;document.querySelectorAll('#fps button').forEach(x=>x.classList.toggle('on',x===b));drawLab();renderPhone()});
+
+// ---------- hybrid phone
+const Q=new URLSearchParams(location.search);const S={map:'time',lefty:Q.get('hand')==='l',auto:Q.get('screen')==='auto',exp:false,drawing:false,pinOnly:false,lines:[],showPos:true,lock:false,rate:1,playing:false};
+document.getElementById('pw').innerHTML=`<div class="phone" id="ph"><div class="media" id="media"><img id="pimg" alt=""></div><svg class="lines" id="lines" viewBox="0 0 390 844"></svg><div class="shade"></div>
+ <div class="sb"><span>12:29</span><div class="island"></div><span style="font-size:13px">●●● 83</span></div>
+ <div class="tb"><div><button class="circ libonly">${ic('back')}</button><button class="done autoonly">Done</button></div><div class="count libonly">1 of 364</div><div class="count autoonly">3 of 7</div><div><button class="circ libonly">${ic('star')}</button><button class="circ autoonly">${ic('trash')}</button></div></div>
+ <button class="analyze libonly">${ic('pencil')}Analyze Swing</button>
+ <div class="rail" id="rail">
+   <div class="ritem"><span class="rl" id="exl"></span><button class="circ" data-a="exp" id="exi">${ic('down')}</button></div>
+   <div class="ritem"><span class="rl">Draw</span><button class="circ" data-a="draw">${ic('pencil')}</button></div>
+   <div class="ritem"><span class="rl">Speed</span><button class="circ" data-a="speed"><b id="spd">1x</b></button></div>
+   <div class="ritem on" id="posi"><span class="rl">Positions</span><button class="circ" data-a="pos">${ic('fig')}</button></div>
+   <div class="ritem libonly"><span class="rl">Info</span><button class="circ">${ic('info')}</button></div>
+ </div>
+ <div class="drawbar"><button class="on">${ic('line')}Line</button><button data-a="pin" id="pinb">${ic('pin')}<span id="pinl">All frames</span></button><button data-a="undo">${ic('undo')}</button><button data-a="clear">${ic('trash')}</button><button class="ok" data-a="draw">Done</button></div>
+ <div class="pscrub" id="pscrub"><div class="tr"></div><div class="fill" id="pfill"></div><div id="pdots"></div><div class="th" id="pth"></div><span class="fine">¼ speed</span></div>
+ <div class="trans"><span class="readout" id="ro"></span><div class="mid"><button class="tbtn" data-a="bk">${fi('bk')}</button><button class="tbtn play" data-a="play" id="play">${fi('play')}</button><button class="tbtn" data-a="fw">${fi('fw')}</button></div><button class="circ lockb" data-a="lock" id="lock">${ic('lockO')}</button></div>
+ <div class="strip" id="strip">${PF.map((_,i)=>`<button class="chip${UNSURE.has(i)?' unsure':''}" data-p="${i}">${glyph(i)}<span class="n">P${i+1}</span></button>`).join('')}</div>
+ <div class="home"></div></div>`;
+const ph=document.getElementById('ph');
+function scale(){const w=document.getElementById('pw');ph.style.transform=`scale(${w.clientWidth/390})`}
+function renderPhone(){
+ const p=nearP(),cp=curP();
+ const img=document.getElementById('pimg'),media=document.getElementById('media');
+ if(p>=0){img.style.display='';if(img.dataset.p!=p){img.src=PIMG(p);img.dataset.p=p}}else{img.style.display='none';spriteStyle(media,390,842)}
+ document.getElementById('ro').innerHTML=p>=0&&S.showPos?`<em>P${p+1}</em> · ${SHORT[p]}`:(F/30).toFixed(2)+' s';
+ const x=xOf(S.map,F*M);document.getElementById('pth').style.left=x*100+'%';document.getElementById('pfill').style.width=x*100+'%';
+ document.getElementById('pdots').innerHTML=S.showPos?PF.map(f=>`<i class="dot" style="left:${xOf(S.map,f*M)*100}%"></i>`).join(''):'';
+ ph.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',+c.dataset.p===cp&&Math.abs(F-PF[cp])<4));
+ ph.classList.toggle('lefty',S.lefty);ph.classList.toggle('auto',S.auto);ph.classList.toggle('drawing',S.drawing);ph.classList.toggle('nopos',!S.showPos);
+ document.getElementById('rail').classList.toggle('exp',S.exp);document.getElementById('exi').innerHTML=ic(S.exp?'up':'down');document.getElementById('exl').textContent=S.exp?'Hide labels':'';
+ document.getElementById('posi').classList.toggle('on',S.showPos);document.getElementById('spd').textContent=(S.rate===1?'1':S.rate)+'x';
+ document.getElementById('lock').innerHTML=ic(S.lock?'lockC':'lockO');document.getElementById('lock').classList.toggle('on',S.lock);
+ document.getElementById('play').innerHTML=fi(S.playing?'pause':'play');
+ document.getElementById('pinl').textContent=S.pinOnly?`P${cp+1} only`:'All frames';document.getElementById('pinb').classList.toggle('on',S.pinOnly);
+ document.getElementById('lines').innerHTML=S.lines.filter(l=>l.p==null||l.p===p).map(l=>`<line class="${l.p!=null?'pinned':''}" x1="${l.x1}" y1="${l.y1}" x2="${l.x2}" y2="${l.y2}"/>`).join('')}
+function stopPlay(){S.playing=false}
+function play(){S.playing=true;if(F>=NF-1.5)F=0;let last=performance.now();const loop=now=>{if(!S.playing)return;F+=(now-last)/1000*30*S.rate*.25;last=now;if(F>=NF-1){F=NF-1;S.playing=false}renderPhone();renderLab();requestAnimationFrame(loop)};requestAnimationFrame(loop)}
+scrubber(document.getElementById('pscrub'),()=>S.map,()=>{renderPhone();renderLab()});
+// strip: discrete, one notch per position
+(()=>{const st=document.getElementById('strip');let on=false;const pick=e=>{const r=st.getBoundingClientRect();const i=Math.max(0,Math.min(9,Math.floor((e.clientX-r.left)/r.width*10)));F=PF[i];renderPhone();renderLab()};
+ st.addEventListener('pointerdown',e=>{on=true;st.setPointerCapture(e.pointerId);stopPlay();pick(e);e.preventDefault()});st.addEventListener('pointermove',e=>{if(on)pick(e)});st.addEventListener('pointerup',()=>on=false)})();
+ph.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
+ if(a==='exp')S.exp=!S.exp;if(a==='draw'){S.drawing=!S.drawing;stopPlay()}if(a==='pos')S.showPos=!S.showPos;if(a==='lock')S.lock=!S.lock;
+ if(a==='speed'){const r=[.25,.5,.75,1];S.rate=r[(r.indexOf(S.rate)+1)%4]}
+ if(a==='play')S.playing?stopPlay():play();if(a==='bk'){stopPlay();F=Math.max(0,Math.round(F*M-1)/M)}if(a==='fw'){stopPlay();F=Math.min(NF-1,Math.round(F*M+1)/M)}
+ if(a==='pin')S.pinOnly=!S.pinOnly;if(a==='undo')S.lines.pop();if(a==='clear')S.lines=[];
+ renderPhone();renderLab()});
+(()=>{const L=document.getElementById('lines');let d=null;
+ L.addEventListener('pointerdown',e=>{if(!S.drawing)return;const r=ph.getBoundingClientRect(),k=390/r.width,x=(e.clientX-r.left)*k,y=(e.clientY-r.top)*k;
+  d={l:{x1:x,y1:y,x2:x,y2:y,p:S.pinOnly?curP():null},r,k};S.lines.push(d.l);if(S.pinOnly)F=PF[curP()];L.setPointerCapture(e.pointerId);e.preventDefault()});
+ L.addEventListener('pointermove',e=>{if(!d)return;d.l.x2=(e.clientX-d.r.left)*d.k;d.l.y2=(e.clientY-d.r.top)*d.k;renderPhone()});
+ L.addEventListener('pointerup',()=>{if(d&&Math.hypot(d.l.x2-d.l.x1,d.l.y2-d.l.y1)<8)S.lines.pop();d=null;renderPhone()})})();
+const seg=(id,fn)=>document.getElementById(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;document.querySelectorAll(`#${id} button`).forEach(x=>x.classList.toggle('on',x===b));fn(b);renderPhone()});
+seg('hand',b=>S.lefty=b.dataset.h==='l');seg('smap',b=>S.map=b.dataset.m);seg('chrome',b=>S.auto=b.dataset.c==='auto');
+addEventListener('resize',()=>{scale();drawLab()});
+function boot(){document.querySelectorAll('#hand button').forEach(x=>x.classList.toggle('on',(x.dataset.h==='l')===S.lefty));document.querySelectorAll('#chrome button').forEach(x=>x.classList.toggle('on',(x.dataset.c==='auto')===S.auto));document.querySelectorAll('#fps button').forEach(x=>x.classList.toggle('on',+x.dataset.fps===M));scale();drawLab();renderPhone()}
+document.getElementById('sprite').complete?boot():document.getElementById('sprite').addEventListener('load',boot);boot();
+</script></body></html>

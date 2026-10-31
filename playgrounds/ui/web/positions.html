@@ -1,0 +1,289 @@
+<!doctype html>
+<!-- P1-P10 player design study, accepted Oct 31 2026 and built into PlaybackChromeView
+     (scrubber spacing evidence: positions-scrub-lab.html).
+     Player chrome matches PlaybackChromeView: monospaced 02.5 readout, 02.5/05.6 badge while scrubbing,
+     4 pt yellow track, 12->16 pt thumb, 38 pt corner circles 10 pt apart under the star.
+     Tool rail: collapse/expand bubble, drag it to the other side to dock left. Scrubber defaults to Balanced.
+     Media: ../media/positions/p1..p10.jpg and sprite.jpg (171 frames, 30 fps, 2.2-7.9 s of sample-001.mp4). -->
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SwingCoach · P positions player</title>
+<style id="standalone">html{background:#0e100f;color:#ecefea}body{max-width:980px;margin:0 auto;padding:24px}</style>
+<style>
+:root{--fg:var(--foreground,#ecefea);--mute:var(--muted-foreground,#9aa29a);--cardbg:var(--card,#181b19);--line:var(--border,#2a2f2b);--acc:#d8f36a;--yel:#ffd60a}
+*{box-sizing:border-box}
+body{font-family:var(--font-sans,-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif);color:var(--fg);margin:0}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+h1{font-size:17px;margin:0 0 3px;font-weight:650}
+.lede{font-size:12px;color:var(--mute);margin:0 0 14px;line-height:1.45}
+.hy{display:grid;grid-template-columns:minmax(0,340px) 1fr;gap:24px;align-items:start}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;padding:3px;border:1px solid var(--line);border-radius:18px;font-size:12px}
+.seg button{padding:5px 11px;border-radius:14px;color:var(--mute)}
+.seg button.on{background:var(--fg);color:#111}
+.seglab{font-size:11px;color:var(--mute);width:62px}
+.ctrls{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.picks{display:flex;gap:8px}
+.pick{width:38px;height:38px;border-radius:50%;background:#2b302c;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px transparent}
+.pick.on{box-shadow:0 0 0 2px var(--acc)}
+.pick svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pick .pg{font-size:16px;font-weight:800;color:#fff}
+.notes{font-size:12px;line-height:1.5;color:var(--mute);margin:0;padding-left:16px}
+.notes li{margin-bottom:6px}.notes b{color:var(--fg);font-weight:600}
+/* phone */
+.pw{width:100%;aspect-ratio:390/844;position:relative}
+.phone{position:absolute;left:0;top:0;width:390px;height:844px;transform-origin:0 0;border-radius:52px;overflow:hidden;background:#000;color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;box-shadow:0 0 0 6px #050605,0 0 0 7px #333;user-select:none;-webkit-user-select:none;touch-action:none}
+.media{position:absolute;inset:0;background:#000 no-repeat}
+.media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(#0009 0,#0000 16%,#0000 66%,#000a 84%,#000d 100%)}
+.sb{position:absolute;top:0;left:0;right:0;height:54px;display:flex;justify-content:space-between;align-items:center;padding:6px 34px 0 40px;font-size:16px;font-weight:600;z-index:5}
+.island{position:absolute;top:11px;left:50%;margin-left:-62px;width:124px;height:36px;border-radius:20px;background:#000}
+.home{position:absolute;bottom:8px;left:50%;margin-left:-68px;width:136px;height:5px;border-radius:3px;background:#fff;opacity:.9;z-index:9}
+.circ{width:38px;height:38px;border-radius:50%;background:#00000073;display:flex;align-items:center;justify-content:center;flex:none}
+.circ svg,.ic{width:19px;height:19px;fill:none;stroke:#fff;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+.tb{position:absolute;top:60px;left:14px;right:14px;height:38px;display:flex;justify-content:space-between;align-items:center;z-index:6}
+.count{font-size:12px;font-weight:600;padding:0 10px;height:32px;line-height:32px;border-radius:16px;background:#00000073}
+.done{height:36px;width:70px;border-radius:18px;background:#ffffff2e;font-weight:600;font-size:15px}
+.slot{width:38px}.phone.auto .slot{width:70px}
+.analyze{position:absolute;top:112px;left:50%;transform:translateX(-50%);height:40px;padding:0 18px;border-radius:20px;background:#f6cf3c;color:#1c1700;font-weight:650;font-size:16px;display:flex;align-items:center;gap:8px;z-index:6;white-space:nowrap}
+.analyze svg{stroke:#1c1700;width:18px;height:18px}
+.phone.auto .libonly,.phone:not(.auto) .autoonly,.phone.drawing .analyze{display:none}
+/* rail: Library sits under the star / back button, Auto takes the empty top-right slot */
+.rail{position:absolute;top:108px;right:14px;z-index:7;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+.phone.auto .rail{top:60px}.phone.auto .rail.left{top:108px}
+.rail.left{right:auto;left:14px;align-items:flex-start}
+.ritem{display:flex;align-items:center;gap:10px;height:38px;transition:transform .24s cubic-bezier(.3,.8,.3,1),opacity .18s}
+.rail.left .ritem{flex-direction:row-reverse}
+.rl{font-size:14px;font-weight:600;text-shadow:0 1px 3px #000d;opacity:0;transition:opacity .3s;white-space:nowrap;pointer-events:none}
+.rail.labels .rl,.ritem.peek .rl{opacity:1}
+.rail.closed .ritem:not(.tog){opacity:0;pointer-events:none;transform:translateY(calc(var(--i) * -48px)) scale(.4)}
+.ritem.on .circ{background:var(--acc)}.ritem.on .circ svg{stroke:#111}.ritem.on .pg{color:#111}
+.ritem b{font-size:12px;font-weight:700}.pg{font-size:16px;font-weight:800}
+.tog .circ{touch-action:none;transition:transform .15s,box-shadow .15s}
+.rail.dragging .tog .circ{transform:scale(1.12);box-shadow:0 4px 14px #000a}
+.rail.dragging .ritem:not(.tog){opacity:.35}
+.phone.drawing .rail{display:none}
+.dock{position:absolute;width:38px;height:38px;border-radius:50%;border:1.5px dashed #ffffffaa;z-index:6;opacity:0;transition:opacity .15s;pointer-events:none}
+.phone.dragrail .dock{opacity:1}.dock.hot{border-color:var(--acc);background:#d8f36a33}
+/* timeline + transport: same sizes as PlaybackChromeView */
+.tl{position:absolute;left:16px;right:16px;bottom:136px;height:28px;z-index:7;touch-action:none;cursor:pointer}
+.tl .tr{position:absolute;left:0;right:0;top:12px;height:4px;border-radius:2px;background:#ffffff47}
+.tl .fill{position:absolute;left:0;top:12px;height:4px;border-radius:2px;background:var(--yel)}
+.tl .dot{position:absolute;top:21px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:#fff;opacity:.75}
+.tl .dot.cur{background:var(--acc);opacity:1;width:5px;height:5px;margin-left:-2.5px;top:20.5px}
+.tl .th{position:absolute;top:8px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#fff;box-shadow:0 0 6px #0007;transition:width .1s,height .1s,margin .1s,top .1s}
+.tl.scrub .th{width:16px;height:16px;margin-left:-8px;top:6px}
+.badge{position:absolute;left:50%;bottom:174px;transform:translateX(-50%);z-index:7;display:none;white-space:nowrap;
+  font:600 12px ui-monospace,"SF Mono",Menlo,monospace;padding:7px 12px;border-radius:16px;background:#000000b3}
+.badge.show{display:block}.badge em{font:700 12px -apple-system,BlinkMacSystemFont,sans-serif;font-style:normal;color:var(--acc);margin-right:2px}
+.badge i{font:600 11px -apple-system,BlinkMacSystemFont,sans-serif;font-style:normal;color:#111;background:var(--acc);border-radius:6px;padding:1px 5px;margin-left:6px}
+.trans{position:absolute;left:22px;right:22px;bottom:94px;height:40px;display:flex;align-items:center;z-index:7}
+.readout{width:58px;font:600 13px ui-monospace,"SF Mono",Menlo,monospace;color:#ffffffd9}
+.trans .mid{flex:1;display:flex;justify-content:center;gap:26px;align-items:center}
+.tbtn{width:40px;height:40px;display:flex;align-items:center;justify-content:center}
+.tbtn svg{width:19px;height:19px;fill:#fff}.play svg{width:24px;height:24px}
+.lockw{width:58px;display:flex;justify-content:flex-end}
+.lockb{width:36px;height:36px}.lockb svg{width:16px;height:16px}
+.lockb.on{background:var(--yel)}.lockb.on svg{stroke:#111}
+.trash{position:absolute;right:12px;bottom:176px;width:42px;height:42px;z-index:7}
+.strip{position:absolute;left:12px;right:12px;bottom:30px;height:56px;display:flex;justify-content:space-between;align-items:center;z-index:7;padding:0 2px;border-radius:28px;background:#0000005c;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:.5px solid #ffffff1f;touch-action:none}
+.chip{width:34px;height:46px;border-radius:17px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.chip svg{width:30px;height:30px}
+.chip .n{font-size:9px;font-weight:700;opacity:.7;margin-top:-1px}
+.chip.on{background:#fff;color:#111}.chip.on .n{opacity:1}
+.phone.nopos .strip{display:none}.phone.nopos .tl{bottom:80px}.phone.nopos .trans{bottom:38px}.phone.nopos .badge{bottom:118px}.phone.nopos .trash{bottom:120px}
+.g-body{stroke:currentColor;stroke-width:3.1;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.g-head{fill:currentColor}.g-club{stroke:var(--acc);stroke-width:2.1;stroke-linecap:round;fill:none}
+.chip.on .g-club{stroke:#5d7d00}.g-ball{fill:currentColor;opacity:.75}
+.drawbar{position:absolute;top:112px;left:50%;transform:translateX(-50%);z-index:8;display:none;align-items:center;gap:4px;padding:4px;border-radius:24px;background:#0000008a;backdrop-filter:blur(14px);border:.5px solid #ffffff22;font-size:13px;font-weight:600;white-space:nowrap}
+.phone.drawing .drawbar{display:flex}
+.drawbar button{height:36px;padding:0 11px;border-radius:18px;display:flex;align-items:center;gap:5px}
+.drawbar button.on{background:#fff;color:#111}.drawbar button.ok{background:var(--acc);color:#111}
+.drawbar svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lines{position:absolute;inset:0;z-index:4;pointer-events:none}
+.phone.drawing .lines{pointer-events:auto;cursor:crosshair}
+.lines line{stroke:var(--acc);stroke-width:3.5;stroke-linecap:round}.lines line.pinned{stroke:#58d3ff}
+#pool{display:none}
+@media(max-width:640px){.hy{grid-template-columns:1fr}}
+</style></head><body>
+<div id="pool"><img src="../media/positions/p1.jpg" alt=""><img src="../media/positions/p2.jpg" alt=""><img src="../media/positions/p3.jpg" alt=""><img src="../media/positions/p4.jpg" alt=""><img src="../media/positions/p5.jpg" alt=""><img src="../media/positions/p6.jpg" alt=""><img src="../media/positions/p7.jpg" alt=""><img src="../media/positions/p8.jpg" alt=""><img src="../media/positions/p9.jpg" alt=""><img src="../media/positions/p10.jpg" alt=""><img id="sprite" src="../media/positions/sprite.jpg" alt=""></div>
+
+<h1>P positions player</h1>
+<p class="lede">Tap the top bubble to fold the tools away. Drag it to the other side and it docks there. Hold any tool to see its name.</p>
+
+<div class="hy">
+  <div><div class="pw" id="pw"></div></div>
+  <div>
+    <div class="ctrls">
+      <div class="row"><span class="seglab">Screen</span><div class="seg" id="chrome"><button data-c="lib" class="on">Library</button><button data-c="auto">Auto review</button></div></div>
+      <div class="row"><span class="seglab">Scrubber</span><div class="seg" id="smap"><button data-m="bal" class="on">Balanced</button><button data-m="time">Time</button></div></div>
+      <div class="row"><span class="seglab">P icon</span><div class="picks" id="picks"></div></div>
+    </div>
+    <ul class="notes">
+      <li><b>Transport</b> is centred again: the time and the padlock each get a 58 pt slot, as in the app today.</li>
+      <li><b>Scrubber</b> uses Balanced spacing with the app's own track, thumb and <b>02.5/05.6</b> badge. Positions snap within 7 pt. On a P, the badge adds its name. Drag your finger well above the bar for ¼ speed.</li>
+      <li><b>Tools</b>, top to bottom: fold, info, speed, draw, positions. The column starts one gap under the star and uses the same 38 pt circles and 10 pt spacing. In Auto it takes the empty top-right slot.</li>
+      <li><b>Fold bubble:</b> ⌃ folds the tools up into it, ⌄ drops them back down. Open is the default. On reopening, the names show for about 1.5 s and then fade.</li>
+      <li><b>Left side</b> is only ever the user's choice: drag the bubble across and it docks under Back. The side is remembered. Right is the default.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const NF=171, PF=[9,30,42,84,102,104,106,110,114,162];
+const SHORT=["Address","Takeaway","Arm parallel","Top","Arm down","Shaft down","Impact","Shaft through","Arm through","Finish"];
+const UNSURE=new Set([7]);
+const pool=document.getElementById('pool'), SPR=()=>document.getElementById('sprite').src, PIMG=i=>pool.children[i].src;
+const Q=new URLSearchParams(location.search);
+const M=Q.get('fps')==='240'?8:1;
+const B=()=>[0,...PF,NF-1].map(f=>f*M);
+const MAPS={
+ time:{xs:b=>b.map(f=>f/b[b.length-1])},
+ bal:{xs:b=>{const w=[];for(let i=0;i<b.length-1;i++){let s=Math.sqrt(Math.max(b[i+1]-b[i],.5));if(i===0||i===b.length-2)s*=.6;w.push(s)}const T=w.reduce((a,c)=>a+c,0);const xs=[0];w.forEach(v=>xs.push(xs[xs.length-1]+v/T));return xs}}};
+function xOf(map,f){const b=B(),xs=MAPS[map].xs(b);for(let i=0;i<b.length-1;i++)if(f<=b[i+1])return xs[i]+(f-b[i])/(b[i+1]-b[i]||1)*(xs[i+1]-xs[i]);return 1}
+function fOf(map,x){const b=B(),xs=MAPS[map].xs(b);x=Math.max(0,Math.min(1,x));for(let i=0;i<b.length-1;i++)if(x<=xs[i+1])return b[i]+(x-xs[i])/(xs[i+1]-xs[i]||1)*(b[i+1]-b[i]);return b[b.length-1]}
+let F=PF[3];
+const nearP=()=>{for(let i=0;i<10;i++)if(Math.abs(F-PF[i])<.5/M)return i;return -1};
+const curP=()=>{let best=0;for(let i=1;i<10;i++)if(Math.abs(F-PF[i])<Math.abs(F-PF[best]))best=i;return best};
+const spriteStyle=(el,w,h)=>{const k=Math.max(0,Math.min(NF-1,Math.round(F)));el.style.backgroundImage=`url(${SPR()})`;el.style.backgroundSize=`${12*w}px ${15*h}px`;el.style.backgroundPosition=`${-(k%12)*w}px ${-Math.floor(k/12)*h}px`};
+// formatTime from PlaybackChromeView: %02d.%d
+const fmt=s=>{const t=Math.max(0,s);return String(Math.floor(t)).padStart(2,'0')+'.'+Math.floor((t*10)%10)};
+
+// ---------- glyphs (original set, rounds 1-2)
+const P=[
+ [[20,8.6],[20,13],[20,24],[16.8,14.2],[23.2,13.8],[20.6,26],[18.4,36.4],[16.6,30.6],[15.6,37],[23.4,30.6],[24.4,37],[19,37.2]],
+ [[19.8,8.6],[19.8,13],[20,24],[17.6,13.4],[22.2,14.6],[16.6,25.6],[6.4,25.2],[16.6,30.6],[15.6,37],[23,30.8],[24.4,37],[19,37.2]],
+ [[19.6,8.6],[19.6,13],[19.8,24],[18,13.2],[21.4,14.8],[11.2,18.4],[9.6,6.6],[16.4,30.6],[15.6,37],[22.2,31],[24.4,37],[19,37.2]],
+ [[19.4,8.8],[19.4,13.2],[19.6,24],[17.8,13],[21,15],[14,8.2],[28.6,4.6],[16.4,30.6],[15.6,37],[21.8,31.2],[24.4,37],[19,37.2]],
+ [[19.6,8.8],[19.8,13.2],[21,24.2],[17.4,13.6],[22,14.8],[12.8,19.6],[13.2,7.4],[17,30.8],[15.6,37],[24,30.6],[24.4,37],[19,37.2]],
+ [[19.8,9],[20,13.4],[21.6,24.4],[17.2,14.4],[22.8,14.2],[16.8,25],[7.2,21.6],[17.6,31],[15.8,37],[24.4,30.6],[24.4,37],[19,37.2]],
+ [[19.4,9],[20,13.4],[22.6,24],[17.4,15],[23.6,13.8],[23,26.4],[20.4,36.4],[20.2,30.6],[17.2,35.8],[25.4,30.4],[25,37],[26.5,35.6]],
+ [[20.2,9.2],[20.6,13.4],[22.2,24],[18.6,14.6],[23.4,13.6],[25.6,24.8],[35,22.6],[19.6,31],[17.4,36.4],[24.6,30.6],[24.4,37],null],
+ [[20.6,9],[21,13.2],[22.2,24],[19.2,14.2],[23.4,13.2],[29,17.4],[30.6,5.8],[20,31],[17.6,36.2],[24.6,30.6],[24.4,37],null],
+ [[22.2,8.2],[22.2,12.4],[22.4,23.6],[20,13],[24.6,12.6],[25.4,6.8],[11.4,12.8],[21.6,30.4],[18.4,36.2],[24.4,30.2],[24.6,37],null]];
+function glyph(i){const [h,n,hp,tS,lS,ha,cl,tK,tF,lK,lF,ball]=P[i];const p=a=>a.join(',');
+ return `<svg viewBox="4 3 32 36" aria-hidden="true">${ball?`<circle class="g-ball" cx="${ball[0]}" cy="${ball[1]}" r="1.1"/>`:''}<line class="g-club" x1="${ha[0]}" y1="${ha[1]}" x2="${cl[0]}" y2="${cl[1]}"/><circle cx="${cl[0]}" cy="${cl[1]}" r="1.4" style="fill:var(--acc)"/><polyline class="g-body" points="${p(tF)} ${p(tK)} ${p(hp)} ${p(lK)} ${p(lF)}"/><line class="g-body" x1="${n[0]}" y1="${n[1]}" x2="${hp[0]}" y2="${hp[1]}"/><polyline class="g-body" points="${p(ha)} ${p(tS)} ${p(n)} ${p(lS)} ${p(ha)}" style="stroke-width:2.6"/><circle class="g-head" cx="${h[0]}" cy="${h[1]}" r="3.6"/></svg>`}
+const I={back:'<path d="M15 5l-7 7 7 7"/>',star:'<path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.6l5.8-.8z"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.1"/>',
+ pencil:'<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/>',trash:'<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>',lockO:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 017.5-2"/>',
+ lockC:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>',undo:'<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/>',
+ up:'<path d="M6 14.5l6-6 6 6"/>',down:'<path d="M6 9.5l6 6 6-6"/>',line:'<path d="M5 19L19 5"/><circle cx="5" cy="19" r="1.5"/><circle cx="19" cy="5" r="1.5"/>',pin:'<path d="M12 21v-6M7 4h10l-2 5 3 4H6l3-4z"/>',
+ flags:'<path d="M3 20h18"/><path d="M6 20V5l6 3-6 3"/><path d="M15 20V10l5 2.5-5 2.5"/>',
+ marks:'<path d="M3 10h18"/><circle cx="5.5" cy="16" r="1.3"/><circle cx="10.5" cy="16" r="1.3"/><circle cx="13.5" cy="16" r="1.3"/><circle cx="18.5" cy="16" r="1.3"/>',
+ chips:'<rect x="2.5" y="6" width="5" height="12" rx="2"/><rect x="9.5" y="6" width="5" height="12" rx="2"/><rect x="16.5" y="6" width="5" height="12" rx="2"/>'};
+const ic=n=>`<svg class="ic" viewBox="0 0 24 24">${I[n]}</svg>`;
+const FI={play:'<path d="M7 4.5v15l12.5-7.5z"/>',pause:'<path d="M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z"/>',bk:'<path d="M4 5h2.6v14H4zM20 5v14L8.5 12z"/>',fw:'<path d="M17.4 5H20v14h-2.4zM4 5v14l11.5-7z"/>'};
+const fi=n=>`<svg viewBox="0 0 24 24">${FI[n]}</svg>`;
+const PICONS={P:'<span class="pg">P</span>',marks:ic('marks'),flags:ic('flags'),chips:ic('chips')};
+
+// ---------- state
+const store=(k,v)=>{try{v===undefined?0:localStorage.setItem(k,v);return localStorage.getItem(k)}catch(e){return null}};
+const S={map:'bal',auto:Q.get('screen')==='auto',left:Q.get('side')?Q.get('side')==='l':store('sc.railSide')==='l',closed:Q.get('rail')==='closed',
+ picon:Q.get('icon')||'marks',labelMode:'flash',drawing:false,pinOnly:false,lines:[],showPos:Q.get('pos')!=='off',lock:false,rate:1,playing:false,scrub:false,fine:false,badgeUntil:0};
+
+document.getElementById('pw').innerHTML=`<div class="phone" id="ph"><div class="media" id="media"><img id="pimg" alt=""></div><svg class="lines" id="lines" viewBox="0 0 390 844"></svg><div class="shade"></div>
+ <div class="sb"><span>12:29</span><div class="island"></div><span style="font-size:13px">●●● 83</span></div>
+ <div class="tb"><div class="slot"><button class="circ libonly">${ic('back')}</button><button class="done autoonly">Done</button></div><div class="count libonly">1 of 364</div><div class="count autoonly">3 of 7</div><div class="slot" style="display:flex;justify-content:flex-end"><button class="circ libonly">${ic('star')}</button></div></div>
+ <button class="analyze libonly">${ic('pencil')}Analyze Swing</button>
+ <div class="dock" id="dockR"></div><div class="dock" id="dockL"></div>
+ <div class="rail" id="rail">
+   <div class="ritem tog" style="--i:0"><span class="rl"></span><button class="circ" id="tog" aria-label="Fold tools">${ic('up')}</button></div>
+   <div class="ritem libonly" style="--i:1"><span class="rl">Info</span><button class="circ" data-a="info">${ic('info')}</button></div>
+   <div class="ritem" style="--i:2"><span class="rl">Speed</span><button class="circ" data-a="speed"><b id="spd">1x</b></button></div>
+   <div class="ritem" style="--i:3"><span class="rl">Draw</span><button class="circ" data-a="draw">${ic('pencil')}</button></div>
+   <div class="ritem on" style="--i:4" id="posi"><span class="rl">Positions</span><button class="circ" data-a="pos" id="posb"></button></div>
+ </div>
+ <div class="drawbar"><button class="on">${ic('line')}Line</button><button data-a="pin" id="pinb">${ic('pin')}<span id="pinl">All frames</span></button><button data-a="undo">${ic('undo')}</button><button data-a="clear">${ic('trash')}</button><button class="ok" data-a="draw">Done</button></div>
+ <div class="badge" id="badge"></div>
+ <button class="circ trash autoonly">${ic('trash')}</button>
+ <div class="tl" id="tl"><div class="tr"></div><div class="fill" id="pfill"></div><div id="pdots"></div><div class="th" id="pth"></div></div>
+ <div class="trans"><span class="readout" id="ro"></span><div class="mid"><button class="tbtn" data-a="bk">${fi('bk')}</button><button class="tbtn play" data-a="play" id="play">${fi('play')}</button><button class="tbtn" data-a="fw">${fi('fw')}</button></div><div class="lockw"><button class="circ lockb" data-a="lock" id="lock">${ic('lockO')}</button></div></div>
+ <div class="strip" id="strip">${PF.map((_,i)=>`<button class="chip${UNSURE.has(i)?' unsure':''}" data-p="${i}">${glyph(i)}<span class="n">P${i+1}${UNSURE.has(i)?'?':''}</span></button>`).join('')}</div>
+ <div class="home"></div></div>`;
+const ph=document.getElementById('ph'),rail=document.getElementById('rail'),tog=document.getElementById('tog');
+const K=()=>390/ph.getBoundingClientRect().width;
+function scale(){ph.style.transform=`scale(${document.getElementById('pw').clientWidth/390})`}
+document.getElementById('picks').innerHTML=Object.keys(PICONS).map(k=>`<button class="pick" data-k="${k}" title="${k}">${PICONS[k]}</button>`).join('');
+
+function render(){
+ const p=nearP(),cp=curP(),dur=(NF-1)/30;
+ const img=document.getElementById('pimg'),media=document.getElementById('media');
+ if(p>=0){img.style.display='';if(img.dataset.p!=p){img.src=PIMG(p);img.dataset.p=p}}else{img.style.display='none';spriteStyle(media,390,842)}
+ document.getElementById('ro').textContent=fmt(F/30);
+ const x=xOf(S.map,F*M);document.getElementById('pth').style.left=x*100+'%';document.getElementById('pfill').style.width=x*100+'%';
+ document.getElementById('pdots').innerHTML=S.showPos?PF.map((f,i)=>`<i class="dot${i===p?' cur':''}" style="left:${xOf(S.map,f*M)*100}%"></i>`).join(''):'';
+ document.getElementById('tl').classList.toggle('scrub',S.scrub);
+ const showBadge=S.scrub||performance.now()<S.badgeUntil,bd=document.getElementById('badge');
+ bd.classList.toggle('show',showBadge);
+ bd.innerHTML=`${p>=0&&S.showPos?`<em>P${p+1} ${SHORT[p]}${UNSURE.has(p)?'?':''}</em> · `:''}${fmt(F/30)}/${fmt(dur)}${S.fine?'<i>¼ speed</i>':''}`;
+ ph.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',+c.dataset.p===cp&&Math.abs(F-PF[cp])<4));
+ ph.classList.toggle('auto',S.auto);ph.classList.toggle('drawing',S.drawing);ph.classList.toggle('nopos',!S.showPos);
+ rail.classList.toggle('left',S.left);rail.classList.toggle('closed',S.closed);
+ tog.innerHTML=ic(S.closed?'down':'up');tog.setAttribute('aria-label',S.closed?'Show tools':'Fold tools');
+ document.getElementById('posi').classList.toggle('on',S.showPos);document.getElementById('posb').innerHTML=PICONS[S.picon];
+ document.getElementById('spd').textContent=(S.rate===1?'1':S.rate)+'x';
+ document.getElementById('lock').innerHTML=ic(S.lock?'lockC':'lockO');document.getElementById('lock').classList.toggle('on',S.lock);
+ document.getElementById('play').innerHTML=fi(S.playing?'pause':'play');
+ document.getElementById('pinl').textContent=S.pinOnly?`P${cp+1} only`:'All frames';document.getElementById('pinb').classList.toggle('on',S.pinOnly);
+ document.getElementById('lines').innerHTML=S.lines.filter(l=>l.p==null||l.p===p).map(l=>`<line class="${l.p!=null?'pinned':''}" x1="${l.x1}" y1="${l.y1}" x2="${l.x2}" y2="${l.y2}"/>`).join('');
+ document.querySelectorAll('.pick').forEach(b=>b.classList.toggle('on',b.dataset.k===S.picon));
+ placeDocks()}
+function placeDocks(){const top=S.auto?{r:60,l:108}:{r:108,l:108};const R=document.getElementById('dockR'),L=document.getElementById('dockL');
+ R.style.top=top.r+'px';R.style.right='14px';L.style.top=top.l+'px';L.style.left='14px'}
+
+// ---------- labels: flash on open, or hold a tool to see its name
+let flashT;
+function flashLabels(){if(S.labelMode!=='flash')return;rail.classList.add('labels');clearTimeout(flashT);flashT=setTimeout(()=>rail.classList.remove('labels'),1500)}
+let peekT,peeked=false;
+rail.addEventListener('pointerdown',e=>{const it=e.target.closest('.ritem');if(!it||it.classList.contains('tog'))return;peeked=false;clearTimeout(peekT);peekT=setTimeout(()=>{peeked=true;it.classList.add('peek')},380)});
+const unpeek=()=>{clearTimeout(peekT);const it=rail.querySelector('.peek');if(it)setTimeout(()=>it.classList.remove('peek'),700)};
+rail.addEventListener('pointerup',unpeek);rail.addEventListener('pointerleave',unpeek);
+rail.addEventListener('click',e=>{if(peeked){e.stopPropagation();e.preventDefault();peeked=false}},true);
+
+// ---------- fold bubble: tap folds/unfolds, drag moves the rail and docks it on the nearer side
+(()=>{let d=null;
+ tog.addEventListener('pointerdown',e=>{d={x:e.clientX,y:e.clientY,moved:false};tog.setPointerCapture(e.pointerId);e.preventDefault()});
+ tog.addEventListener('pointermove',e=>{if(!d)return;const k=K(),dx=(e.clientX-d.x)*k,dy=(e.clientY-d.y)*k;
+  if(!d.moved&&Math.hypot(dx,dy)>6){d.moved=true;rail.classList.add('dragging');ph.classList.add('dragrail');rail.style.transition='none';rail.classList.remove('labels')}
+  if(d.moved){rail.style.transform=`translate(${dx}px,${dy}px)`;const r=tog.getBoundingClientRect(),pr=ph.getBoundingClientRect(),cx=(r.left+r.width/2-pr.left)*k;
+   document.getElementById('dockL').classList.toggle('hot',cx<195);document.getElementById('dockR').classList.toggle('hot',cx>=195)}});
+ const end=e=>{if(!d)return;const moved=d.moved;d=null;rail.classList.remove('dragging');ph.classList.remove('dragrail');
+  if(!moved){rail.style.transform='';S.closed=!S.closed;render();if(!S.closed)flashLabels();return}
+  const k=K(),pr=ph.getBoundingClientRect(),before=tog.getBoundingClientRect(),cx=(before.left+before.width/2-pr.left)*k;
+  S.left=cx<195;store('sc.railSide',S.left?'l':'r');rail.style.transform='none';render();
+  const after=tog.getBoundingClientRect();rail.style.transform=`translate(${(before.left-after.left)*k}px,${(before.top-after.top)*k}px)`;
+  rail.getBoundingClientRect();rail.style.transition='transform .34s cubic-bezier(.2,.9,.3,1.12)';rail.style.transform='';
+  setTimeout(()=>{rail.style.transition=''},360)};
+ tog.addEventListener('pointerup',end);tog.addEventListener('pointercancel',end)})();
+
+// ---------- timeline: tap jumps, drag scrubs, finger 44 pt off the bar = ¼ speed, snaps to P dots on Balanced
+function snap(x,w){if(S.map==='time'||!S.showPos)return x;for(const f of PF){const xp=xOf(S.map,f*M);if(Math.abs(xp-x)*w<7)return xp}return x}
+(()=>{const el=document.getElementById('tl');let d=null;
+ el.addEventListener('pointerdown',e=>{const r=el.getBoundingClientRect(),x=snap((e.clientX-r.left)/r.width,r.width*K());F=fOf(S.map,x)/M;d={x:(e.clientX-r.left)/r.width,cx:e.clientX};S.scrub=true;stopPlay();el.setPointerCapture(e.pointerId);e.preventDefault();render()});
+ el.addEventListener('pointermove',e=>{if(!d)return;const r=el.getBoundingClientRect(),mid=r.top+r.height/2;S.fine=Math.abs(e.clientY-mid)*K()>44;
+  d.x=Math.max(0,Math.min(1,d.x+(e.clientX-d.cx)/r.width*(S.fine?.25:1)));d.cx=e.clientX;F=fOf(S.map,S.fine?d.x:snap(d.x,r.width*K()))/M;render()});
+ const end=()=>{if(!d)return;d=null;S.scrub=false;S.fine=false;render()};el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end)})();
+// ---------- strip: one notch per position
+(()=>{const st=document.getElementById('strip');let on=false;const pick=e=>{const r=st.getBoundingClientRect();const i=Math.max(0,Math.min(9,Math.floor((e.clientX-r.left)/r.width*10)));F=PF[i];S.badgeUntil=performance.now()+1200;render();setTimeout(render,1250)};
+ st.addEventListener('pointerdown',e=>{on=true;st.setPointerCapture(e.pointerId);stopPlay();pick(e);e.preventDefault()});st.addEventListener('pointermove',e=>{if(on)pick(e)});st.addEventListener('pointerup',()=>on=false)})();
+
+function stopPlay(){S.playing=false}
+function play(){S.playing=true;if(F>=NF-1.5)F=0;let last=performance.now();const loop=now=>{if(!S.playing)return;F+=(now-last)/1000*30*S.rate*.25;last=now;if(F>=NF-1){F=NF-1;S.playing=false}render();requestAnimationFrame(loop)};requestAnimationFrame(loop)}
+ph.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
+ if(a==='draw'){S.drawing=!S.drawing;stopPlay()}if(a==='pos')S.showPos=!S.showPos;if(a==='lock')S.lock=!S.lock;
+ if(a==='speed'){const r=[.25,.5,.75,1];S.rate=r[(r.indexOf(S.rate)+1)%4]}
+ if(a==='play')S.playing?stopPlay():play();if(a==='bk'){stopPlay();F=Math.max(0,Math.round(F*M-1)/M)}if(a==='fw'){stopPlay();F=Math.min(NF-1,Math.round(F*M+1)/M)}
+ if(a==='pin')S.pinOnly=!S.pinOnly;if(a==='undo')S.lines.pop();if(a==='clear')S.lines=[];
+ render()});
+(()=>{const L=document.getElementById('lines');let d=null;
+ L.addEventListener('pointerdown',e=>{if(!S.drawing)return;const r=ph.getBoundingClientRect(),k=390/r.width,x=(e.clientX-r.left)*k,y=(e.clientY-r.top)*k;
+  d={l:{x1:x,y1:y,x2:x,y2:y,p:S.pinOnly?curP():null},r,k};S.lines.push(d.l);if(S.pinOnly)F=PF[curP()];L.setPointerCapture(e.pointerId);e.preventDefault()});
+ L.addEventListener('pointermove',e=>{if(!d)return;d.l.x2=(e.clientX-d.r.left)*d.k;d.l.y2=(e.clientY-d.r.top)*d.k;render()});
+ L.addEventListener('pointerup',()=>{if(d&&Math.hypot(d.l.x2-d.l.x1,d.l.y2-d.l.y1)<8)S.lines.pop();d=null;render()})})();
+const seg=(id,fn)=>document.getElementById(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;document.querySelectorAll(`#${id} button`).forEach(x=>x.classList.toggle('on',x===b));fn(b);render()});
+seg('smap',b=>S.map=b.dataset.m);seg('chrome',b=>S.auto=b.dataset.c==='auto');
+document.getElementById('picks').addEventListener('click',e=>{const b=e.target.closest('.pick');if(!b)return;S.picon=b.dataset.k;render()});
+addEventListener('resize',scale);
+function boot(){document.querySelectorAll('#chrome button').forEach(x=>x.classList.toggle('on',(x.dataset.c==='auto')===S.auto));scale();render()}
+document.getElementById('sprite').complete?boot():document.getElementById('sprite').addEventListener('load',boot);boot();
+if(Q.get('labels')==='1')rail.classList.add('labels');else if(!S.closed)setTimeout(flashLabels,400);
+</script></body></html>

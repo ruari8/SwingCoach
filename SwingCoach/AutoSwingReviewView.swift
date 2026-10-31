@@ -51,16 +51,22 @@ struct AutoSwingReviewView: View {
             }
 
             // Only the close button and page label live up top; the player's
-            // own corner controls occupy the top-right, and delete sits in the
+            // tool rail takes the top-right slot, and delete sits in the
             // player's bottom-right accessory slot.
             reviewToolbar
         }
+        .overlayPreferenceValue(ReviewPlaybackCornerControlsKey.self) { toolRail in
+            toolRail
+                .padding(.horizontal, 14)
+                .padding(.top, 8)
+        }
         .overlayPreferenceValue(SwingLineControlsKey.self) { controls in
-            HStack {
+            // While drawing, the line bar sits under Done and the page count.
+            VStack {
                 controls
+                    .padding(.top, 58)
                 Spacer(minLength: 0)
             }
-            .padding(.leading, 14)
         }
         .onChange(of: swings.map(\.id)) { _, ids in
             if let selectedSwingID, ids.contains(selectedSwingID) { return }
@@ -175,6 +181,13 @@ private struct AutoSwingReviewPage: View {
     @State private var playerItem: AVPlayerItem?
     @State private var videoAspectRatio: Double?
     @State private var draftLine: ManualAnnotation?
+    @ObservedObject private var library = SwingLibrary.shared
+
+    /// Positions arrive about a second after the save, after the session list
+    /// copied the swing, so read them from the library.
+    private var swingPositions: SwingPositions? {
+        library.swings.first { $0.id == swing.id }?.swingPositions ?? swing.swingPositions
+    }
 
     private var drawingEnabled: Bool { isSelected && isDrawingLines }
 
@@ -191,6 +204,8 @@ private struct AutoSwingReviewPage: View {
                     contentOverlayAllowsHitTesting: drawingEnabled,
                     edgeToEdge: true,
                     controlsLocked: $controlsLocked,
+                    swingPositions: swingPositions,
+                    drawing: videoAspectRatio != nil ? $isDrawingLines : nil,
                     contentOverlay: { currentTime, _ in
                         AnyView(SwingLineOverlay(
                             swing: swing,
@@ -214,6 +229,9 @@ private struct AutoSwingReviewPage: View {
                     .disabled(deleteDisabled)
                     .accessibilityLabel("Delete this swing")
                 }
+                // The review toolbar hosts the rail, level with Done.
+                .environment(\.reviewCornerControlsInNavigation, true)
+                .environment(\.reviewToolRailTrailingTop, 0)
                 .preference(
                     key: SwingLineControlsKey.self,
                     value: isSelected && videoAspectRatio != nil ? AnyView(SwingLineControls(

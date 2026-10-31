@@ -4,7 +4,7 @@ import XCTest
 /// (SwingCoach/Models/UITestFixture.swift), which documents each one.
 extension XCUIApplication {
     /// Launches with erased app data and settings plus a synthetic Library.
-    /// Seeds: empty, smoke, review, references, swipes, stress, sessions.
+    /// Seeds: empty, smoke, review, references, swipes, stress, sessions, positions.
     static func launched(seed: String, _ arguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["-ui-testing-seed", seed] + arguments

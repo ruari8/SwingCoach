@@ -83,12 +83,12 @@ struct SwingDetailView: View {
 
             reviewPager
 
-            if shouldShowAnalysisAction {
+            if shouldShowAnalysisAction, !isDrawingLines {
                 analysisFloatingLayer
             }
 
-            if selectedPage == 0, videoAspectRatios[currentSwingID] != nil {
-                drawingToolRail
+            if selectedPage == 0, isDrawingLines, videoAspectRatios[currentSwingID] != nil {
+                drawingToolBar
             }
         }
         .overlayPreferenceValue(ReviewPlaybackCornerControlsKey.self) { cornerControls in
@@ -179,24 +179,17 @@ struct SwingDetailView: View {
 
                 Spacer()
 
-                VStack(spacing: 10) {
-                    Button {
-                        library.toggleFavorite(currentSwing)
-                    } label: {
-                        Image(systemName: currentSwing.isFavorite ? "star.fill" : "star")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(currentSwing.isFavorite ? .yellow : .white)
-                            .frame(width: 38, height: 38)
-                            .background(Circle().fill(Color.black.opacity(0.45)))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(currentSwing.isFavorite ? "Remove star" : "Star swing")
-                    cornerControls
+                Button {
+                    library.toggleFavorite(currentSwing)
+                } label: {
+                    Image(systemName: currentSwing.isFavorite ? "star.fill" : "star")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(currentSwing.isFavorite ? .yellow : .white)
+                        .frame(width: 38, height: 38)
+                        .background(Circle().fill(Color.black.opacity(0.45)))
                 }
-                .fixedSize(horizontal: false, vertical: true)
-                // The stack extends below the navigation row without moving
-                // the back button, count, or analysis page picker.
-                .frame(height: 38, alignment: .top)
+                .buttonStyle(.plain)
+                .accessibilityLabel(currentSwing.isFavorite ? "Remove star" : "Star swing")
             }
             .padding(.horizontal, 14)
 
@@ -207,6 +200,13 @@ struct SwingDetailView: View {
             Spacer(minLength: 0)
         }
         .padding(.top, 6)
+        // The player's tool rail starts one gap under the star, or under Back
+        // when docked left, without moving the navigation row.
+        .overlay {
+            cornerControls
+                .padding(.horizontal, 14)
+                .padding(.top, 6)
+        }
     }
 
     private var analysisPagePicker: some View {
@@ -380,6 +380,8 @@ struct SwingDetailView: View {
                 edgeToEdge: true,
                 controlsLocked: $controlsLocked,
                 infoAction: { showMetadata = true },
+                swingPositions: swing.swingPositions,
+                drawing: videoAspectRatios[swing.id] != nil ? $isDrawingLines : nil,
                 contentOverlay: { currentTime, _ in
                     AnyView(
                         SwingLineOverlay(
@@ -433,17 +435,15 @@ struct SwingDetailView: View {
         }
     }
 
-    private var drawingToolRail: some View {
-        HStack {
-            SwingLineControls(
-                annotationID: currentSwing.manualAnnotationID,
-                isDrawing: $isDrawingLines,
-                draft: $draftLine
-            )
-            Spacer(minLength: 0)
-        }
-        .padding(.leading, 14)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    /// Sits where Analyze Swing does; that button hides while drawing.
+    private var drawingToolBar: some View {
+        SwingLineControls(
+            annotationID: currentSwing.manualAnnotationID,
+            isDrawing: $isDrawingLines,
+            draft: $draftLine
+        )
+        .padding(.top, 60)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     private var analysisOverlayButton: some View {

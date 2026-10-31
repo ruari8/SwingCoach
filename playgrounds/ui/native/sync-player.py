@@ -12,5 +12,6 @@ end = source.index("struct SwingPlaybackView:", start)
     "// Generated from production by sync-player.py.\n"
     "import SwiftUI\nimport AVKit\nimport UIKit\n\n" + source[start:end]
 )
-for name in ["SwingVideoPlayer.swift", "PlaybackTransportGesture.swift", "SwingReviewPager.swift"]:
-    (out / name).write_text((root / name).read_text())
+for name in ["SwingVideoPlayer.swift", "PlaybackTransportGesture.swift", "SwingReviewPager.swift",
+             "PlaybackPositionControls.swift", "Models/SwingPositions/SwingPositions.swift"]:
+    (out / Path(name).name).write_text((root / name).read_text())
