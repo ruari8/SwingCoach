@@ -71,6 +71,7 @@ SwingCoach/
 │   ├── analysis/                  # live analysis pipeline (see below)
 │   ├── docs/pipeline/             # current per-stage pipeline docs
 │   └── test_*.py                  # standalone scripts, not pytest
+├── backend_v2/                    # replacement coaching backend, in progress, not deployed
 ├── detector_workbench/            # detector datasets, training, validation; legacy/ holds retired detectors
 ├── docs/
 │   ├── evidence/                  # dated investigations; status index in README
