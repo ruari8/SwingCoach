@@ -108,6 +108,9 @@ struct SwingDetailView: View {
                 await library.loadThumbnails()
             }
         }
+        .onChange(of: selectedPage) { _, page in
+            if page != 0 { isDrawingLines = false }
+        }
         .onChange(of: currentSwingID) { _, _ in
             resetReviewState()
             preparePlaybackWindow()
@@ -193,7 +196,8 @@ struct SwingDetailView: View {
             }
             .padding(.horizontal, 14)
 
-            if savedAnalysis != nil {
+            // The drawing bar takes this spot while drawing.
+            if savedAnalysis != nil, !isDrawingLines {
                 analysisPagePicker
             }
 
@@ -248,8 +252,9 @@ struct SwingDetailView: View {
         VStack(spacing: 12) {
             analysisOverlayButton
 
+            // Clear of the tool rail, which can dock on either side.
             analysisInlineStatus
-                .padding(.horizontal, 28)
+                .padding(.horizontal, 14 + PlayerToolRail.buttonSize + PlayerToolRail.spacing)
 
             Spacer(minLength: 0)
         }
@@ -543,7 +548,7 @@ struct SwingDetailView: View {
                     }
                 }
                 .accessibilityIdentifier("swing-positions")
-                Text("Times are on the clip's slow-motion timeline. Faded rows are positions the model was unsure of.")
+                Text("Times are on the clip's slow-motion timeline. A ? marks positions the model was unsure of.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             } else if positionProcessor.failed.contains(currentSwing.id) {
@@ -563,7 +568,8 @@ struct SwingDetailView: View {
 
     private func swingPositionRow(_ position: SwingPosition) -> some View {
         HStack(alignment: .firstTextBaseline) {
-            Text("\(position.label) \(position.name)")
+            // Below 0.5 the model found no clear peak for this position.
+            Text(position.confidence < 0.5 ? "\(position.label)? \(position.name)" : "\(position.label) \(position.name)")
                 .font(.subheadline)
             Spacer(minLength: 12)
             Text(String(format: "%.2fs", position.clipTime))
@@ -573,8 +579,6 @@ struct SwingDetailView: View {
                 .foregroundColor(.secondary)
                 .frame(width: 40, alignment: .trailing)
         }
-        // Below 0.5 the model found no clear peak for this position.
-        .opacity(position.confidence < 0.5 ? 0.45 : 1)
     }
 
     private var shouldShowAnalysisAction: Bool {

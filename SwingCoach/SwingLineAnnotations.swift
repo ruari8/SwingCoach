@@ -45,6 +45,7 @@ struct SwingLineControls: View {
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(.white)
                             .frame(width: 36, height: 36)
+                            .background(Circle().fill(Color.red.opacity(0.72)))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Clear all lines")

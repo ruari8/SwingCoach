@@ -4,7 +4,7 @@
 //
 //  Player pieces for P1-P10 quick navigation and the player's tool rail:
 //  the scrubber mapping, the pose strip, and the foldable, dockable rail.
-//  Design study: playgrounds/ui/web/positions-v3.html.
+//  Design study: playgrounds/ui/web/positions.html.
 //
 
 import SwiftUI
@@ -208,7 +208,7 @@ struct SwingPositionStrip: View {
                 .font(.system(size: 9, weight: .bold))
                 .foregroundColor(selected ? .black : .white.opacity(0.75))
         }
-        .frame(width: 36, height: 46)
+        .frame(width: 34, height: 46)
         .background(Capsule().fill(selected ? Color.white : Color.clear))
         .accessibilityElement(children: .ignore)
         .accessibilityIdentifier("swing-position-\(position.label)")
@@ -277,14 +277,21 @@ struct PlayerToolRail: View {
     @AppStorage("playerToolRailOpen") private var isOpen = true
     @AppStorage("playerToolLabelsIntroduced") private var labelsIntroduced = false
 
-    @State private var dragOffset: CGSize = .zero
-    @State private var isDragging = false
+    // Gesture state resets itself if the system cancels the drag; the reset
+    // springs, so a docking release animates from where the finger let go.
+    @GestureState(resetTransaction: Transaction(animation: .spring(response: 0.35, dampingFraction: 0.82)))
+    private var dragTranslation: CGSize = .zero
     @State private var labelsVisible = false
     @State private var labelsToken = 0
     @State private var peekedToolID: String?
 
     static let buttonSize: CGFloat = 38
     static let spacing: CGFloat = 10
+
+    private var isDragging: Bool { hypot(dragTranslation.width, dragTranslation.height) > 6 }
+    private var dragOffset: CGSize { isDragging ? dragTranslation : .zero }
+    /// A single tool is not worth a fold button.
+    private var isFoldable: Bool { tools.count > 1 }
 
     var body: some View {
         GeometryReader { geometry in
@@ -306,7 +313,7 @@ struct PlayerToolRail: View {
             .frame(width: width, height: geometry.size.height, alignment: .topLeading)
         }
         .onAppear {
-            guard isOpen, !labelsIntroduced else { return }
+            guard isOpen || !isFoldable, !labelsIntroduced else { return }
             labelsIntroduced = true
             flashLabels(delay: 0.4)
         }
@@ -314,9 +321,11 @@ struct PlayerToolRail: View {
 
     private func column(width: CGFloat) -> some View {
         VStack(alignment: side == .leading ? .leading : .trailing, spacing: Self.spacing) {
-            foldButton(width: width)
+            if isFoldable {
+                foldButton(width: width)
+            }
 
-            if isOpen {
+            if isOpen || !isFoldable {
                 ForEach(tools) { tool in
                     RailToolRow(
                         tool: tool,
@@ -344,17 +353,11 @@ struct PlayerToolRail: View {
             // translation would stay near zero.
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .global)
-                    .onChanged { value in
-                        let distance = hypot(value.translation.width, value.translation.height)
-                        if !isDragging, distance > 6 {
-                            isDragging = true
-                            labelsVisible = false
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        }
-                        if isDragging { dragOffset = value.translation }
+                    .updating($dragTranslation) { value, translation, _ in
+                        translation = value.translation
                     }
                     .onEnded { value in
-                        if isDragging {
+                        if hypot(value.translation.width, value.translation.height) > 6 {
                             dock(width: width, translation: value.translation)
                         } else {
                             toggleOpen()
@@ -393,8 +396,6 @@ struct PlayerToolRail: View {
         if newSide != side { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
         withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
             side = newSide
-            dragOffset = .zero
-            isDragging = false
         }
     }
 
@@ -430,7 +431,7 @@ private struct RailToolRow: View {
     let showsLabel: Bool
     @Binding var peekedToolID: String?
 
-    @State private var isPressed = false
+    @GestureState private var isPressed = false
     @State private var didPeek = false
     @State private var holdTask: Task<Void, Never>?
 
@@ -463,20 +464,23 @@ private struct RailToolRow: View {
             .contentShape(Circle())
             .gesture(
                 DragGesture(minimumDistance: 0)
+                    .updating($isPressed) { _, pressed, _ in pressed = true }
                     .onChanged { _ in
-                        guard !isPressed else { return }
-                        isPressed = true
+                        guard holdTask == nil else { return }
                         didPeek = false
                         holdTask = Task { @MainActor in
                             try? await Task.sleep(nanoseconds: 400_000_000)
-                            guard !Task.isCancelled, isPressed else { return }
+                            guard !Task.isCancelled else { return }
+                            // A cancelled gesture never ends, so the task clears itself.
+                            holdTask = nil
+                            guard isPressed else { return }
                             didPeek = true
                             withAnimation(.easeOut(duration: 0.15)) { peekedToolID = tool.id }
                         }
                     }
                     .onEnded { value in
                         holdTask?.cancel()
-                        isPressed = false
+                        holdTask = nil
                         if didPeek {
                             let id = tool.id
                             Task { @MainActor in

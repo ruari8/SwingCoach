@@ -24,7 +24,7 @@ Stored per swing in `swing_library.json` under `swingPositions`:
 - the model name
 - for each position: number, time on the clip's own slow-motion timeline, and confidence (the model's score through a sigmoid)
 
-Swing Info fades positions under 50% confidence; the player marks them `P8?`.
+Swing Info and the player mark positions under 50% confidence with a `?` (`P8?`).
 
 ## Accuracy
 

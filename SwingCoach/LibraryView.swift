@@ -1282,7 +1282,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             // the bottom-right transport slot.
             let accessoryBottomPadding = max(34, geometry.safeAreaInsets.bottom + 34)
                 + (controlsLocked == nil ? 0 : 80)
-                + (visiblePositions == nil ? 0 : Self.positionStripHeight + 8)
+                + (visiblePositions == nil ? 0 : positionStripLift(bottomControlPadding: bottomControlPadding))
 
             ZStack {
                 if controlsVisible {
@@ -1328,9 +1328,13 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                                 onSelect: jump(to:)
                             )
                             .padding(.horizontal, 12)
-                            .padding(.bottom, max(8, bottomControlPadding - 16))
+                            .padding(.bottom, positionStripBottomPadding(bottomControlPadding: bottomControlPadding))
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
                         }
                     }
+                    // The strip appears when paging to a swing with positions,
+                    // or when Auto's positions land; ease the controls up.
+                    .animation(.easeInOut(duration: 0.2), value: visiblePositions == nil)
                     .transition(.opacity)
 
                     // The rail spans the width so it can dock on either side.
@@ -1469,6 +1473,16 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     // MARK: - Tool rail and positions
 
     static var positionStripHeight: CGFloat { 56 }
+
+    private func positionStripBottomPadding(bottomControlPadding: CGFloat) -> CGFloat {
+        max(8, bottomControlPadding - 16)
+    }
+
+    /// How far the strip raises the timeline and transport row.
+    private func positionStripLift(bottomControlPadding: CGFloat) -> CGFloat {
+        positionStripBottomPadding(bottomControlPadding: bottomControlPadding) + Self.positionStripHeight + 8
+            - (bottomControlPadding + 10)
+    }
     /// Hosted by the review screen, the rail starts one gap under its corner
     /// buttons (Library's star or Back, Auto's Done).
     private var navigationToolRailTop: CGFloat { PlayerToolRail.buttonSize + PlayerToolRail.spacing }
