@@ -57,4 +57,90 @@ final class LiveSwingPosesTests: XCTestCase {
     func testEmptyWindowFails() {
         XCTAssertFalse(LiveSwingPoses.coversWindow([], window: 10.0...12.4))
     }
+
+    // MARK: - Schedule
+
+    /// 240 fps frame times from `start`, with `jitter(frame)` added and the
+    /// frames in `dropped` left out.
+    private func frames(count: Int, start: Double = 0, dropped: Set<Int> = [],
+                        jitter: (Int) -> Double = { _ in 0 }) -> [Double] {
+        (0..<count).filter { !dropped.contains($0) }.map { start + Double($0) / 240 + jitter($0) }
+    }
+
+    private func take(_ times: [Double]) -> [LiveSwingPoses.Slot] {
+        var schedule = LiveSwingPoses.SlotSchedule()
+        return times.compactMap { schedule.take($0) }
+    }
+
+    func testScheduleTakesEveryEighthFrame() {
+        let slots = take(frames(count: 240))
+        XCTAssertEqual(slots.map(\.index), Array(0..<30))
+        XCTAssertEqual(Set(slots.map(\.grid)), [1])
+    }
+
+    func testScheduleIgnoresJitterBothWays() {
+        // ±1 ms, drifting from one sign to the other across the run.
+        for sign in [1.0, -1.0] {
+            let slots = take(frames(count: 2400) { sign * (0.001 - 0.002 * Double($0) / 2400) })
+            XCTAssertEqual(slots.map(\.index), Array(0..<300), "sign \(sign)")
+        }
+    }
+
+    func testDroppedFramesLeaveGapsNotLateDuplicates() {
+        // One dropped frame on a slot: the next frame, 4 ms late, stands in.
+        XCTAssertEqual(take(frames(count: 120, dropped: [80])).map(\.index), Array(0..<15))
+        // Frames 79-86 dropped: slot 10 is missing, not filled 29 ms late.
+        let indices = take(frames(count: 120, dropped: Set(79...86))).map(\.index)
+        XCTAssertFalse(indices.contains(10))
+        XCTAssertEqual(indices.filter { $0 != 10 }, Array(0..<15).filter { $0 != 10 })
+        // A frame exactly one slot late keeps the grid and skips one number.
+        var schedule = LiveSwingPoses.SlotSchedule()
+        XCTAssertEqual(schedule.take(0)?.index, 0)
+        XCTAssertEqual(schedule.take(1.0 / 30)?.index, 1)
+        let late = schedule.take(0.1)
+        XCTAssertEqual(late?.index, 3)
+        XCTAssertEqual(late?.grid, 1)
+    }
+
+    func testThirtyFPSKeepsTakingFramesWhenOffsetFromTheGrid() {
+        // Review example: first frame at 0, then every frame 3 ms early.
+        let times = [0.0] + (1..<300).map { Double($0) / 30 - 0.003 }
+        XCTAssertEqual(take(times).map(\.index), Array(0..<300))
+    }
+
+    func testDriftingThirtyFPSRarelySkipsASlot() {
+        // 30.003 fps for 200 s drifts 0.6 of a slot; every frame still counts.
+        let times = (0..<6000).map { Double($0) / 30.003 }
+        let indices = take(times).map(\.index)
+        XCTAssertGreaterThanOrEqual(indices.count, 5998)
+        XCTAssertEqual(Set(indices).count, indices.count)
+    }
+
+    func testOtherFrameRatesReachEverySlot() {
+        for fps in [60.0, 120.0, 240.0] {
+            let times = (0..<Int(fps * 60)).map { Double($0) / fps + 0.0007 * sin(Double($0)) }
+            XCTAssertEqual(take(times).map(\.index), Array(0..<1800), "\(fps) fps")
+        }
+    }
+
+    func testRestartStartsANewGrid() {
+        let slots = take(frames(count: 240) + frames(count: 240))
+        XCTAssertEqual(Set(slots.map(\.grid)), [1, 2])
+        XCTAssertEqual(slots.filter { $0.grid == 2 }.map(\.index), Array(0..<30))
+    }
+
+    func testScheduledCopiesCoverTheWindow() {
+        let window = 1.0...3.4
+        let slots = take(frames(count: 1000, start: 0.0021) { _ in 0.0009 })
+        XCTAssertTrue(LiveSwingPoses.coversWindow(slots.filter { LiveSwingPoses.inWindow($0, window) }, window: window))
+    }
+
+    func testWindowIsDueOnlyAfterItsLastSlot() {
+        // Review example: slot 481 (16.0333…) is still inside this window.
+        let window = 13.633333333333333...16.033333333333335
+        let slot480 = LiveSwingPoses.Slot(grid: 1, index: 480, anchor: 0)
+        XCTAssertTrue(LiveSwingPoses.inWindow(slot480.next, window))
+        XCTAssertFalse(LiveSwingPoses.isDue(window, latest: slot480))
+        XCTAssertTrue(LiveSwingPoses.isDue(window, latest: slot480.next))
+    }
 }
