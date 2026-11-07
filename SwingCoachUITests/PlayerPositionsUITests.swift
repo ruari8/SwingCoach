@@ -39,11 +39,12 @@ final class PlayerPositionsUITests: XCTestCase {
         let timeline = try XCTUnwrap(app.otherElements.matching(identifier: "playback-timeline")
             .allElementsBoundByIndex.first { $0.isHittable })
         app.buttons["Play"].tap()
-        // The 3 s slow-motion clip lasts 0.375 s at 8x; at 1x it would be near 0.8 s in.
-        let pause = XCTestExpectation(description: "real-time playback")
-        pause.isInverted = true
-        wait(for: [pause], timeout: 0.8)
-        XCTAssertGreaterThan(Double(timeline.value as? String ?? "") ?? 0, 2.5)
+        // The 3 s slow-motion clip passes 2.5 s after 0.31 s at 8x, but only
+        // after 2.5 s at 1x; 1.5 s leaves room for the player to start.
+        let realTime = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            (Double(timeline.value as? String ?? "") ?? 0) > 2.5
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [realTime], timeout: 1.5), .completed, "Real must play at 8x")
         speed.tap()
         XCTAssertEqual(speed.value as? String, "0.25x", "Real wraps back to the slowest speed")
     }
