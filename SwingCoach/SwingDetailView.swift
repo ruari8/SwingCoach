@@ -376,7 +376,7 @@ struct SwingDetailView: View {
         if let playerItem = playerItems[swing.id] {
             PlaybackChromeView(
                 playerItem: playerItem,
-                playbackEnabled: swing.id == currentSwingID && !drawingEnabled,
+                playbackEnabled: swing.id == currentSwingID,
                 showsSpeedControls: true,
                 startsPlaying: false,
                 allowsFullscreen: false,

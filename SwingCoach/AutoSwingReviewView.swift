@@ -196,7 +196,7 @@ private struct AutoSwingReviewPage: View {
             if let playerItem {
                 PlaybackChromeView(
                     playerItem: playerItem,
-                    playbackEnabled: isSelected && !drawingEnabled,
+                    playbackEnabled: isSelected,
                     showsSpeedControls: true,
                     startsPlaying: false,
                     allowsFullscreen: false,

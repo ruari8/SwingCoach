@@ -39,6 +39,22 @@ final class ReviewAnnotationUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Undo last line"].exists)
     }
 
+    func testPlayAndPauseWorkWhileDrawing() {
+        let app = XCUIApplication.launched(seed: "review", ["-ui-testing-library"])
+        app.openLibraryCard("Review A starred DTL", sessionCard: true)
+        let draw = app.buttons["Draw straight lines"]
+        XCTAssertTrue(draw.waitForExistence(timeout: 5))
+        draw.tap()
+        XCTAssertTrue(app.buttons["Finish drawing lines"].waitForExistence(timeout: 2))
+        let play = app.buttons["Play"]
+        XCTAssertTrue(play.waitForExistence(timeout: 2))
+        play.tap()
+        XCTAssertTrue(app.buttons["Pause"].waitForExistence(timeout: 2), "Play must start playback while drawing")
+        app.buttons["Pause"].tap()
+        XCTAssertTrue(play.waitForExistence(timeout: 2))
+        XCTAssertTrue(app.buttons["Finish drawing lines"].exists, "Play and pause must not leave drawing")
+    }
+
     private func attachScreenshot(name: String) {
         // Capture the whole display; application screenshots can crop using
         // stale portrait bounds after a Simulator orientation change.
