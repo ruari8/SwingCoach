@@ -1116,6 +1116,9 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     // The review presentation owns Lock; nil omits the control for standalone players.
     let controlsLocked: Binding<Bool>?
     let infoAction: (() -> Void)?
+    /// The rate that plays a slow-motion export in real time (its source time
+    /// scale, e.g. 8 for 240 fps). Adds a "Real" step to the speed tool.
+    let realTimeRate: Float?
     /// P1-P10 for this clip. When present, the player shows the pose strip,
     /// marks the positions on the timeline, and offers the positions toggle.
     let swingPositions: SwingPositions?
@@ -1158,7 +1161,9 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     @State private var positionBadgeTask: Task<Void, Never>?
     @State private var showsPositionBadge = false
 
-    private let speedOptions: [Float] = [0.25, 0.5, 0.75, 1.0]
+    private var speedOptions: [Float] {
+        [0.25, 0.5, 0.75, 1.0] + (realTimeRate.map { [$0] } ?? [])
+    }
 
     init(
         playerItem: AVPlayerItem,
@@ -1172,6 +1177,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         edgeToEdge: Bool = false,
         controlsLocked: Binding<Bool>? = nil,
         infoAction: (() -> Void)? = nil,
+        realTimeRate: Float? = nil,
         swingPositions: SwingPositions? = nil,
         drawing: Binding<Bool>? = nil,
         contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
@@ -1189,6 +1195,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         self.edgeToEdge = edgeToEdge
         self.controlsLocked = controlsLocked
         self.infoAction = infoAction
+        self.realTimeRate = realTimeRate.flatMap { $0 > 1 ? $0 : nil }
         self.swingPositions = swingPositions
         self.drawing = drawing
         self.header = header()
@@ -1589,6 +1596,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 contentOverlayAllowsHitTesting: contentOverlayAllowsHitTesting,
                 edgeToEdge: true,
                 controlsLocked: controlsLocked,
+                realTimeRate: realTimeRate,
                 contentOverlay: contentOverlay
             ) {
                 EmptyView()
@@ -2066,7 +2074,9 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     }
 
     private func speedLabel(_ speed: Float) -> String {
-        if speed == 1.0 {
+        if speed == realTimeRate {
+            return "Real"
+        } else if speed == 1.0 {
             return "1x"
         } else if speed == 0.5 {
             return "0.5x"

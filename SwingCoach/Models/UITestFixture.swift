@@ -47,8 +47,8 @@ nonisolated enum UITestFixture {
         case stress
         /// Six clips today and three yesterday.
         case sessions
-        /// One personal DTL clip and three references, all with P1-P10
-        /// (P8 below the model's 0.5 confidence line).
+        /// One personal DTL clip (240 fps, 8x slow-motion) and three references,
+        /// all with P1-P10 (P8 below the model's 0.5 confidence line).
         case positions
     }
 
@@ -181,6 +181,8 @@ extension UITestFixture {
             personal(1, title: "Positions DTL", createdAt: Date())
             references(3)
             for index in swings.indices { swings[index].swingPositions = fixturePositions }
+            // The personal clip is a 240 fps capture, exported 8x slower.
+            swings[0].sourceTimeScale = 8
         }
 
         let files = FileManager.default
