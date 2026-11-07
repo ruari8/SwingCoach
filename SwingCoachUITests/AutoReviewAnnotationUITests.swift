@@ -95,6 +95,14 @@ final class AutoReviewAnnotationUITests: XCTestCase {
         saved.tap()
         assertPosition("3 of 3", app)
         XCTAssertTrue(visible("Star swing").isHittable, "The star must persist after reopening review")
+        app.buttons["Close swing review"].tap()
+
+        // A relaunch reloads the library from disk.
+        app.relaunch(Fixture.syntheticCamera)
+        XCTAssertTrue(saved.waitForExistence(timeout: 5))
+        saved.tap()
+        assertPosition("3 of 3", app)
+        XCTAssertTrue(visible("Star swing").isHittable, "The unstar must be saved to disk")
         visible("Star swing").tap()
         XCTAssertTrue(visible("Remove star").isHittable)
         app.buttons["Close swing review"].tap()
