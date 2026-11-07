@@ -145,10 +145,12 @@ nonisolated final class CaptureCadenceDiagnostics: Sendable {
         ])
     }
 
+    /// Returns false when the event was dropped because earlier writes are still queued.
+    @discardableResult
     func emit(_ boundary: String, id: String = "", cadence: CaptureCadenceWindow.Summary? = nil,
-              values: [String: Double] = [:], state: [String: String] = [:]) {
+              values: [String: Double] = [:], state: [String: String] = [:]) -> Bool {
         // A blocked disk must not grow an unbounded backlog or block capture.
-        guard slots.wait(timeout: .now()) == .success else { return }
+        guard slots.wait(timeout: .now()) == .success else { return false }
         let event = Event(runID: runID, date: Date(), uptime: ProcessInfo.processInfo.systemUptime,
                           boundary: boundary, id: id, cadence: cadence,
                           values: values.filter { $0.value.isFinite }, state: state)
@@ -164,6 +166,7 @@ nonisolated final class CaptureCadenceDiagnostics: Sendable {
                 Self.logger.error("Could not save capture diagnostics: \(error.localizedDescription, privacy: .public)")
             }
         }
+        return true
     }
 }
 

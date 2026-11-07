@@ -410,6 +410,12 @@ def footage_check(run):
     verdicts = find("detector-candidate")
     accepted = [e for e in verdicts if e["state"]["accepted"] == "yes"]
     assert verdicts, "no detector-candidate events in the diagnostics log"
+    # Candidate ids count up from 1 per detector, so a dropped verdict leaves a gap.
+    previous = 0
+    for e in verdicts:
+        current = int(e["id"])
+        assert current in (previous + 1, 1), f"detector-candidate {previous + 1} missing before {current}"
+        previous = current
     assert len(accepted) >= len(find("detector-swing")), \
         f"{len(accepted)} accepted candidates logged for {len(find('detector-swing'))} detected swings"
     assert all("ballLock" in e["state"] for e in find("detector")), "detector events lack ballLock"

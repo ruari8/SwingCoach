@@ -642,6 +642,8 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     func stopAutoCapture() {
         queue.async {
             self.autoCaptureIsActive = false
+            // After any frame already on analysisQueue.
+            self.analysisQueue.async { self.reportNewCandidates(relativeTime: nil) }
             self.autoCaptureIsPausedForReview = false
             self.livePoses?.reset()
             self.bufferQueue.async {
@@ -685,6 +687,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             if let reviewSessionID { self.autoDetectionReviewSessionID = reviewSessionID }
             self.analysisRecordingStart = nil
             self.autoExportedDetectionIDs = []
+            self.reportNewCandidates(relativeTime: nil)
             self.liveSwingDetector = SwingDetectorV3(configuration: self.liveV3Configuration())
             self.liveSwingDetector.reset(enabled: detectorEnabled)
             self.detectorTiming = DetectorTimingWindow()
@@ -820,6 +823,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         }
 
         let detections = liveSwingDetector.finish(recordingTime: recordingTime)
+        reportNewCandidates(relativeTime: recordingTime)
         return (
             detections,
             finalizedSummary(
@@ -1146,6 +1150,8 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             orientedImageSize: orientedImageSize
         )
         snapshot = liveTelemetrySnapshot(base: snapshot, recordingTime: relativeTime)
+        // Outside the Auto check: a stop that lands mid-frame must not lose this frame's verdict.
+        reportNewCandidates(relativeTime: relativeTime)
         if autoCaptureIsActive {
             detectorTiming.record(seconds: ProcessInfo.processInfo.systemUptime - startedAt,
                                   inferred: liveSwingDetector.processedFrames > processedBefore)
@@ -1180,7 +1186,6 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                                                   state: ["state": state.rawValue,
                                                           "swingWindow": isOpen ? "open" : "closed"])
         }
-        reportNewCandidates(relativeTime: relativeTime)
         let now = ProcessInfo.processInfo.systemUptime
         guard now >= nextDetectorReport else { return }
         nextDetectorReport = now + 1
@@ -1191,30 +1196,32 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     /// Every swing the detector weighed, kept or not, with the reason it was
-    /// rejected, so a missed swing can be explained from the log alone.
-    private func reportNewCandidates(relativeTime: Double) {
+    /// rejected, so a missed swing can be explained from the log alone. Runs on
+    /// analysisQueue; a verdict the log drops is retried on the next call.
+    private func reportNewCandidates(relativeTime: Double?) {
         let traces = liveSwingDetector.currentTraces()
         // A detector reset clears its traces.
         if traces.count < reportedCandidateCount { reportedCandidateCount = 0 }
-        guard traces.count > reportedCandidateCount else { return }
-        for trace in traces[reportedCandidateCount...] {
+        while reportedCandidateCount < traces.count {
+            let trace = traces[reportedCandidateCount]
             let evidence = trace.evidence
             var values: [String: Double] = [
-                "relativeTime": relativeTime, "score": trace.score,
-                "anchorStability": evidence.anchorStability,
+                "score": trace.score, "anchorStability": evidence.anchorStability,
                 "disappearancePersistence": evidence.disappearancePersistence,
                 "clubSweptThrough": evidence.clubSweptThrough, "swingArc": evidence.swingArc,
             ]
+            values["relativeTime"] = relativeTime
             values["impactTime"] = trace.impactRealTime
             values["swingSequence"] = evidence.swingSequence
             values["ballInventoryDrop"] = evidence.ballInventoryDrop
             values["poseConsistency"] = evidence.poseConsistency
-            CaptureCadenceDiagnostics.shared.emit(
+            let logged = CaptureCadenceDiagnostics.shared.emit(
                 "detector-candidate", id: String(trace.candidateId), values: values,
                 state: ["accepted": trace.accepted ? "yes" : "no", "failure": trace.primaryFailure.rawValue,
                         "stateReached": trace.stateReached])
+            guard logged else { return }
+            reportedCandidateCount += 1
         }
-        reportedCandidateCount = traces.count
     }
 
     private func enqueueNewAutoDetections() {
