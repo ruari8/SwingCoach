@@ -13,3 +13,26 @@ nonisolated enum AutoSessionContinuity {
         return idle >= 0 && idle < idleLimit
     }
 }
+
+/// The session's idle clock. Starting a session, accepting a swing and saving
+/// one all count as activity; acceptance counts so a swing still collecting
+/// its after-swing footage keeps the session alive.
+nonisolated struct AutoSessionActivity {
+    private(set) var last: Date?
+
+    func continuesSession(at now: Date) -> Bool {
+        AutoSessionContinuity.continues(lastActivity: last, now: now)
+    }
+
+    mutating func sessionStarted(at now: Date) { last = now }
+
+    /// Returns true when this swing comes after the idle limit and so opens a
+    /// fresh review.
+    mutating func swingAccepted(at now: Date) -> Bool {
+        let opensFreshReview = !continuesSession(at: now)
+        last = now
+        return opensFreshReview
+    }
+
+    mutating func swingSaved(at now: Date) { last = now }
+}

@@ -165,10 +165,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     // Captured with detector work on analysisQueue; never read by UI callbacks.
     private var autoDetectionReviewSessionID = UUID()
     private var autoSavedSwingCount = 0
-    /// The last saved swing, or the session start before the first one. Auto
+    /// The session's last start, accepted swing or saved swing. Auto
     /// restarting within `AutoSessionContinuity.idleLimit` of it continues the
     /// same session, so a trip to Library doesn't empty the saved count.
-    private var autoSessionLastActivity: Date?
+    private var autoSessionActivity = AutoSessionActivity()
     private var autoPendingSwingCount = 0
     private var autoExportedDetectionIDs: Set<UUID> = []
     private lazy var autoRollingBuffer = AutoRollingVideoBuffer(writerQueue: bufferQueue)
@@ -1406,7 +1406,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     /// within the idle limit; otherwise start a new one.
     @MainActor
     private func nextAutoSession(now: Date = Date()) -> (id: UUID, continues: Bool) {
-        AutoSessionContinuity.continues(lastActivity: autoSessionLastActivity, now: now)
+        autoSessionActivity.continuesSession(at: now)
             ? (autoReviewSessionID, true) : (UUID(), false)
     }
 
@@ -1424,7 +1424,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
     @MainActor
     func beginAutoReviewSession(id: UUID) {
-        autoSessionLastActivity = Date()
+        autoSessionActivity.sessionStarted(at: Date())
         autoReviewSessionID = id
         autoSavedSwingCount = 0
         autoPendingSwingCount = 0
@@ -1436,10 +1436,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         guard sessionID == autoReviewSessionID else { return }
         // Auto can watch (or sit in review) past the idle limit without
         // restarting; the first swing after that opens a fresh review.
-        if !AutoSessionContinuity.continues(lastActivity: autoSessionLastActivity, now: Date()) {
+        if autoSessionActivity.swingAccepted(at: Date()) {
             autoSessionSwings = []
             autoSavedSwingCount = 0
-            autoSessionLastActivity = Date()
         }
         autoPendingSwingCount += 1
         autoCaptureStatus = AutoCaptureStatus(
@@ -1456,7 +1455,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         if let savedSwing {
             autoSessionSwings.append(savedSwing)
             autoSavedSwingCount += 1
-            autoSessionLastActivity = Date()
+            autoSessionActivity.swingSaved(at: Date())
         }
         autoPendingSwingCount = max(0, autoPendingSwingCount - 1)
         autoCaptureStatus = AutoCaptureStatus(
