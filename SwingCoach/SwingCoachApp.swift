@@ -9,11 +9,13 @@ import SwiftUI
 
 @main
 struct SwingCoachApp: App {
-    #if DEBUG
     init() {
+        // Before the fixture records the launch audio policy.
+        PlaybackAudioSession.configure()
+        #if DEBUG
         UITestFixture.prepareLaunch()
+        #endif
     }
-    #endif
 
     var body: some Scene {
         WindowGroup {

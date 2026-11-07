@@ -1,7 +1,8 @@
 import XCTest
 
 /// Real capture-session setup, with camera access granted, must leave the
-/// shared audio policy and microphone alone on launch and on every tab entry.
+/// shared audio policy and microphone alone on launch and on every tab entry,
+/// and that policy must mix with other apps so playback keeps their music.
 final class CaptureAudioUITests: XCTestCase {
     private let audioCamera = ["-ui-testing-camera", "audio"]
 
@@ -31,7 +32,7 @@ final class CaptureAudioUITests: XCTestCase {
 
     private func assertAudioUnchanged(_ app: XCUIApplication, start: Int) {
         let value = app.staticTexts["capture-audio-verification"]
-        let expected = "unchanged=true microphones=0 starts=\(start)"
+        let expected = "unchanged=true mixes=true microphones=0 starts=\(start)"
         let predicate = NSPredicate(format: "label == %@", expected)
         expectation(for: predicate, evaluatedWith: value)
         waitForExpectations(timeout: 10)

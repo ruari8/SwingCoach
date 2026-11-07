@@ -559,7 +559,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             }
             self.manualRecordingIsPending = true
             self.recordedMode = self.captureMode
-            self.beginRecordingAudio()
+            if CaptureSoundPreference.recordsSound {
+                self.beginRecordingAudio()
+            }
             self.resetLiveSwingDetection()
             let rotationAngle = self.currentCardinalCaptureRotationAngle()
             if let connection = self.movieOutput.connection(with: .video),
@@ -1394,7 +1396,8 @@ extension CameraSession {
             let microphones = self.session.inputs.compactMap { $0 as? AVCaptureDeviceInput }
                 .filter { $0.device.hasMediaType(.audio) }.count
             let unchanged = UITestFixture.currentAudioPolicy() == UITestFixture.launchAudioPolicy
-            let readout = "unchanged=\(unchanged) microphones=\(microphones) starts=\(self.fixtureCameraStarts)"
+            let mixes = AVAudioSession.sharedInstance().categoryOptions.contains(.mixWithOthers)
+            let readout = "unchanged=\(unchanged) mixes=\(mixes) microphones=\(microphones) starts=\(self.fixtureCameraStarts)"
             DispatchQueue.main.async { self.fixtureAudioReadout = readout }
         }
     }
