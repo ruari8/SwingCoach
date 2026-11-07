@@ -3,6 +3,18 @@ import AVFoundation
 @testable import SwingCoach
 
 final class CaptureRecordingAudioSessionTests: XCTestCase {
+    func testPlaybackPolicyMixesWithOtherAppsWithoutActivating() {
+        let audio = AudioSpy()
+        audio.category = .soloAmbient
+        audio.mode = .default
+        audio.categoryOptions = []
+        PlaybackAudioSession.configure(audio: audio)
+        XCTAssertEqual(audio.category, .playback)
+        XCTAssertEqual(audio.mode, .moviePlayback)
+        XCTAssertEqual(audio.categoryOptions, [.mixWithOthers])
+        XCTAssertEqual(audio.calls, ["category"])
+    }
+
     func testConstructionAndIdleReleaseDoNotTouchAudio() throws {
         let audio = AudioSpy()
         let recording = CaptureRecordingAudioSession(audio: audio)

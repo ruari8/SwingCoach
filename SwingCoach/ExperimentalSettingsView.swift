@@ -50,6 +50,7 @@ struct ExperimentalSettingsView: View {
     @AppStorage(ExperimentalSettingKey.liveAutoSwingDetectionEnabled) private var liveAutoSwingDetectionEnabled = true
     @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
     @AppStorage(ExperimentalSettingKey.capturePracticeSwings) private var capturePracticeSwings = false
+    @AppStorage(CaptureSoundPreference.recordsSoundKey) private var recordsSound = false
     @AppStorage(ExperimentalSettingKey.showCaptureModelStats) private var showCaptureModelStats = false
     @AppStorage(ExperimentalSettingKey.backendTarget) private var backendTargetRaw = BackendTarget.local.rawValue
     @AppStorage(ExperimentalSettingKey.customBackendURL) private var customBackendURL = ""
@@ -100,6 +101,15 @@ struct ExperimentalSettingsView: View {
                 Text("Extra swing footage")
             } footer: {
                 Text("Add 0–30 seconds before or after the detected swing in Auto and Manual/Trim. Use +/− for half seconds, or enter a value. These are real seconds before slow-motion export. Auto waits for the extra footage; stopping early saves what was recorded. Existing clips are unchanged.")
+            }
+
+            Section {
+                Toggle("Record sound", isOn: $recordsSound)
+                    .accessibilityIdentifier("record-sound")
+            } header: {
+                Text("Sound")
+            } footer: {
+                Text("Off by default. When on, Manual recordings include microphone sound. Auto clips never have sound. Clips play alongside your music either way.")
             }
 
             Section {
