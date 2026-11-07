@@ -599,7 +599,9 @@ nonisolated final class SwingDetectorV3 {
                 score: score
             )
         )
-        let failure = primaryFailure(evidence: evidence, accepted: accepted, strokeMotion: hasGolfStrokeMotion,
+        let failure = primaryFailure(evidence: evidence, accepted: accepted,
+                                     passesScore: score >= scorer.threshold || strongPhysicalContact,
+                                     strokeMotion: hasGolfStrokeMotion,
                                      hasHuman: presence.hasHuman, hasClub: presence.hasClub)
 
         let lockTrace = resolved.lock.map { lock in
@@ -711,7 +713,9 @@ nonisolated final class SwingDetectorV3 {
             && ((evidence.swingSequence ?? 0) > 0 || strongStartupSwing)
             && presence.hasHuman
             && presence.hasClub
-        let failure = primaryFailure(evidence: evidence, accepted: accepted, strokeMotion: hasGolfStrokeMotion,
+        let failure = primaryFailure(evidence: evidence, accepted: accepted,
+                                     passesScore: score >= startupThreshold,
+                                     strokeMotion: hasGolfStrokeMotion,
                                      hasHuman: presence.hasHuman, hasClub: presence.hasClub)
 
         decisionTraces.append(
@@ -1072,11 +1076,11 @@ nonisolated final class SwingDetectorV3 {
         }
     }
 
-    /// The first gate that rejected the candidate. Evidence scores come first;
-    /// when they all pass, name the stroke-motion or presence gate instead of
-    /// reporting a misleading `below_threshold`.
+    /// The first gate that rejected the candidate. Evidence scores come first,
+    /// then the path's own score gate (`below_threshold`); only when the score
+    /// passed is the stroke-motion or presence gate named.
     private func primaryFailure(
-        evidence: EvidenceVector, accepted: Bool,
+        evidence: EvidenceVector, accepted: Bool, passesScore: Bool = true,
         strokeMotion: Bool = true, hasHuman: Bool = true, hasClub: Bool = true
     ) -> SwingPrimaryFailure {
         if accepted { return .none }
@@ -1086,6 +1090,7 @@ nonisolated final class SwingDetectorV3 {
         if evidence.clubSweptThrough < 0.45 { return .noClubSweep }
         if (evidence.swingSequence ?? 0) < 0.35 { return .noSwingSequence }
         if evidence.swingArc < 0.35 { return .lowSwingArc }
+        if !passesScore { return .belowThreshold }
         if !strokeMotion { return .noStrokeMotion }
         if !hasHuman { return .noHuman }
         if !hasClub { return .noClubPresence }
