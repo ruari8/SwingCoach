@@ -1239,9 +1239,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             guard logged else {
                 if !candidateRetryScheduled {
                     candidateRetryScheduled = true
-                    analysisQueue.asyncAfter(deadline: .now() + 1) {
-                        self.candidateRetryScheduled = false
-                        self.reportNewCandidates(relativeTime: nil)
+                    // Weak: a log that stays full must not keep a released session alive.
+                    analysisQueue.asyncAfter(deadline: .now() + 1) { [weak self] in
+                        self?.candidateRetryScheduled = false
+                        self?.reportNewCandidates(relativeTime: nil)
                     }
                 }
                 return
