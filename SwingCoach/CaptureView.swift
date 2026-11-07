@@ -165,6 +165,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     // Captured with detector work on analysisQueue; never read by UI callbacks.
     private var autoDetectionReviewSessionID = UUID()
     private var autoSavedSwingCount = 0
+    /// The last saved swing, or the session start before the first one. Auto
+    /// restarting within `AutoSessionContinuity.idleLimit` of it continues the
+    /// same session, so a trip to Library doesn't empty the saved count.
+    private var autoSessionLastActivity: Date?
     private var autoPendingSwingCount = 0
     private var autoExportedDetectionIDs: Set<UUID> = []
     private lazy var autoRollingBuffer = AutoRollingVideoBuffer(writerQueue: bufferQueue)
@@ -602,6 +606,8 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             return
         }
         #endif
+        // Decided on the main actor, which owns the review identity.
+        let session = nextAutoSession()
         queue.async {
             guard !self.autoCaptureIsActive else { return }
             guard !self.manualRecordingIsPending, !self.movieOutput.isRecording else {
@@ -620,13 +626,13 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             self.autoCaptureIsActive = true
             self.autoCaptureIsPausedForReview = false
             self.recordedMode = self.captureMode
-            let reviewSessionID = UUID()
+            let reviewSessionID = session.id
             DispatchQueue.main.async {
-                self.beginAutoReviewSession(id: reviewSessionID)
+                self.enterAutoSession(session)
                 self.autoCaptureStatus = AutoCaptureStatus(
                     isActive: true,
-                    savedSwingCount: 0,
-                    pendingSwingCount: 0,
+                    savedSwingCount: self.autoSavedSwingCount,
+                    pendingSwingCount: self.autoPendingSwingCount,
                     message: "Auto watching",
                     lastErrorMessage: nil
                 )
@@ -1396,8 +1402,29 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         }
     }
 
+    /// Continue the current review session if it saw a swing (or started)
+    /// within the idle limit; otherwise start a new one.
+    @MainActor
+    private func nextAutoSession(now: Date = Date()) -> (id: UUID, continues: Bool) {
+        AutoSessionContinuity.continues(lastActivity: autoSessionLastActivity, now: now)
+            ? (autoReviewSessionID, true) : (UUID(), false)
+    }
+
+    @MainActor
+    private func enterAutoSession(_ session: (id: UUID, continues: Bool)) {
+        guard session.continues else {
+            beginAutoReviewSession(id: session.id)
+            return
+        }
+        // Library may have deleted or starred session swings in the meantime.
+        let library = SwingLibrary.shared.swings
+        autoSessionSwings = autoSessionSwings.compactMap { swing in library.first { $0.id == swing.id } }
+        autoSavedSwingCount = autoSessionSwings.count
+    }
+
     @MainActor
     func beginAutoReviewSession(id: UUID) {
+        autoSessionLastActivity = Date()
         autoReviewSessionID = id
         autoSavedSwingCount = 0
         autoPendingSwingCount = 0
@@ -1422,6 +1449,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         if let savedSwing {
             autoSessionSwings.append(savedSwing)
             autoSavedSwingCount += 1
+            autoSessionLastActivity = Date()
         }
         autoPendingSwingCount = max(0, autoPendingSwingCount - 1)
         autoCaptureStatus = AutoCaptureStatus(
@@ -1506,13 +1534,17 @@ extension CameraSession {
     private func startFixtureAutoCapture() {
         guard !autoCaptureIsActive else { return }
         autoCaptureIsActive = true
+        let session = nextAutoSession()
+        enterAutoSession(session)
         guard !UITestFixture.exportsAutoClip else {
             exportFixtureAutoClip()
             return
         }
-        // The Library's reference swings stand in for this Auto session.
-        autoSessionSwings = SwingLibrary.shared.swings.filter(\.isReference)
-        autoSavedSwingCount = autoSessionSwings.count
+        if !session.continues {
+            // The Library's reference swings stand in for a new Auto session.
+            autoSessionSwings = SwingLibrary.shared.swings.filter(\.isReference)
+            autoSavedSwingCount = autoSessionSwings.count
+        }
         liveSwingDetection = fixtureSnapshot(manual: false)
         autoCaptureStatus = AutoCaptureStatus(
             isActive: true,
