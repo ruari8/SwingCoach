@@ -60,7 +60,10 @@ sequence. This match counts every dip, not only the first in 3 s, so an
 earlier dip from a rehearsal swing cannot hide the shot's own dip. Ball departure, sweep,
 arc, stroke motion, human and club presence are all still required, so raking a
 new ball onto the mat (ball moves, no full-swing pose) stays rejected. A held
-candidate expires unconfirmed after 2.6 s.
+candidate expires unconfirmed after 2.6 s. A rescued shot only adds its
+detection: by then the golfer may be addressing the next ball, so the decision
+engine and target lock are left alone. A rescue that fails re-evaluation leaves
+the pose dip to contact recovery and the practice-swing fallback.
 
 With practice capture enabled, a confirmed pose dip remains pending while the
 contact state is `impactCandidate`. The contact decision gets its existing

@@ -376,9 +376,18 @@ nonisolated final class SwingDetectorV3 {
                abs($0 - rescue.resolved.impactRealTime) <= Self.sequenceRescueDipTolerance
            }) {
             sequenceRescue = nil
-            lastFullSwingPatternRealTime = max(lastFullSwingPatternRealTime, rescue.resolved.impactRealTime)
+            // Up to 2.6 s late, the golfer may already be addressing or
+            // swinging at the next ball, so the rescue only adds the detection
+            // and leaves the decision engine and target lock alone.
+            let countBefore = detections.count
             evaluate(resolved: rescue.resolved, club: rescue.club,
-                     fullSwingPatternConfirmed: true, suppressesLocksOnReject: false)
+                     fullSwingPatternConfirmed: true, suppressesLocksOnReject: false,
+                     commitsDecisionState: false)
+            // A failed rescue leaves the dip to contact recovery and the
+            // practice-swing fallback below.
+            if detections.count > countBefore {
+                lastFullSwingPatternRealTime = max(lastFullSwingPatternRealTime, rescue.resolved.impactRealTime)
+            }
         }
         for dip in FullSwingPatternV3.confirmedDips(in: samples) {
             guard dip - lastFullSwingPatternRealTime >= max(3.0, configuration.minImpactGap) else { continue }
@@ -519,7 +528,8 @@ nonisolated final class SwingDetectorV3 {
         resolved: ResolvedSwingCandidateV3,
         club: ClubEvidenceV3,
         fullSwingPatternConfirmed: Bool = false,
-        suppressesLocksOnReject: Bool = true
+        suppressesLocksOnReject: Bool = true,
+        commitsDecisionState: Bool = true
     ) {
         let candidateWindow = featuresInWindow(
             start: max(0, resolved.impactRealTime - 1.45),
@@ -634,6 +644,7 @@ nonisolated final class SwingDetectorV3 {
                 declaredAt: features.last?.sourceTime
             )
         )
+        guard commitsDecisionState else { return }
         decisionEngine.didConfirm(impactRealTime: resolved.impactRealTime)
         targetSelector.suppressLocks(until: resolved.impactRealTime + configuration.minImpactGap)
     }
