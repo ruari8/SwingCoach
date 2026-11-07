@@ -51,6 +51,11 @@ nonisolated final class SwingDetectorV3 {
     private var startupInFlightResolved = false
     private var startupEvaluatedImpactTimes: [Double] = []
     private var lastFullSwingPatternRealTime = -Double.greatestFiniteMagnitude
+    /// A shot that passed every gate except the club sequence. At a floodlit
+    /// range the blurred clubhead often goes undetected through the strike, so
+    /// the near-away-near path never forms. Held until a pose full-swing
+    /// pattern can confirm it (the finish needs up to 2.5 s after impact).
+    private var sequenceRescue: (resolved: ResolvedSwingCandidateV3, club: ClubEvidenceV3)?
     private var latestObservationRealTime = -Double.greatestFiniteMagnitude
     private var lastRaisedHandsRealTime = -Double.greatestFiniteMagnitude
 
@@ -120,6 +125,7 @@ nonisolated final class SwingDetectorV3 {
         startupInFlightResolved = false
         startupEvaluatedImpactTimes.removeAll(keepingCapacity: true)
         lastFullSwingPatternRealTime = -Double.greatestFiniteMagnitude
+        sequenceRescue = nil
         latestObservationRealTime = -Double.greatestFiniteMagnitude
         lastRaisedHandsRealTime = -Double.greatestFiniteMagnitude
         targetSelector.reset()
@@ -354,10 +360,44 @@ nonisolated final class SwingDetectorV3 {
     /// the completed pattern can recover contact from local ball and club
     /// evidence. A remaining full swing is retained only in practice mode.
     private func evaluateFullSwingPatternIfNeeded(frame: SwingObservationV3) {
+        if let rescue = sequenceRescue,
+           frame.realTime > rescue.resolved.impactRealTime + Self.sequenceRescueWait {
+            sequenceRescue = nil
+        }
         let samples = featuresInWindow(
             start: max(0, frame.realTime - 10.0),
             end: frame.realTime
         )
+        // Every dip counts here, not just the first in 3 s: the rescue already
+        // has ball departure, club sweep and arc, so it only needs the pose to
+        // show a full swing at that impact.
+        // Another path (startup in-flight, recovery) may already have accepted
+        // this impact; a second detection would export the shot twice.
+        if let rescue = sequenceRescue, detections.contains(where: { detection in
+            guard let impactTime = detection.impactTime else { return false }
+            return abs(configuration.realTime(fromSource: impactTime) - rescue.resolved.impactRealTime)
+                < configuration.minImpactGap
+        }) {
+            sequenceRescue = nil
+        }
+        if let rescue = sequenceRescue,
+           FullSwingPatternV3.confirmedDips(in: samples, minimumGap: 0).contains(where: {
+               abs($0 - rescue.resolved.impactRealTime) <= Self.sequenceRescueDipTolerance
+           }) {
+            sequenceRescue = nil
+            // Up to 2.6 s late, the golfer may already be addressing or
+            // swinging at the next ball, so the rescue only adds the detection
+            // and leaves the decision engine and target lock alone.
+            let countBefore = detections.count
+            evaluate(resolved: rescue.resolved, club: rescue.club,
+                     fullSwingPatternConfirmed: true, suppressesLocksOnReject: false,
+                     commitsDecisionState: false)
+            // A failed rescue leaves the dip to contact recovery and the
+            // practice-swing fallback below.
+            if detections.count > countBefore {
+                lastFullSwingPatternRealTime = max(lastFullSwingPatternRealTime, rescue.resolved.impactRealTime)
+            }
+        }
         for dip in FullSwingPatternV3.confirmedDips(in: samples) {
             guard dip - lastFullSwingPatternRealTime >= max(3.0, configuration.minImpactGap) else { continue }
 
@@ -408,6 +448,11 @@ nonisolated final class SwingDetectorV3 {
             )
         }
     }
+
+    /// How long after impact a sequence-only rejection waits for its pose
+    /// finish, and how far the pose dip may sit from the club impact estimate.
+    private static let sequenceRescueWait = 2.6
+    private static let sequenceRescueDipTolerance = 0.5
 
     private func evaluateRecoveredContact(around impactRealTime: Double) -> Bool {
         guard let candidate = recoveredContactCandidate(around: impactRealTime) else { return false }
@@ -492,7 +537,8 @@ nonisolated final class SwingDetectorV3 {
         resolved: ResolvedSwingCandidateV3,
         club: ClubEvidenceV3,
         fullSwingPatternConfirmed: Bool = false,
-        suppressesLocksOnReject: Bool = true
+        suppressesLocksOnReject: Bool = true,
+        commitsDecisionState: Bool = true
     ) {
         let candidateWindow = featuresInWindow(
             start: max(0, resolved.impactRealTime - 1.45),
@@ -533,6 +579,11 @@ nonisolated final class SwingDetectorV3 {
             && ((evidence.swingSequence ?? 1) > 0 || fullSwingPatternConfirmed)
             && presence.hasHuman
             && presence.hasClub
+        if !accepted, !fullSwingPatternConfirmed, (evidence.swingSequence ?? 1) <= 0,
+           hasGolfStrokeMotion, score >= scorer.threshold || strongPhysicalContact,
+           evidence.disappearancePersistence >= 0.35, presence.hasHuman, presence.hasClub {
+            sequenceRescue = (resolved, club)
+        }
         let outcome: ContactOutcomeV3 = accepted
             ? .strikeSupported
             : (poseStrokeMotion != nil && !hasGolfStrokeMotion ? .nonContactSupported : .unresolved)
@@ -602,6 +653,7 @@ nonisolated final class SwingDetectorV3 {
                 declaredAt: features.last?.sourceTime
             )
         )
+        guard commitsDecisionState else { return }
         decisionEngine.didConfirm(impactRealTime: resolved.impactRealTime)
         targetSelector.suppressLocks(until: resolved.impactRealTime + configuration.minImpactGap)
     }

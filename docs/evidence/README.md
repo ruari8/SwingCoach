@@ -6,6 +6,8 @@ Auto-capture cadence work is tracked in [issue #28](https://github.com/ruari8/Sw
 
 | Date | Investigation | Status | Next step |
 | --- | --- | --- | --- |
+| 2026-11-06 | [Range session: missed swings under floodlights](./2026-11-06-range-session-missed-swings.md) | Shots dropped on the club-sequence gate (blurred clubhead, ~13 fps phone burst); no jitter in 35 clips | Range count with the PR #64 build |
+| 2026-11-06 | [Range session: missed swings under floodlights](./2026-11-06-range-session-missed-swings.md) | Cause found: real shots rejected only by a zero club sequence (clubhead blurs under floodlights). Pose rescue recovers 12/12 on the Nov 6 video; fixtures 54/54 at 16 and 12 fps, unseen 19/19 | Confirm at the range with the fix installed |
 | 2026-10-23 | [Range session: quiet rollover on the phone](./2026-10-23-range-session-quiet-rollover.md) | Quiet rollover works: 3 of 48 clips have gaps, longest 107 ms, none in the downswing. One forced 60 s rollover hit a swing; 120 fps had zero handoff drops | Jitter treated as resolved. `quiet-rollover-v2` raises the forced limit to 120 s; removing encoder handoffs is optional future work |
 | 2026-10-12 | [Range session: standby writer on the phone](./2026-10-12-range-session-standby-writer.md) | Standby writer works and cut drops per file switch by about two thirds; 8 of 44 clips still have gaps (rollover drops plus unexplained bursts) | Superseded by Oct 23 |
 | 2026-10-04 | [Auto writer handoff stall](./2026-10-04-handoff-stall.md) | Fix in `836039d` device-tested on Oct 12: queue stall gone, smaller rollover drops remain | Superseded by Oct 12 |

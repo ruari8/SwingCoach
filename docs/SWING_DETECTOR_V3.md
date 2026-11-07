@@ -50,6 +50,23 @@ only runs while the target selector has no lock and the state machine is idle,
 so it cannot replace or race an armed normal candidate. If contact recovery
 fails, the motion is retained only when optional practice-swing capture is on.
 
+A normal candidate that passes every gate except the club sequence (its
+sequence score is exactly 0) is held for up to 2.6 s after impact. Under range
+floodlights the clubhead blurs through the strike and the object detector loses
+it, so the near-away-near path never forms even though the ball left and the
+club swept through. If a full-swing pose dip lands within 0.5 s of that impact,
+the candidate is evaluated again with the pose pattern standing in for the
+sequence. This match counts every dip, not only the first in 3 s, so an
+earlier dip from a rehearsal swing cannot hide the shot's own dip. Ball departure, sweep,
+arc, stroke motion, human and club presence are all still required, so raking a
+new ball onto the mat (ball moves, no full-swing pose) stays rejected. A held
+candidate expires unconfirmed after 2.6 s. A rescued shot only adds its
+detection: by then the golfer may be addressing the next ball, so the decision
+engine and target lock are left alone. A rescue that fails re-evaluation leaves
+the pose dip to contact recovery and the practice-swing fallback. A held candidate is dropped if another path has
+already accepted a swing within the minimum impact gap of it, so one shot never
+exports twice.
+
 With practice capture enabled, a confirmed pose dip remains pending while the
 contact state is `impactCandidate`. The contact decision gets its existing
 bounded confirmation window first. An accepted contact covers that dip; a
@@ -94,6 +111,23 @@ The final live-order Mac replay used the same 8 to 16 fps analysis schedule as C
 | Mac wall time | 1,020.1 seconds |
 | Aggregate replay speed | 2.68 times real time |
 
+On 2026-11-07 the floodlight sequence rescue was checked against the same gate
+and against Ruari's Nov 6 iPhone range video (`IMG_5895.MOV`, 59 minutes of file
+time: 1x for 0–91 s and from 3448 s, 8x slow motion between, run as three
+segments). The 12 fps rows approximate the phone, which reached a median of
+13 inferences per second while a swing was in progress at the Nov 6 range.
+
+| Set | Before | After |
+| --- | --- | --- |
+| 54 reviewed impacts, 16 fps burst | 54/54, 0 extra | 54/54, 0 extra |
+| 54 reviewed impacts, 12 fps burst | 47/54, 0 extra | 54/54, 0 extra |
+| 19 unseen-session impacts, 16 fps burst | 19/19, 0 extra | 19/19, 0 extra |
+| Nov 6 video, 16 fps burst | 8 shots | 12 shots |
+| Nov 6 video, 12 fps burst | 6 shots | 12 shots |
+
+All 12 Nov 6 detections were checked frame by frame as real ball strikes. The
+video is unlabelled, so it is not in the gate.
+
 Run the complete gate with:
 
 ```bash
@@ -116,5 +150,13 @@ hits plus the original 54. The other 70 accepted impact timestamps were exactly
 unchanged from their preceding V3 results.
 
 All ten original fixtures informed implementation or debugging, so their 54/54 is a regression result rather than held-out generalization evidence. test16 also informed this reconstruction, so the complete 73/73 is now a regression gate rather than held-out proof. A later unseen 30 fps portrait clip exposed a missed full swing when the addressed clubhead hid the ball too often for a quiet address lock. The detector now recovers that shot at 7.60 seconds from the combined full-swing pattern, local ball departure, and club evidence. That clip informed the recovery implementation and is now a local regression fixture, not held-out proof. Deliberate framing changes, people crossing the target, arbitrary occlusion, lighting changes, and practice swings still need broader independent evaluation. The recovery route also depends on a readable full-swing pose pattern, so it does not extend coverage to chips, putts, or abbreviated swings.
+
+On 2026-11-07 a 10-minute floodlit range video (Nov 6, iPhone slow motion)
+showed real shots rejected only by the club sequence: 3 of about 11 on the Mac
+at 16 fps and 3 of 11 in the phone's live Auto pipeline. Lower burst rates make
+it worse: at 12 fps the original fixtures fell to 47/54. With the pose rescue,
+the original fixtures match 54/54 at both 16 and 12 fps and the six unseen
+recordings 19/19, all with zero extras. See
+[the Nov 6 range evidence](./evidence/2026-11-06-range-session-missed-swings.md).
 
 The Mac result proves that this configuration can keep up with replayed live-order input on the development Mac. The Simulator build proves integration and navigation only. A physical iPhone run is still required for camera cadence, thermal behavior, frame drops, model latency across supported devices, rolling-buffer export, and real Auto Capture behavior.

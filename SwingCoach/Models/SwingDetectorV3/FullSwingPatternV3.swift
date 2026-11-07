@@ -23,7 +23,9 @@ nonisolated enum FullSwingPatternV3 {
     /// inside `samples`, ordered ascending. A dip only appears once its
     /// finish evidence (up to 2.5s later) has been observed, so streaming
     /// callers can re-run this every frame and emit dips past a watermark.
-    static func confirmedDips(in samples: [SwingObservationV3]) -> [Double] {
+    /// Dips within `minimumGap` of an earlier one are dropped. The sequence
+    /// rescue passes 0 so an earlier rehearsal dip cannot hide a shot's dip.
+    static func confirmedDips(in samples: [SwingObservationV3], minimumGap: Double = 3.0) -> [Double] {
         let pts = samples.compactMap { sample in
             sample.handHeight.map { (t: sample.realTime, h: $0) }
         }
@@ -62,7 +64,7 @@ nonisolated enum FullSwingPatternV3 {
             if topIndex + 1 < pts.count { adjacent.append(pts[topIndex + 1].h) }
             guard let highestAdjacent = adjacent.max(), highestAdjacent >= 0.3 else { continue }
 
-            if let last = dips.last, t - last <= 3.0 { continue }
+            if let last = dips.last, t - last <= minimumGap { continue }
             dips.append(t)
         }
         return dips
