@@ -63,7 +63,9 @@ new ball onto the mat (ball moves, no full-swing pose) stays rejected. A held
 candidate expires unconfirmed after 2.6 s. A rescued shot only adds its
 detection: by then the golfer may be addressing the next ball, so the decision
 engine and target lock are left alone. A rescue that fails re-evaluation leaves
-the pose dip to contact recovery and the practice-swing fallback.
+the pose dip to contact recovery and the practice-swing fallback. A held candidate is dropped if another path has
+already accepted a swing within the minimum impact gap of it, so one shot never
+exports twice.
 
 With practice capture enabled, a confirmed pose dip remains pending while the
 contact state is `impactCandidate`. The contact decision gets its existing

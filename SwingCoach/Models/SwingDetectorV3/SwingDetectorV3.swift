@@ -371,6 +371,15 @@ nonisolated final class SwingDetectorV3 {
         // Every dip counts here, not just the first in 3 s: the rescue already
         // has ball departure, club sweep and arc, so it only needs the pose to
         // show a full swing at that impact.
+        // Another path (startup in-flight, recovery) may already have accepted
+        // this impact; a second detection would export the shot twice.
+        if let rescue = sequenceRescue, detections.contains(where: { detection in
+            guard let impactTime = detection.impactTime else { return false }
+            return abs(configuration.realTime(fromSource: impactTime) - rescue.resolved.impactRealTime)
+                < configuration.minImpactGap
+        }) {
+            sequenceRescue = nil
+        }
         if let rescue = sequenceRescue,
            FullSwingPatternV3.confirmedDips(in: samples, minimumGap: 0).contains(where: {
                abs($0 - rescue.resolved.impactRealTime) <= Self.sequenceRescueDipTolerance
