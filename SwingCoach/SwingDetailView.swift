@@ -385,6 +385,7 @@ struct SwingDetailView: View {
                 edgeToEdge: true,
                 controlsLocked: $controlsLocked,
                 infoAction: { showMetadata = true },
+                realTimeRate: swing.realTimePlaybackRate,
                 swingPositions: swing.swingPositions,
                 drawing: videoAspectRatios[swing.id] != nil ? $isDrawingLines : nil,
                 contentOverlay: { currentTime, _ in

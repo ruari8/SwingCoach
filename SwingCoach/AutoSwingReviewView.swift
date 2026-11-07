@@ -204,6 +204,7 @@ private struct AutoSwingReviewPage: View {
                     contentOverlayAllowsHitTesting: drawingEnabled,
                     edgeToEdge: true,
                     controlsLocked: $controlsLocked,
+                    realTimeRate: swing.realTimePlaybackRate,
                     swingPositions: swingPositions,
                     drawing: videoAspectRatio != nil ? $isDrawingLines : nil,
                     contentOverlay: { currentTime, _ in

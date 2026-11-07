@@ -30,6 +30,12 @@ struct SavedSwing: Identifiable, Codable, Equatable {
     /// exported at 30 fps). Set only for clips captured in the app; nil for
     /// imports, whose real-time rate is unknown.
     var sourceTimeScale: Double? = nil
+    /// The player rate that shows the swing in real time; nil when the clip
+    /// already plays in real time or its scale is unknown.
+    var realTimePlaybackRate: Float? {
+        guard let sourceTimeScale, sourceTimeScale > 1 else { return nil }
+        return Float(sourceTimeScale)
+    }
     /// P1-P10 found after capture (down-the-line clips only).
     var swingPositions: SwingPositions? = nil
     /// The swing itself on the clip's timeline, without the extra footage

@@ -28,6 +28,36 @@ final class PlayerPositionsUITests: XCTestCase {
         XCTAssertTrue(strip.waitForExistence(timeout: 2))
     }
 
+    func testRealSpeedPlaysSlowMotionCaptureInRealTime() throws {
+        let app = XCUIApplication.launched(seed: "positions", ["-ui-testing-library"])
+        app.openLibraryCard("Positions DTL", sessionCard: true)
+        let speed = app.buttons["Change playback speed"]
+        XCTAssertTrue(speed.waitForExistence(timeout: 5))
+        XCTAssertEqual(speed.value as? String, "1x")
+        speed.tap()
+        XCTAssertEqual(speed.value as? String, "Real", "A 240 fps capture offers real time after 1x")
+        let timeline = try XCTUnwrap(app.otherElements.matching(identifier: "playback-timeline")
+            .allElementsBoundByIndex.first { $0.isHittable })
+        app.buttons["Play"].tap()
+        // The 3 s slow-motion clip passes 2.5 s after 0.31 s at 8x, but only
+        // after 2.5 s at 1x; 1.5 s leaves room for the player to start.
+        let realTime = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            (Double(timeline.value as? String ?? "") ?? 0) > 2.5
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [realTime], timeout: 1.5), .completed, "Real must play at 8x")
+        speed.tap()
+        XCTAssertEqual(speed.value as? String, "0.25x", "Real wraps back to the slowest speed")
+    }
+
+    func testReferencesWithoutCaptureRateHaveNoRealSpeed() throws {
+        let app = XCUIApplication.launched(seed: "positions", ["-ui-testing-library"])
+        app.openLibraryCard("Reference swing 1", sessionCard: false)
+        let speed = app.buttons["Change playback speed"]
+        XCTAssertTrue(speed.waitForExistence(timeout: 5))
+        speed.tap()
+        XCTAssertEqual(speed.value as? String, "0.25x")
+    }
+
     func testToolRailFoldsAndDocksOnTheChosenSide() throws {
         let app = XCUIApplication.launched(seed: "positions", ["-ui-testing-library"])
         app.openLibraryCard("Positions DTL", sessionCard: true)
