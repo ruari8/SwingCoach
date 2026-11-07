@@ -73,6 +73,41 @@ final class AutoReviewAnnotationUITests: XCTestCase {
         XCTAssertTrue(app.segmentedControls.buttons["Auto"].isSelected)
     }
 
+    func testStarToggledInAutoReviewPersists() {
+        continueAfterFailure = false
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication.launched(seed: "references", Fixture.syntheticCamera)
+        let saved = app.buttons["capture-saved-swings"]
+        XCTAssertTrue(saved.waitForExistence(timeout: 5))
+        saved.tap()
+        assertPosition("3 of 3", app)
+        // Neighbouring pages are in the hierarchy too; act on the visible one.
+        func visible(_ label: String) -> XCUIElement {
+            app.buttons.matching(NSPredicate(format: "label == %@", label)).allElementsBoundByIndex
+                .first { $0.isHittable } ?? app.buttons[label]
+        }
+        // Seeded references start starred.
+        visible("Remove star").tap()
+        XCTAssertTrue(visible("Star swing").waitForExistence(timeout: 2))
+        attach("auto-review-unstarred")
+        app.buttons["Close swing review"].tap()
+        XCTAssertTrue(saved.waitForExistence(timeout: 5))
+        saved.tap()
+        assertPosition("3 of 3", app)
+        XCTAssertTrue(visible("Star swing").isHittable, "The star must persist after reopening review")
+        app.buttons["Close swing review"].tap()
+
+        // A relaunch reloads the library from disk.
+        app.relaunch(Fixture.syntheticCamera)
+        XCTAssertTrue(saved.waitForExistence(timeout: 5))
+        saved.tap()
+        assertPosition("3 of 3", app)
+        XCTAssertTrue(visible("Star swing").isHittable, "The unstar must be saved to disk")
+        visible("Star swing").tap()
+        XCTAssertTrue(visible("Remove star").isHittable)
+        app.buttons["Close swing review"].tap()
+    }
+
     private func openFirstAutoSwing(_ saved: XCUIElement, _ app: XCUIApplication) {
         saved.tap()
         assertPosition("3 of 3", app)

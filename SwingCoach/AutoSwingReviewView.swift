@@ -190,6 +190,10 @@ private struct AutoSwingReviewPage: View {
     }
 
     private var drawingEnabled: Bool { isSelected && isDrawingLines }
+    /// The session list holds copies, so read the star from the library.
+    private var isStarred: Bool {
+        library.swings.first { $0.id == swing.id }?.isFavorite ?? swing.isFavorite
+    }
 
     var body: some View {
         Group {
@@ -219,16 +223,31 @@ private struct AutoSwingReviewPage: View {
                 ) {
                     EmptyView()
                 } overlayAccessory: {
-                    Button(action: onDelete) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 42, height: 42)
-                            .background(Circle().fill(.black.opacity(0.48)))
+                    VStack(spacing: 10) {
+                        // Star a good one without leaving the session for Library.
+                        Button {
+                            library.toggleFavorite(swing)
+                        } label: {
+                            Image(systemName: isStarred ? "star.fill" : "star")
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(isStarred ? .yellow : .white)
+                                .frame(width: 42, height: 42)
+                                .background(Circle().fill(.black.opacity(0.48)))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(isStarred ? "Remove star" : "Star swing")
+
+                        Button(action: onDelete) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(width: 42, height: 42)
+                                .background(Circle().fill(.black.opacity(0.48)))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(deleteDisabled)
+                        .accessibilityLabel("Delete this swing")
                     }
-                    .buttonStyle(.plain)
-                    .disabled(deleteDisabled)
-                    .accessibilityLabel("Delete this swing")
                 }
                 // The review toolbar hosts the rail, level with Done.
                 .environment(\.reviewCornerControlsInNavigation, true)
