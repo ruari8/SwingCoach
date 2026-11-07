@@ -144,8 +144,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     // Capture is not redrawn at the detector's frame rate.
     private var nextAutoSnapshotPublish = 0.0
     private var lastReportedDetectorState: SwingMachineStateV3?
-    /// Candidate traces already written to the diagnostics log.
+    /// Detector traces already taken into `unloggedCandidates`.
     private var reportedCandidateCount = 0
+    /// Verdicts the diagnostics log has not accepted yet, with the capture time
+    /// they were first seen. Survives detector resets; capped at the newest 64.
+    private var unloggedCandidates: [(trace: SwingCandidateTrace, relativeTime: Double?)] = []
     private var lastReportedSwingWindow: Bool?
 
     private var liveSwingDetector = SwingDetectorV3()
@@ -642,8 +645,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     func stopAutoCapture() {
         queue.async {
             self.autoCaptureIsActive = false
-            // After any frame already on analysisQueue.
-            self.analysisQueue.async { self.reportNewCandidates(relativeTime: nil) }
+            // After any frame already on analysisQueue. finish adds the
+            // "why nothing" verdict when no swing reached impact.
+            self.analysisQueue.async {
+                _ = self.liveSwingDetector.finish(recordingTime: nil)
+                self.reportNewCandidates(relativeTime: nil)
+            }
             self.autoCaptureIsPausedForReview = false
             self.livePoses?.reset()
             self.bufferQueue.async {
@@ -687,6 +694,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             if let reviewSessionID { self.autoDetectionReviewSessionID = reviewSessionID }
             self.analysisRecordingStart = nil
             self.autoExportedDetectionIDs = []
+            _ = self.liveSwingDetector.finish(recordingTime: nil)
             self.reportNewCandidates(relativeTime: nil)
             self.liveSwingDetector = SwingDetectorV3(configuration: self.liveV3Configuration())
             self.liveSwingDetector.reset(enabled: detectorEnabled)
@@ -1197,20 +1205,25 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
     /// Every swing the detector weighed, kept or not, with the reason it was
     /// rejected, so a missed swing can be explained from the log alone. Runs on
-    /// analysisQueue; a verdict the log drops is retried on the next call.
+    /// analysisQueue. Verdicts the log drops stay queued and are retried on the
+    /// next frame, stop or reset, including after the detector is replaced.
     private func reportNewCandidates(relativeTime: Double?) {
         let traces = liveSwingDetector.currentTraces()
         // A detector reset clears its traces.
         if traces.count < reportedCandidateCount { reportedCandidateCount = 0 }
-        while reportedCandidateCount < traces.count {
-            let trace = traces[reportedCandidateCount]
+        if reportedCandidateCount < traces.count {
+            unloggedCandidates += traces[reportedCandidateCount...].map { ($0, relativeTime) }
+            reportedCandidateCount = traces.count
+            if unloggedCandidates.count > 64 { unloggedCandidates.removeFirst(unloggedCandidates.count - 64) }
+        }
+        while let (trace, seenAt) = unloggedCandidates.first {
             let evidence = trace.evidence
             var values: [String: Double] = [
                 "score": trace.score, "anchorStability": evidence.anchorStability,
                 "disappearancePersistence": evidence.disappearancePersistence,
                 "clubSweptThrough": evidence.clubSweptThrough, "swingArc": evidence.swingArc,
             ]
-            values["relativeTime"] = relativeTime
+            values["relativeTime"] = seenAt
             values["impactTime"] = trace.impactRealTime
             values["swingSequence"] = evidence.swingSequence
             values["ballInventoryDrop"] = evidence.ballInventoryDrop
@@ -1220,7 +1233,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 state: ["accepted": trace.accepted ? "yes" : "no", "failure": trace.primaryFailure.rawValue,
                         "stateReached": trace.stateReached])
             guard logged else { return }
-            reportedCandidateCount += 1
+            unloggedCandidates.removeFirst()
         }
     }
 
