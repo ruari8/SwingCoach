@@ -1434,6 +1434,13 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     @MainActor
     func beginAutoReviewRequest(sessionID: UUID) {
         guard sessionID == autoReviewSessionID else { return }
+        // Auto can watch (or sit in review) past the idle limit without
+        // restarting; the first swing after that opens a fresh review.
+        if !AutoSessionContinuity.continues(lastActivity: autoSessionLastActivity, now: Date()) {
+            autoSessionSwings = []
+            autoSavedSwingCount = 0
+            autoSessionLastActivity = Date()
+        }
         autoPendingSwingCount += 1
         autoCaptureStatus = AutoCaptureStatus(
             isActive: autoCaptureIsActive, savedSwingCount: autoSavedSwingCount,

@@ -147,16 +147,24 @@ final class CaptureControlsUITests: XCTestCase {
         XCTAssertTrue(saved.waitForExistence(timeout: 5))
         XCTAssertEqual(saved.label, "Review 2 saved swings")
         attach(app, "auto-count-after-delete")
+    }
 
-        // Leaving Capture (e.g. to star in Library) keeps the session.
+    /// Each Auto start exports one clip. A fresh session would show 1 again;
+    /// the continued session keeps the first clip and adds the second.
+    func testAutoSessionContinuesAfterLeavingCapture() {
+        let app = XCUIApplication.launched(seed: "empty", Fixture.syntheticCamera
+            + ["-ui-testing-auto-export", "-storage.saveToPhotos", "NO"])
+        let saved = app.buttons["capture-saved-swings"]
+        func waitForLabel(_ label: String) {
+            let expectation = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", label), object: saved)
+            XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: 20), .completed, "Expected \(label), saw \(saved.label)")
+        }
+        XCTAssertTrue(saved.waitForExistence(timeout: 20))
+        waitForLabel("Review 1 saved swings")
         app.tabBars.buttons["Library"].tap()
         app.tabBars.buttons["Capture"].tap()
-        XCTAssertTrue(saved.waitForExistence(timeout: 5))
-        XCTAssertEqual(saved.label, "Review 2 saved swings", "A tab round trip must not reset the Auto session")
-        saved.tap()
-        XCTAssertTrue(position.waitForExistence(timeout: 5))
-        XCTAssertEqual(position.label, "2 of 2")
-        close.tap()
+        waitForLabel("Review 2 saved swings")
+        attach(app, "auto-session-continued")
     }
 
     func testPortraitPolicyAcrossTabsTrimAndReview() {
