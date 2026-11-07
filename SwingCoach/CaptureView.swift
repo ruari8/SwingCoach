@@ -149,6 +149,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     /// Verdicts the diagnostics log has not accepted yet, with the capture time
     /// they were first seen. Survives detector resets; capped at the newest 64.
     private var unloggedCandidates: [(trace: SwingCandidateTrace, relativeTime: Double?)] = []
+    /// One timed retry is pending, so a refused verdict is logged even when
+    /// no frame follows (after stop).
+    private var candidateRetryScheduled = false
     private var lastReportedSwingWindow: Bool?
 
     private var liveSwingDetector = SwingDetectorV3()
@@ -1206,7 +1209,8 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     /// Every swing the detector weighed, kept or not, with the reason it was
     /// rejected, so a missed swing can be explained from the log alone. Runs on
     /// analysisQueue. Verdicts the log drops stay queued and are retried on the
-    /// next frame, stop or reset, including after the detector is replaced.
+    /// next frame, stop or reset, or after a second, including after the
+    /// detector is replaced.
     private func reportNewCandidates(relativeTime: Double?) {
         let traces = liveSwingDetector.currentTraces()
         // A detector reset clears its traces.
@@ -1232,7 +1236,16 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 "detector-candidate", id: String(trace.candidateId), values: values,
                 state: ["accepted": trace.accepted ? "yes" : "no", "failure": trace.primaryFailure.rawValue,
                         "stateReached": trace.stateReached])
-            guard logged else { return }
+            guard logged else {
+                if !candidateRetryScheduled {
+                    candidateRetryScheduled = true
+                    analysisQueue.asyncAfter(deadline: .now() + 1) {
+                        self.candidateRetryScheduled = false
+                        self.reportNewCandidates(relativeTime: nil)
+                    }
+                }
+                return
+            }
             unloggedCandidates.removeFirst()
         }
     }
