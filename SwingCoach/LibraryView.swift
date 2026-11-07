@@ -1225,6 +1225,10 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             isPlaying = false
             stopContinuousStep()
         }
+        .onChange(of: isDrawing) { _, _ in
+            // Drawing keeps the controls up; leaving it restarts auto-hide.
+            showControls()
+        }
         .onChange(of: isLocked) { _, _ in
             // Other pages can change the shared preference while this player
             // remains alive with hidden controls or a pending auto-hide task.
@@ -1914,12 +1918,13 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
     private func scheduleAutoHide() {
         autoHideTask?.cancel()
-        guard isPlaying, !isLocked, !isScrubbing else { return }
+        // Drawing turns off the video tap that brings hidden controls back.
+        guard isPlaying, !isLocked, !isScrubbing, !isDrawing else { return }
         autoHideTask = Task {
             try? await Task.sleep(nanoseconds: 3_000_000_000)
             guard !Task.isCancelled else { return }
             await MainActor.run {
-                guard isPlaying, !isLocked, !isScrubbing else { return }
+                guard isPlaying, !isLocked, !isScrubbing, !isDrawing else { return }
                 withAnimation(.easeInOut(duration: 0.2)) {
                     controlsVisible = false
                 }

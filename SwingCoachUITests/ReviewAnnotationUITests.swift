@@ -44,13 +44,22 @@ final class ReviewAnnotationUITests: XCTestCase {
         app.openLibraryCard("Review A starred DTL", sessionCard: true)
         let draw = app.buttons["Draw straight lines"]
         XCTAssertTrue(draw.waitForExistence(timeout: 5))
+        // 0.25x stretches the 3 s clip past the 3 s auto-hide delay.
+        let speed = app.buttons["Change playback speed"]
+        speed.tap()
+        XCTAssertEqual(speed.value as? String, "0.25x")
         draw.tap()
         XCTAssertTrue(app.buttons["Finish drawing lines"].waitForExistence(timeout: 2))
         let play = app.buttons["Play"]
         XCTAssertTrue(play.waitForExistence(timeout: 2))
         play.tap()
-        XCTAssertTrue(app.buttons["Pause"].waitForExistence(timeout: 2), "Play must start playback while drawing")
-        app.buttons["Pause"].tap()
+        let pauseButton = app.buttons["Pause"]
+        XCTAssertTrue(pauseButton.waitForExistence(timeout: 2), "Play must start playback while drawing")
+        let autoHide = XCTestExpectation(description: "past the auto-hide delay")
+        autoHide.isInverted = true
+        wait(for: [autoHide], timeout: 4)
+        XCTAssertTrue(pauseButton.isHittable, "Controls must stay up while drawing; the video tap that restores them is off")
+        pauseButton.tap()
         XCTAssertTrue(play.waitForExistence(timeout: 2))
         XCTAssertTrue(app.buttons["Finish drawing lines"].exists, "Play and pause must not leave drawing")
     }
