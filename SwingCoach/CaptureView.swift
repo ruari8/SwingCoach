@@ -140,6 +140,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     // tells whether an unexplained drop burst coincides with slow inference.
     private var detectorTiming = DetectorTimingWindow()
     private var nextDetectorReport = 0.0
+    // Auto publishes the detector snapshot at most every half second, so
+    // Capture is not redrawn at the detector's frame rate.
+    private var nextAutoSnapshotPublish = 0.0
     private var lastReportedDetectorState: SwingMachineStateV3?
     private var lastReportedSwingWindow: Bool?
 
@@ -682,6 +685,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             self.liveSwingDetector.reset(enabled: detectorEnabled)
             self.detectorTiming = DetectorTimingWindow()
             self.nextDetectorReport = 0
+            self.nextAutoSnapshotPublish = 0
             self.lastReportedDetectorState = nil
             self.lastReportedSwingWindow = nil
         }
@@ -1143,7 +1147,11 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             reportDetectorState(relativeTime: relativeTime)
         }
 
-        if !autoCaptureIsActive || movieOutput.isRecording {
+        // Auto records through the rolling buffer, never movieOutput, so it
+        // needs its own throttled publish or the model stats stay on
+        // "Waiting for model…" while the detector runs.
+        if !autoCaptureIsActive || movieOutput.isRecording || relativeTime >= nextAutoSnapshotPublish {
+            if autoCaptureIsActive { nextAutoSnapshotPublish = relativeTime + 0.5 }
             DispatchQueue.main.async {
                 self.liveSwingDetection = snapshot
             }

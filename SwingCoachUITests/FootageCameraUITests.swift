@@ -25,6 +25,7 @@ final class FootageCameraUITests: XCTestCase {
             "-footage-camera-time-scale", environment["FOOTAGE_TIME_SCALE"] ?? "1",
             "-footage-camera-impacts", environment["FOOTAGE_IMPACTS"] ?? "",
             "-experimental.keepAutoRecordings", "YES",
+            "-experimental.showCaptureModelStats", "YES",
             // Real time with drops, as on a phone, so the run lasts as long as the footage.
             "-footage-camera-every-frame", "NO",
         ]
@@ -34,6 +35,12 @@ final class FootageCameraUITests: XCTestCase {
         XCTAssertTrue(status.waitForExistence(timeout: 20), "Capture did not show the footage camera")
         XCTAssertFalse(status.label.contains("Footage camera:"), "Footage camera failed: \(status.label)")
         XCTAssertEqual(app.staticTexts["capture-status-title"].label, "Auto is on")
+
+        // Auto never records through movieOutput; the stats must still leave
+        // "Waiting for model…" once the detector has run on a frame.
+        let modelStats = app.staticTexts["capture-model-stats"]
+        expectation(for: NSPredicate(format: "label CONTAINS %@", " fps / "), evaluatedWith: modelStats)
+        waitForExpectations(timeout: 30)
 
         let finished = NSPredicate(format: "label BEGINSWITH %@", "Footage finished")
         expectation(for: finished, evaluatedWith: status)
