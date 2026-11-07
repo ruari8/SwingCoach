@@ -579,9 +579,10 @@ nonisolated final class SwingDetectorV3 {
             && ((evidence.swingSequence ?? 1) > 0 || fullSwingPatternConfirmed)
             && presence.hasHuman
             && presence.hasClub
-        if !accepted, !fullSwingPatternConfirmed, (evidence.swingSequence ?? 1) <= 0,
-           hasGolfStrokeMotion, score >= scorer.threshold || strongPhysicalContact,
-           evidence.disappearancePersistence >= 0.35, presence.hasHuman, presence.hasClub {
+        let holdsForRescue = !accepted && !fullSwingPatternConfirmed && (evidence.swingSequence ?? 1) <= 0
+            && hasGolfStrokeMotion && (score >= scorer.threshold || strongPhysicalContact)
+            && evidence.disappearancePersistence >= 0.35 && presence.hasHuman && presence.hasClub
+        if holdsForRescue {
             sequenceRescue = (resolved, club)
         }
         let outcome: ContactOutcomeV3 = accepted
@@ -598,7 +599,10 @@ nonisolated final class SwingDetectorV3 {
                 score: score
             )
         )
-        let failure = primaryFailure(evidence: evidence, accepted: accepted)
+        let failure = primaryFailure(evidence: evidence, accepted: accepted,
+                                     passesScore: score >= scorer.threshold || strongPhysicalContact,
+                                     strokeMotion: hasGolfStrokeMotion,
+                                     hasHuman: presence.hasHuman, hasClub: presence.hasClub)
 
         let lockTrace = resolved.lock.map { lock in
             SwingAddressLockTrace(
@@ -628,7 +632,9 @@ nonisolated final class SwingDetectorV3 {
                 evidence: evidence,
                 score: score,
                 accepted: accepted,
-                primaryFailure: failure
+                primaryFailure: failure,
+                poseStrokeMotion: poseStrokeMotion,
+                sequenceRescueHeld: holdsForRescue
             )
         )
         nextCandidateId += 1
@@ -707,7 +713,10 @@ nonisolated final class SwingDetectorV3 {
             && ((evidence.swingSequence ?? 0) > 0 || strongStartupSwing)
             && presence.hasHuman
             && presence.hasClub
-        let failure = primaryFailure(evidence: evidence, accepted: accepted)
+        let failure = primaryFailure(evidence: evidence, accepted: accepted,
+                                     passesScore: score >= startupThreshold,
+                                     strokeMotion: hasGolfStrokeMotion,
+                                     hasHuman: presence.hasHuman, hasClub: presence.hasClub)
 
         decisionTraces.append(
             SwingDecisionTraceV3(
@@ -732,7 +741,8 @@ nonisolated final class SwingDetectorV3 {
                 evidence: evidence,
                 score: score,
                 accepted: accepted,
-                primaryFailure: failure
+                primaryFailure: failure,
+                poseStrokeMotion: poseStrokeMotion
             )
         )
         nextCandidateId += 1
@@ -1066,7 +1076,13 @@ nonisolated final class SwingDetectorV3 {
         }
     }
 
-    private func primaryFailure(evidence: EvidenceVector, accepted: Bool) -> SwingPrimaryFailure {
+    /// The first gate that rejected the candidate. Evidence scores come first,
+    /// then the path's own score gate (`below_threshold`); only when the score
+    /// passed is the stroke-motion or presence gate named.
+    private func primaryFailure(
+        evidence: EvidenceVector, accepted: Bool, passesScore: Bool = true,
+        strokeMotion: Bool = true, hasHuman: Bool = true, hasClub: Bool = true
+    ) -> SwingPrimaryFailure {
         if accepted { return .none }
         if (evidence.poseConsistency ?? 0) < 0.35 { return .noHuman }
         if evidence.anchorStability < 0.25 { return .noAddressLock }
@@ -1074,6 +1090,10 @@ nonisolated final class SwingDetectorV3 {
         if evidence.clubSweptThrough < 0.45 { return .noClubSweep }
         if (evidence.swingSequence ?? 0) < 0.35 { return .noSwingSequence }
         if evidence.swingArc < 0.35 { return .lowSwingArc }
+        if !passesScore { return .belowThreshold }
+        if !strokeMotion { return .noStrokeMotion }
+        if !hasHuman { return .noHuman }
+        if !hasClub { return .noClubPresence }
         return .belowThreshold
     }
 
