@@ -144,6 +144,8 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     // Capture is not redrawn at the detector's frame rate.
     private var nextAutoSnapshotPublish = 0.0
     private var lastReportedDetectorState: SwingMachineStateV3?
+    /// Candidate traces already written to the diagnostics log.
+    private var reportedCandidateCount = 0
     private var lastReportedSwingWindow: Bool?
 
     private var liveSwingDetector = SwingDetectorV3()
@@ -688,6 +690,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             self.detectorTiming = DetectorTimingWindow()
             self.nextDetectorReport = 0
             self.nextAutoSnapshotPublish = 0
+            self.reportedCandidateCount = 0
             self.lastReportedDetectorState = nil
             self.lastReportedSwingWindow = nil
         }
@@ -1146,7 +1149,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         if autoCaptureIsActive {
             detectorTiming.record(seconds: ProcessInfo.processInfo.systemUptime - startedAt,
                                   inferred: liveSwingDetector.processedFrames > processedBefore)
-            reportDetectorState(relativeTime: relativeTime)
+            reportDetectorState(relativeTime: relativeTime, hasBallLock: snapshot.hasBallLock)
         }
 
         // Auto records through the rolling buffer, never movieOutput, so it
@@ -1164,7 +1167,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         }
     }
 
-    private func reportDetectorState(relativeTime: Double) {
+    private func reportDetectorState(relativeTime: Double, hasBallLock: Bool) {
         let state = liveSwingDetector.decisionState
         let isOpen = liveSwingDetector.isSwingWindowOpen
         bufferQueue.async {
@@ -1177,12 +1180,41 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                                                   state: ["state": state.rawValue,
                                                           "swingWindow": isOpen ? "open" : "closed"])
         }
+        reportNewCandidates(relativeTime: relativeTime)
         let now = ProcessInfo.processInfo.systemUptime
         guard now >= nextDetectorReport else { return }
         nextDetectorReport = now + 1
         var values = detectorTiming.takeValues()
         values["relativeTime"] = relativeTime
-        CaptureCadenceDiagnostics.shared.emit("detector", values: values, state: ["state": state.rawValue])
+        CaptureCadenceDiagnostics.shared.emit("detector", values: values,
+                                              state: ["state": state.rawValue, "ballLock": hasBallLock ? "yes" : "no"])
+    }
+
+    /// Every swing the detector weighed, kept or not, with the reason it was
+    /// rejected, so a missed swing can be explained from the log alone.
+    private func reportNewCandidates(relativeTime: Double) {
+        let traces = liveSwingDetector.currentTraces()
+        // A detector reset clears its traces.
+        if traces.count < reportedCandidateCount { reportedCandidateCount = 0 }
+        guard traces.count > reportedCandidateCount else { return }
+        for trace in traces[reportedCandidateCount...] {
+            let evidence = trace.evidence
+            var values: [String: Double] = [
+                "relativeTime": relativeTime, "score": trace.score,
+                "anchorStability": evidence.anchorStability,
+                "disappearancePersistence": evidence.disappearancePersistence,
+                "clubSweptThrough": evidence.clubSweptThrough, "swingArc": evidence.swingArc,
+            ]
+            values["impactTime"] = trace.impactRealTime
+            values["swingSequence"] = evidence.swingSequence
+            values["ballInventoryDrop"] = evidence.ballInventoryDrop
+            values["poseConsistency"] = evidence.poseConsistency
+            CaptureCadenceDiagnostics.shared.emit(
+                "detector-candidate", id: String(trace.candidateId), values: values,
+                state: ["accepted": trace.accepted ? "yes" : "no", "failure": trace.primaryFailure.rawValue,
+                        "stateReached": trace.stateReached])
+        }
+        reportedCandidateCount = traces.count
     }
 
     private func enqueueNewAutoDetections() {

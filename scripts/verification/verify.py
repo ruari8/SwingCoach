@@ -404,6 +404,19 @@ def footage_check(run):
     assert kept_seconds >= 0.9 * feed["footageSeconds"], \
         f"kept recordings cover {kept_seconds:.1f} s of {feed['footageSeconds']:.1f} s of footage"
 
+    # Every swing the detector kept or rejected is logged with its reason.
+    # The Simulator has no Vision pose, so it may reject every swing (no_human);
+    # the verdicts must still be there.
+    verdicts = find("detector-candidate")
+    accepted = [e for e in verdicts if e["state"]["accepted"] == "yes"]
+    assert verdicts, "no detector-candidate events in the diagnostics log"
+    assert len(accepted) >= len(find("detector-swing")), \
+        f"{len(accepted)} accepted candidates logged for {len(find('detector-swing'))} detected swings"
+    assert all("ballLock" in e["state"] for e in find("detector")), "detector events lack ballLock"
+    failures = {}
+    for e in verdicts:
+        failures[e["state"]["failure"]] = failures.get(e["state"]["failure"], 0) + 1
+
     label_times = [e["values"]["impactTime"] for e in impacts]
     candidates = [e["values"]["relativeTime"] for e in find("detector-state") if e["state"]["state"] == "impactCandidate"]
     dropped = {}
@@ -421,6 +434,9 @@ def footage_check(run):
         "detectorImpactCandidates": len(candidates),
         "labelsWithDetectorCandidateWithin1s": sum(any(abs(c - t) <= 1.0 for c in candidates) for t in label_times),
         "detectorSwingsAccepted": len(find("detector-swing")), "impactToSavedSeconds": latencies,
+        "detectorCandidatesByFailure": failures,
+        "labelsWithLoggedCandidateWithin1s": sum(any(abs(e["values"].get("impactTime", -9) - t) <= 1.0 for e in verdicts)
+                                                 for t in [i["values"]["impactTime"] for i in impacts]),
         "detectorMeanInferenceMS": round(sum(mean_ms) / len(mean_ms), 1) if mean_ms else None,
         "keptRecordings": len(kept), "keptSeconds": round(kept_seconds, 1),
         "swingPositions": {"stored": len(find("swing-positions")), "failed": len(find("swing-positions-failed"))},
