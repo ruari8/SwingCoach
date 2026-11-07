@@ -1232,10 +1232,12 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             values["swingSequence"] = evidence.swingSequence
             values["ballInventoryDrop"] = evidence.ballInventoryDrop
             values["poseConsistency"] = evidence.poseConsistency
+            values["poseStrokeMotion"] = trace.poseStrokeMotion
             let logged = CaptureCadenceDiagnostics.shared.emit(
                 "detector-candidate", id: String(trace.candidateId), values: values,
                 state: ["accepted": trace.accepted ? "yes" : "no", "failure": trace.primaryFailure.rawValue,
-                        "stateReached": trace.stateReached])
+                        "stateReached": trace.stateReached,
+                        "rescueHeld": trace.sequenceRescueHeld ? "yes" : "no"])
             guard logged else {
                 if !candidateRetryScheduled {
                     candidateRetryScheduled = true

@@ -23,6 +23,9 @@ nonisolated enum SwingPrimaryFailure: String, Encodable {
     case lowSwingArc = "low_swing_arc"
     case noHuman = "no_human"
     case noClubPresence = "no_club_presence"
+    /// Every evidence score passed, but the golfer's wrists did not trace a
+    /// full stroke path (the walking/reaching guard).
+    case noStrokeMotion = "no_stroke_motion"
     case belowThreshold = "below_threshold"
     case duplicate
     case timedOut = "timed_out"
@@ -55,6 +58,11 @@ nonisolated struct SwingCandidateTrace: Encodable, Equatable {
     let score: Double
     let accepted: Bool
     let primaryFailure: SwingPrimaryFailure
+    /// Wrist path relative to the torso; below 0.5 is not a golf stroke. nil
+    /// when pose was too sparse to judge.
+    var poseStrokeMotion: Double? = nil
+    /// Rejected only for a zero club sequence and held for the pose rescue.
+    var sequenceRescueHeld = false
 }
 
 nonisolated struct SwingDepartureTrace: Encodable, Equatable {
