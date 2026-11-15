@@ -20,6 +20,10 @@ nonisolated struct SwingPositions: Codable, Equatable {
     let model: String
     /// P1...P10 in order.
     let positions: [SwingPosition]
+    /// Set once coaching has re-timed P2, P6 and P7 off the club track: the
+    /// model's own clip times, P1 first, so coaching can start again from
+    /// them. Nil while `positions` are the model's.
+    var modelClipTimes: [Double]? = nil
 
     static let currentModel = "tcn_vision_v2"
 }

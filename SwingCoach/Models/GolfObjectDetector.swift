@@ -98,6 +98,20 @@ nonisolated final class GolfObjectDetector {
         return decode(output: output, orientedImageSize: orientedImageSize)
     }
 
+    /// Detects on an upright still image (coaching reads frames this way).
+    func detect(in image: CGImage) throws -> [GolfObjectDetection] {
+        let handler = VNImageRequestHandler(cgImage: image, options: [:])
+        try handler.perform([request])
+
+        guard let observation = request.results?.first as? VNCoreMLFeatureValueObservation,
+              let output = observation.featureValue.multiArrayValue
+        else {
+            throw DetectorError.invalidOutput
+        }
+
+        return decode(output: output, orientedImageSize: CGSize(width: image.width, height: image.height))
+    }
+
     private func decode(output: MLMultiArray, orientedImageSize: CGSize) -> [GolfObjectDetection] {
         guard output.shape.count == 3,
               output.shape[1].intValue >= 7
