@@ -1,10 +1,6 @@
 import AVKit
 import SwiftUI
 
-struct AutoSwingReviewPresentation: Identifiable {
-    let id = UUID()
-}
-
 struct AutoSwingReviewView: View {
     @Environment(\.dismiss) private var dismiss
     let swings: [SavedSwing]
@@ -17,12 +13,15 @@ struct AutoSwingReviewView: View {
     @State private var isDrawingLines = false
     @State private var controlsLocked = false
 
-    init(swings: [SavedSwing], onDelete: @escaping @MainActor (SavedSwing) async throws -> Void) {
+    init(swings: [SavedSwing], startAt: UUID? = nil,
+         onDelete: @escaping @MainActor (SavedSwing) async throws -> Void) {
         self.swings = swings
         self.onDelete = onDelete
-        // Capture appends clips chronologically. Every presentation starts at
-        // the newest clip while earlier swings remain a swipe to the right away.
-        _selectedSwingID = State(initialValue: swings.last?.id)
+        // Capture appends clips chronologically. A presentation starts at
+        // the newest clip unless it was opened on a particular swing, while
+        // the others remain a swipe away.
+        let start = startAt.flatMap { id in swings.first { $0.id == id } } ?? swings.last
+        _selectedSwingID = State(initialValue: start?.id)
     }
 
     var body: some View {

@@ -74,12 +74,13 @@ nonisolated struct CoachingMetricDefinition {
     /// within one when the tripod moved) while the body readings held.
     var dependsOnCamera = false
 
-    /// True for the checks at P2 and P6, the frames where the shaft is
-    /// level. They are found by following the club, and 30 frames a second
-    /// can't place them: read from Auto's live copies, takeaway moved by a
-    /// step and made a theme the full clip didn't have. They are only
-    /// measured from the saved clip.
-    var needsEveryFrame: Bool { position == 2 || position == 6 }
+    /// True for a check only made from the saved clip, never from the
+    /// small copies Auto holds in memory: every club reading. At 30 frames
+    /// a second the level-shaft frames can't be placed and the fast frames
+    /// land a little off, enough to move takeaway by a step and transition
+    /// by 2 degrees and make themes the clip didn't have. The body
+    /// readings came out the same.
+    var needsClip: Bool { dependsOnCamera }
 
     func level(for value: Double) -> Int {
         if !scored || zone.contains(value) { return 0 }

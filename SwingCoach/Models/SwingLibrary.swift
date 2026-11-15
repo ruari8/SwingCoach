@@ -340,7 +340,7 @@ class SwingLibrary: ObservableObject {
         guard let index = swings.firstIndex(where: { $0.id == id }) else { return }
         swings[index].swingPositions = positions
         saveToDisk()
-        SwingCoachingStore.shared.coachAfterCapture(swings[index])
+        SwingCoachingStore.shared.coachIfNeeded(swings[index])
     }
 
     func toggleFavorite(_ swing: SavedSwing) {

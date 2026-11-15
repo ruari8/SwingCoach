@@ -26,8 +26,8 @@ nonisolated enum CoachingAnalyzer {
         var unavailable: [CoachingMetricID] = []
         let live = evidence.fromLiveCopies == true
         for definition in CoachingMetricDefinition.all {
-            // Left for the saved clip: see `needsEveryFrame`.
-            if live, definition.needsEveryFrame {
+            // Left for the saved clip: see `needsClip`.
+            if live, definition.needsClip {
                 unavailable.append(definition.id)
             } else if let result = builder.measure(definition), result.confidence >= minimumConfidence,
                definition.isBelievable(result.value) {

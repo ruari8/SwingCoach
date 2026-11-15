@@ -73,6 +73,10 @@ struct SwingCoachingOverlay: View {
     let timeScale: Double
     /// Metric picked from the list: shown even when it is in zone.
     let highlighted: CoachingMetricID?
+    /// On a still picture of one check (`CoachingFrameView`): only
+    /// `highlighted` is drawn, whatever the drawing settings say, and
+    /// without its caption.
+    var still = false
 
     @AppStorage("coaching.showAllDrawings") private var showsAll = false
     @AppStorage("coaching.showDrawings") private var showsDrawings = true
@@ -80,7 +84,9 @@ struct SwingCoachingOverlay: View {
     @AppStorage(CoachingDrawingChoices.hiddenKey) private var hiddenMetrics = ""
 
     private var visible: [CoachingMetricResult] {
-        guard showsDrawings, let report else { return [] }
+        guard let report else { return [] }
+        if still { return report.metrics.filter { $0.id == highlighted } }
+        guard showsDrawings else { return [] }
         let now = CMTimeGetSeconds(currentTime)
         guard now.isFinite else { return [] }
         // One slot of the position grid either side, in clip time.
@@ -106,10 +112,12 @@ struct SwingCoachingOverlay: View {
                             draw(result, in: rect, context: &context)
                         }
                     }
-                    // Under the verdict pill and the old Analyze button.
-                    captions(results)
-                        .padding(.leading, max(rect.minX, 0) + 12)
-                        .padding(.top, max(rect.minY + 12, 178))
+                    if !still {
+                        // Under the verdict pill and the old Analyze button.
+                        captions(results)
+                            .padding(.leading, max(rect.minX, 0) + 12)
+                            .padding(.top, max(rect.minY + 12, 178))
+                    }
                 }
             }
         }
@@ -150,7 +158,9 @@ struct SwingCoachingOverlay: View {
             }
             let points = shape.points.map(place)
             let size = CGFloat(shape.size ?? 0) * rect.height
-            let stroke = StrokeStyle(lineWidth: 3, lineCap: .round, dash: shape.dashed ? [7, 6] : [])
+            // Thinner on a small still picture.
+            let weight: CGFloat = still ? max(1.5, min(3, rect.height / 110)) : 3
+            let stroke = StrokeStyle(lineWidth: weight, lineCap: .round, dash: shape.dashed ? [7, 6] : [])
             switch shape.kind {
             case .line:
                 guard points.count == 2 else { continue }
@@ -158,7 +168,7 @@ struct SwingCoachingOverlay: View {
                 path.move(to: points[0])
                 path.addLine(to: points[1])
                 // A dark edge keeps a white line readable on sky.
-                context.stroke(path, with: .color(.black.opacity(0.35)), style: StrokeStyle(lineWidth: 5, lineCap: .round, dash: stroke.dash))
+                context.stroke(path, with: .color(.black.opacity(0.35)), style: StrokeStyle(lineWidth: weight + 2, lineCap: .round, dash: stroke.dash))
                 context.stroke(path, with: .color(colour), style: stroke)
             case .area:
                 guard points.count >= 3 else { continue }
@@ -184,7 +194,7 @@ struct SwingCoachingOverlay: View {
                 context.stroke(path, with: .color(colour), style: stroke)
             case .dot:
                 guard let centre = points.first else { continue }
-                let radius: CGFloat = 6
+                let radius = weight * 2
                 let path = Path(ellipseIn: CGRect(x: centre.x - radius, y: centre.y - radius, width: radius * 2, height: radius * 2))
                 context.fill(path, with: .color(colour))
                 context.stroke(path, with: .color(.black.opacity(0.6)), lineWidth: 1.5)
