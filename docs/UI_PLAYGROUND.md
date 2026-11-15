@@ -46,6 +46,20 @@ xcrun simctl openurl <simulator-UDID> 'capturestudy://design/1?mode=manual'
 xcrun simctl openurl <simulator-UDID> 'capturestudy://design/5'
 ```
 
+## Coaching flows
+
+`playgrounds/ui/web/coaching.html` is a clickable phone-sized mock of coaching on real swings: one swing in Auto, a recap every few swings, and a session review at home. It draws the real coaching output; the page says which parts exist in the app and which are mock. See [COACHING.md](./COACHING.md).
+
+It needs local media that is not in git. Coach a folder of clips with the harness, then copy the result in:
+
+```bash
+detector_workbench/validation/coaching/run.sh ~/Downloads/15:11_range_session /tmp/coaching-1511 --limit 0
+backend/venv/bin/python playgrounds/ui/coaching-media.py range-2026-11-15=/tmp/coaching-1511
+open playgrounds/ui/web/coaching.html
+```
+
+Each `label=folder` argument becomes a session in the mock.
+
 ## Mirror the real app or another SwiftUI study
 
 Build and launch the intended app using the project verification workflow, then

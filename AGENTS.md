@@ -95,6 +95,7 @@ SwingCoach/
 | Library tab, import, batch actions, export | `SwingCoach/LibraryView.swift` |
 | Settings (gear icon in Library; there is no `SettingsView`) | `SwingCoach/ExperimentalSettingsView.swift` |
 | Swing detail, analyzed video, coach notes | `SwingCoach/SwingDetailView.swift`; result subviews are `AnnotatedAnalysisVideo.swift` and `GroundedCoachingView.swift` |
+| On-device coaching: drawings, verdict pill, measurement list, session summary | `SwingCoach/SwingCoachingViews.swift` |
 | Left/right swing paging | `SwingCoach/SwingReviewPager.swift` |
 | Capture tab, manual + Auto | `SwingCoach/CaptureView.swift` |
 | Auto rolling recording buffer | `SwingCoach/Models/AutoRollingVideoBuffer.swift` |
@@ -108,6 +109,10 @@ SwingCoach/
 ### Swing detection
 
 The live detector is `SwingCoach/Models/SwingDetectorV3/` (used by `CaptureView`, `DebugReplayView`, and `SwingDetectorV3AssetDetector`). Candidate scoring and traces (`SwingEvidence.swift`, `SwingCandidateTrace.swift`) live in that folder too. The retired V2 detector and `ModelBackedSwingDetector.swift` are outside the app target in `detector_workbench/legacy/`, used only by workbench evaluators. Current design: [SWING_DETECTOR_V3.md](./docs/SWING_DETECTOR_V3.md); older detector docs are marked historical.
+
+### Coaching (on-device)
+
+`SwingCoach/Models/Coaching/` measures a down-the-line swing on the phone: evidence from Vision pose, person segmentation and the club detector at P1–P10, 21 metrics with zones and levels, a drawing per metric, one pointer per swing and session themes. Chips, moved cameras and unclear positions are measured but not judged. UI is `SwingCoach/SwingCoachingViews.swift`. No backend. Zones come from 96 pro swings; nothing has run on a phone yet. Design, metric table and the Mac review harness: [COACHING.md](./docs/COACHING.md).
 
 ### Swing positions
 
@@ -156,7 +161,8 @@ The shell is zsh on macOS: quote globs in flags (`grep -r --include='*.py'`), an
 
 ## Current Status
 
-- Backend: 2D observations, reference overlays, and coaching retrieved from the knowledge library; the AI visual review and coach pick one source-backed focus. Shaft, impact, pressure, calibrated 3D, and ball-flight measurements are unavailable. See `backend/docs/pipeline/`.
+- On-device coaching: metrics, drawings, per-swing verdicts and session themes for down-the-line swings, checked on a Mac against range sessions. It is off during Auto and has not run on a phone. See [COACHING.md](./docs/COACHING.md).
+- Backend (older, separate): 2D observations, reference overlays, and coaching retrieved from the knowledge library; the AI visual review and coach pick one source-backed focus. Shaft, impact, pressure, calibrated 3D, and ball-flight measurements are unavailable. See `backend/docs/pipeline/`.
 - iOS: capture, Auto capture, trim, library, analysis queue, and swing detail are implemented. Auto-capture frame cadence is still under investigation; see the [evidence index](./docs/evidence/README.md).
 
 ## Technical Guardrails

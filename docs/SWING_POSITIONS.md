@@ -26,6 +26,8 @@ Stored per swing in `swing_library.json` under `swingPositions`:
 
 Swing Info and the player mark positions under 50% confidence with a `?` (`P8?`).
 
+Once a swing has been coached, P2, P6 and P7 are re-timed off the club track (shaft level, ball struck) and saved back here, with the model's own times kept in `modelClipTimes`. See [COACHING.md](./COACHING.md#club-timing).
+
 ## Accuracy
 
 Measured on the frozen bench in detectSwings: 106 of your range clips, never trained on.

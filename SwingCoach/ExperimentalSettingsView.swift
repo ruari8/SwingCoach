@@ -22,6 +22,8 @@ enum ExperimentalSettingKey {
     static let debugReplayPracticeSwings = "experimental.debugReplayPracticeSwings"
     static let detectorDefaultsRevision = "experimental.detectorDefaultsRevision"
     static let keepAutoRecordings = "experimental.keepAutoRecordings"
+    static let coachDuringAuto = "coaching.coachDuringAuto"
+    static let showCoachingDrawings = "coaching.showDrawings"
 }
 
 enum ExperimentalDetectorDefaults {
@@ -56,6 +58,8 @@ struct ExperimentalSettingsView: View {
     @AppStorage(ExperimentalSettingKey.customBackendURL) private var customBackendURL = ""
     @AppStorage(ExperimentalSettingKey.useMockAnalysis) private var useMockAnalysis = false
     @AppStorage(ExperimentalSettingKey.showDebugReplayTab) private var showDebugReplayTab = true
+    @AppStorage(ExperimentalSettingKey.coachDuringAuto) private var coachDuringAuto = false
+    @AppStorage(ExperimentalSettingKey.showCoachingDrawings) private var showCoachingDrawings = true
     #if DEBUG
     @AppStorage(ExperimentalSettingKey.keepAutoRecordings) private var keepAutoRecordings = false
     #endif
@@ -118,6 +122,16 @@ struct ExperimentalSettingsView: View {
                 Text("Auto & Manual Capture")
             } footer: {
                 Text("Off by default: detect real shots only. Turn this on to include practice swings in Auto capture and Manual recording's detected trim ranges. Replay Debug has its own option under Advanced.")
+            }
+
+            Section {
+                Toggle("Drawings on the video", isOn: $showCoachingDrawings)
+                Toggle("Coach swings during Auto", isOn: $coachDuringAuto)
+                    .accessibilityIdentifier("coach-during-auto-toggle")
+            } header: {
+                Text("Coaching")
+            } footer: {
+                Text("Down-the-line swings are measured on the phone when you open them or a session's coaching. During Auto is off by default: reading each clip beside the camera has not been checked for dropped frames or heat.")
             }
 
             Section {
