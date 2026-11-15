@@ -181,7 +181,15 @@ private struct AutoSwingReviewPage: View {
     @State private var playerItem: AVPlayerItem?
     @State private var videoAspectRatio: Double?
     @State private var draftLine: ManualAnnotation?
+    @State private var coachingSeek: Double?
+    @State private var highlightedMetric: CoachingMetricID?
     @ObservedObject private var library = SwingLibrary.shared
+    @ObservedObject private var coachingStore = SwingCoachingStore.shared
+
+    /// The library's copy, which gains positions after the save.
+    private var librarySwing: SavedSwing {
+        library.swings.first { $0.id == swing.id } ?? swing
+    }
 
     /// Positions arrive about a second after the save, after the session list
     /// copied the swing, so read them from the library.
@@ -211,14 +219,25 @@ private struct AutoSwingReviewPage: View {
                     realTimeRate: swing.realTimePlaybackRate,
                     swingPositions: swingPositions,
                     drawing: videoAspectRatio != nil ? $isDrawingLines : nil,
+                    seekRequest: isSelected ? $coachingSeek : nil,
                     contentOverlay: { currentTime, _ in
-                        AnyView(SwingLineOverlay(
-                            swing: swing,
-                            aspectRatio: videoAspectRatio,
-                            currentTime: currentTime,
-                            isDrawing: drawingEnabled,
-                            draft: $draftLine
-                        ))
+                        AnyView(ZStack {
+                            SwingCoachingOverlay(
+                                report: coachingStore.report(for: swing),
+                                picks: coachingStore.coachPicks(for: swing),
+                                aspectRatio: videoAspectRatio,
+                                currentTime: currentTime,
+                                timeScale: swing.sourceTimeScale ?? 1,
+                                highlighted: isSelected ? highlightedMetric : nil
+                            )
+                            SwingLineOverlay(
+                                swing: swing,
+                                aspectRatio: videoAspectRatio,
+                                currentTime: currentTime,
+                                isDrawing: drawingEnabled,
+                                draft: $draftLine
+                            )
+                        })
                     }
                 ) {
                     EmptyView()
@@ -266,6 +285,13 @@ private struct AutoSwingReviewPage: View {
                     .tint(.white)
             }
         }
+        .overlay(alignment: .top) {
+            if isSelected, !drawingEnabled, SwingCoachingStore.canCoach(librarySwing) {
+                SwingCoachingPill(swing: librarySwing, seek: { coachingSeek = $0 }, highlighted: $highlightedMetric)
+                    .padding(.horizontal, 14 + PlayerToolRail.buttonSize + PlayerToolRail.spacing)
+                    .padding(.top, 64)
+            }
+        }
         .task(id: swing.id) {
             let item = await SwingLibrary.shared.getPlayerItem(for: swing)
             guard !Task.isCancelled else { return }
@@ -278,6 +304,7 @@ private struct AutoSwingReviewPage: View {
         }
         .onChange(of: isSelected) { _, _ in
             draftLine = nil
+            highlightedMetric = nil
         }
     }
 }

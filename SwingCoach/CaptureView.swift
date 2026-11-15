@@ -602,6 +602,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     func startAutoCapture() {
         #if DEBUG
         if UITestFixture.camera == .synthetic {
+            SwingCoachingStore.shared.autoCaptureIsRecording = true
             startFixtureAutoCapture()
             return
         }
@@ -628,6 +629,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             self.recordedMode = self.captureMode
             let reviewSessionID = session.id
             DispatchQueue.main.async {
+                // Coaching reads saved clips; it waits while the camera
+                // records. Set only once Auto has really started.
+                SwingCoachingStore.shared.autoCaptureIsRecording = true
                 self.enterAutoSession(session)
                 self.autoCaptureStatus = AutoCaptureStatus(
                     isActive: true,
@@ -652,6 +656,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     func stopAutoCapture() {
+        SwingCoachingStore.shared.autoCaptureIsRecording = false
         queue.async {
             self.autoCaptureIsActive = false
             // After any frame already on analysisQueue. finish adds the
@@ -752,6 +757,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     func pauseAutoCaptureForReview() {
+        SwingCoachingStore.shared.autoCaptureIsRecording = false
         queue.async {
             guard self.autoCaptureIsActive else { return }
             self.autoCaptureIsPausedForReview = true
@@ -764,12 +770,14 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     func resumeAutoCaptureAfterReview() {
         #if DEBUG
         if UITestFixture.camera == .synthetic {
+            SwingCoachingStore.shared.autoCaptureIsRecording = true
             liveSwingDetection = fixtureSnapshot(manual: false)
             return
         }
         #endif
         queue.async {
             guard self.autoCaptureIsActive, self.autoCaptureIsPausedForReview else { return }
+            DispatchQueue.main.async { SwingCoachingStore.shared.autoCaptureIsRecording = true }
             self.autoCaptureIsPausedForReview = false
             self.recordedMode = self.captureMode
             self.resetLiveSwingDetection()

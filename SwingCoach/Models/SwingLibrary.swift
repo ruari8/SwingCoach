@@ -327,6 +327,7 @@ class SwingLibrary: ObservableObject {
         let removed = swings.filter { ids.contains($0.id) }
         guard !removed.isEmpty else { return }
         swings.removeAll { ids.contains($0.id) }
+        SwingCoachingStore.shared.removeCoaching(for: Set(removed.map(\.id)))
         for swing in removed {
             if let name = swing.localVideoFilename {
                 try? FileManager.default.removeItem(at: videosDirectory.appendingPathComponent(name))
@@ -339,6 +340,7 @@ class SwingLibrary: ObservableObject {
         guard let index = swings.firstIndex(where: { $0.id == id }) else { return }
         swings[index].swingPositions = positions
         saveToDisk()
+        SwingCoachingStore.shared.coachAfterCapture(swings[index])
     }
 
     func toggleFavorite(_ swing: SavedSwing) {
@@ -537,7 +539,9 @@ class SwingLibrary: ObservableObject {
         
         // Remove swings whose assets no longer exist
         let originalCount = swings.count
+        let missing = swings.filter { !$0.isReference && !$0.photoAssetID.isEmpty && !validIDs.contains($0.photoAssetID) }
         swings.removeAll { !$0.isReference && !$0.photoAssetID.isEmpty && !validIDs.contains($0.photoAssetID) }
+        SwingCoachingStore.shared.removeCoaching(for: Set(missing.map(\.id)))
         
         if swings.count != originalCount {
             print("⚠️ Removed \(originalCount - swings.count) swings with missing assets")

@@ -468,6 +468,7 @@ AREAS = {
     "review": [Step("review", [f"{UI}/FastSwipePagingUITests", f"{UI}/ReviewLockUITests",
                                f"{UI}/ReviewAnnotationUITests", f"{UI}/PlayerPositionsUITests",
                                f"{UNIT}/SwingReviewTests", f"{UNIT}/PositionScrubMappingTests"])],
+    "coaching": [Step("coaching", [f"{UI}/SwingCoachingUITests", f"{UNIT}/SwingCoachingTests"])],
     "capture": [Step("capture", [f"{UI}/CaptureControlsUITests", f"{UI}/CaptureAudioUITests",
                                  f"{UI}/ManualTrimCancelUITests", f"{UI}/AutoReviewAnnotationUITests",
                                  f"{UNIT}/CaptureRecordingAudioSessionTests", f"{UNIT}/CaptureDiagnosticsExportTests",
@@ -503,7 +504,7 @@ AREAS = {
     "coach": [Step("coach", [f"{UI}/CoachingPipelineUITests", f"{UNIT}/CoachingContractTests"], plan="OnRequest",
                    before=coach_before, after=coach_check, check_on=f"{UI}/CoachingPipelineUITests")],
 }
-DEFAULT_AREAS = ["smoke", "unit", "library", "review", "capture", "trim", "storage"]
+DEFAULT_AREAS = ["smoke", "unit", "library", "review", "coaching", "capture", "trim", "storage"]
 MAC_ONLY_AREAS = {"trim-clock"}
 
 

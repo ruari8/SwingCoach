@@ -27,6 +27,7 @@ struct LibraryView: View {
     @State private var importProgress: Double? = nil  // 0.0-1.0, nil = indeterminate
     @State private var showVideoPicker = false
     @State private var showExperimentalSettings = false
+    @State private var coachingSession: SwingSession?
     @State private var photoLibraryAccessStatus: PHAuthorizationStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
     @State private var showLimitedPhotoAccessOptions = false
 
@@ -204,6 +205,9 @@ struct LibraryView: View {
                         importProgress = nil
                     }
                 )
+            }
+            .sheet(item: $coachingSession) { session in
+                SessionCoachingView(session: session)
             }
             .sheet(isPresented: $showExperimentalSettings) {
                 NavigationStack {
@@ -555,6 +559,18 @@ struct LibraryView: View {
                     .font(.subheadline.weight(.medium))
             }
             .accessibilityLabel("\(isWholeSessionSelected ? "Deselect" : "Select") \(title) session")
+
+            if session.swings.contains(where: SwingCoachingStore.canCoach) {
+                Button {
+                    coachingSession = session
+                } label: {
+                    Image(systemName: "figure.golf")
+                        .font(.subheadline.weight(.medium))
+                }
+                .padding(.leading, 10)
+                .accessibilityLabel("Coaching for \(title) session")
+                .accessibilityIdentifier("session-coaching-button")
+            }
         }
         .padding(.horizontal)
         .padding(.bottom, 8)
@@ -1124,6 +1140,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     let swingPositions: SwingPositions?
     /// Line drawing for this clip; nil omits the Draw tool.
     let drawing: Binding<Bool>?
+    /// Set to a clip time to pause there; the player clears it once it has.
+    let seekRequest: Binding<Double?>?
 
     private let header: Header
     private let overlayAccessory: OverlayAccessory
@@ -1180,6 +1198,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         realTimeRate: Float? = nil,
         swingPositions: SwingPositions? = nil,
         drawing: Binding<Bool>? = nil,
+        seekRequest: Binding<Double?>? = nil,
         contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
         @ViewBuilder header: () -> Header,
         @ViewBuilder overlayAccessory: () -> OverlayAccessory
@@ -1198,6 +1217,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         self.realTimeRate = realTimeRate.flatMap { $0 > 1 ? $0 : nil }
         self.swingPositions = swingPositions
         self.drawing = drawing
+        self.seekRequest = seekRequest
         self.header = header()
         self.overlayAccessory = overlayAccessory()
         self.contentOverlay = contentOverlay
@@ -1235,6 +1255,13 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         .onChange(of: isDrawing) { _, _ in
             // Drawing keeps the controls up; leaving it restarts auto-hide.
             showControls()
+        }
+        .onChange(of: seekRequest?.wrappedValue) { _, requested in
+            guard let requested, playbackEnabled else { return }
+            player?.pause()
+            isPlaying = false
+            seek(to: CMTime(seconds: requested, preferredTimescale: 600))
+            seekRequest?.wrappedValue = nil
         }
         .onChange(of: isLocked) { _, _ in
             // Other pages can change the shared preference while this player

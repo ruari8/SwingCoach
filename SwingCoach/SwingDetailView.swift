@@ -29,6 +29,9 @@ struct SwingDetailView: View {
     @State private var isDrawingLines = false
     @State private var controlsLocked = false
     @State private var draftLine: ManualAnnotation?
+    @State private var coachingSeek: Double?
+    @State private var highlightedMetric: CoachingMetricID?
+    @ObservedObject private var coachingStore = SwingCoachingStore.shared
 
     init(swing: SavedSwing, reviewSwings: [SavedSwing]? = nil) {
         self.swing = swing
@@ -89,6 +92,16 @@ struct SwingDetailView: View {
 
             if selectedPage == 0, isDrawingLines, videoAspectRatios[currentSwingID] != nil {
                 drawingToolBar
+            }
+
+            if selectedPage == 0, !isDrawingLines, SwingCoachingStore.canCoach(currentSwing) {
+                VStack {
+                    SwingCoachingPill(swing: currentSwing, seek: { coachingSeek = $0 }, highlighted: $highlightedMetric)
+                        // Clear of the tool rail, which can dock on either side.
+                        .padding(.horizontal, 14 + PlayerToolRail.buttonSize + PlayerToolRail.spacing)
+                    Spacer(minLength: 0)
+                }
+                .padding(.top, shouldShowAnalysisAction ? 124 : 64)
             }
         }
         .overlayPreferenceValue(ReviewPlaybackCornerControlsKey.self) { cornerControls in
@@ -388,15 +401,26 @@ struct SwingDetailView: View {
                 realTimeRate: swing.realTimePlaybackRate,
                 swingPositions: swing.swingPositions,
                 drawing: videoAspectRatios[swing.id] != nil ? $isDrawingLines : nil,
+                seekRequest: swing.id == currentSwingID ? $coachingSeek : nil,
                 contentOverlay: { currentTime, _ in
                     AnyView(
-                        SwingLineOverlay(
-                            swing: swing,
-                            aspectRatio: videoAspectRatios[swing.id],
-                            currentTime: currentTime,
-                            isDrawing: drawingEnabled,
-                            draft: $draftLine
-                        )
+                        ZStack {
+                            SwingCoachingOverlay(
+                                report: coachingStore.report(for: swing),
+                                picks: coachingStore.coachPicks(for: swing),
+                                aspectRatio: videoAspectRatios[swing.id],
+                                currentTime: currentTime,
+                                timeScale: swing.sourceTimeScale ?? 1,
+                                highlighted: swing.id == currentSwingID ? highlightedMetric : nil
+                            )
+                            SwingLineOverlay(
+                                swing: swing,
+                                aspectRatio: videoAspectRatios[swing.id],
+                                currentTime: currentTime,
+                                isDrawing: drawingEnabled,
+                                draft: $draftLine
+                            )
+                        }
                     )
                 }
             ) {
@@ -694,6 +718,8 @@ struct SwingDetailView: View {
         isDrawingLines = false
         draftLine = nil
         showMetadata = false
+        highlightedMetric = nil
+        coachingSeek = nil
     }
 
     private func startAnalysis() {

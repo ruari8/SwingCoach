@@ -50,6 +50,10 @@ nonisolated enum UITestFixture {
         /// One personal DTL clip (240 fps, 8x slow-motion) and three references,
         /// all with P1-P10 (P8 below the model's 0.5 confidence line).
         case positions
+        /// One session of five DTL clips with positions and coaching reports:
+        /// four steepen the shaft in transition, one is clean. "Coaching DTL"
+        /// is the newest.
+        case coaching
     }
 
     private static let arguments = ProcessInfo.processInfo.arguments
@@ -183,6 +187,23 @@ extension UITestFixture {
             for index in swings.indices { swings[index].swingPositions = fixturePositions }
             // The personal clip is a 240 fps capture, exported 8x slower.
             swings[0].sourceTimeScale = 8
+        case .coaching:
+            let start = Calendar.current.date(bySettingHour: 10, minute: 0, second: 0, of: Date())!
+            for index in 0..<5 {
+                personal(index + 1, title: index == 4 ? "Coaching DTL" : nil,
+                         createdAt: start.addingTimeInterval(Double(120 * index)))
+            }
+            let coaching = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("SwingCoaching", isDirectory: true)
+            try! FileManager.default.createDirectory(at: coaching, withIntermediateDirectories: true)
+            for index in swings.indices {
+                swings[index].swingPositions = fixturePositions
+                swings[index].sourceTimeScale = 8
+                // The third swing of the session is the clean one.
+                let report = fixtureCoachingReport(steep: index != 2)
+                try! JSONEncoder().encode(report)
+                    .write(to: coaching.appendingPathComponent("\(swings[index].id.uuidString).report.json"))
+            }
         }
 
         let files = FileManager.default
@@ -196,6 +217,36 @@ extension UITestFixture {
             try! files.copyItem(at: video, to: videos.appendingPathComponent(swing.localVideoFilename!))
         }
         try! JSONEncoder().encode(swings).write(to: documents.appendingPathComponent("swing_library.json"))
+    }
+
+    /// A report on the fixture positions' times: the transition drawn at P5
+    /// (level 4 when `steep`), hip depth one level out at P7, and an in-zone
+    /// head at P4.
+    static func fixtureCoachingReport(steep: Bool) -> SwingCoachingReport {
+        func line(_ role: CoachingDrawing.Role, _ a: (Double, Double), _ b: (Double, Double), dashed: Bool = false) -> CoachingDrawing {
+            CoachingDrawing(kind: .line, role: role, points: [CoachingPoint(x: a.0, y: a.1), CoachingPoint(x: b.0, y: b.1)],
+                            dashed: dashed)
+        }
+        let transition = CoachingMetricDefinition.definition(.transition)
+        let hips = CoachingMetricDefinition.definition(.hipDepthImpact)
+        let head = CoachingMetricDefinition.definition(.headHeightTop)
+        let steepening = steep ? 20.0 : 1.0
+        return SwingCoachingReport(rightHanded: true, metrics: [
+            CoachingMetricResult(id: .headHeightTop, position: 4, clipTime: 1.6, value: -3, level: head.level(for: -3),
+                                 confidence: 0.8, drawings: [
+                                    CoachingDrawing(kind: .circle, role: .reference, points: [CoachingPoint(x: 0.5, y: 0.3)], size: 0.04),
+                                 ]),
+            CoachingMetricResult(id: .transition, position: 5, clipTime: 1.85, value: steepening,
+                                 level: transition.level(for: steepening), confidence: 0.9, drawings: [
+                                    line(.reference, (0.45, 0.45), (0.25, 0.2), dashed: true),
+                                    line(.subject, (0.45, 0.45), (0.33, 0.15)),
+                                 ]),
+            CoachingMetricResult(id: .hipDepthImpact, position: 7, clipTime: 1.95, value: 4, level: hips.level(for: 4),
+                                 confidence: 0.85, drawings: [
+                                    line(.reference, (0.3, 0.4), (0.3, 0.7)),
+                                    CoachingDrawing(kind: .dot, role: .subject, points: [CoachingPoint(x: 0.33, y: 0.55)]),
+                                 ]),
+        ], unavailable: [.takeawayClub])
     }
 
     /// Positions on the 3-second fixture clip, bunched through the downswing
