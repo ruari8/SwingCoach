@@ -779,8 +779,8 @@ final class SwingCoachingTests: XCTestCase {
         XCTAssertEqual(recap.theme?.swings, 3)
         XCTAssertEqual(recap.theme?.measured, 4)
         // The swing's strongest reading of the fault, whichever metric
-        // shows it; 0 where it doesn't; nil where the swing wasn't judged.
-        XCTAssertEqual(recap.levels, [3, 0, 4, nil, 3])
+        // shows it.
+        XCTAssertEqual(recap.swings, [.shows(3), .inZone, .shows(4), .notJudged, .shows(3)])
         XCTAssertEqual(recap.judged, 4)
         XCTAssertEqual(recap.good, 2)
     }
@@ -790,7 +790,7 @@ final class SwingCoachingTests: XCTestCase {
         let once = report([result(.hipDepthImpact, level: 4)])
         let recap = CoachingFeedback.recap(of: [clean, once, clean, clean, clean])
         XCTAssertNil(recap.theme)
-        XCTAssertEqual(recap.levels, [])
+        XCTAssertEqual(recap.swings, [])
         XCTAssertEqual(recap.judged, 5)
         XCTAssertEqual(recap.good, 4)
     }
@@ -802,9 +802,14 @@ final class SwingCoachingTests: XCTestCase {
         XCTAssertEqual(theme?.direction, -1)
         guard let theme else { return }
         XCTAssertEqual(CoachingFeedback.level(of: theme, in: inside), 3)
-        // Out on the other side is not this theme.
+        XCTAssertEqual(CoachingFeedback.showing(of: theme, in: inside), .shows(3))
+        // Out on the other side is not this theme, and not in zone either.
         XCTAssertEqual(CoachingFeedback.level(of: theme, in: outside), 0)
-        XCTAssertNil(CoachingFeedback.level(of: theme, in: report([result(.hipDepthImpact, level: 2)])))
+        XCTAssertEqual(CoachingFeedback.showing(of: theme, in: outside), .otherWay(3))
+        XCTAssertEqual(CoachingFeedback.showing(of: theme, in: report([result(.takeawayClub, level: 0)])), .inZone)
+        let unseen = report([result(.hipDepthImpact, level: 2)])
+        XCTAssertNil(CoachingFeedback.level(of: theme, in: unseen))
+        XCTAssertEqual(CoachingFeedback.showing(of: theme, in: unseen), .notJudged)
     }
 
     func testThemeIsDrawnOnASwingByTheMetricThatShowsItThere() {
@@ -821,35 +826,48 @@ final class SwingCoachingTests: XCTestCase {
         XCTAssertEqual(CoachingFeedback.metric(showing: theme, in: clean), .trailKneeImpact)
     }
 
-    func testRecapComesUpOncePerFullGroupOfMeasuredSwings() {
-        XCTAssertNil(CoachingCadence.everyFive.recapDue(measured: 4))
-        XCTAssertEqual(CoachingCadence.everyFive.recapDue(measured: 5), 1)
-        XCTAssertEqual(CoachingCadence.everyFive.recapDue(measured: 14), 2)
-        XCTAssertEqual(CoachingCadence.everyTen.recapDue(measured: 14), 1)
-        XCTAssertNil(CoachingCadence.everySwing.recapDue(measured: 14))
-        XCTAssertNil(CoachingCadence.onRequest.recapDue(measured: 14))
+    func testRecapComesUpOnceForEveryFiveNewlyMeasuredSwings() {
+        let swings = (0..<30).map { _ in UUID() }
+        func first(_ count: Int) -> [UUID] { Array(swings.prefix(count)) }
 
         var schedule = CoachingRecapSchedule()
-        // First look at a session that already has seven: nothing pops up.
-        XCTAssertNil(schedule.update(measured: 7, cadence: .everyFive))
-        XCTAssertNil(schedule.update(measured: 9, cadence: .everyFive))
-        XCTAssertEqual(schedule.update(measured: 10, cadence: .everyFive), 5..<10)
-        // The same count again, and swings in between: not twice.
-        XCTAssertNil(schedule.update(measured: 10, cadence: .everyFive))
-        XCTAssertNil(schedule.update(measured: 12, cadence: .everyFive))
-        // A new session starts the count again.
-        XCTAssertNil(schedule.update(measured: 0, cadence: .everyFive))
-        XCTAssertEqual(schedule.update(measured: 5, cadence: .everyFive), 0..<5)
+        // First look at a session that already has seven: they are passed
+        // over, and the recap comes after five more.
+        XCTAssertNil(schedule.update(measured: first(7), cadence: .everyFive))
+        XCTAssertNil(schedule.update(measured: first(11), cadence: .everyFive))
+        XCTAssertEqual(schedule.update(measured: first(12), cadence: .everyFive), Array(swings[7..<12]))
+        // The same swings again, and a few more: not twice.
+        XCTAssertNil(schedule.update(measured: first(12), cadence: .everyFive))
+        XCTAssertNil(schedule.update(measured: first(16), cadence: .everyFive))
+        XCTAssertEqual(schedule.update(measured: first(17), cadence: .everyFive), Array(swings[12..<17]))
+
+        // Deleting a recapped swing and measuring a new one doesn't bring
+        // the old recap back.
+        var afterDeletion = first(17)
+        afterDeletion.remove(at: 16)
+        XCTAssertNil(schedule.update(measured: afterDeletion, cadence: .everyFive))
+        XCTAssertNil(schedule.update(measured: afterDeletion + [swings[17]], cadence: .everyFive))
+
+        // Changing the setting passes over what is already measured.
+        schedule.cadenceChanged(measured: first(20))
+        XCTAssertNil(schedule.update(measured: first(29), cadence: .everyTen))
+        XCTAssertEqual(schedule.update(measured: first(30), cadence: .everyTen), Array(swings[20..<30]))
+        XCTAssertNil(schedule.update(measured: first(30), cadence: .onRequest))
+        XCTAssertNil(schedule.update(measured: first(30), cadence: .everySwing))
+    }
+
+    func testRecapScheduleStartsAgainWithANewSession() {
+        let old = (0..<5).map { _ in UUID() }, new = (0..<5).map { _ in UUID() }
+        var schedule = CoachingRecapSchedule()
+        XCTAssertNil(schedule.update(measured: [], cadence: .everyFive))
+        XCTAssertEqual(schedule.update(measured: old, cadence: .everyFive), old)
+        // A new session's swings are all new.
+        XCTAssertNil(schedule.update(measured: [], cadence: .everyFive))
+        XCTAssertEqual(schedule.update(measured: new, cadence: .everyFive), new)
         // A session with no swings, then one restored with five already
         // measured: a first look, so nothing comes up.
         schedule.reset()
-        XCTAssertNil(schedule.update(measured: 5, cadence: .everyFive))
-        XCTAssertEqual(schedule.update(measured: 10, cadence: .everyFive), 5..<10)
-        // Changing the setting doesn't bring up groups already complete.
-        schedule.cadenceChanged(measured: 5, cadence: .everyTen)
-        XCTAssertNil(schedule.update(measured: 9, cadence: .everyTen))
-        XCTAssertEqual(schedule.update(measured: 10, cadence: .everyTen), 0..<10)
-        XCTAssertNil(schedule.update(measured: 20, cadence: .onRequest))
+        XCTAssertNil(schedule.update(measured: old, cadence: .everyFive))
     }
 
     // MARK: - Session review

@@ -65,7 +65,7 @@ struct AutoCoachingPanel: View {
         .onChange(of: measured.map(\.swing.id)) { _, ids in update(ids) }
         .onChange(of: swings.isEmpty) { _, _ in update(measured.map(\.swing.id)) }
         .onChange(of: cadenceName) { _, _ in
-            schedule.cadenceChanged(measured: measured.count, cadence: cadence)
+            schedule.cadenceChanged(measured: measured.map(\.swing.id))
         }
     }
 
@@ -77,8 +77,8 @@ struct AutoCoachingPanel: View {
             schedule.reset()
             return
         }
-        if let range = schedule.update(measured: ids.count, cadence: cadence) {
-            recapIDs = Array(ids[range])
+        if let due = schedule.update(measured: ids, cadence: cadence) {
+            recapIDs = due
         }
     }
 
@@ -140,6 +140,23 @@ struct AutoCoachingPanel: View {
         } onClose: {
             recapIDs = nil
         }
+    }
+}
+
+extension CoachingThemeShowing {
+    var colour: Color {
+        switch self {
+        case .notJudged: .gray.opacity(0.6)
+        case .inZone: .coachingLevel(0)
+        case .shows(let level), .otherWay(let level): .coachingLevel(level)
+        }
+    }
+
+    /// Solid, except out the other way: that is not the theme, so it is
+    /// only outlined.
+    var fill: Color {
+        if case .otherWay = self { return .clear }
+        return colour
     }
 }
 
@@ -224,21 +241,23 @@ struct CoachingRecapCard: View {
         .accessibilityIdentifier("coach-recap")
     }
 
-    /// One bar per swing: green where the theme didn't show, amber or red
-    /// by how far out it was, grey where the swing couldn't be judged.
+    /// One bar per swing: green where the theme's check was in zone,
+    /// amber or red by how far out it was, an outline where it was out the
+    /// other way, grey where the swing couldn't be judged.
     private var levelBars: some View {
         HStack(alignment: .top, spacing: 6) {
-            ForEach(Array(zip(numbers, recap.levels).enumerated()), id: \.offset) { _, entry in
+            ForEach(Array(zip(numbers, recap.swings).enumerated()), id: \.offset) { _, entry in
                 VStack(spacing: 5) {
                     Capsule()
-                        .fill(entry.1.map(Color.coachingLevel) ?? .gray.opacity(0.6))
+                        .fill(entry.1.fill)
+                        .overlay(Capsule().strokeBorder(entry.1.colour, lineWidth: 1))
                         .frame(height: 6)
                     Text("\(entry.0)")
                         .font(.caption2.weight(.semibold).monospacedDigit())
                         .foregroundStyle(.white.opacity(0.7))
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Swing \(entry.0): \(entry.1.map { $0 == 0 ? "in zone" : "level \($0)" } ?? "not judged")")
+                .accessibilityLabel("Swing \(entry.0): \(entry.1.label)")
             }
         }
         .padding(.top, 2)
@@ -280,8 +299,12 @@ struct CoachingFrameView: View {
                 ProgressView().tint(.white)
             }
         }
-        .task(id: "\(swing.id.uuidString)-\(metric.rawValue)") {
-            frame = await Self.frame(of: swing, at: result?.clipTime)
+        // The clip's reading can replace a first reading while this is
+        // on screen and move the check to another frame.
+        .task(id: "\(swing.id.uuidString)-\(metric.rawValue)-\(result?.clipTime ?? -1)") {
+            let image = await Self.frame(of: swing, at: result?.clipTime)
+            guard !Task.isCancelled else { return }
+            frame = image
             loaded = true
         }
     }
@@ -344,7 +367,7 @@ struct CoachingCompareView: View {
     @ViewBuilder
     private func tile(_ number: Int, _ swing: SavedSwing) -> some View {
         let report = store.report(for: swing)
-        let level = report.flatMap { CoachingFeedback.level(of: theme, in: $0) }
+        let showing = report.map { CoachingFeedback.showing(of: theme, in: $0) } ?? .notJudged
         let metric = report.flatMap { CoachingFeedback.metric(showing: theme, in: $0) }
         Button {
             onOpen(swing)
@@ -360,10 +383,12 @@ struct CoachingCompareView: View {
                 .aspectRatio(9.0 / 16.0, contentMode: .fit)
                 .clipShape(.rect(cornerRadius: 12))
                 HStack(spacing: 6) {
-                    Circle().fill(level.map(Color.coachingLevel) ?? .gray).frame(width: 8, height: 8)
+                    Circle().fill(showing.fill)
+                        .overlay(Circle().strokeBorder(showing.colour, lineWidth: 1.5))
+                        .frame(width: 8, height: 8)
                     Text("Swing \(number)").font(.subheadline.weight(.semibold))
                     Spacer(minLength: 0)
-                    Text(level.map { $0 == 0 ? "in zone" : "level \($0)" } ?? "not judged")
+                    Text(showing.label)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

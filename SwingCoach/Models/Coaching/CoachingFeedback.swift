@@ -149,13 +149,34 @@ nonisolated struct CoachingTheme: Equatable, Identifiable {
 nonisolated struct CoachingRecap: Equatable {
     /// The fault most of them shared, or nil when nothing kept repeating.
     let theme: CoachingTheme?
-    /// The theme's level on each swing, oldest first: 0 where the swing
-    /// doesn't show it, nil where it wasn't judged or couldn't be seen.
-    /// Empty without a theme.
-    let levels: [Int?]
+    /// How each swing stands on the theme, oldest first. Empty without a
+    /// theme.
+    let swings: [CoachingThemeShowing]
     /// Swings that were judged, and how many of those needed no pointer.
     let judged: Int
     let good: Int
+}
+
+/// How one swing stands on a theme.
+nonisolated enum CoachingThemeShowing: Equatable {
+    /// Not judged, or the theme couldn't be seen on it.
+    case notJudged
+    /// The check that shows the theme is in its zone.
+    case inZone
+    /// Shows the theme, this many levels out.
+    case shows(Int)
+    /// The theme's check is out of its zone the other way, this many
+    /// levels: a different fault, not the theme and not in zone.
+    case otherWay(Int)
+
+    var label: String {
+        switch self {
+        case .notJudged: "not judged"
+        case .inZone: "in zone"
+        case .shows(let level): "level \(level)"
+        case .otherWay(let level): "other way, level \(level)"
+        }
+    }
 }
 
 /// When the coach speaks during Auto. Swings are measured either way.
@@ -187,40 +208,41 @@ nonisolated enum CoachingCadence: String, CaseIterable, Identifiable {
         case .everySwing, .onRequest: nil
         }
     }
-
-    /// The recap that is due, counted from 1, once `measured` swings of
-    /// the session have been measured; nil until the first is complete.
-    func recapDue(measured: Int) -> Int? {
-        guard let recapSize, measured >= recapSize else { return nil }
-        return measured / recapSize
-    }
 }
 
-/// Decides when a recap comes up on the camera screen: once for each
-/// full group of measured swings, and never for groups that were already
-/// complete when the screen was first looked at or the setting changed.
+/// Decides when a recap comes up on the camera screen: once for every
+/// `recapSize` swings measured since the last one. Swings already measured
+/// when the screen was first looked at, or when the setting changed, are
+/// never counted, and deleting a swing doesn't bring an old recap back.
 nonisolated struct CoachingRecapSchedule: Equatable {
-    /// The last recap that came due, shown or not. Nil before the first look.
-    private(set) var seen: Int?
+    /// Measured swings already recapped or passed over. Nil before the
+    /// first look at a session.
+    private var counted: Set<UUID>?
 
-    /// Call when the count of measured swings changes. Returns which of
-    /// the measured swings (oldest first) the recap now due covers.
-    mutating func update(measured: Int, cadence: CoachingCadence) -> Range<Int>? {
-        let due = cadence.recapDue(measured: measured) ?? 0
-        // Also follows the count down when a new session starts.
-        defer { seen = due }
-        guard let seen, due > seen, let size = cadence.recapSize else { return nil }
-        return (due * size - size)..<(due * size)
+    /// Call when the session's measured swings (oldest first) change.
+    /// Returns the swings of a recap that has just come due.
+    mutating func update(measured: [UUID], cadence: CoachingCadence) -> [UUID]? {
+        guard let counted else {
+            self.counted = Set(measured)
+            return nil
+        }
+        // Deleted swings are forgotten; the rest stay counted.
+        self.counted = counted.intersection(measured)
+        let fresh = measured.filter { !counted.contains($0) }
+        guard let size = cadence.recapSize, fresh.count >= size else { return nil }
+        let recap = Array(fresh.prefix(size))
+        self.counted?.formUnion(recap)
+        return recap
     }
 
-    mutating func cadenceChanged(measured: Int, cadence: CoachingCadence) {
-        seen = cadence.recapDue(measured: measured) ?? 0
+    mutating func cadenceChanged(measured: [UUID]) {
+        counted = Set(measured)
     }
 
     /// The session has no swings: the next ones to appear are a first
     /// look again, whether they are new or a session being restored.
     mutating func reset() {
-        seen = nil
+        counted = nil
     }
 }
 
@@ -428,7 +450,7 @@ nonisolated enum CoachingFeedback {
         let theme = themes(in: reports, minimumSwings: 3).first
         return CoachingRecap(
             theme: theme,
-            levels: theme.map { theme in reports.map { level(of: theme, in: $0) } } ?? [],
+            swings: theme.map { theme in reports.map { showing(of: theme, in: $0) } } ?? [],
             judged: judged.count,
             good: judged.filter { verdict(for: $0) == .good }.count
         )
@@ -445,6 +467,18 @@ nonisolated enum CoachingFeedback {
         }
         guard let result = report.metric(theme.metric) else { return nil }
         return result.level * theme.direction > 0 ? abs(result.level) : 0
+    }
+
+    /// How a swing stands on a theme, for a bar or a label. A swing that
+    /// doesn't show the theme is only "in zone" when the check drawn for
+    /// it really is: out the other way is said as that.
+    static func showing(of theme: CoachingTheme, in report: SwingCoachingReport) -> CoachingThemeShowing {
+        guard let level = level(of: theme, in: report) else { return .notJudged }
+        if level > 0 { return .shows(level) }
+        if let drawn = metric(showing: theme, in: report).flatMap({ report.metric($0) }), drawn.level != 0 {
+            return .otherWay(abs(drawn.level))
+        }
+        return .inZone
     }
 
     /// The metric whose drawing shows a theme on one swing: the theme's
