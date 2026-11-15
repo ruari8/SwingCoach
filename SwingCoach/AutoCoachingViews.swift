@@ -63,7 +63,6 @@ struct AutoCoachingPanel: View {
         .animation(.easeInOut(duration: 0.25), value: recapIDs)
         .onAppear { update(measured.map(\.swing.id)) }
         .onChange(of: measured.map(\.swing.id)) { _, ids in update(ids) }
-        .onChange(of: swings.isEmpty) { _, _ in update(measured.map(\.swing.id)) }
         .onChange(of: cadenceName) { _, _ in
             schedule.cadenceChanged(measured: measured.map(\.swing.id))
         }
@@ -73,10 +72,6 @@ struct AutoCoachingPanel: View {
     /// swings, oldest first.
     private func update(_ ids: [UUID]) {
         if let shown = recapIDs, !shown.allSatisfy(ids.contains) { recapIDs = nil }
-        guard !swings.isEmpty else {
-            schedule.reset()
-            return
-        }
         if let due = schedule.update(measured: ids, cadence: cadence) {
             recapIDs = due
         }
@@ -273,11 +268,15 @@ struct CoachingFrameView: View {
     let report: SwingCoachingReport
     let metric: CoachingMetricID
 
-    @State private var frame: UIImage?
-    @State private var loaded = false
+    /// The last frame read, and what it was read for. A frame read for
+    /// another time is never shown under this reading's drawing.
+    @State private var loaded: (request: String, frame: UIImage?)?
 
     var body: some View {
         let result = report.metric(metric)
+        let request = "\(swing.id.uuidString)-\(metric.rawValue)-\(result?.clipTime ?? -1)"
+        let current = loaded?.request == request ? loaded : nil
+        let frame = current?.frame
         ZStack {
             Color.black
             if let frame {
@@ -292,7 +291,7 @@ struct CoachingFrameView: View {
                         timeScale: swing.sourceTimeScale ?? 1, highlighted: metric, still: true
                     )
                 }
-            } else if loaded {
+            } else if current != nil {
                 Image(systemName: "video.slash")
                     .foregroundStyle(.white.opacity(0.4))
             } else {
@@ -301,11 +300,10 @@ struct CoachingFrameView: View {
         }
         // The clip's reading can replace a first reading while this is
         // on screen and move the check to another frame.
-        .task(id: "\(swing.id.uuidString)-\(metric.rawValue)-\(result?.clipTime ?? -1)") {
+        .task(id: request) {
             let image = await Self.frame(of: swing, at: result?.clipTime)
             guard !Task.isCancelled else { return }
-            frame = image
-            loaded = true
+            loaded = (request, image)
         }
     }
 

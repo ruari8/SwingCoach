@@ -213,7 +213,9 @@ nonisolated enum CoachingCadence: String, CaseIterable, Identifiable {
 /// Decides when a recap comes up on the camera screen: once for every
 /// `recapSize` swings measured since the last one. Swings already measured
 /// when the screen was first looked at, or when the setting changed, are
-/// never counted, and deleting a swing doesn't bring an old recap back.
+/// never counted, and deleting a swing doesn't bring an old recap back. A
+/// session that is empty at the first look has none to pass over, so its
+/// first swing counts.
 nonisolated struct CoachingRecapSchedule: Equatable {
     /// Measured swings already recapped or passed over. Nil before the
     /// first look at a session.
@@ -237,12 +239,6 @@ nonisolated struct CoachingRecapSchedule: Equatable {
 
     mutating func cadenceChanged(measured: [UUID]) {
         counted = Set(measured)
-    }
-
-    /// The session has no swings: the next ones to appear are a first
-    /// look again, whether they are new or a session being restored.
-    mutating func reset() {
-        counted = nil
     }
 }
 
@@ -475,23 +471,30 @@ nonisolated enum CoachingFeedback {
     static func showing(of theme: CoachingTheme, in report: SwingCoachingReport) -> CoachingThemeShowing {
         guard let level = level(of: theme, in: report) else { return .notJudged }
         if level > 0 { return .shows(level) }
-        if let drawn = metric(showing: theme, in: report).flatMap({ report.metric($0) }), drawn.level != 0 {
-            return .otherWay(abs(drawn.level))
-        }
-        return .inZone
+        // The check that would be drawn for it: `metric(showing:)` picks
+        // the one furthest out, so in zone means all of them are.
+        guard let drawn = metric(showing: theme, in: report).flatMap({ report.metric($0) }) else { return .notJudged }
+        return drawn.level == 0 ? .inZone : .otherWay(abs(drawn.level))
     }
 
     /// The metric whose drawing shows a theme on one swing: the theme's
     /// own where the swing shows it there, otherwise the swing's strongest
-    /// metric of the same fault, otherwise the theme's own if measured.
+    /// metric of the same fault. On a swing that doesn't show the theme it
+    /// is the theme's own metric if measured; for a fault any of several
+    /// metrics can show, failing that, whichever of them is furthest out
+    /// of its zone (the other way, since the swing doesn't show the fault).
     static func metric(showing theme: CoachingTheme, in report: SwingCoachingReport) -> CoachingMetricID? {
         if let own = report.metric(theme.metric), CoachingFault.fault(for: own) == theme.fault { return own.id }
-        if theme.fault.isOneDirection,
-           let other = report.metrics.filter({ CoachingFault.fault(for: $0) == theme.fault })
-               .max(by: { (score($0), -$0.position) < (score($1), -$1.position) }) {
+        guard theme.fault.isOneDirection else { return report.metric(theme.metric)?.id }
+        let family = theme.fault.metrics.compactMap { report.metric($0) }
+        if let other = family.filter({ CoachingFault.fault(for: $0) == theme.fault })
+            .max(by: { (score($0), -$0.position) < (score($1), -$1.position) }) {
             return other.id
         }
-        return report.metric(theme.metric)?.id
+        if let own = report.metric(theme.metric), own.level != 0 { return own.id }
+        let furthest = family.max { (abs($0.level), -$0.position) < (abs($1.level), -$1.position) }
+        if let furthest, furthest.level != 0 { return furthest.id }
+        return report.metric(theme.metric)?.id ?? furthest?.id
     }
 
     /// Two swings to picture a theme with, as places in `reports`: the one

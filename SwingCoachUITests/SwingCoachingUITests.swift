@@ -99,12 +99,15 @@ final class SwingCoachingUITests: XCTestCase {
         let chip = app.buttons["coach-cadence"]
         XCTAssertTrue(chip.waitForExistence(timeout: 10))
         XCTAssertEqual(chip.label, "Coach speaks: Every 5 swings")
-        // The session's five swings were measured before the camera
-        // opened: no recap comes up by itself, and no verdict per swing.
+        // The session's five measured swings arrive once the camera is
+        // up: the recap comes up by itself, and there is no verdict per swing.
         let recap = app.descendants(matching: .any)["coach-recap"]
-        XCTAssertFalse(recap.exists)
+        XCTAssertTrue(recap.waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["coach-latest-verdict"].exists)
 
+        // Closed, it can be asked for again.
+        app.buttons["coach-recap-close"].tap()
+        XCTAssertFalse(recap.waitForExistence(timeout: 1))
         chip.tap()
         app.buttons["Recap the last swings"].tap()
         XCTAssertTrue(recap.waitForExistence(timeout: 3))
