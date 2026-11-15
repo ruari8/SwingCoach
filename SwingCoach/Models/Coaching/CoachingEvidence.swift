@@ -91,7 +91,7 @@ nonisolated struct CoachingFrameEvidence: Codable, Equatable {
     /// 1...10.
     let position: Int
     /// Seconds on the saved clip's timeline.
-    let clipTime: Double
+    var clipTime: Double
     var joints: [String: CoachingPoint] = [:]
     var silhouette: CoachingSilhouette?
     /// Detector candidates, most confident first.
@@ -122,6 +122,10 @@ nonisolated struct SwingCoachingEvidence: Codable, Equatable {
     /// time order: arm joints, club and ball only, no outline. `position` is
     /// 0 on these.
     var track: [CoachingFrameEvidence] = []
+    /// True when built from the small copies Auto holds in memory when a
+    /// swing is declared, not from the saved clip: 30 frames a second, 270
+    /// pixels across. Nil in stored evidence means the clip.
+    var fromLiveCopies: Bool?
 
     static let currentVersion = 4
 
@@ -131,5 +135,20 @@ nonisolated struct SwingCoachingEvidence: Codable, Equatable {
 
     func frame(_ position: Int) -> CoachingFrameEvidence? {
         frames.first { $0.position == position }
+    }
+
+    /// Evidence read on a recording's timeline, moved onto the saved
+    /// clip's: clip time is (time - offset) * scale, and the clip plays
+    /// `scale` times slower than real time.
+    func onClip(offset: Double, scale: Double) -> SwingCoachingEvidence {
+        var moved = self
+        moved.timeScale = timeScale * scale
+        for index in moved.frames.indices {
+            moved.frames[index].clipTime = (frames[index].clipTime - offset) * scale
+        }
+        for index in moved.track.indices {
+            moved.track[index].clipTime = (track[index].clipTime - offset) * scale
+        }
+        return moved
     }
 }

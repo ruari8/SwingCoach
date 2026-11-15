@@ -11,7 +11,9 @@
 //
 
 import CoreGraphics
+import CoreVideo
 import Foundation
+import ImageIO
 
 /// The ten positions found for one down-the-line swing, stored on SavedSwing.
 nonisolated struct SwingPositions: Codable, Equatable {
@@ -55,6 +57,16 @@ nonisolated struct SwingPositionPose {
 
     /// Any joint reported (dataset.py `ok`).
     var hasBody: Bool { confidence.contains { $0 > 0 } }
+}
+
+/// One of the small copies of a camera frame Auto keeps while it watches
+/// (LiveSwingPoses). Coaching reads a swing from these before its clip is
+/// saved.
+nonisolated struct SwingLiveCopy: @unchecked Sendable {
+    /// Seconds on the recording's timeline, real time.
+    let time: Double
+    let buffer: CVPixelBuffer
+    let orientation: CGImagePropertyOrientation
 }
 
 nonisolated enum SwingPositionFeatures {

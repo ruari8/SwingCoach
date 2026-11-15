@@ -2,10 +2,11 @@
 //  CoachingEvidenceExtractor.swift
 //  SwingCoach
 //
-//  Builds a swing's coaching evidence from its saved clip. It follows the
-//  club from address to follow-through, uses that to time the club-defined
-//  positions, then records what Vision and the club detector see on the
-//  frame at each position.
+//  Builds a swing's coaching evidence: from its saved clip, or during
+//  Auto from the small copies of the camera's frames kept in memory. It
+//  follows the club from address to follow-through, uses that to time the
+//  club-defined positions, then records what Vision and the club detector
+//  see on the frame at each position.
 //
 
 import AVFoundation
@@ -70,16 +71,18 @@ nonisolated final class CoachingEvidenceExtractor: @unchecked Sendable {
         /// Frames are reduced to this width before Vision and the detector;
         /// nil keeps them full size.
         var frameWidth: Int?
-        /// Take each position's frame from the nearest track sample instead
-        /// of seeking the clip for the exact frame.
+        /// Read the clip the way Auto's copies are read: each position's
+        /// frame is the nearest sampled frame, and the club isn't followed
+        /// between them.
         var positionsFromTrack = false
 
         /// The saved clip at full size: the most accurate, a few seconds a swing.
         static let clip = Configuration()
-        /// What Auto holds in memory when a swing is declared: 480-wide
-        /// copies, 30 per second of real time (LiveSwingPoses). Stands in
-        /// for coaching straight after impact, before the clip is saved.
-        static let liveCopies = Configuration(trackRate: 30, downswingTrackRate: 30, frameWidth: 480, positionsFromTrack: true)
+        /// What Auto holds in memory when a swing is declared: copies 480
+        /// wide as the sensor sees them, so 270 across once upright, 30 per
+        /// second of real time (LiveSwingPoses). Reads a saved clip the
+        /// same way, for the Mac harness.
+        static let liveCopies = Configuration(trackRate: 30, downswingTrackRate: 30, frameWidth: 270, positionsFromTrack: true)
     }
 
     private struct KeptFrame {
@@ -116,7 +119,7 @@ nonisolated final class CoachingEvidenceExtractor: @unchecked Sendable {
         }
         var modelTimes: [Int: Double] = [:]
         for position in positions.positions { modelTimes[position.number] = position.clipTime }
-        guard let addressTime = modelTimes[1] else { throw ExtractorError.frameUnreadable(position: 1) }
+        guard modelTimes[1] != nil else { throw ExtractorError.frameUnreadable(position: 1) }
 
         var timing = Timing()
         // The club first: it needs nothing from the positions' frames.
@@ -137,7 +140,7 @@ nonisolated final class CoachingEvidenceExtractor: @unchecked Sendable {
         generator.appliesPreferredTrackTransform = true
         generator.requestedTimeToleranceBefore = .zero
         generator.requestedTimeToleranceAfter = .zero
-        func checkpoint(_ position: Int, at clipTime: Double) async throws -> (CoachingFrameEvidence, CGImage) {
+        func checkpoint(_ position: Int, clipTime: Double) async throws -> (CoachingFrameEvidence, CGImage) {
             // The store cancels a run when Auto starts recording again.
             try Task.checkCancellation()
             let frameStarted = Date()
@@ -160,11 +163,29 @@ nonisolated final class CoachingEvidenceExtractor: @unchecked Sendable {
             return (evidence(in: image, position: position, clipTime: time, timing: &timing), image)
         }
 
-        // Address says which way the golfer faces, which tells the grip end
-        // of the shaft from the head when the track is read.
-        let (address, addressImage) = try await checkpoint(1, at: addressTime)
+        let swing = try await assemble(positions: positions, modelTimes: modelTimes, timeScale: timeScale,
+                                       track: configuration.positionsFromTrack ? [] : followed.samples,
+                                       fromLiveCopies: configuration.positionsFromTrack,
+                                       checkpoint: checkpoint)
+        return (swing, timing)
+    }
+
+    /// Reads each position's frame, address first, re-timing the positions
+    /// the club defines once the address frame says which way the golfer
+    /// faces (that tells the grip end of the shaft from the head).
+    private func assemble(
+        positions: SwingPositions,
+        modelTimes: [Int: Double],
+        timeScale: Double,
+        track: [CoachingFrameEvidence],
+        fromLiveCopies: Bool,
+        checkpoint: (Int, Double) async throws -> (CoachingFrameEvidence, CGImage)
+    ) async throws -> SwingCoachingEvidence {
+        guard let addressTime = modelTimes[1] else { throw ExtractorError.frameUnreadable(position: 1) }
+        let (address, addressImage) = try await checkpoint(1, addressTime)
         var swing = SwingCoachingEvidence(frameWidth: addressImage.width, frameHeight: addressImage.height,
-                                          timeScale: timeScale, frames: [address], track: followed.samples)
+                                          timeScale: timeScale, frames: [address], track: track,
+                                          fromLiveCopies: fromLiveCopies ? true : nil)
 
         var times = modelTimes
         if let geometry = CoachingSwingGeometry(evidence: swing) {
@@ -173,10 +194,48 @@ nonisolated final class CoachingEvidenceExtractor: @unchecked Sendable {
         }
 
         for position in positions.positions where position.number != 1 {
-            let (frame, _) = try await checkpoint(position.number, at: times[position.number] ?? position.clipTime)
+            let (frame, _) = try await checkpoint(position.number, times[position.number] ?? position.clipTime)
             swing.frames.append(frame)
         }
+        return swing
+    }
+
+    /// Evidence from Auto's copies of the swing's frames, so a swing can
+    /// be coached before its clip is saved. `positions` are on the
+    /// recording's timeline like the copies; the evidence comes back on
+    /// it too, in real time (`timeScale` 1).
+    ///
+    /// Only the ten position frames are read. The club isn't followed
+    /// between them: the checks made from these copies are the body ones
+    /// (`CoachingMetricDefinition.needsClip`), and following the club
+    /// changed none of them on three range sessions.
+    func extract(copies: [SwingLiveCopy], positions: SwingPositions) async throws -> (SwingCoachingEvidence, Timing) {
+        var modelTimes: [Int: Double] = [:]
+        for position in positions.positions { modelTimes[position.number] = position.clipTime }
+        var timing = Timing()
+        func checkpoint(_ position: Int, time: Double) throws -> (CoachingFrameEvidence, CGImage) {
+            try Task.checkCancellation()
+            let frameStarted = Date()
+            guard let copy = copies.min(by: { abs($0.time - time) < abs($1.time - time) }),
+                  abs(copy.time - time) <= Self.slot,
+                  let image = imageContext.createCGImage(
+                      CIImage(cvPixelBuffer: copy.buffer).oriented(copy.orientation),
+                      from: CGRect(origin: .zero, size: Self.uprightSize(of: copy)))
+            else { throw ExtractorError.frameUnreadable(position: position) }
+            timing.frameSeconds += Date().timeIntervalSince(frameStarted)
+            return (evidence(in: image, position: position, clipTime: copy.time, timing: &timing), image)
+        }
+        let swing = try await assemble(positions: positions, modelTimes: modelTimes, timeScale: 1,
+                                       track: [], fromLiveCopies: true, checkpoint: checkpoint)
         return (swing, timing)
+    }
+
+    private static func uprightSize(of copy: SwingLiveCopy) -> CGSize {
+        let width = CVPixelBufferGetWidth(copy.buffer), height = CVPixelBufferGetHeight(copy.buffer)
+        switch copy.orientation {
+        case .left, .right, .leftMirrored, .rightMirrored: return CGSize(width: height, height: width)
+        default: return CGSize(width: width, height: height)
+        }
     }
 
     /// Reads the clip from address to follow-through once and records the
@@ -242,7 +301,12 @@ nonisolated final class CoachingEvidenceExtractor: @unchecked Sendable {
                     let scale = CGFloat(width) / upright.extent.width
                     let small = upright.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
                     guard let image = imageContext.createCGImage(small, from: small.extent) else { return nil }
-                    if configuration.positionsFromTrack { images.append(KeptFrame(time: time, image: image)) }
+                    if configuration.positionsFromTrack {
+                        // Only the frames are wanted: the club isn't
+                        // followed from Auto's copies (see `extract(copies:)`).
+                        images.append(KeptFrame(time: time, image: image))
+                        return nil
+                    }
                     handler = VNImageRequestHandler(cgImage: image, options: [:])
                     detections = try? objectDetector.detect(in: image)
                 } else {

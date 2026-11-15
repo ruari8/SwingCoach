@@ -1013,7 +1013,8 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         preparedClip: AutoRollingVideoBuffer.PreparedClip,
         recordedMode: SloMoMode,
         reviewSessionID: UUID,
-        livePositions: Bool
+        livePositions: Bool,
+        liveCoaching: Bool = false
     ) async {
         let diagnosticID = preparedClip.chunkID.uuidString
         CaptureCadenceDiagnostics.shared.emit("export-start", id: diagnosticID, values: [
@@ -1073,6 +1074,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 // are on the recording since Auto started.
                 await SwingPositionProcessor.shared.attach(detection.id, to: savedSwing,
                     offset: preparedClip.sourceStartTime, scale: recordedMode.sourceTimeScale)
+                if liveCoaching {
+                    await SwingCoachingStore.shared.attachLive(detection.id, to: savedSwing,
+                        offset: preparedClip.sourceStartTime, scale: recordedMode.sourceTimeScale)
+                }
             } else {
                 await SwingPositionProcessor.shared.findPositionsIfNeeded(for: savedSwing)
             }
@@ -1090,6 +1095,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         } catch {
             lastErrorMessage = error.localizedDescription
             if livePositions { await SwingPositionProcessor.shared.discardLive(detection.id) }
+            if liveCoaching { await SwingCoachingStore.shared.dropLive(detection.id) }
         }
 
         await MainActor.run {
@@ -1384,6 +1390,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         // other recording can't fill its request.
         let recording = analysisRecordingStart
         let livePositions = livePoses != nil && recording != nil
+        // A first coaching reading from the same copies, if the setting
+        // allows it while Auto records.
+        let liveCoaching = livePositions && SwingCoachingStore.coachesWhileAutoRecords
         if let livePoses, let recording {
             let token = detection.id
             var end = detection.endTime.seconds
@@ -1395,8 +1404,15 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             }
             #endif
             livePoses.positions(token: token, epoch: recording, window: detection.startTime.seconds...end,
-                                diagnosticID: token.uuidString) { positions in
-                Task { @MainActor in SwingPositionProcessor.shared.deliverLive(token, positions) }
+                                diagnosticID: token.uuidString,
+                                copies: liveCoaching ? { copies, positions in
+                                    SwingCoachingStore.coachLive(token: token, copies: copies, positions: positions)
+                                } : nil) { positions in
+                Task { @MainActor in
+                    SwingPositionProcessor.shared.deliverLive(token, positions)
+                    // No positions, so no copies will be handed over.
+                    if liveCoaching, positions == nil { SwingCoachingStore.shared.noLiveReading(token) }
+                }
             }
         }
         let range = SwingClipContext.load().range(for: detection)
@@ -1413,12 +1429,14 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                     Task {
                         await self.exportAutoDetectedSwing(
                             detection: detection, preparedClip: preparedClip, recordedMode: mode,
-                            reviewSessionID: reviewSessionID, livePositions: livePositions
+                            reviewSessionID: reviewSessionID, livePositions: livePositions,
+                            liveCoaching: liveCoaching
                         )
                     }
                 case .failure(let error):
                     DispatchQueue.main.async {
                         if livePositions { SwingPositionProcessor.shared.discardLive(detection.id) }
+                        if liveCoaching { SwingCoachingStore.shared.dropLive(detection.id) }
                         self.finishAutoReviewRequest(sessionID: reviewSessionID, savedSwing: nil,
                                                      errorMessage: error.localizedDescription)
                     }
@@ -1572,9 +1590,19 @@ extension CameraSession {
             return
         }
         if !session.continues {
-            // The Library's reference swings stand in for a new Auto session.
-            autoSessionSwings = SwingLibrary.shared.swings.filter(\.isReference)
-            autoSavedSwingCount = autoSessionSwings.count
+            // The Library's reference swings stand in for a new Auto
+            // session; on the coaching seed, its coached swings do.
+            let library = SwingLibrary.shared.swings
+            if UITestFixture.seed == .coaching {
+                // After the camera screen is up, as saved swings arrive.
+                DispatchQueue.main.async {
+                    self.autoSessionSwings = library.sorted { $0.createdAt < $1.createdAt }
+                    self.autoSavedSwingCount = self.autoSessionSwings.count
+                }
+            } else {
+                autoSessionSwings = library.filter(\.isReference)
+                autoSavedSwingCount = autoSessionSwings.count
+            }
         }
         liveSwingDetection = fixtureSnapshot(manual: false)
         autoCaptureStatus = AutoCaptureStatus(
@@ -1758,6 +1786,9 @@ struct CaptureView: View {
     // Trim view presentation
     @State private var showTrimView = false
     @State private var autoReviewPresentation: AutoSwingReviewPresentation?
+    // Held here, not in the coaching panel: the panel goes away in Manual.
+    @State private var recapSchedule = CoachingRecapSchedule()
+    @State private var recapSwingIDs: [UUID]?
 
     var body: some View {
         ZStack {
@@ -1919,8 +1950,9 @@ struct CaptureView: View {
                 )
             }
         }
-        .fullScreenCover(item: $autoReviewPresentation) { _ in
-            AutoSwingReviewView(swings: camera.autoSessionSwings, onDelete: camera.deleteAutoCapturedSwing)
+        .fullScreenCover(item: $autoReviewPresentation) { presentation in
+            AutoReviewCover(presentation: presentation, swings: camera.autoSessionSwings,
+                            onDelete: camera.deleteAutoCapturedSwing)
                 .onDisappear {
                     camera.resumeAutoCaptureAfterReview()
                     camera.start()
@@ -1959,7 +1991,12 @@ struct CaptureView: View {
             .padding(.top, 8)
             .animation(.easeInOut(duration: 0.2), value: isRecording)
 
-            Spacer(minLength: 16)
+            if workflowMode == .auto, !isRecording {
+                AutoCoachingPanel(swings: camera.autoSessionSwings, open: openAutoReview,
+                                  schedule: $recapSchedule, recapIDs: $recapSwingIDs)
+            } else {
+                Spacer(minLength: 16)
+            }
 
             if workflowMode == .auto {
                 HStack(alignment: .center, spacing: 12) {
@@ -2019,7 +2056,9 @@ struct CaptureView: View {
 
     private var savedSwingsButton: some View {
         let count = camera.autoSessionSwings.count
-        return Button(action: openAutoReview) {
+        return Button {
+            openAutoReview(AutoSwingReviewPresentation())
+        } label: {
             HStack(spacing: 9) {
                 Group {
                     if let thumbnail = camera.autoSessionSwings.last?.thumbnail {
@@ -2089,12 +2128,12 @@ struct CaptureView: View {
         }
     }
 
-    private func openAutoReview() {
+    private func openAutoReview(_ presentation: AutoSwingReviewPresentation) {
         guard !camera.autoSessionSwings.isEmpty else { return }
         camera.pauseAutoCaptureForReview()
         // Reviewing fully stops the camera, encoder and inference work.
         camera.stop()
-        autoReviewPresentation = AutoSwingReviewPresentation()
+        autoReviewPresentation = presentation
     }
 
     // MARK: - Actions

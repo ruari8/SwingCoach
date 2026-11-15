@@ -145,6 +145,103 @@ nonisolated struct CoachingTheme: Equatable, Identifiable {
     var share: Double { measured > 0 ? Double(swings) / Double(measured) : 0 }
 }
 
+/// What a few swings in a row had in common: the recap shown during Auto.
+nonisolated struct CoachingRecap: Equatable {
+    /// The fault most of them shared, or nil when nothing kept repeating.
+    let theme: CoachingTheme?
+    /// How each swing stands on the theme, oldest first. Empty without a
+    /// theme.
+    let swings: [CoachingThemeShowing]
+    /// Swings that were judged, and how many of those needed no pointer.
+    let judged: Int
+    let good: Int
+}
+
+/// How one swing stands on a theme.
+nonisolated enum CoachingThemeShowing: Equatable {
+    /// Not judged, or the theme couldn't be seen on it.
+    case notJudged
+    /// The check that shows the theme is in its zone.
+    case inZone
+    /// Shows the theme, this many levels out.
+    case shows(Int)
+    /// The theme's check is out of its zone the other way, this many
+    /// levels: a different fault, not the theme and not in zone.
+    case otherWay(Int)
+
+    var label: String {
+        switch self {
+        case .notJudged: "not judged"
+        case .inZone: "in zone"
+        case .shows(let level): "level \(level)"
+        case .otherWay(let level): "other way, level \(level)"
+        }
+    }
+}
+
+/// When the coach speaks during Auto. Swings are measured either way.
+nonisolated enum CoachingCadence: String, CaseIterable, Identifiable {
+    case everySwing, everyFive, everyTen, onRequest
+
+    static let key = "coaching.cadence"
+    /// A golfer overthinks enough: a recap, not a pointer after every ball.
+    static let standard = CoachingCadence.everyFive
+    /// Swings in a recap asked for by hand.
+    static let requestedRecapSize = 5
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .everySwing: "Every swing"
+        case .everyFive: "Every 5 swings"
+        case .everyTen: "Every 10 swings"
+        case .onRequest: "Only when I ask"
+        }
+    }
+
+    /// How many swings a recap covers, or nil when none is shown unasked.
+    var recapSize: Int? {
+        switch self {
+        case .everyFive: 5
+        case .everyTen: 10
+        case .everySwing, .onRequest: nil
+        }
+    }
+}
+
+/// Decides when a recap comes up on the camera screen: once for every
+/// `recapSize` swings measured since the last one. Swings already measured
+/// when the screen was first looked at, or when the setting changed, are
+/// never counted, and deleting a swing doesn't bring an old recap back. A
+/// session that is empty at the first look has none to pass over, so its
+/// first swing counts.
+nonisolated struct CoachingRecapSchedule: Equatable {
+    /// Measured swings already recapped or passed over. Nil before the
+    /// first look at a session.
+    private var counted: Set<UUID>?
+
+    /// Call when the session's measured swings (oldest first) change.
+    /// Returns the swings of a recap that has just come due.
+    mutating func update(measured: [UUID], cadence: CoachingCadence) -> [UUID]? {
+        guard let counted else {
+            self.counted = Set(measured)
+            return nil
+        }
+        // Deleted swings are forgotten; the rest stay counted.
+        self.counted = counted.intersection(measured)
+        let fresh = measured.filter { !counted.contains($0) }
+        guard let size = cadence.recapSize, fresh.count >= size else { return nil }
+        let recap = Array(fresh.prefix(size))
+        self.counted?.formUnion(recap)
+        return recap
+    }
+
+    mutating func cadenceChanged(measured: [UUID]) {
+        counted = Set(measured)
+    }
+}
+
 nonisolated enum CoachingFeedback {
     /// A fault scoring this much (level x weight x confidence, more when
     /// its metrics agree) is worth mentioning on its own. Set so that four
@@ -339,6 +436,106 @@ nonisolated enum CoachingFeedback {
         reports.indices.compactMap { index in
             reports[index].map { verdict(for: $0, earlierInSession: Array(reports[..<index])) }
         }
+    }
+
+    /// What `reports`, a few swings in a row, had in common. A fault is
+    /// the recap's theme when at least three of them, and half of those
+    /// where it could be seen, show it.
+    static func recap(of reports: [SwingCoachingReport]) -> CoachingRecap {
+        let judged = reports.filter { $0.exclusion == nil }
+        let theme = themes(in: reports, minimumSwings: 3).first
+        return CoachingRecap(
+            theme: theme,
+            swings: theme.map { theme in reports.map { showing(of: theme, in: $0) } } ?? [],
+            judged: judged.count,
+            good: judged.filter { verdict(for: $0) == .good }.count
+        )
+    }
+
+    /// How far out a swing is on a theme: 0 when it doesn't show it, nil
+    /// when the swing wasn't judged or the theme couldn't be seen on it.
+    static func level(of theme: CoachingTheme, in report: SwingCoachingReport) -> Int? {
+        guard report.exclusion == nil else { return nil }
+        if theme.fault.isOneDirection {
+            let measured = theme.fault.metrics.compactMap { report.metric($0) }
+            guard !measured.isEmpty else { return nil }
+            return measured.filter { CoachingFault.fault(for: $0) == theme.fault }.map { abs($0.level) }.max() ?? 0
+        }
+        guard let result = report.metric(theme.metric) else { return nil }
+        return result.level * theme.direction > 0 ? abs(result.level) : 0
+    }
+
+    /// How a swing stands on a theme as a whole, for its bar in a recap:
+    /// how far out its strongest reading of the fault is. A swing that
+    /// doesn't show the theme is only "in zone" when every check of the
+    /// fault is; out the other way on any of them is said as that.
+    static func showing(of theme: CoachingTheme, in report: SwingCoachingReport) -> CoachingThemeShowing {
+        guard let level = level(of: theme, in: report) else { return .notJudged }
+        if level > 0 { return .shows(level) }
+        guard let drawn = metric(showing: theme, in: report).flatMap({ report.metric($0) }) else { return .notJudged }
+        return drawn.level == 0 ? .inZone : .otherWay(abs(drawn.level))
+    }
+
+    /// How the one check drawn for a theme on a swing stands on it, for
+    /// the label beside its picture: always that check's own level.
+    static func showing(of theme: CoachingTheme, drawnIn report: SwingCoachingReport) -> CoachingThemeShowing {
+        guard report.exclusion == nil,
+              let drawn = metric(showing: theme, in: report).flatMap({ report.metric($0) })
+        else { return .notJudged }
+        if shows(theme, drawn) { return .shows(abs(drawn.level)) }
+        return drawn.level == 0 ? .inZone : .otherWay(abs(drawn.level))
+    }
+
+    /// True when this result is the theme's fault: any metric of the
+    /// fault for a fault several metrics can show, otherwise the theme's
+    /// own metric out in the theme's direction.
+    private static func shows(_ theme: CoachingTheme, _ result: CoachingMetricResult) -> Bool {
+        theme.fault.isOneDirection
+            ? CoachingFault.fault(for: result) == theme.fault
+            : result.id == theme.metric && result.level * theme.direction > 0
+    }
+
+    /// The metric whose drawing shows a theme on one swing. Where the
+    /// swing shows the theme: the theme's own metric if it shows it there,
+    /// otherwise the swing's strongest metric of the same fault. Where it
+    /// doesn't: for a fault several metrics can show, whichever of them is
+    /// furthest out of its zone (the other way), the theme's own on a tie;
+    /// otherwise the theme's own metric.
+    static func metric(showing theme: CoachingTheme, in report: SwingCoachingReport) -> CoachingMetricID? {
+        if let own = report.metric(theme.metric), shows(theme, own) { return own.id }
+        guard theme.fault.isOneDirection else { return report.metric(theme.metric)?.id }
+        let family = theme.fault.metrics.compactMap { report.metric($0) }
+        if let other = family.filter({ shows(theme, $0) })
+            .max(by: { (score($0), -$0.position) < (score($1), -$1.position) }) {
+            return other.id
+        }
+        func rank(_ result: CoachingMetricResult) -> (Int, Int, Int) {
+            (abs(result.level), result.id == theme.metric ? 1 : 0, -result.position)
+        }
+        return family.max { rank($0) < rank($1) }?.id
+    }
+
+    /// Two swings to picture a theme with, as places in `reports`: the one
+    /// that shows it most, and the best one that doesn't (the theme's own
+    /// metric nearest the middle of its zone). Either can be missing.
+    static func examples(of theme: CoachingTheme, in reports: [SwingCoachingReport]) -> (most: Int?, best: Int?) {
+        let levels = reports.map { level(of: theme, in: $0) }
+        let most = levels.indices.filter { (levels[$0] ?? 0) > 0 }.max { (levels[$0] ?? 0, -$0) < (levels[$1] ?? 0, -$1) }
+        let zone = CoachingMetricDefinition.definition(theme.metric).zone
+        let middle = (zone.lowerBound + zone.upperBound) / 2
+        func distance(_ index: Int) -> Double {
+            reports[index].metric(theme.metric).map { abs($0.value - middle) } ?? .infinity
+        }
+        let best = levels.indices.filter { levels[$0] == 0 && distance($0).isFinite }
+            .min { (distance($0), $0) < (distance($1), $1) }
+        return (most, best)
+    }
+
+    /// How many swings show both themes at theme level.
+    static func swingsShowingBoth(_ first: CoachingTheme, _ second: CoachingTheme, in reports: [SwingCoachingReport]) -> Int {
+        reports.filter { report in
+            (level(of: first, in: report) ?? 0) >= themeLevel && (level(of: second, in: report) ?? 0) >= themeLevel
+        }.count
     }
 
     /// The checks the coach draws without being asked: the verdict's one

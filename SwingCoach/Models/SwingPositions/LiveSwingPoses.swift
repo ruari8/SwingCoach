@@ -105,6 +105,9 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
         /// `skippedCopies` when the request registered.
         let skippedBefore: Int
         let deliver: Delivery
+        /// Given the swing's copies once its positions are found, for
+        /// coaching. Nil when nothing wants them.
+        let handOver: (([SwingLiveCopy], SwingPositions) -> Void)?
     }
 
     let mode: Mode
@@ -208,8 +211,11 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
     /// Any queue: positions for `window` (seconds on the recording that
     /// started at `epoch`), delivered once its last slot is posed; nil if they
     /// can't be found. Every request delivers exactly once, at the latest
-    /// after `requestTimeout`.
+    /// after `requestTimeout`. `copies`, if given, then receives the
+    /// window's copies with the positions found on them (same timeline);
+    /// it is not called when the positions fail.
     func positions(token: UUID, epoch: Double, window: ClosedRange<Double>, diagnosticID: String,
+                   copies handOver: (([SwingLiveCopy], SwingPositions) -> Void)? = nil,
                    completion: @escaping (SwingPositions?) -> Void) {
         let registeredAt = ProcessInfo.processInfo.systemUptime
         let deliver = Delivery(completion)
@@ -232,7 +238,8 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
                 return
             }
             self.requests.append(Request(token: token, epoch: epoch, window: window, diagnosticID: diagnosticID,
-                                         registeredAt: registeredAt, skippedBefore: skippedBefore, deliver: deliver))
+                                         registeredAt: registeredAt, skippedBefore: skippedBefore, deliver: deliver,
+                                         handOver: handOver))
             if self.mode == .copy {
                 // Pose the backlog one frame per block so new frames interleave.
                 let generation = self.generation
@@ -387,6 +394,11 @@ nonisolated final class LiveSwingPoses: @unchecked Sendable {
             return
         }
         guard request.deliver(positions) else { return }
+        // The buffers outlive this window's entries only while coaching
+        // reads them. Pose mode keeps none.
+        request.handOver?(slots.compactMap { entry in
+            entry.buffer.map { SwingLiveCopy(time: entry.time, buffer: $0, orientation: entry.orientation) }
+        }, positions)
         lock.lock()
         let skipped = skippedCopies - request.skippedBefore
         lock.unlock()

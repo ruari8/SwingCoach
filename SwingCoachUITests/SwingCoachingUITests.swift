@@ -1,8 +1,10 @@
 import XCTest
 
-/// On-device coaching in the review player and the session summary, on the
-/// `coaching` seed: five DTL clips in one session with stored reports, four
-/// of which steepen the shaft in transition (drawn at P5, 1.85 s).
+/// On-device coaching in the review player, the session review and on the
+/// Auto camera screen, on the `coaching` seed: five DTL clips in one
+/// session with stored reports, four of which steepen the shaft in
+/// transition (drawn at P5, 1.85 s). With the synthetic camera, those five
+/// are the Auto session.
 final class SwingCoachingUITests: XCTestCase {
     func testVerdictJumpsToItsDrawingAndListsTheMeasurements() throws {
         let app = XCUIApplication.launched(seed: "coaching", ["-ui-testing-library"])
@@ -49,17 +51,103 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertFalse(transitionCaption.exists)
     }
 
-    func testSessionSummaryNamesWhatKeptHappening() {
+    func testSessionReviewShowsTheThemeItsPicturesAndEachSwing() {
         let app = XCUIApplication.launched(seed: "coaching", ["-ui-testing-library"])
         XCTAssertTrue(app.buttons["Filter swings"].waitForExistence(timeout: 10))
         app.buttons["session-coaching-button"].firstMatch.tap()
 
         let theme = app.descendants(matching: .any)["session-theme-steepTransition-transition-1"]
         XCTAssertTrue(theme.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Shaft steepens coming down"].exists)
+        XCTAssertTrue(app.staticTexts["Shaft steepens coming down"].firstMatch.exists)
         XCTAssertTrue(app.staticTexts["4 of 5 swings · P5 lead arm parallel down"].exists)
         XCTAssertTrue(app.staticTexts["Start here"].exists)
+
+        // A dot a swing, in the order hit. The fifth is the first with four
+        // behind it, so it is the one that gets the session's theme.
+        let third = app.buttons["session-swing-dot-3"]
+        XCTAssertTrue(third.exists)
+        XCTAssertEqual(third.label, "Swing 3: Good swing")
+        XCTAssertEqual(app.buttons["session-swing-dot-5"].label, "Swing 5: Shaft steepens coming down")
+
+        // The theme at its worst and at its best, as pictures.
+        XCTAssertTrue(app.buttons["session-example-1"].waitForExistence(timeout: 5), "Shows it most")
+        XCTAssertTrue(app.buttons["session-example-3"].exists, "Your best here")
         attach(app, "session-coaching")
+
+        // The theme's metric swing by swing.
+        let trend = app.descendants(matching: .any)["session-trend-transition"]
+        for _ in 0..<4 where !(trend.exists && trend.isHittable) {
+            app.collectionViews.firstMatch.swipeUp(velocity: .slow)
+        }
+        XCTAssertTrue(trend.exists)
+        XCTAssertTrue(trend.label.contains("1 of 5 swings in the green band"), trend.label)
+        attach(app, "session-coaching-trend")
+
+        // A dot opens its swing.
+        for _ in 0..<4 where !(third.exists && third.isHittable) {
+            app.collectionViews.firstMatch.swipeDown(velocity: .slow)
+        }
+        third.tap()
+        let pill = app.buttons["swing-coaching-pill"]
+        XCTAssertTrue(pill.waitForExistence(timeout: 5))
+        XCTAssertEqual(pill.label, "Coaching: Good swing")
+    }
+
+    func testRecapOnTheCameraComparesTheLastSwingsAndOpensOne() {
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication.launched(seed: "coaching", Fixture.syntheticCamera)
+        let chip = app.buttons["coach-cadence"]
+        XCTAssertTrue(chip.waitForExistence(timeout: 10))
+        XCTAssertEqual(chip.label, "Coach speaks: Every 5 swings")
+        // The session's five measured swings arrive once the camera is
+        // up: the recap comes up by itself, and there is no verdict per swing.
+        let recap = app.descendants(matching: .any)["coach-recap"]
+        XCTAssertTrue(recap.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["coach-latest-verdict"].exists)
+
+        // Closed, it can be asked for again.
+        app.buttons["coach-recap-close"].tap()
+        XCTAssertFalse(recap.waitForExistence(timeout: 1))
+        chip.tap()
+        app.buttons["Recap the last swings"].tap()
+        XCTAssertTrue(recap.waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["Last 5 swings"].exists)
+        XCTAssertTrue(app.staticTexts["Shaft steepens coming down"].exists)
+        XCTAssertTrue(app.staticTexts["4 of 5 swings · P5 lead arm parallel down"].exists)
+        attach(app, "capture-recap")
+
+        app.buttons["coach-recap-open"].tap()
+        let third = app.buttons["coach-compare-swing-3"]
+        XCTAssertTrue(third.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["coach-compare-swing-1"].exists)
+        XCTAssertTrue(app.staticTexts["in zone"].exists, "The clean swing is in zone on the theme")
+        attach(app, "capture-recap-compare")
+
+        // A swing in the comparison opens in the player.
+        third.tap()
+        let pill = app.buttons.matching(identifier: "swing-coaching-pill").allElementsBoundByIndex
+            .first { $0.isHittable } ?? app.buttons["swing-coaching-pill"]
+        XCTAssertTrue(pill.waitForExistence(timeout: 5))
+        XCTAssertEqual(pill.label, "Coaching: Good swing")
+        XCTAssertEqual(app.staticTexts["swing-position"].label, "3 of 5")
+    }
+
+    func testEverySwingSettingShowsTheLastVerdictOnTheCamera() {
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication.launched(seed: "coaching", Fixture.syntheticCamera + ["-coaching.cadence", "everySwing"])
+        let verdict = app.buttons["coach-latest-verdict"]
+        XCTAssertTrue(verdict.waitForExistence(timeout: 10))
+        XCTAssertEqual(verdict.label, "Last swing: Shaft steepens coming down")
+        XCTAssertEqual(app.buttons["coach-cadence"].label, "Coach speaks: Every swing")
+        attach(app, "capture-latest-verdict")
+
+        // Closing the recap brings the verdict back.
+        app.buttons["coach-cadence"].tap()
+        app.buttons["Recap the last swings"].tap()
+        XCTAssertTrue(app.buttons["coach-recap-close"].waitForExistence(timeout: 3))
+        XCTAssertFalse(verdict.exists)
+        app.buttons["coach-recap-close"].tap()
+        XCTAssertTrue(verdict.waitForExistence(timeout: 3))
     }
 
     private func attach(_ app: XCUIApplication, _ name: String) {
