@@ -13,7 +13,7 @@ On October 24 the current coaching was tested on real range swings and judged no
 - The overlays only track the body: a torso line, a first-head-position circle and a hand trail. There is no club, no phases and no key positions.
 - The coach notes run to about 600 words of hedged text.
 
-The direction for v2 is still being decided. More of the work is expected to move on-device.
+The direction since 15 November: metrics and drawings are computed on the phone, with no backend ([docs/COACHING.md](../docs/COACHING.md)). Nothing here is needed for that. This folder is where a backend for the later pieces (coaching voice, drills, chat) would go.
 
 ## Possibly reusable from `backend/`
 
