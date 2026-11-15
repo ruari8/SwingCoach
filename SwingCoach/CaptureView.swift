@@ -1095,7 +1095,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         } catch {
             lastErrorMessage = error.localizedDescription
             if livePositions { await SwingPositionProcessor.shared.discardLive(detection.id) }
-            if liveCoaching { await SwingCoachingStore.shared.discardLive(detection.id) }
+            if liveCoaching { await SwingCoachingStore.shared.dropLive(detection.id) }
         }
 
         await MainActor.run {
@@ -1411,7 +1411,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 Task { @MainActor in
                     SwingPositionProcessor.shared.deliverLive(token, positions)
                     // No positions, so no copies will be handed over.
-                    if liveCoaching, positions == nil { SwingCoachingStore.shared.discardLive(token) }
+                    if liveCoaching, positions == nil { SwingCoachingStore.shared.noLiveReading(token) }
                 }
             }
         }
@@ -1436,7 +1436,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 case .failure(let error):
                     DispatchQueue.main.async {
                         if livePositions { SwingPositionProcessor.shared.discardLive(detection.id) }
-                        if liveCoaching { SwingCoachingStore.shared.discardLive(detection.id) }
+                        if liveCoaching { SwingCoachingStore.shared.dropLive(detection.id) }
                         self.finishAutoReviewRequest(sessionID: reviewSessionID, savedSwing: nil,
                                                      errorMessage: error.localizedDescription)
                     }

@@ -60,6 +60,7 @@ struct ExperimentalSettingsView: View {
     @AppStorage(ExperimentalSettingKey.showDebugReplayTab) private var showDebugReplayTab = true
     @AppStorage(ExperimentalSettingKey.coachDuringAuto) private var coachDuringAuto = false
     @AppStorage(ExperimentalSettingKey.showCoachingDrawings) private var showCoachingDrawings = true
+    @AppStorage(CoachingCadence.key) private var coachingCadence = CoachingCadence.standard.rawValue
     #if DEBUG
     @AppStorage(ExperimentalSettingKey.keepAutoRecordings) private var keepAutoRecordings = false
     #endif
@@ -126,12 +127,16 @@ struct ExperimentalSettingsView: View {
 
             Section {
                 Toggle("Drawings on the video", isOn: $showCoachingDrawings)
-                Toggle("Coach swings during Auto", isOn: $coachDuringAuto)
+                Picker("Coach speaks in Auto", selection: $coachingCadence) {
+                    ForEach(CoachingCadence.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+                .accessibilityIdentifier("coach-cadence-setting")
+                Toggle("Measure swings while Auto records", isOn: $coachDuringAuto)
                     .accessibilityIdentifier("coach-during-auto-toggle")
             } header: {
                 Text("Coaching")
             } footer: {
-                Text("Down-the-line swings are measured on the phone when you open them or a session's coaching. During Auto is off by default: reading each clip beside the camera has not been checked for dropped frames or heat.")
+                Text("Every down-the-line swing is measured on the phone. That happens when Auto pauses or stops, so the coach has nothing to say while you hit. Turn on measuring while Auto records to get a first reading of each swing as it is saved (body checks only; the clip fills in the rest later). It is off by default: it has not been checked on a phone for dropped frames or heat.")
             }
 
             Section {

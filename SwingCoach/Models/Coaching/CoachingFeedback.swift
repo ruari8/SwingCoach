@@ -196,6 +196,28 @@ nonisolated enum CoachingCadence: String, CaseIterable, Identifiable {
     }
 }
 
+/// Decides when a recap comes up on the camera screen: once for each
+/// full group of measured swings, and never for groups that were already
+/// complete when the screen was first looked at or the setting changed.
+nonisolated struct CoachingRecapSchedule: Equatable {
+    /// The last recap that came due, shown or not. Nil before the first look.
+    private(set) var seen: Int?
+
+    /// Call when the count of measured swings changes. Returns which of
+    /// the measured swings (oldest first) the recap now due covers.
+    mutating func update(measured: Int, cadence: CoachingCadence) -> Range<Int>? {
+        let due = cadence.recapDue(measured: measured) ?? 0
+        // Also follows the count down when a new session starts.
+        defer { seen = due }
+        guard let seen, due > seen, let size = cadence.recapSize else { return nil }
+        return (due * size - size)..<(due * size)
+    }
+
+    mutating func cadenceChanged(measured: Int, cadence: CoachingCadence) {
+        seen = cadence.recapDue(measured: measured) ?? 0
+    }
+}
+
 nonisolated enum CoachingFeedback {
     /// A fault scoring this much (level x weight x confidence, more when
     /// its metrics agree) is worth mentioning on its own. Set so that four
@@ -430,6 +452,29 @@ nonisolated enum CoachingFeedback {
             return other.id
         }
         return report.metric(theme.metric)?.id
+    }
+
+    /// Two swings to picture a theme with, as places in `reports`: the one
+    /// that shows it most, and the best one that doesn't (the theme's own
+    /// metric nearest the middle of its zone). Either can be missing.
+    static func examples(of theme: CoachingTheme, in reports: [SwingCoachingReport]) -> (most: Int?, best: Int?) {
+        let levels = reports.map { level(of: theme, in: $0) }
+        let most = levels.indices.filter { (levels[$0] ?? 0) > 0 }.max { (levels[$0] ?? 0, -$0) < (levels[$1] ?? 0, -$1) }
+        let zone = CoachingMetricDefinition.definition(theme.metric).zone
+        let middle = (zone.lowerBound + zone.upperBound) / 2
+        func distance(_ index: Int) -> Double {
+            reports[index].metric(theme.metric).map { abs($0.value - middle) } ?? .infinity
+        }
+        let best = levels.indices.filter { levels[$0] == 0 && distance($0).isFinite }
+            .min { (distance($0), $0) < (distance($1), $1) }
+        return (most, best)
+    }
+
+    /// How many swings show both themes at theme level.
+    static func swingsShowingBoth(_ first: CoachingTheme, _ second: CoachingTheme, in reports: [SwingCoachingReport]) -> Int {
+        reports.filter { report in
+            (level(of: first, in: report) ?? 0) >= themeLevel && (level(of: second, in: report) ?? 0) >= themeLevel
+        }.count
     }
 
     /// The checks the coach draws without being asked: the verdict's one

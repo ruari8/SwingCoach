@@ -53,14 +53,8 @@ final class SwingCoachingStore: ObservableObject {
     /// (about 15 MB), so only the newest few are kept.
     private var liveJobs: [LiveJob] = []
     private static let liveJobLimit = 2
-    /// The saved swing for each live request, and the mapping from the
-    /// recording's timeline onto its clip: (time - offset) * scale.
-    private var liveOwners: [UUID: (swing: UUID, offset: Double, scale: Double)] = [:]
-    /// Live evidence that was ready before its swing was saved.
-    private var liveEvidence: [UUID: (evidence: SwingCoachingEvidence, positions: SwingPositions)] = [:]
-    /// Live requests that will get no reading: the swing wasn't saved, or
-    /// the reading failed or was dropped.
-    private var endedLive: Set<UUID> = []
+    /// Joins each live reading to its swing once that is saved.
+    private var liveJoin = CoachingLiveJoin<(evidence: SwingCoachingEvidence, positions: SwingPositions)>()
     private var extractor: CoachingEvidenceExtractor?
     /// Reports read from disk or produced this session. Not published:
     /// views call `report(for:)` while drawing, and it fills this in.
@@ -178,73 +172,74 @@ final class SwingCoachingStore: ObservableObject {
     // MARK: - Live readings
 
     /// Any queue: reads a swing from Auto's copies of its frames, as soon
-    /// as its positions are found on them. `token` is the live request the
-    /// swing is later joined to with `attachLive`.
+    /// as its positions are found on them. `token` is the live request,
+    /// which `attachLive` or `dropLive` later settles from the capture
+    /// side.
     nonisolated static func coachLive(token: UUID, copies: [SwingLiveCopy], positions: SwingPositions) {
         let queuedAt = ProcessInfo.processInfo.systemUptime
         Task { @MainActor in
             let store = SwingCoachingStore.shared
-            // The swing was dropped before its frames got here.
-            guard store.endedLive.remove(token) == nil else { return }
+            guard !store.liveJoin.isUnwanted(token) else {
+                store.liveReading(token, nil)
+                return
+            }
             store.liveJobs.append(LiveJob(token: token, copies: copies, positions: positions, queuedAt: queuedAt))
-            while store.liveJobs.count > liveJobLimit { store.endLive(store.liveJobs.removeFirst().token) }
+            // Swings hit faster than they can be read: the oldest waits
+            // for its clip instead.
+            while store.liveJobs.count > liveJobLimit { store.liveReading(store.liveJobs.removeFirst().token, nil) }
             store.runNext()
         }
     }
 
-    /// Joins live request `token` to its saved swing, mapping the
-    /// recording's times onto the clip with (time - offset) * scale.
+    /// The request's positions were not found, so no copies will come.
+    func noLiveReading(_ token: UUID) {
+        liveReading(token, nil)
+    }
+
+    /// The request's swing was saved: its reading belongs to `swing`, with
+    /// the recording's times mapped onto the clip by (time - offset) * scale.
     func attachLive(_ token: UUID, to swing: SavedSwing, offset: Double, scale: Double) {
         guard SwingPositionProcessor.canFindPositions(for: swing) else {
-            discardLive(token)
+            dropLive(token)
             return
         }
-        guard endedLive.remove(token) == nil else { return }
-        let owner = (swing: swing.id, offset: offset, scale: scale)
-        if let ready = liveEvidence.removeValue(forKey: token) {
-            saveLive(ready.evidence, positions: ready.positions, for: owner)
-        } else {
-            liveOwners[token] = owner
+        if let ready = liveJoin.swing(token, .init(swing: swing.id, offset: offset, scale: scale)) {
+            saveLive(ready.reading.evidence, positions: ready.reading.positions, for: ready.owner)
         }
     }
 
-    /// Live request `token` gets no reading: its swing wasn't saved, or
-    /// its positions weren't found. Safe to call for a request that never
-    /// asked for one.
-    func discardLive(_ token: UUID) {
-        liveJobs.removeAll { $0.token == token }
-        if running?.live == true, running?.id == token { running?.task.cancel() }
-        endLive(token)
+    /// The request's swing was not saved: its reading is not wanted.
+    func dropLive(_ token: UUID) {
+        _ = liveJoin.swing(token, nil)
+        // A waiting reading is settled here; one in progress settles
+        // itself when it stops.
+        if let index = liveJobs.firstIndex(where: { $0.token == token }) {
+            liveJobs.remove(at: index)
+            liveReading(token, nil)
+        } else if running?.live == true, running?.id == token {
+            running?.task.cancel()
+        }
     }
 
-    /// Forgets `token`. If its swing or its frames have yet to arrive,
-    /// remembers that they are not wanted.
-    private func endLive(_ token: UUID) {
-        let hadOwner = liveOwners.removeValue(forKey: token) != nil
-        let hadEvidence = liveEvidence.removeValue(forKey: token) != nil
-        if !hadOwner, !hadEvidence { endedLive.insert(token) }
+    /// The reading side of the join: `evidence`, or nil when none was made.
+    private func liveReading(_ token: UUID, _ reading: (evidence: SwingCoachingEvidence, positions: SwingPositions)?) {
+        if let ready = liveJoin.reading(token, reading) {
+            saveLive(ready.reading.evidence, positions: ready.reading.positions, for: ready.owner)
+        }
     }
 
     private func finishLive(_ token: UUID, positions: SwingPositions, evidence: SwingCoachingEvidence?,
                             extractor: CoachingEvidenceExtractor?) {
         self.extractor = extractor ?? self.extractor
         running = nil
-        if let evidence {
-            if let owner = liveOwners.removeValue(forKey: token) {
-                saveLive(evidence, positions: positions, for: owner)
-            } else if endedLive.remove(token) == nil {
-                liveEvidence[token] = (evidence, positions)
-            }
-        } else {
-            endLive(token)
-        }
+        liveReading(token, evidence.map { ($0, positions) })
         runNext()
     }
 
     /// Scores live evidence on the swing's clip timeline and keeps the
     /// report, unless the clip has already been read.
     private func saveLive(_ evidence: SwingCoachingEvidence, positions: SwingPositions,
-                          for owner: (swing: UUID, offset: Double, scale: Double)) {
+                          for owner: CoachingLiveJoin<(evidence: SwingCoachingEvidence, positions: SwingPositions)>.Owner) {
         guard let swing = SwingLibrary.shared.swings.first(where: { $0.id == owner.swing }),
               report(for: swing).map(\.fromLiveCopies) ?? true
         else { return }
@@ -264,7 +259,7 @@ final class SwingCoachingStore: ObservableObject {
         guard !ids.isEmpty else { return }
         revision += 1
         queue.removeAll { ids.contains($0) }
-        for (token, owner) in liveOwners where ids.contains(owner.swing) { liveOwners[token] = nil }
+        liveJoin.forget(swings: ids)
         for id in ids {
             // A run in progress finds its swing gone and saves nothing.
             if running?.live == false, running?.id == id { running?.task.cancel() }

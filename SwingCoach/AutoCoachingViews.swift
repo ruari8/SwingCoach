@@ -35,8 +35,7 @@ struct AutoCoachingPanel: View {
 
     @ObservedObject private var store = SwingCoachingStore.shared
     @AppStorage(CoachingCadence.key) private var cadenceName = CoachingCadence.standard.rawValue
-    /// The last recap that came due, shown or not, so each shows once.
-    @State private var seenRecap: Int?
+    @State private var schedule = CoachingRecapSchedule()
     /// The swings of the recap on screen.
     @State private var recapIDs: [UUID]?
 
@@ -65,8 +64,7 @@ struct AutoCoachingPanel: View {
         .onAppear { update(measured.map(\.swing.id)) }
         .onChange(of: measured.map(\.swing.id)) { _, ids in update(ids) }
         .onChange(of: cadenceName) { _, _ in
-            // Recaps already complete under the new setting don't pop up.
-            seenRecap = cadence.recapDue(measured: measured.count) ?? 0
+            schedule.cadenceChanged(measured: measured.count, cadence: cadence)
         }
     }
 
@@ -74,17 +72,9 @@ struct AutoCoachingPanel: View {
     /// swings, oldest first.
     private func update(_ ids: [UUID]) {
         if let shown = recapIDs, !shown.allSatisfy(ids.contains) { recapIDs = nil }
-        let due = cadence.recapDue(measured: ids.count) ?? 0
-        guard let seen = seenRecap else {
-            // First look at this session: nothing already complete pops up.
-            seenRecap = due
-            return
+        if let range = schedule.update(measured: ids.count, cadence: cadence) {
+            recapIDs = Array(ids[range])
         }
-        if due > seen, let size = cadence.recapSize {
-            recapIDs = Array(ids[(due * size - size)..<(due * size)])
-        }
-        // Also follows the count down when a new session starts.
-        seenRecap = due
     }
 
     private func chip(canRecap: Bool) -> some View {
