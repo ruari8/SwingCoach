@@ -1786,6 +1786,9 @@ struct CaptureView: View {
     // Trim view presentation
     @State private var showTrimView = false
     @State private var autoReviewPresentation: AutoSwingReviewPresentation?
+    // Held here, not in the coaching panel: the panel goes away in Manual.
+    @State private var recapSchedule = CoachingRecapSchedule()
+    @State private var recapSwingIDs: [UUID]?
 
     var body: some View {
         ZStack {
@@ -1989,7 +1992,8 @@ struct CaptureView: View {
             .animation(.easeInOut(duration: 0.2), value: isRecording)
 
             if workflowMode == .auto, !isRecording {
-                AutoCoachingPanel(swings: camera.autoSessionSwings, open: openAutoReview)
+                AutoCoachingPanel(swings: camera.autoSessionSwings, open: openAutoReview,
+                                  schedule: $recapSchedule, recapIDs: $recapSwingIDs)
             } else {
                 Spacer(minLength: 16)
             }

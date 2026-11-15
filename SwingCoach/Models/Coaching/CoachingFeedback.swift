@@ -465,36 +465,54 @@ nonisolated enum CoachingFeedback {
         return result.level * theme.direction > 0 ? abs(result.level) : 0
     }
 
-    /// How a swing stands on a theme, for a bar or a label. A swing that
-    /// doesn't show the theme is only "in zone" when the check drawn for
-    /// it really is: out the other way is said as that.
+    /// How a swing stands on a theme as a whole, for its bar in a recap:
+    /// how far out its strongest reading of the fault is. A swing that
+    /// doesn't show the theme is only "in zone" when every check of the
+    /// fault is; out the other way on any of them is said as that.
     static func showing(of theme: CoachingTheme, in report: SwingCoachingReport) -> CoachingThemeShowing {
         guard let level = level(of: theme, in: report) else { return .notJudged }
         if level > 0 { return .shows(level) }
-        // The check that would be drawn for it: `metric(showing:)` picks
-        // the one furthest out, so in zone means all of them are.
         guard let drawn = metric(showing: theme, in: report).flatMap({ report.metric($0) }) else { return .notJudged }
         return drawn.level == 0 ? .inZone : .otherWay(abs(drawn.level))
     }
 
-    /// The metric whose drawing shows a theme on one swing: the theme's
-    /// own where the swing shows it there, otherwise the swing's strongest
-    /// metric of the same fault. On a swing that doesn't show the theme it
-    /// is the theme's own metric if measured; for a fault any of several
-    /// metrics can show, failing that, whichever of them is furthest out
-    /// of its zone (the other way, since the swing doesn't show the fault).
+    /// How the one check drawn for a theme on a swing stands on it, for
+    /// the label beside its picture: always that check's own level.
+    static func showing(of theme: CoachingTheme, drawnIn report: SwingCoachingReport) -> CoachingThemeShowing {
+        guard report.exclusion == nil,
+              let drawn = metric(showing: theme, in: report).flatMap({ report.metric($0) })
+        else { return .notJudged }
+        if shows(theme, drawn) { return .shows(abs(drawn.level)) }
+        return drawn.level == 0 ? .inZone : .otherWay(abs(drawn.level))
+    }
+
+    /// True when this result is the theme's fault: any metric of the
+    /// fault for a fault several metrics can show, otherwise the theme's
+    /// own metric out in the theme's direction.
+    private static func shows(_ theme: CoachingTheme, _ result: CoachingMetricResult) -> Bool {
+        theme.fault.isOneDirection
+            ? CoachingFault.fault(for: result) == theme.fault
+            : result.id == theme.metric && result.level * theme.direction > 0
+    }
+
+    /// The metric whose drawing shows a theme on one swing. Where the
+    /// swing shows the theme: the theme's own metric if it shows it there,
+    /// otherwise the swing's strongest metric of the same fault. Where it
+    /// doesn't: for a fault several metrics can show, whichever of them is
+    /// furthest out of its zone (the other way), the theme's own on a tie;
+    /// otherwise the theme's own metric.
     static func metric(showing theme: CoachingTheme, in report: SwingCoachingReport) -> CoachingMetricID? {
-        if let own = report.metric(theme.metric), CoachingFault.fault(for: own) == theme.fault { return own.id }
+        if let own = report.metric(theme.metric), shows(theme, own) { return own.id }
         guard theme.fault.isOneDirection else { return report.metric(theme.metric)?.id }
         let family = theme.fault.metrics.compactMap { report.metric($0) }
-        if let other = family.filter({ CoachingFault.fault(for: $0) == theme.fault })
+        if let other = family.filter({ shows(theme, $0) })
             .max(by: { (score($0), -$0.position) < (score($1), -$1.position) }) {
             return other.id
         }
-        if let own = report.metric(theme.metric), own.level != 0 { return own.id }
-        let furthest = family.max { (abs($0.level), -$0.position) < (abs($1.level), -$1.position) }
-        if let furthest, furthest.level != 0 { return furthest.id }
-        return report.metric(theme.metric)?.id ?? furthest?.id
+        func rank(_ result: CoachingMetricResult) -> (Int, Int, Int) {
+            (abs(result.level), result.id == theme.metric ? 1 : 0, -result.position)
+        }
+        return family.max { rank($0) < rank($1) }?.id
     }
 
     /// Two swings to picture a theme with, as places in `reports`: the one

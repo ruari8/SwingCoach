@@ -33,11 +33,14 @@ struct AutoCoachingPanel: View {
     let swings: [SavedSwing]
     let open: (AutoSwingReviewPresentation) -> Void
 
+    /// Which swings have been recapped, and the recap on screen. Kept by
+    /// the camera screen, so they outlive this panel when the camera
+    /// leaves Auto and comes back.
+    @Binding var schedule: CoachingRecapSchedule
+    @Binding var recapIDs: [UUID]?
+
     @ObservedObject private var store = SwingCoachingStore.shared
     @AppStorage(CoachingCadence.key) private var cadenceName = CoachingCadence.standard.rawValue
-    @State private var schedule = CoachingRecapSchedule()
-    /// The swings of the recap on screen.
-    @State private var recapIDs: [UUID]?
 
     private var cadence: CoachingCadence { CoachingCadence(rawValue: cadenceName) ?? .standard }
 
@@ -365,7 +368,8 @@ struct CoachingCompareView: View {
     @ViewBuilder
     private func tile(_ number: Int, _ swing: SavedSwing) -> some View {
         let report = store.report(for: swing)
-        let showing = report.map { CoachingFeedback.showing(of: theme, in: $0) } ?? .notJudged
+        // The label is about the check in the picture.
+        let showing = report.map { CoachingFeedback.showing(of: theme, drawnIn: $0) } ?? .notJudged
         let metric = report.flatMap { CoachingFeedback.metric(showing: theme, in: $0) }
         Button {
             onOpen(swing)

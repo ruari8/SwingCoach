@@ -847,11 +847,43 @@ final class SwingCoachingTests: XCTestCase {
         let quiet = report([result(.shaftHalfwayDown, level: 0)])
         XCTAssertEqual(CoachingFeedback.metric(showing: theme, in: quiet), .shaftHalfwayDown)
         XCTAssertEqual(CoachingFeedback.showing(of: theme, in: quiet), .inZone)
+        // Its own check a little out the other way, another further:
+        // drawn and described by the further one.
+        let further = report([result(.transition, level: -1), result(.shaftHalfwayDown, level: 4)])
+        XCTAssertEqual(CoachingFeedback.metric(showing: theme, in: further), .shaftHalfwayDown)
+        XCTAssertEqual(CoachingFeedback.showing(of: theme, in: further), .otherWay(4))
+        XCTAssertEqual(CoachingFeedback.showing(of: theme, drawnIn: further), .otherWay(4))
+        // Equally far out: the theme's own check.
+        let level = report([result(.transition, level: -2), result(.shaftHalfwayDown, level: 2)])
+        XCTAssertEqual(CoachingFeedback.metric(showing: theme, in: level), .transition)
         // The head dropping too far is not standing up, and not in zone.
         let knee = report([result(.trailKneeImpact, level: 3)])
         let standing = CoachingFeedback.themes(in: Array(repeating: knee, count: 4)).first
         let dropped = report([result(.headHeightImpact, level: -2)])
         XCTAssertEqual(standing.map { CoachingFeedback.showing(of: $0, in: dropped) }, .otherWay(2))
+    }
+
+    func testAPicturesLabelIsTheLevelOfTheCheckItDraws() {
+        let steep = report([result(.transition, level: 3)])
+        let theme = CoachingFeedback.themes(in: Array(repeating: steep, count: 4)).first
+        guard let theme else { return XCTFail("four steep swings make a theme") }
+        // Both checks show the fault, the other one more: the picture is
+        // the theme's own check at its own level, the bar is the swing's
+        // strongest reading.
+        let both = report([result(.transition, level: 2), result(.shaftHalfwayDown, level: -5)])
+        XCTAssertEqual(CoachingFeedback.metric(showing: theme, in: both), .transition)
+        XCTAssertEqual(CoachingFeedback.showing(of: theme, drawnIn: both), .shows(2))
+        XCTAssertEqual(CoachingFeedback.showing(of: theme, in: both), .shows(5))
+        // A swing that isn't judged has no label.
+        var chip = both
+        chip.swingLength = .short
+        XCTAssertEqual(CoachingFeedback.showing(of: theme, drawnIn: chip), .notJudged)
+        // A theme counted on one metric and direction.
+        let inside = report([result(.takeawayClub, level: -3)])
+        let takeaway = CoachingFeedback.themes(in: Array(repeating: inside, count: 4)).first
+        XCTAssertEqual(takeaway.map { CoachingFeedback.showing(of: $0, drawnIn: inside) }, .shows(3))
+        XCTAssertEqual(takeaway.map { CoachingFeedback.showing(of: $0, drawnIn: report([result(.takeawayClub, level: 3)])) },
+                       .otherWay(3))
     }
 
     func testRecapComesUpOnceForEveryFiveNewlyMeasuredSwings() {
@@ -892,6 +924,12 @@ final class SwingCoachingTests: XCTestCase {
         // A new session's swings are all new.
         XCTAssertNil(schedule.update(measured: [], cadence: .everyFive))
         XCTAssertEqual(schedule.update(measured: new, cadence: .everyFive), new)
+        // The camera leaves Auto after four swings and comes back: the
+        // schedule is kept, so the fifth still completes the first recap.
+        var kept = CoachingRecapSchedule()
+        XCTAssertNil(kept.update(measured: [], cadence: .everyFive))
+        XCTAssertNil(kept.update(measured: Array(old.prefix(4)), cadence: .everyFive))
+        XCTAssertEqual(kept.update(measured: old, cadence: .everyFive), old)
         // A camera screen that opens on a session with five already
         // measured passes them over.
         var reopened = CoachingRecapSchedule()
