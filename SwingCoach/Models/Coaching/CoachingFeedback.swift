@@ -216,6 +216,12 @@ nonisolated struct CoachingRecapSchedule: Equatable {
     mutating func cadenceChanged(measured: Int, cadence: CoachingCadence) {
         seen = cadence.recapDue(measured: measured) ?? 0
     }
+
+    /// The session has no swings: the next ones to appear are a first
+    /// look again, whether they are new or a session being restored.
+    mutating func reset() {
+        seen = nil
+    }
 }
 
 nonisolated enum CoachingFeedback {

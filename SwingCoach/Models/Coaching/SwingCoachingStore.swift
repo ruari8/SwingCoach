@@ -49,8 +49,8 @@ final class SwingCoachingStore: ObservableObject {
         let queuedAt: Double
     }
 
-    /// Waiting live readings, oldest first. Each holds a swing's frames
-    /// (about 15 MB), so only the newest few are kept.
+    /// Waiting live readings, oldest first. Only the newest few are kept:
+    /// a reading that has fallen behind the golfer is left for the clip.
     private var liveJobs: [LiveJob] = []
     private static let liveJobLimit = 2
     /// Joins each live reading to its swing once that is saved.
@@ -177,6 +177,11 @@ final class SwingCoachingStore: ObservableObject {
     /// side.
     nonisolated static func coachLive(token: UUID, copies: [SwingLiveCopy], positions: SwingPositions) {
         let queuedAt = ProcessInfo.processInfo.systemUptime
+        // Only the frame nearest each position is read, so only those are
+        // held while the reading waits its turn.
+        let copies = positions.positions.compactMap { position in
+            copies.min { abs($0.time - position.clipTime) < abs($1.time - position.clipTime) }
+        }
         Task { @MainActor in
             let store = SwingCoachingStore.shared
             guard !store.liveJoin.isUnwanted(token) else {

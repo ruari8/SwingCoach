@@ -2,10 +2,11 @@
 
 The app measures each down-the-line swing on the phone and draws what it measured on the video. No backend and no AI model call: Vision and the club detector find the body, club and ball, and plain geometry scores them against what tour pros do.
 
-It gives three things:
+It gives four things:
 - **Per swing:** up to 21 measurements, each with a level and a drawing on the frame it was measured at.
 - **One line per swing:** "Good swing", "That's better", the one fault worth a thought, or "not judged" with the reason.
-- **Per session:** the faults that kept repeating.
+- **Every few swings in Auto:** a recap of what the last 5 or 10 had in common, with the swings side by side.
+- **Per session:** the faults that kept repeating, pictured and charted swing by swing.
 
 Voice and drills are not built. The old backend coaching (`backend/`, the Coach tab, "Analyze Swing") is untouched and separate.
 
@@ -22,10 +23,17 @@ Down-the-line clips captured in the app only. Face-on, imports and reference swi
 | The metrics, their zones and levels | `CoachingMetrics.swift` |
 | Evidence to a report: a value, level and drawing per metric | `CoachingAnalyzer.swift` |
 | What to say: one fault per swing, session themes | `CoachingFeedback.swift` |
-| Background queue and saved results | `SwingCoachingStore.swift` |
-| Drawings on the video, verdict pill, measurement list, session summary | `SwingCoach/SwingCoachingViews.swift` |
+| Background queue, live readings and saved results | `SwingCoachingStore.swift`, `CoachingLiveJoin.swift` |
+| Drawings on the video, verdict pill, measurement list, session review | `SwingCoach/SwingCoachingViews.swift` |
+| On the Auto camera screen: coach chip, latest verdict, recap, comparison | `SwingCoach/AutoCoachingViews.swift` |
 
 Coaching starts from the swing's P1–P10 ([SWING_POSITIONS.md](./SWING_POSITIONS.md)). It needs the app's own copy of the clip.
+
+### When a swing is measured
+
+- **Every Auto swing is queued** as soon as it has positions, so a session's swings all have coaching in the Library without being opened. Opening a swing or a session review queues what it needs too, and the swing being looked at goes first.
+- **Clips are read only while Auto is not recording**: paused for review, or stopped. A clip being read when Auto resumes is stopped and goes back to the front of the queue. Reading clips beside the camera has not been checked on a phone.
+- **With "Measure swings while Auto records" on** (Settings › Coaching, off by default), a swing also gets a **first reading** as it is saved, from the copies of its frames Auto already holds in memory. See [The first reading during Auto](#the-first-reading-during-auto). The clip's reading replaces it later.
 
 ### Evidence
 
@@ -137,19 +145,33 @@ A golfer already overthinks, so the rules lean toward saying less (`CoachingFeed
 8. When half the swings go one way on a metric and half the other (clubhead inside on four, outside on four), neither is a theme: that is inconsistency, not a fault.
 9. A swing's verdict uses the session's themes only once every earlier swing of the session has been coached. Until then it is judged on its own, so the pill doesn't depend on which swings happen to have been opened. Opening a swing queues the ones before it.
 
-The 3.5 was set against the pros: 79 of the 94 judged pro swings (84%) come out "good swing", and treated as sessions the pros produce no theme. On the four range sessions 101 of 151 judged swings (67%) are good on their own. Judged in order with the session's themes applied, as the pills read, 71 are good or "that's better" and 80 get a pointer, nearly all of them the session's theme again. That is a lot of repeats for a golfer who wants to hear less; the recap-every-few-swings flow in the playground is the quieter alternative, and which is the default is still open.
+The 3.5 was set against the pros: 79 of the 94 judged pro swings (84%) come out "good swing", and treated as sessions the pros produce no theme. On the four range sessions 101 of 151 judged swings (67%) are good on their own. Judged in order with the session's themes applied, as the pills read, 71 are good or "that's better" and 80 get a pointer, nearly all of them the session's theme again. That is a lot of repeats for a golfer who wants to hear less, so on the camera screen the default is a recap every five swings, not a verdict after each one. The pill on an opened swing still gives that swing's verdict.
+
+10. A **recap** covers a few swings in a row. Its theme is the strongest fault that at least three of them, and half of those where it could be seen, show at level 2 or more; with none, nothing kept repeating.
 
 ## In the app
 
 - **Swing detail and Auto review:** a pill under the top bar shows the verdict. The first tap pauses on the position the fault was measured at and draws it; the next tap opens every measurement grouped by position. Tapping a measurement jumps to it.
 - **Drawings** show while the playhead is within one position slot of the frame they were measured on, so they hold when paused there and pass by when playing.
 - **What is drawn:** the coach decides by default. It draws the one fault the verdict names, by every metric that shows it (standing up through impact can draw the hip line, the trail knee and the head box together), and **nothing on a good swing**, however many measurements sit a little outside their zones. In the measurement list, the eye on a check always draws it or never draws it, "Draw every check" draws them all, and "Let the coach decide" clears both. Choices apply to every swing.
-- **Library:** the golfer icon on a session header opens Session coaching: swings measured, good swings (counted the way the swings' own pills read, "That's better" included), swings not judged, and the three strongest things that kept happening with "Start here" on the first. Opening it coaches the session's swings.
-- **Settings › Coaching:** drawings on or off, and "Coach swings during Auto".
+- **Auto camera screen:** a chip under the top bar sets when the coach speaks: every swing, every 5 swings (the default), every 10, or only when asked. Swings are measured either way.
+  - *Every swing:* the latest swing's verdict sits above the saved-swings button; tapping it opens that swing.
+  - *Every 5 or 10:* when that many more swings of the session have been measured, a recap card comes up: the fault at least three of them (and half of those where it could be seen) shared, a bar per swing coloured by how far out it was, and "Compare them". With nothing repeating it says so and how many needed no pointer. A group that was already complete when the camera opened, or when the setting changed, does not come up by itself.
+  - *Only when asked:* nothing comes up. "Recap the last swings" in the chip's menu shows the recap of the last five measured at any time, in every setting.
+  - "Compare them" pauses Auto and shows the recap's swings side by side at the theme's position, each with the theme's drawing and its level. Tapping one opens it in the player.
+- **Library:** the golfer icon on a session header opens the session review:
+  - a dot a swing in the order hit, coloured by its verdict; a dot opens its swing
+  - swings measured, good swings (counted the way the swings' own pills read, "That's better" included) and swings not judged
+  - the three strongest things that kept happening, "Start here" on the first, with two pictures of it: the swing that shows it most and the best one that doesn't
+  - how the themes sit together in swing order, with how many swings show both
+  - each theme's metric swing by swing against its green band
 
-Coaching runs in the background, one swing at a time, when a swing is opened or a session summary asks. It is **off during Auto by default**: reading each saved clip beside the camera has not been checked on a phone for dropped frames or heat. While Auto is recording nothing runs: a swing being coached when Auto resumes from review is stopped and goes back to the front of the queue. A swing deleted while it is being coached saves nothing.
+  Opening it queues the session's swings.
+- **Settings › Coaching:** drawings on or off, when the coach speaks in Auto, and "Measure swings while Auto records".
 
-Results are saved under Application Support/`SwingCoaching`: `<swing id>.report.json` (small, what the UI reads) and `<swing id>.evidence.json` (about 100 KB). A report with an older `version` is re-scored from stored evidence without touching the clip; evidence with an older version is rebuilt from the clip.
+Coaching runs in the background, one swing at a time. A swing deleted while it is being read saves nothing. Without measuring while Auto records, nothing is measured until Auto pauses or stops, so on the camera screen the verdict and the recaps only catch up then.
+
+Results are saved under Application Support/`SwingCoaching`: `<swing id>.report.json` (small, what the UI reads) and `<swing id>.evidence.json` (about 100 KB). A report with an older `version` is re-scored from stored evidence without touching the clip; evidence with an older version is rebuilt from the clip. A first reading saves its report only (`fromLiveCopies`), and counts as not yet read from the clip.
 
 ## Checked so far
 
@@ -208,19 +230,30 @@ Check a new theme against the review sheets before trusting it.
 
 A swing takes about 3.5 s on an M-series Mac: 2.3 s following the club, 0.6 s reading the ten position frames, 0.3 s for the outlines.
 
-### Straight after impact (simulated)
+### The first reading during Auto
 
-In Auto the positions are ready 0.8 s after impact, from 480-wide copies of the camera frames held in memory, 30 per second ([SWING_POSITIONS.md](./SWING_POSITIONS.md)). Coaching could run on the same copies instead of waiting for the saved clip. `CoachingEvidenceExtractor.Configuration.liveCopies` reads a clip that way (30 samples a second, 480 wide, positions from the nearest sample), and the harness runs it with `COACH_MODE=live`.
+In Auto the positions are ready 0.8 s after impact, found on small copies of the camera's frames held in memory: 30 a second, 480 × 270 as the sensor sees them, so 270 across once upright ([SWING_POSITIONS.md](./SWING_POSITIONS.md)). When the setting is on, `LiveSwingPoses` hands the swing's copies over with its positions and `CoachingEvidenceExtractor.extract(copies:positions:)` reads the ten position frames from them: pose, outline and club detector on each, 30 model calls a swing. The club is not followed between them.
 
-On the 52 swings of 15 November, against the full clip:
-- Body metrics are the same: the median difference is 0 to 1.5, under a step, and 91–100% of levels are within one.
-- Club metrics are close (median difference about 1.5, 93–100% within a level) except takeaway (5.5%, one step; 67% within a level).
-- The session's themes are the same two.
-- The per-swing verdict matches on 36 of 52. Verdicts sit near the 3.5 line, so a small change in a reading flips them; themes don't move.
+That reading has the **body checks only**. The six club checks (`CoachingMetricDefinition.needsClip`: takeaway, shaft halfway back, transition, shaft halfway down, and the two address-plane guides) wait for the clip. It is joined to the swing once the swing is saved (`CoachingLiveJoin`), its times mapped from the recording onto the clip, and saved as the swing's report until the clip's reading replaces it. If swings are hit faster than they can be read, only the two newest wait; older ones are left for their clips.
 
-Work per swing in that mode: about 50 detector calls and 10 outlines on small frames, with pose already done by the positions step. **This is a Mac simulation.** It reads the saved clip to imitate the copies; nothing is wired into Auto and nothing has run on a phone.
+How this was arrived at, on a Mac. `Configuration.liveCopies` reads a saved clip the way the copies are read and the harness runs it with `COACH_MODE=live`. Against the full clip on three range sessions (135 swings):
 
-**Not checked:** anything on a phone. How long a swing takes there, and whether coaching during Auto costs frames or heat, need a device run. The Simulator can't run Vision body pose, so there the UI is checked against stored reports only.
+| | 23 Oct | 7 Nov | 15 Nov |
+| --- | --- | --- | --- |
+| Body metrics: median difference | 0 to 2.2 | 0 to 1.8 | 0 to 1.6 |
+| Body metrics: levels within one | 86–100% | 94–100% | 90–100% |
+| Body theme, clip | Trail knee out, 38 of 43 | Trail knee out, 28 of 31 | Head stays up, 36 of 48 |
+| Body theme, first reading | Trail knee out, 34 of 40 | Trail knee out, 29 of 31 | Head stays up, 37 of 49 |
+| Verdict of the same kind | 35 of 48 | 21 of 35 | 42 of 52 |
+
+- The widest body differences are the hands at impact (they move fast, and the frame is up to half a slot off). Everything else is within a step.
+- **The club readings did not hold**, which is why they are left out. With them in, on 15 November takeaway moved by a step (53% of levels within one) and became a theme the clip didn't have, and on 7 November transition read 2° steeper and did the same.
+- Following the club at 30 samples a second changed none of the body readings, so it was dropped: that is 10 detector calls a swing instead of about 70.
+- A swing's own verdict changes between the first reading and the clip on a fifth to two fifths of swings, mostly because the clip adds the club faults. The session's body themes don't move.
+
+**This is a Mac simulation of the reading.** It reads the saved clip to imitate the copies. The hand-over from the camera and the join to the saved swing are built but **have not run on a phone**, and the Simulator cannot run them (no Vision body pose, no camera).
+
+**Not checked:** anything on a phone. How long a first reading or a clip takes there, and whether the first reading costs frames or heat while Auto records, need a device run; `swing-coaching-live` and `swing-coaching` in the capture diagnostics carry the timings. The Simulator checks the UI against stored reports only.
 
 ## Checking a change
 
@@ -228,9 +261,9 @@ Work per swing in that mode: about 50 detector calls and 10 outlines on small fr
 scripts/verify.sh coaching
 ```
 
-runs `SwingCoachingUITests` (the `coaching` launch fixture: five swings with stored reports) and `SwingCoachingTests` (levels, measurements on synthetic evidence, club timing, the not-judged checks, the feedback rules).
+runs `SwingCoachingUITests` (the `coaching` launch fixture: five swings with stored reports; with the synthetic camera they are the Auto session) and `SwingCoachingTests` (levels, measurements on synthetic evidence, club timing, the not-judged checks, the feedback rules, recaps and their schedule, the join of a first reading to its swing, the session review's examples).
 
-No test covers the store's queue (pausing for Auto, a swing deleted mid-run) or checks a drawing's shapes against its number; both were reviewed by reading and by the review sheets.
+No test covers the store's queue (pausing for Auto, a swing deleted mid-run, a first reading end to end) or checks a drawing's shapes against its number; both were reviewed by reading and by the review sheets.
 
 To see the numbers and drawings on real swings:
 
@@ -245,7 +278,7 @@ Interaction mock-ups of coaching in Auto and at home, on real swings: [UI playgr
 
 ## Next
 
-- A phone run for speed and heat, then wire coaching to Auto's live copies so the verdict is there when the swing's thumbnail appears.
+- A phone run of the first reading for speed, dropped frames and heat; then turn "Measure swings while Auto records" on by default.
 - A camera-placement check at setup (hand line, hand height), so club readings mean the same thing every session.
 - A better club source for the level-shaft and top-of-swing frames, a real club and swing-type reading, and zones per club. The dataset for one model that sees all of this is being curated in `../detectSwings`.
 - The clubhead path as a drawing, face-on metrics, then voice and drills on top of the verdicts.

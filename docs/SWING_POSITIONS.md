@@ -26,7 +26,9 @@ Stored per swing in `swing_library.json` under `swingPositions`:
 
 Swing Info and the player mark positions under 50% confidence with a `?` (`P8?`).
 
-Once a swing has been coached, P2, P6 and P7 are re-timed off the club track (shaft level, ball struck) and saved back here, with the model's own times kept in `modelClipTimes`. See [COACHING.md](./COACHING.md#club-timing).
+Once a swing's clip has been coached, P2, P6 and P7 are re-timed off the club track (shaft level, ball struck) and saved back here, with the model's own times kept in `modelClipTimes`. See [COACHING.md](./COACHING.md#club-timing).
+
+With `Measure swings while Auto records` on, the live path also hands the swing's copies to coaching with the positions found on them, for a first reading before the clip is saved (`LiveSwingPoses.positions(…copies:)`). Coaching keeps the ten copies nearest the positions until that reading is done, about 2 MB a swing. See [COACHING.md](./COACHING.md#the-first-reading-during-auto).
 
 ## Accuracy
 

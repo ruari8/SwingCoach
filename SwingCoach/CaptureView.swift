@@ -1590,8 +1590,11 @@ extension CameraSession {
             return
         }
         if !session.continues {
-            // The Library's reference swings stand in for a new Auto session.
-            autoSessionSwings = SwingLibrary.shared.swings.filter(\.isReference)
+            // The Library's reference swings stand in for a new Auto
+            // session; on the coaching seed, its coached swings do.
+            let library = SwingLibrary.shared.swings
+            autoSessionSwings = UITestFixture.seed == .coaching
+                ? library.sorted { $0.createdAt < $1.createdAt } : library.filter(\.isReference)
             autoSavedSwingCount = autoSessionSwings.count
         }
         liveSwingDetection = fixtureSnapshot(manual: false)

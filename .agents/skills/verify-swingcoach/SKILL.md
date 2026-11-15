@@ -37,7 +37,7 @@ Take every row whose paths or behavior you touched. A shared model (`SwingLibrar
 | Trim playback timing | `scripts/verify.sh trim-clock` |
 | Save to Photos, local storage preference | `scripts/verify.sh storage` |
 | `FootageCamera`, `CaptureView` `handleVideoFrame`, rolling-buffer keep setting | `scripts/verify.sh footage` (on request; needs the private `.detectorTestV3/` videos) |
-| `Models/Coaching/`, `SwingCoachingViews`, coaching pill or drawings in the player | `scripts/verify.sh coaching` (UI on stored reports; for real numbers run `detector_workbench/validation/coaching/run.sh`, see `docs/COACHING.md`) |
+| `Models/Coaching/`, `SwingCoachingViews`, `AutoCoachingViews`, coaching pill or drawings in the player, coach chip or recap on the camera screen | `scripts/verify.sh coaching` (UI on stored reports; for real numbers run `detector_workbench/validation/coaching/run.sh`, see `docs/COACHING.md`). The first reading during Auto can't run on the Simulator: it needs a phone |
 | `AnalyseView`, `SwingCoachAPI`, coaching display | `scripts/verify.sh coach` (local backend with seeded coaching; proves the app flow, not live AI quality) |
 | `backend/` | The backend tests listed in AGENTS.md |
 | Docs, comments, Git only | Nothing |

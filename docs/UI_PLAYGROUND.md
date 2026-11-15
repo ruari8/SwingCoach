@@ -48,7 +48,7 @@ xcrun simctl openurl <simulator-UDID> 'capturestudy://design/5'
 
 ## Coaching flows
 
-`playgrounds/ui/web/coaching.html` is a clickable phone-sized mock of coaching on real swings: one swing in Auto, a recap every few swings, and a session review at home. It draws the real coaching output; the page says which parts exist in the app and which are mock. See [COACHING.md](./COACHING.md).
+`playgrounds/ui/web/coaching.html` is a clickable phone-sized mock of coaching on real swings: one swing in Auto, a recap every few swings, and a session review at home. It draws the real coaching output. The three flows now exist in the app in a simpler form; the drill ideas are still mock only, and the page says so. See [COACHING.md](./COACHING.md).
 
 It needs local media that is not in git. Coach a folder of clips with the harness, then copy the result in:
 

@@ -63,6 +63,7 @@ struct AutoCoachingPanel: View {
         .animation(.easeInOut(duration: 0.25), value: recapIDs)
         .onAppear { update(measured.map(\.swing.id)) }
         .onChange(of: measured.map(\.swing.id)) { _, ids in update(ids) }
+        .onChange(of: swings.isEmpty) { _, _ in update(measured.map(\.swing.id)) }
         .onChange(of: cadenceName) { _, _ in
             schedule.cadenceChanged(measured: measured.count, cadence: cadence)
         }
@@ -72,6 +73,10 @@ struct AutoCoachingPanel: View {
     /// swings, oldest first.
     private func update(_ ids: [UUID]) {
         if let shown = recapIDs, !shown.allSatisfy(ids.contains) { recapIDs = nil }
+        guard !swings.isEmpty else {
+            schedule.reset()
+            return
+        }
         if let range = schedule.update(measured: ids.count, cadence: cadence) {
             recapIDs = Array(ids[range])
         }

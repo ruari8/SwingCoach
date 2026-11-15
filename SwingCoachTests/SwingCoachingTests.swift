@@ -683,4 +683,207 @@ final class SwingCoachingTests: XCTestCase {
         XCTAssertNil(decoded.modelClipTimes)
         XCTAssertEqual(decoded.positions.first?.clipTime, 1.5)
     }
+
+    // MARK: - Read from Auto's live copies
+
+    func testLiveReadingLeavesClubChecksToTheClip() throws {
+        var evidence = swing(mirrored: false)
+        evidence.fromLiveCopies = true
+        let live = try XCTUnwrap(CoachingAnalyzer.analyze(evidence))
+        XCTAssertTrue(live.fromLiveCopies)
+        // Body checks are made; every club reading waits for the clip.
+        XCTAssertEqual(live.metric(.hipDepthImpact)?.level, 2)
+        XCTAssertEqual(live.metric(.headHeightImpact)?.level, 4)
+        for definition in CoachingMetricDefinition.all where definition.needsClip {
+            XCTAssertNil(live.metric(definition.id), definition.title)
+            XCTAssertTrue(live.unavailable.contains(definition.id), definition.title)
+        }
+        XCTAssertEqual(Set(CoachingMetricDefinition.all.filter(\.needsClip).map(\.id)),
+                       [.takeawayClub, .planeTakeaway, .shaftHalfwayBack, .transition, .shaftHalfwayDown, .planeDelivery])
+
+        let clip = try XCTUnwrap(CoachingAnalyzer.analyze(swing(mirrored: false)))
+        XCTAssertFalse(clip.fromLiveCopies)
+        XCTAssertNotNil(clip.metric(.transition))
+    }
+
+    func testEvidenceMovesFromTheRecordingOntoItsClip() {
+        let golfer = SyntheticSwing()
+        var recorded = golfer.evidence([golfer.frame(1, clipTime: 100.5), golfer.frame(7, clipTime: 101.75)],
+                                       track: [golfer.frame(0, clipTime: 101)])
+        recorded.timeScale = 1
+        // The clip starts 100 s into the recording and plays 8 times slower.
+        let moved = recorded.onClip(offset: 100, scale: 8)
+        XCTAssertEqual(moved.frames.map(\.clipTime), [4, 14])
+        XCTAssertEqual(moved.track.map(\.clipTime), [8])
+        XCTAssertEqual(moved.timeScale, 8)
+        XCTAssertEqual(moved.frames.map(\.joints), recorded.frames.map(\.joints))
+    }
+
+    func testLiveReadingAndSavedSwingJoinInEitherOrder() {
+        typealias Join = CoachingLiveJoin<String>
+        let owner = Join.Owner(swing: UUID(), offset: 3, scale: 8)
+        let token = UUID()
+
+        var readingFirst = Join()
+        XCTAssertNil(readingFirst.reading(token, "reading"))
+        let joined = readingFirst.swing(token, owner)
+        XCTAssertEqual(joined?.reading, "reading")
+        XCTAssertEqual(joined?.owner, owner)
+        XCTAssertEqual(readingFirst.waiting, 0)
+
+        var swingFirst = Join()
+        XCTAssertNil(swingFirst.swing(token, owner))
+        XCTAssertFalse(swingFirst.isUnwanted(token))
+        XCTAssertEqual(swingFirst.reading(token, "reading")?.owner, owner)
+        XCTAssertEqual(swingFirst.waiting, 0)
+    }
+
+    func testLiveJoinForgetsRequestsThatFailOnEitherSide() {
+        typealias Join = CoachingLiveJoin<String>
+        let owner = Join.Owner(swing: UUID(), offset: 0, scale: 8)
+        var join = Join()
+
+        // The swing wasn't saved: its reading is unwanted, and dropped.
+        let unsaved = UUID()
+        XCTAssertNil(join.swing(unsaved, nil))
+        XCTAssertTrue(join.isUnwanted(unsaved))
+        XCTAssertNil(join.reading(unsaved, "reading"))
+
+        // No reading was made, before or after the swing was saved.
+        let unread = UUID(), unreadLater = UUID()
+        XCTAssertNil(join.reading(unread, nil))
+        XCTAssertNil(join.swing(unread, owner))
+        XCTAssertNil(join.swing(unreadLater, owner))
+        XCTAssertNil(join.reading(unreadLater, nil))
+
+        // The swing was deleted while its reading was being made.
+        let deleted = UUID()
+        XCTAssertNil(join.swing(deleted, owner))
+        join.forget(swings: [owner.swing])
+        XCTAssertNil(join.reading(deleted, "reading"))
+
+        XCTAssertEqual(join.waiting, 0)
+    }
+
+    // MARK: - Recaps
+
+    func testRecapNamesWhatMostOfTheLastSwingsShared() {
+        let standing = report([result(.hipDepthImpact, level: 3), result(.headHeightImpact, level: 2)])
+        let knee = report([result(.trailKneeImpact, level: 4), result(.hipDepthImpact, level: 0)])
+        let clean = report([result(.hipDepthImpact, level: 0), result(.trailKneeImpact, level: 0)])
+        var chip = report([result(.hipDepthImpact, level: 5)])
+        chip.swingLength = .short
+
+        let recap = CoachingFeedback.recap(of: [standing, clean, knee, chip, standing])
+        XCTAssertEqual(recap.theme?.fault, .earlyExtension)
+        XCTAssertEqual(recap.theme?.swings, 3)
+        XCTAssertEqual(recap.theme?.measured, 4)
+        // The swing's strongest reading of the fault, whichever metric
+        // shows it; 0 where it doesn't; nil where the swing wasn't judged.
+        XCTAssertEqual(recap.levels, [3, 0, 4, nil, 3])
+        XCTAssertEqual(recap.judged, 4)
+        XCTAssertEqual(recap.good, 2)
+    }
+
+    func testRecapWithNothingRepeatingHasNoTheme() {
+        let clean = report([result(.hipDepthImpact, level: 0)])
+        let once = report([result(.hipDepthImpact, level: 4)])
+        let recap = CoachingFeedback.recap(of: [clean, once, clean, clean, clean])
+        XCTAssertNil(recap.theme)
+        XCTAssertEqual(recap.levels, [])
+        XCTAssertEqual(recap.judged, 5)
+        XCTAssertEqual(recap.good, 4)
+    }
+
+    func testThemeLevelOnASwingFollowsItsDirection() {
+        let inside = report([result(.takeawayClub, level: -3)])
+        let outside = report([result(.takeawayClub, level: 3)])
+        let theme = CoachingFeedback.themes(in: Array(repeating: inside, count: 4)).first
+        XCTAssertEqual(theme?.direction, -1)
+        guard let theme else { return }
+        XCTAssertEqual(CoachingFeedback.level(of: theme, in: inside), 3)
+        // Out on the other side is not this theme.
+        XCTAssertEqual(CoachingFeedback.level(of: theme, in: outside), 0)
+        XCTAssertNil(CoachingFeedback.level(of: theme, in: report([result(.hipDepthImpact, level: 2)])))
+    }
+
+    func testThemeIsDrawnOnASwingByTheMetricThatShowsItThere() {
+        let knee = report([result(.trailKneeImpact, level: 3), result(.hipDepthImpact, level: 0)])
+        let hips = report([result(.hipDepthImpact, level: 3)])
+        let theme = CoachingFeedback.themes(in: Array(repeating: knee, count: 4)).first
+        XCTAssertEqual(theme?.metric, .trailKneeImpact)
+        guard let theme else { return }
+        XCTAssertEqual(CoachingFeedback.metric(showing: theme, in: knee), .trailKneeImpact)
+        // The same fault by another metric is drawn with that one.
+        XCTAssertEqual(CoachingFeedback.metric(showing: theme, in: hips), .hipDepthImpact)
+        // In zone: its own metric, so the picture shows it in the green.
+        let clean = report([result(.trailKneeImpact, level: 0)])
+        XCTAssertEqual(CoachingFeedback.metric(showing: theme, in: clean), .trailKneeImpact)
+    }
+
+    func testRecapComesUpOncePerFullGroupOfMeasuredSwings() {
+        XCTAssertNil(CoachingCadence.everyFive.recapDue(measured: 4))
+        XCTAssertEqual(CoachingCadence.everyFive.recapDue(measured: 5), 1)
+        XCTAssertEqual(CoachingCadence.everyFive.recapDue(measured: 14), 2)
+        XCTAssertEqual(CoachingCadence.everyTen.recapDue(measured: 14), 1)
+        XCTAssertNil(CoachingCadence.everySwing.recapDue(measured: 14))
+        XCTAssertNil(CoachingCadence.onRequest.recapDue(measured: 14))
+
+        var schedule = CoachingRecapSchedule()
+        // First look at a session that already has seven: nothing pops up.
+        XCTAssertNil(schedule.update(measured: 7, cadence: .everyFive))
+        XCTAssertNil(schedule.update(measured: 9, cadence: .everyFive))
+        XCTAssertEqual(schedule.update(measured: 10, cadence: .everyFive), 5..<10)
+        // The same count again, and swings in between: not twice.
+        XCTAssertNil(schedule.update(measured: 10, cadence: .everyFive))
+        XCTAssertNil(schedule.update(measured: 12, cadence: .everyFive))
+        // A new session starts the count again.
+        XCTAssertNil(schedule.update(measured: 0, cadence: .everyFive))
+        XCTAssertEqual(schedule.update(measured: 5, cadence: .everyFive), 0..<5)
+        // A session with no swings, then one restored with five already
+        // measured: a first look, so nothing comes up.
+        schedule.reset()
+        XCTAssertNil(schedule.update(measured: 5, cadence: .everyFive))
+        XCTAssertEqual(schedule.update(measured: 10, cadence: .everyFive), 5..<10)
+        // Changing the setting doesn't bring up groups already complete.
+        schedule.cadenceChanged(measured: 5, cadence: .everyTen)
+        XCTAssertNil(schedule.update(measured: 9, cadence: .everyTen))
+        XCTAssertEqual(schedule.update(measured: 10, cadence: .everyTen), 0..<10)
+        XCTAssertNil(schedule.update(measured: 20, cadence: .onRequest))
+    }
+
+    // MARK: - Session review
+
+    func testExamplesAreTheWorstSwingAndTheBestOneInZone() {
+        func hips(_ value: Double) -> SwingCoachingReport {
+            let definition = CoachingMetricDefinition.definition(.hipDepthImpact)
+            return report([CoachingMetricResult(id: .hipDepthImpact, position: 7, clipTime: 0, value: value,
+                                                level: definition.level(for: value), confidence: 0.9, drawings: [])])
+        }
+        // Zone -3.5...3, middle -0.25.
+        let session = [hips(6), hips(2.5), hips(9), hips(0), hips(7), hips(6.5)]
+        let theme = CoachingFeedback.themes(in: session).first
+        XCTAssertEqual(theme?.metric, .hipDepthImpact)
+        guard let theme else { return }
+        let examples = CoachingFeedback.examples(of: theme, in: session)
+        XCTAssertEqual(examples.most, 2)
+        XCTAssertEqual(examples.best, 3)
+
+        // Every swing shows it: there is no best one to picture.
+        let all = [hips(6), hips(7), hips(8), hips(9)]
+        // Levels 2, 3, 4, 4: the first of the two worst.
+        XCTAssertNil(CoachingFeedback.examples(of: theme, in: all).best)
+        XCTAssertEqual(CoachingFeedback.examples(of: theme, in: all).most, 2)
+    }
+
+    func testCountsSwingsShowingTwoThemesTogether() {
+        let both = report([result(.hipDepthImpact, level: 3), result(.headHeightTop, level: -3)])
+        let hipsOnly = report([result(.hipDepthImpact, level: 3), result(.headHeightTop, level: 0)])
+        let headOnly = report([result(.hipDepthImpact, level: 0), result(.headHeightTop, level: -3)])
+        let session = [both, both, both, hipsOnly, hipsOnly, headOnly, headOnly]
+        let themes = CoachingFeedback.themes(in: session)
+        XCTAssertEqual(themes.count, 2)
+        guard themes.count == 2 else { return }
+        XCTAssertEqual(CoachingFeedback.swingsShowingBoth(themes[0], themes[1], in: session), 3)
+    }
 }

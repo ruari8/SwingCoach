@@ -681,8 +681,8 @@ function renderCtl(){
  if(S.flow===3)h+=seg('Screen',[['scr3','library','Library',S.screen==='library'],['scr3','session','Session coaching',S.screen==='session']]);
  document.getElementById('ctrls').innerHTML=h;
  document.getElementById('side').innerHTML=`<h2>Try this</h2><ol class="notes">${STEPS[S.flow].map(x=>`<li>${x}</li>`).join('')}</ol>
-  <div class="real"><p><b>Real in the app today:</b> the verdict pill, the drawings and captions in swing detail and Auto review, the measurement list, and the session summary with its themes.</p>
-  <p><b>Mock here:</b> the verdict on the Auto thumbnail, switching single checks on and off, the every-5-swings recap, the chain of faults, the comparisons, the charts and the drill cards.</p>
+  <div class="real"><p><b>Real in the app today:</b> the verdict pill, the drawings and captions in swing detail and Auto review, the measurement list with a switch per check, the coach chip and the last verdict on the camera screen, the recap every few swings and its side-by-side comparison, and the session review with its themes, two pictures, the chain of faults and the charts. The app's versions are simpler than these.</p>
+  <p><b>Mock here:</b> the "try next" line on the recap and the drill cards. During Auto the app only has something to say once swings are measured, which by default is when Auto pauses or stops.</p>
   <p>Each swing is its ten real position frames, not video. Drawings, levels, verdicts and themes come straight from <code>data.js</code>; the recap, the chain, the best and worst swing and the charts are worked out from it on this page. The drill cards quote coaching videos saved in the repo and no coach has reviewed them.</p></div>`}
 
 // ---------- actions
