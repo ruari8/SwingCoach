@@ -51,7 +51,7 @@ struct Harness {
             .write(to: outRoot.appendingPathComponent("definitions.json"))
 
         // COACH_MODE=live coaches from what Auto holds in memory at impact
-        // (480-wide copies, 30 a second) instead of the saved clip.
+        // (copies 270 across, 30 a second) instead of the saved clip.
         let live = ProcessInfo.processInfo.environment["COACH_MODE"] == "live"
         var session: [(name: String, report: SwingCoachingReport)] = []
         for path in args.dropFirst(5) {
@@ -60,7 +60,7 @@ struct Harness {
             let outDir = outRoot.appendingPathComponent(name)
             let evidenceFile = outDir.appendingPathComponent("evidence.json")
             do {
-                let record: ClipRecord
+                var record: ClipRecord
                 if let cached = try? decoder.decode(ClipRecord.self, from: Data(contentsOf: evidenceFile)),
                    cached.evidence.version == SwingCoachingEvidence.currentVersion,
                    (cached.mode ?? "clip") == (live ? "live" : "clip"), cached.evidence.timeScale == timeScale {
@@ -88,6 +88,8 @@ struct Harness {
                                        timing.frameSeconds, timing.poseSeconds, timing.outlineSeconds, timing.detectorSeconds,
                                        timing.trackSeconds, timing.trackSamples), "| moved (240 fps frames):", moved)
                 }
+                // Records cached before evidence said where it came from.
+                if live { record.evidence.fromLiveCopies = true }
                 // Metrics are cheap and change often: always recomputed.
                 let reportFile = outDir.appendingPathComponent("report.json")
                 if let report = CoachingAnalyzer.analyze(record.evidence, positions: record.positions) {

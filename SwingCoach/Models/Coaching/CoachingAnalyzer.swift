@@ -24,8 +24,12 @@ nonisolated enum CoachingAnalyzer {
         let builder = Builder(geometry: geometry, positions: positions)
         var metrics: [CoachingMetricResult] = []
         var unavailable: [CoachingMetricID] = []
+        let live = evidence.fromLiveCopies == true
         for definition in CoachingMetricDefinition.all {
-            if let result = builder.measure(definition), result.confidence >= minimumConfidence,
+            // Left for the saved clip: see `needsEveryFrame`.
+            if live, definition.needsEveryFrame {
+                unavailable.append(definition.id)
+            } else if let result = builder.measure(definition), result.confidence >= minimumConfidence,
                definition.isBelievable(result.value) {
                 metrics.append(result)
             } else {
@@ -39,7 +43,7 @@ nonisolated enum CoachingAnalyzer {
         let judged = metrics.filter { $0.definition.scored }.count
         let unclear = !geometry.positionsLookRight || judged < minimumJudgedMetrics
         return SwingCoachingReport(rightHanded: geometry.isRightHanded, swingLength: short ? .short : .full,
-                                   cameraMoved: moved, positionsUnclear: unclear,
+                                   cameraMoved: moved, positionsUnclear: unclear, fromLiveCopies: live,
                                    metrics: metrics, unavailable: unavailable)
     }
 

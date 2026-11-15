@@ -122,6 +122,10 @@ nonisolated struct SwingCoachingEvidence: Codable, Equatable {
     /// time order: arm joints, club and ball only, no outline. `position` is
     /// 0 on these.
     var track: [CoachingFrameEvidence] = []
+    /// True when built from the small copies Auto holds in memory when a
+    /// swing is declared, not from the saved clip: 30 frames a second, 270
+    /// pixels across. Nil in stored evidence means the clip.
+    var fromLiveCopies: Bool?
 
     static let currentVersion = 4
 

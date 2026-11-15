@@ -76,10 +76,11 @@ nonisolated final class CoachingEvidenceExtractor: @unchecked Sendable {
 
         /// The saved clip at full size: the most accurate, a few seconds a swing.
         static let clip = Configuration()
-        /// What Auto holds in memory when a swing is declared: 480-wide
-        /// copies, 30 per second of real time (LiveSwingPoses). Stands in
-        /// for coaching straight after impact, before the clip is saved.
-        static let liveCopies = Configuration(trackRate: 30, downswingTrackRate: 30, frameWidth: 480, positionsFromTrack: true)
+        /// What Auto holds in memory when a swing is declared: copies 480
+        /// wide as the sensor sees them, so 270 across once upright, 30 per
+        /// second of real time (LiveSwingPoses). Reads a saved clip the
+        /// same way, for the Mac harness.
+        static let liveCopies = Configuration(trackRate: 30, downswingTrackRate: 30, frameWidth: 270, positionsFromTrack: true)
     }
 
     private struct KeptFrame {
@@ -164,7 +165,8 @@ nonisolated final class CoachingEvidenceExtractor: @unchecked Sendable {
         // of the shaft from the head when the track is read.
         let (address, addressImage) = try await checkpoint(1, at: addressTime)
         var swing = SwingCoachingEvidence(frameWidth: addressImage.width, frameHeight: addressImage.height,
-                                          timeScale: timeScale, frames: [address], track: followed.samples)
+                                          timeScale: timeScale, frames: [address], track: followed.samples,
+                                          fromLiveCopies: configuration.positionsFromTrack ? true : nil)
 
         var times = modelTimes
         if let geometry = CoachingSwingGeometry(evidence: swing) {

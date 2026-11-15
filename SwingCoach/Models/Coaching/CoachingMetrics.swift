@@ -74,6 +74,13 @@ nonisolated struct CoachingMetricDefinition {
     /// within one when the tripod moved) while the body readings held.
     var dependsOnCamera = false
 
+    /// True for the checks at P2 and P6, the frames where the shaft is
+    /// level. They are found by following the club, and 30 frames a second
+    /// can't place them: read from Auto's live copies, takeaway moved by a
+    /// step and made a theme the full clip didn't have. They are only
+    /// measured from the saved clip.
+    var needsEveryFrame: Bool { position == 2 || position == 6 }
+
     func level(for value: Double) -> Int {
         if !scored || zone.contains(value) { return 0 }
         let outside = value < zone.lowerBound ? value - zone.lowerBound : value - zone.upperBound
@@ -243,6 +250,10 @@ nonisolated struct SwingCoachingReport: Codable, Equatable {
     var swingLength: CoachingSwingLength = .full
     var cameraMoved = false
     var positionsUnclear = false
+    /// True for a first reading made during Auto from the small copies of
+    /// the camera's frames. The saved clip gives a fuller one later, which
+    /// replaces it.
+    var fromLiveCopies = false
 
     /// Nil when the swing is judged.
     var exclusion: CoachingExclusion? {
@@ -254,7 +265,7 @@ nonisolated struct SwingCoachingReport: Codable, Equatable {
     /// Metrics that could not be measured on this swing.
     var unavailable: [CoachingMetricID]
 
-    static let currentVersion = 7
+    static let currentVersion = 8
 
     /// Feet shifting more than this share of body scale by the top means
     /// the camera moved. A tripod clip's ankle joints wander about 5%, and
