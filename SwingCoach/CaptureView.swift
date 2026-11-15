@@ -602,7 +602,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     func startAutoCapture() {
         #if DEBUG
         if UITestFixture.camera == .synthetic {
-            SwingCoachingStore.shared.autoCaptureIsRecording = true
+            queue.async { self.tellCoachingAutoIsRecording(true) }
             startFixtureAutoCapture()
             return
         }
@@ -628,10 +628,9 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             self.autoCaptureIsPausedForReview = false
             self.recordedMode = self.captureMode
             let reviewSessionID = session.id
+            // Only once Auto has really started.
+            self.tellCoachingAutoIsRecording(true)
             DispatchQueue.main.async {
-                // Coaching reads saved clips; it waits while the camera
-                // records. Set only once Auto has really started.
-                SwingCoachingStore.shared.autoCaptureIsRecording = true
                 self.enterAutoSession(session)
                 self.autoCaptureStatus = AutoCaptureStatus(
                     isActive: true,
@@ -655,9 +654,17 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         }
     }
 
+    /// Coaching reads saved clips, so it waits while the camera records
+    /// for Auto. Call on `queue`, for starts and stops alike: sent any
+    /// other way, a stop could overtake the start before it and leave
+    /// coaching waiting for a camera that has stopped.
+    private func tellCoachingAutoIsRecording(_ recording: Bool) {
+        DispatchQueue.main.async { SwingCoachingStore.shared.autoCaptureIsRecording = recording }
+    }
+
     func stopAutoCapture() {
-        SwingCoachingStore.shared.autoCaptureIsRecording = false
         queue.async {
+            self.tellCoachingAutoIsRecording(false)
             self.autoCaptureIsActive = false
             // After any frame already on analysisQueue. finish adds the
             // "why nothing" verdict when no swing reached impact.
@@ -757,8 +764,8 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     }
 
     func pauseAutoCaptureForReview() {
-        SwingCoachingStore.shared.autoCaptureIsRecording = false
         queue.async {
+            self.tellCoachingAutoIsRecording(false)
             guard self.autoCaptureIsActive else { return }
             self.autoCaptureIsPausedForReview = true
             self.bufferQueue.async {
@@ -770,14 +777,14 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     func resumeAutoCaptureAfterReview() {
         #if DEBUG
         if UITestFixture.camera == .synthetic {
-            SwingCoachingStore.shared.autoCaptureIsRecording = true
+            queue.async { self.tellCoachingAutoIsRecording(true) }
             liveSwingDetection = fixtureSnapshot(manual: false)
             return
         }
         #endif
         queue.async {
             guard self.autoCaptureIsActive, self.autoCaptureIsPausedForReview else { return }
-            DispatchQueue.main.async { SwingCoachingStore.shared.autoCaptureIsRecording = true }
+            self.tellCoachingAutoIsRecording(true)
             self.autoCaptureIsPausedForReview = false
             self.recordedMode = self.captureMode
             self.resetLiveSwingDetection()

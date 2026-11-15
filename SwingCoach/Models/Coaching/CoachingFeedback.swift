@@ -232,11 +232,17 @@ nonisolated enum CoachingFeedback {
                 // counts the swing as one where it could have been seen.
                 let metrics = fault.metrics
                 let measured = judged.filter { report in metrics.contains { report.metric($0) != nil } }.count
+                // A swing shows the fault when any of its metrics is at
+                // theme level; the strongest of those stands for the swing.
+                // Chosen among those only: a closer-to-zone reading with
+                // more confidence must not hide one that qualifies.
                 let shown = judged.compactMap { report in
-                    findings(in: report).first { $0.fault == fault && abs($0.level) >= themeLevel }
+                    report.metrics
+                        .filter { CoachingFault.fault(for: $0) == fault && abs($0.level) >= themeLevel }
+                        .max { (score($0), -$0.position) < (score($1), -$1.position) }
                 }
                 // The metric that most often leads stands for the fault.
-                let leads = Dictionary(grouping: shown, by: \.metric)
+                let leads = Dictionary(grouping: shown, by: \.id)
                 let lead = leads.max { ($0.value.count, $1.key.rawValue) < ($1.value.count, $0.key.rawValue) }
                 guard let lead, let first = lead.value.first else { continue }
                 add(fault: fault, metric: lead.key, direction: first.level > 0 ? 1 : -1,
@@ -315,10 +321,24 @@ nonisolated enum CoachingFeedback {
         return .focus(worst)
     }
 
-    /// The verdict for each swing of a session, oldest first, each judged
-    /// against the swings before it: what the pills show.
-    static func sessionVerdicts(_ reports: [SwingCoachingReport]) -> [CoachingVerdict] {
-        reports.indices.map { verdict(for: reports[$0], earlier: Array(reports[..<$0])) }
+    /// What to say about one swing of a session. `earlierInSession` is
+    /// every earlier swing that can be coached, oldest first, nil where it
+    /// has not been coached yet. The session's themes only apply once all
+    /// of them have been: until then the swing is judged on its own, so
+    /// the verdict doesn't depend on which swings happen to have been
+    /// opened.
+    static func verdict(for report: SwingCoachingReport, earlierInSession: [SwingCoachingReport?]) -> CoachingVerdict {
+        let known = earlierInSession.compactMap { $0 }
+        return verdict(for: report, earlier: known.count == earlierInSession.count ? known : [])
+    }
+
+    /// The verdict for each coached swing of a session, oldest first, each
+    /// judged against the swings before it: what the pills show. A swing
+    /// not coached yet is nil and gets no verdict.
+    static func sessionVerdicts(_ reports: [SwingCoachingReport?]) -> [CoachingVerdict] {
+        reports.indices.compactMap { index in
+            reports[index].map { verdict(for: $0, earlierInSession: Array(reports[..<index])) }
+        }
     }
 
     /// The checks the coach draws without being asked: the verdict's one

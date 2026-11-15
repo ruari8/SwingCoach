@@ -39,8 +39,11 @@ final class SwingCoachingStore: ObservableObject {
     /// views call `report(for:)` while drawing, and it fills this in.
     private var reports: [UUID: SwingCoachingReport] = [:]
     /// Verdicts worked out for the current `revision`; they depend on the
-    /// other swings' reports, so any report change clears them.
+    /// other swings' reports, so any report change clears them. They also
+    /// depend on which swings sit earlier in the session and can be
+    /// coached, so any library change clears them too.
     private var verdicts: [UUID: (revision: Int, verdict: CoachingVerdict)] = [:]
+    private var libraryWatch: AnyCancellable?
     /// Swings whose report file has been looked for, found or not.
     private var checkedDisk: Set<UUID> = []
     private let directory: URL
@@ -72,13 +75,17 @@ final class SwingCoachingStore: ObservableObject {
     /// What to say about the swing, judged against the swings hit before it
     /// in the same session.
     func verdict(for swing: SavedSwing, report: SwingCoachingReport) -> CoachingVerdict {
+        if libraryWatch == nil {
+            // Started here, not in init: the library and this store reach
+            // for each other. A swing gaining positions, or one added or
+            // deleted, changes what "the session so far" is.
+            libraryWatch = SwingLibrary.shared.$swings.dropFirst().sink { [weak self] _ in
+                self?.verdicts.removeAll()
+            }
+        }
         if let cached = verdicts[swing.id], cached.revision == revision { return cached.verdict }
         let earlier = earlierInSession(swing).filter(Self.canCoach)
-        let reports = earlier.compactMap { self.report(for: $0) }
-        // The session's themes only apply once every earlier swing has been
-        // coached; until then the swing is judged on its own, so the pill
-        // doesn't depend on which swings happen to have been opened.
-        let verdict = CoachingFeedback.verdict(for: report, earlier: reports.count == earlier.count ? reports : [])
+        let verdict = CoachingFeedback.verdict(for: report, earlierInSession: earlier.map { self.report(for: $0) })
         verdicts[swing.id] = (revision, verdict)
         return verdict
     }

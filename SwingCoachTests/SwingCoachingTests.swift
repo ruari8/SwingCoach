@@ -484,6 +484,35 @@ final class SwingCoachingTests: XCTestCase {
         XCTAssertEqual(verdicts[5], .better(.steepTransition))
     }
 
+    func testSessionVerdictsJudgeASwingAloneWhileAnEarlierOneIsUncoached() {
+        // Level 3 alone is not worth a pointer; as a theme it is.
+        let steep = report([result(.transition, level: 3)])
+        let all = CoachingFeedback.sessionVerdicts([steep, steep, steep, steep, steep, steep])
+        XCTAssertEqual(all.filter { $0 == .good }.count, 4)
+
+        // With the first swing still to be coached, every later pill
+        // judges its swing alone, so the count must too.
+        let waiting = CoachingFeedback.sessionVerdicts([nil, steep, steep, steep, steep, steep])
+        XCTAssertEqual(waiting, Array(repeating: .good, count: 5))
+        XCTAssertEqual(CoachingFeedback.verdict(for: steep, earlierInSession: [nil, steep, steep, steep, steep]), .good)
+    }
+
+    func testAWeakerConfidentReadingDoesNotHideAThemeReading() {
+        // Hands high at level 2 with little confidence shows standing up.
+        let hands = result(.handsHeightImpact, level: 2, confidence: 0.35)
+        let alone = Array(repeating: report([hands]), count: 4)
+        XCTAssertEqual(CoachingFeedback.themes(in: alone).first?.fault, .earlyExtension)
+
+        // A confident level 1 on the hips outscores it on each swing but
+        // is under theme level: the theme stays, on the hands.
+        let hips = result(.hipDepthImpact, level: 1, confidence: 0.85)
+        let both = Array(repeating: report([hands, hips]), count: 4)
+        let theme = CoachingFeedback.themes(in: both).first
+        XCTAssertEqual(theme?.fault, .earlyExtension)
+        XCTAssertEqual(theme?.metric, .handsHeightImpact)
+        XCTAssertEqual(theme?.swings, 4)
+    }
+
     func testBetterNeedsTheThemeMetricBackInItsZone() {
         let forward = report([result(.hipDepthImpact, level: 3), result(.postureImpact, level: -2)])
         let session = Array(repeating: forward, count: 5)

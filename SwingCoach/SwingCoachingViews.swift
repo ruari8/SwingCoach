@@ -459,13 +459,15 @@ struct SessionCoachingView: View {
     var body: some View {
         let swings = swings
         let coachable = swings.filter(SwingCoachingStore.canCoach)
-        let reports = coachable.compactMap { store.report(for: $0) }
+        let coached = coachable.map { store.report(for: $0) }
+        let reports = coached.compactMap { $0 }
         let waiting = coachable.filter { store.pending.contains($0.id) }.count
         let themes = CoachingFeedback.themes(in: reports)
         let judged = reports.filter { $0.exclusion == nil }
         // Counted the way the swings' own pills read: each against the
-        // swings before it.
-        let good = CoachingFeedback.sessionVerdicts(reports).filter {
+        // swings before it, and on its own while any of those is still
+        // to be coached.
+        let good = CoachingFeedback.sessionVerdicts(coached).filter {
             switch $0 {
             case .good, .better: true
             default: false
