@@ -117,7 +117,7 @@ Those offsets should be learned or tuned from labels rather than hard-coded as f
 Diagnostic script:
 
 ```bash
-./backend/venv/bin/python detector_workbench/validation/analyze_audio_impacts.py \
+tools/venv/bin/python detector_workbench/validation/analyze_audio_impacts.py \
   --video .detectorTestV3/test4.mp4 \
   --labels detector_workbench/validation/labels/detector_test_v3_labels.json \
   --label-case-id test4 \
@@ -419,7 +419,7 @@ The ball count is intentionally much higher because this run labels all plausibl
 The raw MLX SAM3 labels are too noisy to train directly because the range background contains many tiny golf balls. A filtered training dataset was built with:
 
 ```bash
-./backend/venv/bin/python detector_workbench/modeling/build_detector_training_dataset.py --overwrite
+tools/venv/bin/python detector_workbench/modeling/build_detector_training_dataset.py --overwrite
 ```
 
 Output:
