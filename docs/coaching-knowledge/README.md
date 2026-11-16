@@ -1,13 +1,13 @@
 # Coaching knowledge library
 
-This library connects source lessons to the evidence behind their coaching decisions. The local viewer and initial coaching pipeline share these structured records. Source extraction does not establish that a recommendation is correct for another golfer; the pipeline must also establish applicable evidence from the new recording and golfer context.
+This library connects source lessons to the evidence behind their coaching decisions. The local viewer reads these structured records; nothing in the app does yet. They are the intended source for drills and written explanations on top of the on-device coaching. Source extraction does not establish that a recommendation is correct for another golfer; the pipeline must also establish applicable evidence from the new recording and golfer context.
 
 ## Scope and progress
 
 Browse the cases and local videos with `python3 scripts/knowledge_viewer.py`, then
 open <http://127.0.0.1:8769>. The [viewer guide](../../tools/knowledge-viewer/README.md)
-covers search, timestamp playback and missing media. See the
-[implementation plan](implementation.md) for the app integration work.
+covers search, timestamp playback and missing media. The
+[implementation record](implementation.md) describes the earlier server-side pipeline that used them, since removed.
 
 Completed: all 22 supplied videos and four distinct additional videos from each specified creator, 30 sources and 145 coaching records. A repost of the Cameron review was excluded from the additional count. See [decision examples](decision-examples.md) for contrasting cases and the evidence that changes the recommendation.
 

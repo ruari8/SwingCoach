@@ -27,15 +27,6 @@ final class TrimClipPreparationTests: XCTestCase {
         XCTAssertEqual(padded.endTime, 48)
     }
 
-    func testAnalysisUsesChosenSuccessfullySavedRecordsInClipOrder() {
-        let clips = (0..<3).map { SwingClip(startTime: time(Double($0)), endTime: time(Double($0 + 1))) }
-        let a = saved(), b = saved()
-        let records = [clips[0].id: a, clips[1].id: b]
-        XCTAssertTrue(TrimClipPreparation.analysisSwings(clips: clips, selectedIDs: [], savedSwings: records).isEmpty)
-        XCTAssertEqual(TrimClipPreparation.analysisSwings(clips: clips, selectedIDs: [clips[1].id], savedSwings: records).map(\.id), [b.id])
-        XCTAssertEqual(TrimClipPreparation.analysisSwings(clips: clips, selectedIDs: Set(clips.map(\.id)), savedSwings: records).map(\.id), [a.id, b.id])
-    }
-
     func testReviewCompositionBoundsVideoAndPreservesOrientationWithoutExport() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("trim-unit-\(UUID()).mov")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -79,10 +70,5 @@ final class TrimClipPreparationTests: XCTestCase {
         input.markAsFinished()
         await writer.finishWriting()
         XCTAssertEqual(writer.status, .completed, writer.error?.localizedDescription ?? "")
-    }
-
-    private func saved() -> SavedSwing {
-        SavedSwing(id: UUID(), photoAssetID: "fixture", vantage: .dtl, duration: 3,
-                   createdAt: Date(), notes: nil, analyzed: false)
     }
 }

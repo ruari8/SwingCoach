@@ -17,7 +17,6 @@
     {
       "parallelizable" : false,
       "selectedTests" : [
-        "CoachingContractTests",
         "FootageCameraTests"
       ],
       "target" : {
@@ -29,7 +28,6 @@
     {
       "parallelizable" : false,
       "selectedTests" : [
-        "CoachingPipelineUITests",
         "FastSwipeStressUITests",
         "FootageCameraUITests"
       ],

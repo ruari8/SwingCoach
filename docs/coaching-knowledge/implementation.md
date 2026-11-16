@@ -1,5 +1,7 @@
 # Coaching pipeline implementation
 
+> **Historical.** This records connecting the library to the server-side coaching pipeline. That pipeline, its backend and the app's Coach tab were removed in November 2026. The library, its viewer (`scripts/knowledge_viewer.py`) and its reader (`scripts/knowledge_library.py`) remain.
+
 ## Objective and sequence
 
 Preserve the existing knowledge work in Git, build a local viewer, then connect

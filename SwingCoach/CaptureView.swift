@@ -1758,8 +1758,6 @@ struct CameraPreview: UIViewRepresentable {
 }
 
 struct CaptureView: View {
-    var onAnalyzeSwings: (([SavedSwing]) -> Void)? = nil
-
     @StateObject private var camera = CameraSession()
     @AppStorage(ExperimentalSettingKey.liveAutoSwingDetectionEnabled) private var liveAutoSwingDetectionEnabled = true
     @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
@@ -1945,8 +1943,7 @@ struct CaptureView: View {
                     },
                     onCancel: {
                         showTrimView = false
-                    },
-                    onAnalyzeSwings: onAnalyzeSwings
+                    }
                 )
             }
         }
@@ -2329,5 +2326,5 @@ private struct CaptureStatusLabel: View {
 }
 
 #Preview {
-    CaptureView(onAnalyzeSwings: nil)
+    CaptureView()
 }

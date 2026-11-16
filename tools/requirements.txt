@@ -1,0 +1,17 @@
+# Python packages for the repo's scripts: review sheets, the UI playground's
+# media export and the detector workbench.
+#
+#   python3 -m venv tools/venv
+#   tools/venv/bin/pip install -r tools/requirements.txt
+
+numpy>=1.24.0
+pillow>=10.0.0
+opencv-python>=4.8.0
+scipy>=1.10.0
+
+# detector_workbench/validation/propose_p7_labels.py and swing_positions/parity.py
+torch>=2.0.0
+
+# detector_workbench/modeling/mlx_sam3_relabel_frame_dataset.py also needs the
+# MLX SAM3 clone and that clone's own packages (mlx, torchvision and others).
+# See detector_workbench/modeling/README.md.

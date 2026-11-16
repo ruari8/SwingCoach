@@ -16,8 +16,6 @@ On request only:
   stress      fast swipes over 171 clips
   console     Library paging with a scan of the app's console for framework diagnostics
   trim-clock  slow-motion playback clock probe on macOS (no Simulator)
-  coach       legacy coaching flow against a local backend (needs backend/venv, the pose
-              model and SwingCoach/ReferenceSwings/DaBMIbhpel9_1.mp4)
   footage     labelled range footage fed through Auto by the footage camera (needs the
               private .detectorTestV3/ videos; FOOTAGE_VIDEO picks one, default test15)
 
@@ -36,7 +34,6 @@ import sqlite3
 import subprocess
 import sys
 import time
-import urllib.request
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -135,21 +132,16 @@ def preferences(run):
 
 
 def trim_check(variant):
-    """Saved clips have video and audio at the expected length; analysis got the chosen clip."""
+    """Saved clips have video and audio at the expected length."""
     def check(run):
         root, swings, videos = library(run)
         prefs = preferences(run)
-        ids = prefs.get("ui-testing-analysis-ids", [])
         personal = [s for s in swings if not s.get("isReference")]
-        expected_clips, expected_seconds = {"export": (6, 3.0), "partial": (3, 3.0), "context": (3, 30.0)}[variant]
+        expected_clips, expected_seconds = {"export": (3, 3.0), "partial": (3, 3.0), "context": (3, 30.0)}[variant]
         assert len(personal) == expected_clips, personal
         if variant == "context":
-            assert ids == [], ids
             assert prefs["capture.extraSecondsBeforeSwing"] == 0.5, prefs
             assert prefs["capture.extraSecondsAfterSwing"] == 2.25, prefs
-        else:
-            assert len(ids) == 1, ids
-            assert any(s["id"] == ids[0] and s["localVideoFilename"] for s in personal), (ids, personal)
         for swing in personal:
             video = videos / swing["localVideoFilename"]
             assert video.is_file(), video
@@ -162,7 +154,7 @@ def trim_check(variant):
             peak = next(line.split("max_volume:")[1].split()[0] for line in levels.splitlines() if "max_volume:" in line)
             assert peak == "-inf" or float(peak) <= -60, f"{video.name} audio peaks at {peak} dB"
         assert_no_fixture_recordings(run)
-        return f"{len(personal)} saved clips with silent audio and video, {expected_seconds:g} s each; analysis ids {ids}"
+        return f"{len(personal)} saved clips with silent audio and video, {expected_seconds:g} s each"
     return check
 
 
@@ -248,82 +240,6 @@ def console_check(run):
                 if "warning:" in line and "TrimView.swift:" in line]
     assert not warnings, warnings
     return "no frame-analysis diagnostics in the console; no TrimView compiler warnings"
-
-
-# MARK: - Coach (on request, frozen legacy coaching)
-
-COACH_PORT = 8871
-COACH_VIDEO = ROOT / "SwingCoach/ReferenceSwings/DaBMIbhpel9_1.mp4"
-BACKEND_PYTHON = ROOT / "backend/venv/bin/python"
-POSE_MODEL = ROOT / "backend/models/pose_landmarker_heavy.task"
-
-COACH_SEED = r'''
-import json, pathlib, shutil, sys
-root, video, repo = map(pathlib.Path, sys.argv[1:])
-sys.path.insert(0, str(repo / 'backend'))
-from analysis.coaching_contract import CoachingDetail, CoachingSource
-from analysis.knowledge_library import KnowledgeLibrary
-from analysis.coach_response_builder import intervention_text
-storage = root / 'Library/Application Support/SwingVideos'
-storage.mkdir(parents=True, exist_ok=True)
-(root / 'Documents').mkdir(exist_ok=True)
-swings = []
-for i, title in [(1, 'Coaching upload fixture'), (2, 'Coaching source fixture')]:
-    uid = f'00000000-0000-0000-0000-{i:012d}'
-    shutil.copyfile(video, storage / f'{uid}.mp4')
-    swings.append(dict(id=uid, photoAssetID='', vantage='DTL', duration=4, createdAt=100 - i,
-                       analyzed=i == 2, isFavorite=False, isReference=False, title=title, localVideoFilename=f'{uid}.mp4'))
-(root / 'Documents/swing_library.json').write_text(json.dumps(swings))
-c = KnowledgeLibrary().cases['DcqwwGio81y-C02']
-e = c['evidence'][1]
-detail = CoachingDetail(status='recommend', focus='Backswing pivot · contract fixture',
-    rationale='This saved fixture checks the coaching display; it is not a diagnosis of the fixture video.',
-    cue=c['intervention']['cue'], reassess='Compare the intended movement and strike, then try without the prop.',
-    sources=[CoachingSource(case_id=c['id'], title=c['title'], publisher=c['publisher'], url=c['source_url'],
-             start_seconds=e['span_seconds'][0], end_seconds=e['span_seconds'][1], review_status=c['review_status'])],
-    limitations=['Verification fixture. Live coaching model has not been called.'])
-record = dict(id='10000000-0000-0000-0000-000000000002', swingID=swings[1]['id'], analysisID='source-fixture', createdAt=98,
-    summary='Source-linked coaching display fixture', metrics=[],
-    drills=[dict(title=c['title'], summary=intervention_text(c['intervention']))], coaching=detail.model_dump())
-(root / 'Documents/analysis_library.json').write_text(json.dumps([record]))
-'''
-
-
-def coach_before(run):
-    storage = run.artifacts / "coach-storage"
-    # No model calls: neither API billing nor the Codex provider. Empty values,
-    # not removed ones, so backend/.env cannot restore them through load_dotenv.
-    env = {**os.environ, "OPENAI_API_KEY": "", "SWINGCOACH_COACH_PROVIDER": ""}
-    log = open(run.artifacts / "coach-backend.log", "w")
-    server = subprocess.Popen([str(BACKEND_PYTHON), str(ROOT / "scripts/verification/coaching_backend.py"),
-                               "--storage", str(storage), "--port", str(COACH_PORT)],
-                              stdout=log, stderr=subprocess.STDOUT, env=env)
-    run.state["coach_server"] = server
-    for _ in range(60):
-        try:
-            with urllib.request.urlopen(f"http://127.0.0.1:{COACH_PORT}/verification-ready") as response:
-                if json.load(response)["pid"] != server.pid:
-                    raise Blocked(f"port {COACH_PORT} belongs to another process")
-            break
-        except OSError:
-            if server.poll() is not None:
-                raise Failed("The coaching backend exited; see coach-backend.log")
-            time.sleep(0.5)
-    else:
-        raise Failed("The coaching backend did not start; see coach-backend.log")
-    clip = run.artifacts / "coach-swing.mp4"
-    sh("ffmpeg", "-v", "error", "-ss", "4", "-i", str(COACH_VIDEO), "-t", "4", "-vf", "scale=-2:640", "-an",
-       "-c:v", "libx264", "-pix_fmt", "yuv420p", str(clip))
-    sh(str(BACKEND_PYTHON), "-c", COACH_SEED, str(run.container()), str(clip), str(ROOT))
-
-
-def coach_check(run):
-    inputs = [json.loads(p.read_text()) for p in (run.artifacts / "coach-storage").rglob("input_meta.json")]
-    assert inputs, "Missing persisted analysis input"
-    assert any(m.get("student_goal") == "Improve contact" and m.get("golfer_context", {}).get("club") == "7 iron"
-               for m in inputs), inputs
-    shutil.copy(run.container() / "Documents/analysis_library.json", run.artifacts / "coach-saved-analysis.json")
-    return "upload, analysis, overlays and source notes persisted with the practice context"
 
 
 # MARK: - Footage camera (on request, private range footage)
@@ -475,10 +391,10 @@ AREAS = {
                                  f"{UNIT}/InterfaceOrientationPolicyTests"],
                      before=grant_photos, after=assert_no_fixture_recordings, check_on=f"{UI}/ManualTrimCancelUITests")],
     "trim": [
-        Step("trim-export", [f"{UI}/TrimReviewUITests/testManualTrimSelectionReviewExportOnlyThenSubsetAnalysis",
+        Step("trim-export", [f"{UI}/TrimReviewUITests/testManualTrimSelectionReviewAndExport",
                              f"{UNIT}/TrimClipPreparationTests"],
              before=grant_photos, after=trim_check("export"),
-             check_on=f"{UI}/TrimReviewUITests/testManualTrimSelectionReviewExportOnlyThenSubsetAnalysis"),
+             check_on=f"{UI}/TrimReviewUITests/testManualTrimSelectionReviewAndExport"),
         Step("trim-partial-save", [f"{UI}/TrimReviewUITests/testPartialSaveKeepsFailedClipReachableForRetry"],
              before=grant_photos, after=trim_check("partial"),
              check_on=f"{UI}/TrimReviewUITests/testPartialSaveKeepsFailedClipReachableForRetry"),
@@ -501,8 +417,6 @@ AREAS = {
                      check_on=f"{UI}/LibraryPagingUITests")],
     "footage": [Step("footage", [f"{UI}/FootageCameraUITests", f"{UNIT}/FootageCameraTests"], plan="OnRequest",
                      before=footage_before, after=footage_check, check_on=f"{UI}/FootageCameraUITests")],
-    "coach": [Step("coach", [f"{UI}/CoachingPipelineUITests", f"{UNIT}/CoachingContractTests"], plan="OnRequest",
-                   before=coach_before, after=coach_check, check_on=f"{UI}/CoachingPipelineUITests")],
 }
 DEFAULT_AREAS = ["smoke", "unit", "library", "review", "coaching", "capture", "trim", "storage"]
 MAC_ONLY_AREAS = {"trim-clock"}
@@ -619,16 +533,12 @@ def run_trim_clock(run):
 
 def preflight(areas):
     needs = {"xcodebuild": True, "ffprobe": bool({"trim", "footage"} & set(areas)),
-             "ffmpeg": bool({"trim", "coach", "trim-clock"} & set(areas))}
+             "ffmpeg": bool({"trim", "trim-clock"} & set(areas))}
     for tool, needed in needs.items():
         if needed and not shutil.which(tool):
             raise Blocked(f"{tool} is not installed")
     if "footage" in areas:
         footage_source(os.environ.get("FOOTAGE_VIDEO", "test15"))
-    if "coach" in areas:
-        for path in (BACKEND_PYTHON, POSE_MODEL, COACH_VIDEO):
-            if not path.exists():
-                raise Blocked(f"coach needs {path.relative_to(ROOT)}; symlink it from the main checkout")
 
 
 def create_simulator(run):
@@ -754,12 +664,11 @@ def main():
     except SystemExit as error:
         reason = f"terminated ({error.code})"
     finally:
-        server = run.state.pop("coach_server", None)
         run.state.pop("test_env", None)
-        for process in (server, run.state.pop("console", None)):
-            if process and process.poll() is None:
-                process.terminate()
-                process.wait()
+        process = run.state.pop("console", None)
+        if process and process.poll() is None:
+            process.terminate()
+            process.wait()
         cleanup = delete_simulator(run)
         if "still exists" in cleanup and verdict == "PASS":
             verdict, reason = "FAIL", cleanup

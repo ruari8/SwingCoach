@@ -34,7 +34,7 @@ high-confidence detections, shaft support when a head is missing, mirrored and
 translated framing, practice swings, and temporary versus sustained occlusion:
 
 ```bash
-backend/venv/bin/python -B detector_workbench/validation/test_swing_detector_v3_evidence.py --build
+tools/venv/bin/python -B detector_workbench/validation/test_swing_detector_v3_evidence.py --build
 ```
 
 These checks use synthetic observations without model inference. They do not
@@ -105,7 +105,7 @@ No detector code, model, or thresholds changed. See the
 [results and failure analysis](reports/2026-09-03-slow-only-v3-results.md).
 
 ```bash
-backend/venv/bin/python detector_workbench/validation/evaluate_swing_detector_v3.py \
+tools/venv/bin/python detector_workbench/validation/evaluate_swing_detector_v3.py \
   --build \
   --labels detector_workbench/validation/labels/unseen_range_slow_only_labels.json \
   --fixtures-root .detectorTestV3/unseen-2026-08-31/slow-only \
@@ -126,7 +126,7 @@ labels or compare against original full-video counts, because the discarded
 normal-speed sections also contained swings.
 
 ```bash
-backend/venv/bin/python detector_workbench/validation/propose_p7_labels.py \
+tools/venv/bin/python detector_workbench/validation/propose_p7_labels.py \
   --fixture-root .detectorTestV3/unseen-2026-08-31/slow-only \
   --source-time-scale 8 \
   --artifacts-dir .verification-artifacts/unseen-range-slow-only-tcn \
@@ -146,11 +146,11 @@ overlapping four-real-second windows, preserves every local P7 peak, and
 renders video-only review sheets around selected peaks. It never reads
 SwingDetectorV3 output.
 
-Run it with the SwingCoach backend environment because the tool needs PyTorch,
+Run it with the repo's script environment (`tools/venv`) because the tool needs PyTorch,
 SciPy, Ultralytics, OpenCV, and Pillow:
 
 ```bash
-backend/venv/bin/python detector_workbench/validation/propose_p7_labels.py \
+tools/venv/bin/python detector_workbench/validation/propose_p7_labels.py \
   --fixture-root .detectorTestV3/example \
   --source-time-scale 8 \
   --artifacts-dir .verification-artifacts/example-tcn \

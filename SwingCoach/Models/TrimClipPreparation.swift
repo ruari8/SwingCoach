@@ -15,11 +15,6 @@ enum TrimClipPreparation {
         )
     }
 
-    static func analysisSwings(clips: [SwingClip], selectedIDs: Set<UUID>,
-                               savedSwings: [UUID: SavedSwing]) -> [SavedSwing] {
-        clips.filter { selectedIDs.contains($0.id) }.compactMap { savedSwings[$0.id] }
-    }
-
     /// A bounded composition lets the shared player scrub only this clip,
     /// including its audio and orientation, without exporting a temporary movie.
     static func reviewAsset(source: AVAsset, clip: SwingClip) async throws -> AVAsset {

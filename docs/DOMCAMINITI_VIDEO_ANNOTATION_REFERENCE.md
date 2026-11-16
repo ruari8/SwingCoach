@@ -1,5 +1,7 @@
 # Dom Caminiti Video Annotation Reference
 
+> **Historical.** Written in June 2026 for the server-side annotation pipeline, which was removed with the backend in November 2026. The annotation vocabulary still informs the on-device drawings ([COACHING.md](./COACHING.md)); the backend sections describe code that no longer exists.
+
 ## Scope
 
 Research pass for SwingCoach's next video-annotation pipeline.

@@ -113,10 +113,10 @@ struct SwingCoachingOverlay: View {
                         }
                     }
                     if !still {
-                        // Under the verdict pill and the old Analyze button.
+                        // Under the verdict pill.
                         captions(results)
                             .padding(.leading, max(rect.minX, 0) + 12)
-                            .padding(.top, max(rect.minY + 12, 178))
+                            .padding(.top, max(rect.minY + 12, 118))
                     }
                 }
             }

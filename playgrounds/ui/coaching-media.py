@@ -5,7 +5,7 @@ writes playgrounds/ui/media/coaching/: each swing's ten position frames, and
 data.js with the reports, per-swing verdicts, session themes and metric table.
 The media folder is ignored by git: the frames are Ruari's swings.
 
-Usage: backend/venv/bin/python playgrounds/ui/coaching-media.py <label>=<harness-out-dir> ...
+Usage: tools/venv/bin/python playgrounds/ui/coaching-media.py <label>=<harness-out-dir> ...
   e.g. range=/tmp/coaching-1511 pros=/tmp/coaching-pros
 """
 import json

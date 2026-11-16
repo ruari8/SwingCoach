@@ -8,7 +8,7 @@ It gives four things:
 - **Every few swings in Auto:** a recap of what the last 5 or 10 had in common, with the swings side by side.
 - **Per session:** the faults that kept repeating, pictured and charted swing by swing.
 
-Voice and drills are not built. The old backend coaching (`backend/`, the Coach tab, "Analyze Swing") is untouched and separate.
+Voice and drills are not built. The earlier server-side coaching (a backend, the Coach tab, "Analyze Swing") was removed in November 2026.
 
 Down-the-line clips captured in the app only. Face-on, imports and reference swings are skipped.
 

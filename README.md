@@ -1,37 +1,15 @@
 # SwingCoach
 
-SwingCoach is an experimental AI golf coaching system for turning iPhone swing video into coachable feedback. It combines a native SwiftUI capture/library app with a FastAPI backend that stores analysis runs, renders video artifacts, and returns coaching notes.
+SwingCoach is an experimental golf coaching app for iPhone. It records swings, saves each one as a clip, and measures down-the-line swings on the phone: where the body and club were at ten swing positions, how that compares with tour pros, and the one thing worth working on.
 
-This is an active prototype rather than a polished App Store product. The repo is useful as a full-stack product/ML engineering sample: native media workflows, on-device detection experiments, async backend jobs, cloud artifact storage, and confidence-gated coaching output.
+This is an active prototype, not a polished App Store product. Everything runs on the phone; there is no server.
 
 ## What It Does
 
-- Captures or imports golf swing video on iOS, then trims one or more swing clips into a local library.
-- Runs on-device `SwingDetectorV3` using the YOLO/Core ML golf-object model, Apple Vision pose, persistent target relationships, and target-specific contact outcomes to preselect swing windows.
-- Uploads clips to a Python backend through Cloudflare R2 pre-signed URLs.
-- Queues asynchronous analysis runs and streams backend progress back to the app with Server-Sent Events.
-- Produces clean playback video with toggleable body-reference and hand-path overlays, image-space measurements, and source-backed coaching when the model is configured.
-
-## System Shape
-
-```text
-iOS app
-  Capture / Import / Trim / Library / Coach
-        |
-        | pre-signed upload
-        v
-Cloudflare R2
-        |
-        | video_key
-        v
-FastAPI backend
-  /analysis-runs -> video observations -> metrics / overlays -> sourced coaching
-        |
-        | status + SSE progress + signed artifact URLs
-        v
-iOS Swing Detail
-  original video, clean analyzed video, coach notes
-```
+- Captures or imports golf swing video, then trims one or more swing clips into a local library.
+- **Auto** watches the camera and saves each swing by itself, using on-device `SwingDetectorV3`: the YOLO/Core ML golf-object model, Apple Vision pose, persistent target relationships and target-specific contact outcomes.
+- Finds swing positions P1–P10 on each down-the-line swing, about 0.8 s after impact during Auto.
+- Coaches each down-the-line swing: up to 21 measurements with a drawing each, one verdict per swing, a recap every few swings on the camera screen, and a session review in the Library.
 
 ## Repository Layout
 
@@ -39,78 +17,53 @@ iOS Swing Detail
 SwingCoach/
 ├── SwingCoach/                 # SwiftUI iOS app
 ├── SwingCoach.xcodeproj/       # Xcode project
-├── backend/                    # FastAPI API and analysis pipeline
-├── detector_workbench/         # Detector dataset/modeling/validation tools
-├── docs/                       # Project and frontend documentation
-├── scripts/                    # UI verification, diagnostics, profiling
-└── AGENTS.md                   # Agent quick guide and file map
+├── SwingCoachTests/            # unit tests
+├── SwingCoachUITests/          # UI tests, driven by DEBUG launch fixtures
+├── detector_workbench/         # detector datasets, modeling and validation tools
+├── docs/                       # project documentation
+├── playgrounds/                # UI playground
+├── scripts/                    # verification, diagnostics, profiling, knowledge viewer
+├── tools/                      # knowledge viewer page, Python requirements for scripts
+└── AGENTS.md                   # agent quick guide and file map
 ```
 
 ## iOS App
 
-The app is built around three production tabs:
+The app has two tabs:
 
-- `Library`: import videos from Photos, browse and star saved swings, optionally open locally supplied DTL reference swings, batch analyze/delete/export, and open swing detail. Swing detail supports left/right navigation and persistent straight-line guides over playback.
-- `Capture`: record manual clips or use the experimental auto-capture path that writes accepted detector windows directly to the library.
-- `Coach`: queue swings for analysis and review completed analysis results.
+- `Library`: import videos from Photos, browse and star saved swings by session, open locally supplied DTL reference swings, batch delete or export, and open a swing. A swing opens in a player with left/right navigation, straight-line guides you draw yourself, the coaching verdict and its drawings. A session header opens that session's coaching review.
+- `Capture`: record manual clips, or use Auto, which saves detected swings straight to the library and can show the last verdict or a recap of the last few swings.
 
-DEBUG builds also include tools for development:
+DEBUG builds also include:
 
-- `Experiments`: backend target selection, mock analysis, detector sampling settings, and Replay Debug visibility.
-- `Replay Debug`: feeds saved videos through the same detector core used by live capture so detector behavior can be validated without repeatedly recording fresh sessions.
+- `Experiments` (the gear in Library): detector sampling settings, coaching settings and Replay Debug visibility.
+- `Replay Debug`: feeds saved videos through the same detector core used by live capture, so detector behaviour can be checked without recording fresh sessions.
 
-See [docs/FRONTEND.md](docs/FRONTEND.md) for the detailed feature inventory.
-
-## Backend
-
-The backend is a FastAPI service. Its main mobile path is asynchronous:
-
-1. `GET /upload-url`
-2. Upload MP4 directly to R2
-3. `POST /analysis-runs`
-4. Stream `GET /analysis-runs/{run_id}/events`
-5. Fetch `GET /analysis-runs/{run_id}` for the completed result
-
-The default pipeline measures 2D body movement, writes reference overlays and retrieves cases from the coaching knowledge library. An optional AI visual review and smart coach choose one source-backed focus with evidence and a reassessment plan. Without an API key, measured evidence remains available and no correction is invented. Shaft, impact, pressure, calibrated 3D and ball-flight measurements remain unavailable.
-
-See [backend/README.md](backend/README.md) and [backend/docs/README.md](backend/docs/README.md) for API details and pipeline notes.
+See [docs/FRONTEND.md](docs/FRONTEND.md) for the feature inventory and [docs/COACHING.md](docs/COACHING.md) for how coaching works and what has been checked.
 
 ## Quick Start
 
-### iOS
-
 1. Open [SwingCoach.xcodeproj](SwingCoach.xcodeproj) in Xcode.
 2. Build and run the `SwingCoach` target on a device or simulator.
-3. For local backend work, run the backend on `http://127.0.0.1:8000`.
-4. In DEBUG builds, use `Library > Experiments` to switch between local, deployed, custom LAN, real analysis, and mock analysis modes.
 
 The project uses Xcode 26.2 recommended settings. App and test targets inherit the development team from the project; change signing teams at the project level. String-catalog symbol generation is enabled for the project, with test targets opting out.
 
-The simulator can reach the local backend directly at `127.0.0.1`. A physical iPhone needs a custom backend URL using the Mac's LAN IP, for example `http://192.168.1.23:8000`.
-
-### Backend
-
-```bash
-cd backend
-python3 -m venv venv
-./venv/bin/pip install -r requirements.txt
-cp .env.example .env
-./venv/bin/python main.py
-```
-
-Configure `backend/.env` with Cloudflare R2 credentials before running real upload/analysis flows. Without R2 configuration, `/health` reports a degraded state and storage-backed endpoints will not complete.
+The Simulator has no camera and cannot run Vision body pose, so capture, swing positions and coaching measurements need a phone. UI tests replace them with fixtures.
 
 ## Useful Checks
 
-Backend smoke and regression checks:
+App verification on a disposable Simulator:
 
 ```bash
-cd backend
-./venv/bin/python test_grounded_coaching.py
-./venv/bin/python test_knowledge_library.py
-./venv/bin/python test_analysis_runs.py
-./venv/bin/python test_annotation_tracks.py
-./venv/bin/python test_pipeline_3d.py
+scripts/verify.sh --help
+scripts/verify.sh coaching
+```
+
+Repo scripts that draw or read images need a Python environment:
+
+```bash
+python3 -m venv tools/venv
+tools/venv/bin/pip install -r tools/requirements.txt
 ```
 
 Detector validation tooling:
@@ -120,26 +73,30 @@ python3 detector_workbench/validation/evaluate_swing_detector_v3.py --build --on
 python3 detector_workbench/validation/evaluate_detector_video_data.py --force
 ```
 
-Heavy local fixture videos, raw detector outputs, model-training outputs, backend videos, and local model weights are intentionally git-ignored. Small reviewed label manifests and evidence reports may be committed under `detector_workbench/validation/` when they form part of a reproducible regression record.
+Coaching on real clips, on a Mac:
+
+```bash
+detector_workbench/validation/coaching/run.sh ~/Downloads/<session folder> /tmp/coaching --limit 10
+```
+
+Heavy local fixture videos, raw detector outputs, model-training outputs and local model weights are intentionally git-ignored. Small reviewed label manifests and evidence reports may be committed under `detector_workbench/validation/` when they form part of a reproducible regression record.
 
 ## Current Status
 
-- The iOS capture, library, trim, analysis queue, swing detail, and analyzed-video playback workflows are implemented.
-- The async backend analysis API is implemented, including progress events, R2 artifacts, `/chat`, and a legacy synchronous `/analyze` fallback.
-- The on-device detector is still experimental. It is useful for clip preselection and auto-capture iteration, but it is not treated as a solved detection problem.
-- Body-reference overlays and three descriptive image-space metric rows are enabled when tracking is usable. They are not validated swing diagnoses. The prior experimental annotation implementation remains at `abc12c4`.
-- The current mobile product path is DTL-first. Face-on exists in the data model, but the most mature flows and validation focus on down-the-line swings.
-- Async run state is currently in memory, so active jobs do not survive backend restarts.
+- Capture, Auto capture, trim, library and swing review are implemented.
+- On-device coaching is implemented for down-the-line swings and has been checked on a Mac against range sessions. It has not run on a phone yet.
+- The on-device detector is still experimental. It is useful for clip preselection and Auto, but it is not treated as a solved detection problem.
+- The product path is DTL-first. Face-on exists in the data model, but coaching, swing positions and validation are down-the-line only.
+- Voice, drills and written explanations are not built.
+- An earlier server-side coaching pipeline (a FastAPI backend, a Coach tab and "Analyze Swing") was removed in November 2026. It is in the git history before that.
 
 ## Documentation
 
 - [Project docs index](docs/README.md)
 - [Frontend documentation](docs/FRONTEND.md)
-- [Backend overview](backend/README.md)
-- [Backend docs index](backend/docs/README.md)
+- [Coaching](docs/COACHING.md)
 - [Detector tooling](detector_workbench/README.md)
-- [Deployment notes](docs/DEPLOYMENT.md)
 
 ## Coaching knowledge
 
-Run `python3 scripts/knowledge_viewer.py` to browse the 30 sources and 145 cases at <http://127.0.0.1:8769>. The [library](docs/coaching-knowledge/README.md) preserves transcripts, source reasoning, prerequisites and local visual evidence. The [implementation record](docs/coaching-knowledge/implementation.md) explains runtime scope and verification.
+Run `python3 scripts/knowledge_viewer.py` to browse the 30 sources and 145 cases at <http://127.0.0.1:8769>. The [library](docs/coaching-knowledge/README.md) preserves transcripts, source reasoning, prerequisites and local visual evidence. Nothing in the app reads it yet; it is the intended source for drills and written explanations.

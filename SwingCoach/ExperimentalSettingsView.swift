@@ -13,9 +13,6 @@ enum ExperimentalSettingKey {
     static let liveModelDetectorSampleFPS = "experimental.liveModelDetectorSampleFPS"
     static let capturePracticeSwings = "capture.capturePracticeSwings"
     static let showCaptureModelStats = "experimental.showCaptureModelStats"
-    static let backendTarget = "experimental.backendTarget"
-    static let customBackendURL = "experimental.customBackendURL"
-    static let useMockAnalysis = "experimental.useMockAnalysis"
     static let showDebugReplayTab = "experimental.showDebugReplayTab"
     static let debugReplaySpeedMultiplier = "experimental.debugReplaySpeedMultiplier"
     static let debugReplaySourceTiming = "experimental.debugReplaySourceTiming"
@@ -54,9 +51,6 @@ struct ExperimentalSettingsView: View {
     @AppStorage(ExperimentalSettingKey.capturePracticeSwings) private var capturePracticeSwings = false
     @AppStorage(CaptureSoundPreference.recordsSoundKey) private var recordsSound = false
     @AppStorage(ExperimentalSettingKey.showCaptureModelStats) private var showCaptureModelStats = false
-    @AppStorage(ExperimentalSettingKey.backendTarget) private var backendTargetRaw = BackendTarget.local.rawValue
-    @AppStorage(ExperimentalSettingKey.customBackendURL) private var customBackendURL = ""
-    @AppStorage(ExperimentalSettingKey.useMockAnalysis) private var useMockAnalysis = false
     @AppStorage(ExperimentalSettingKey.showDebugReplayTab) private var showDebugReplayTab = true
     @AppStorage(ExperimentalSettingKey.coachDuringAuto) private var coachDuringAuto = false
     @AppStorage(ExperimentalSettingKey.showCoachingDrawings) private var showCoachingDrawings = true
@@ -162,25 +156,6 @@ struct ExperimentalSettingsView: View {
             }
 
             #if DEBUG
-            Section {
-                Picker("Backend target", selection: $backendTargetRaw) {
-                    ForEach(BackendTarget.allCases, id: \.rawValue) { target in
-                        Text(target.label).tag(target.rawValue)
-                    }
-                }
-
-                if backendTargetRaw == BackendTarget.custom.rawValue {
-                    TextField("Backend URL", text: $customBackendURL)
-                        .keyboardType(.URL)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                }
-
-                Toggle("Mock analysis", isOn: $useMockAnalysis)
-            } footer: {
-                Text("Current backend: \(SwingCoachAPI.baseURL). Mock analysis calls /mock/analyze; real analysis calls /analyze.")
-            }
-
             Section {
                 Toggle("Keep Auto recordings", isOn: $keepAutoRecordings)
                     .accessibilityIdentifier("keep-auto-recordings")

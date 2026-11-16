@@ -19,7 +19,6 @@ struct SavedSwing: Identifiable, Codable, Equatable {
     var duration: Double  // seconds
     var createdAt: Date
     var notes: String?
-    var analyzed: Bool
     var isFavorite: Bool
     var isReference: Bool
     var title: String?
@@ -54,7 +53,6 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         duration: Double,
         createdAt: Date,
         notes: String?,
-        analyzed: Bool,
         isFavorite: Bool = false,
         isReference: Bool = false,
         title: String? = nil,
@@ -67,7 +65,6 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         self.duration = duration
         self.createdAt = createdAt
         self.notes = notes
-        self.analyzed = analyzed
         self.isFavorite = isFavorite
         self.isReference = isReference
         self.title = title
@@ -76,7 +73,7 @@ struct SavedSwing: Identifiable, Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, photoAssetID, vantage, duration, createdAt, notes, analyzed, isFavorite, isReference, title, localVideoFilename
+        case id, photoAssetID, vantage, duration, createdAt, notes, isFavorite, isReference, title, localVideoFilename
         case sourceTimeScale, swingPositions, swingWindow
     }
 
@@ -88,7 +85,6 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         duration = try container.decode(Double.self, forKey: .duration)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         notes = try container.decodeIfPresent(String.self, forKey: .notes)
-        analyzed = try container.decode(Bool.self, forKey: .analyzed)
         isFavorite = try container.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
         isReference = try container.decodeIfPresent(Bool.self, forKey: .isReference) ?? false
         title = try container.decodeIfPresent(String.self, forKey: .title)
@@ -106,7 +102,6 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         lhs.duration == rhs.duration &&
         lhs.createdAt == rhs.createdAt &&
         lhs.notes == rhs.notes &&
-        lhs.analyzed == rhs.analyzed &&
         lhs.isFavorite == rhs.isFavorite &&
         lhs.isReference == rhs.isReference &&
         lhs.title == rhs.title &&
@@ -267,7 +262,7 @@ class SwingLibrary: ObservableObject {
             var swing = SavedSwing(
                 id: id, photoAssetID: photoAssetID, vantage: vantage,
                 duration: duration, createdAt: Date(), notes: nil,
-                analyzed: false, localVideoFilename: filename,
+                localVideoFilename: filename,
                 sourceTimeScale: sourceTimeScale
             )
             swing.swingWindow = swingWindow
@@ -302,8 +297,7 @@ class SwingLibrary: ObservableObject {
             vantage: vantage,
             duration: duration,
             createdAt: Date(),
-            notes: notes,
-            analyzed: false
+            notes: notes
         )
         swing.thumbnail = initialThumbnail
         if let localSourceURL {
@@ -385,14 +379,6 @@ class SwingLibrary: ObservableObject {
         }
 
         removeSwings(withIDs: [swing.id])
-    }
-    
-    /// Mark swing as analyzed
-    func markAnalyzed(_ swing: SavedSwing) {
-        if let index = swings.firstIndex(where: { $0.id == swing.id }) {
-            swings[index].analyzed = true
-            saveToDisk()
-        }
     }
     
     // MARK: - Photos Integration
@@ -576,7 +562,6 @@ class SwingLibrary: ObservableObject {
     // MARK: - Stats
     
     var totalSwings: Int { swings.filter { !$0.isReference }.count }
-    var analyzedSwings: Int { swings.filter { !$0.isReference && $0.analyzed }.count }
     
     func swings(for vantage: Vantage) -> [SavedSwing] {
         swings.filter { !$0.isReference && $0.vantage == vantage }
@@ -638,7 +623,6 @@ class SwingLibrary: ObservableObject {
                     duration: reference.duration,
                     createdAt: Date(timeIntervalSince1970: 0),
                     notes: "Bundled DTL reference swing",
-                    analyzed: false,
                     isFavorite: true,
                     isReference: true,
                     title: reference.title,

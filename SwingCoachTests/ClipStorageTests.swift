@@ -5,7 +5,7 @@ import Photos
 
 @MainActor
 final class ClipStorageTests: XCTestCase {
-    func testLocalClipSurvivesValidationSupportsPlaybackAndAnalysisAndDeletesWithoutPhotos() async throws {
+    func testLocalClipSurvivesValidationSupportsPlaybackAndDeletesWithoutPhotos() async throws {
         let previous = UserDefaults.standard.object(forKey: ClipStoragePreference.saveToPhotosKey)
         defer { UserDefaults.standard.set(previous, forKey: ClipStoragePreference.saveToPhotosKey) }
         UserDefaults.standard.set(false, forKey: ClipStoragePreference.saveToPhotosKey)
@@ -26,8 +26,6 @@ final class ClipStorageTests: XCTestCase {
         XCTAssertNotNil(item)
         await library.loadThumbnails()
         XCTAssertNotNil(library.swings.first { $0.id == swing.id }?.thumbnail)
-        let upload = try await SwingCoachAPI.shared.exportVideoToMP4(swing: swing)
-        XCTAssertGreaterThan(upload.count, 0)
         try await library.deleteSwingAndPhoto(swing)
         XCTAssertFalse(FileManager.default.fileExists(atPath: local.path))
         XCTAssertEqual(PHPhotoLibrary.authorizationStatus(for: .addOnly), authorization)

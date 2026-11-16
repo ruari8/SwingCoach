@@ -26,7 +26,6 @@ struct TrimView: View {
     var runsPostRecordDetection = true
     let onComplete: ([SwingClip], [URL]) -> Void
     let onCancel: () -> Void
-    var onAnalyzeSwings: (([SavedSwing]) -> Void)? = nil
 
     @State private var player: AVPlayer?
     @State private var duration: CMTime = .zero
@@ -48,7 +47,6 @@ struct TrimView: View {
     @State private var autoDetectedClipIDs: Set<UUID> = []
     @State private var editingClipID: UUID?
     @State private var timelineSelectionRequest = UUID()
-    @State private var analysisClipIDs: Set<UUID> = []
     @State private var reviewPresentation: TrimReviewPresentation?
     @State private var reviewSelection: UUID?
     @State private var exportError: String?
@@ -132,9 +130,7 @@ struct TrimView: View {
             }
         }) { presentation in
             TrimReviewView(asset: presentation.asset, clips: presentation.clips,
-                           selection: $reviewSelection, analysisClipIDs: $analysisClipIDs,
-                           allowsAnalysis: onAnalyzeSwings != nil,
-                           playbackRate: preferredPlaybackRate)
+                           selection: $reviewSelection, playbackRate: preferredPlaybackRate)
         }
         .alert("Couldn’t Export Swings", isPresented: Binding(
             get: { exportError != nil }, set: { if !$0 { exportError = nil } }
@@ -562,18 +558,6 @@ struct TrimView: View {
                 .accessibilityLabel("Remove swing \(clipNumber(clip))")
             }
 
-            if onAnalyzeSwings != nil {
-                Button {
-                    if !analysisClipIDs.insert(clip.id).inserted { analysisClipIDs.remove(clip.id) }
-                } label: {
-                    Label("Analyze", systemImage: analysisClipIDs.contains(clip.id) ? "checkmark.circle.fill" : "circle")
-                        .font(.caption)
-                        .foregroundStyle(analysisClipIDs.contains(clip.id) ? .yellow : .white)
-                }
-                .accessibilityLabel("Analyze swing \(clipNumber(clip))")
-                .accessibilityValue(analysisClipIDs.contains(clip.id) ? "Selected" : "Not selected")
-            }
-
             Text(clipDurationText(clip))
                 .font(.caption2)
                 .foregroundColor(.white.opacity(0.7))
@@ -663,14 +647,6 @@ struct TrimView: View {
                 Button(primaryExportButtonTitle) { handlePrimaryExportAction() }
                     .accessibilityIdentifier("trim-export-only")
                     .disabled(clips.isEmpty && !canUseFullVideo)
-                if onAnalyzeSwings != nil && !clips.isEmpty {
-                    Button("Export & Analyze \(analysisClipIDs.count)") {
-                        commitEditingClipIfNeeded()
-                        exportClips(clips, analyzing: analysisClipIDs)
-                    }
-                    .accessibilityIdentifier("trim-export-analyze")
-                    .disabled(analysisClipIDs.isEmpty)
-                }
             }
             .buttonStyle(.borderedProminent)
             .tint(.yellow)
@@ -974,7 +950,6 @@ struct TrimView: View {
     private func removeClip(_ clip: SwingClip) {
         clips.removeAll { $0.id == clip.id }
         autoDetectedClipIDs.remove(clip.id)
-        analysisClipIDs.remove(clip.id)
 
         if editingClipID == clip.id {
             clearSelection()
@@ -1026,7 +1001,7 @@ struct TrimView: View {
         }
     }
 
-    private func exportClips(_ clipsToExport: [SwingClip], analyzing analysisIDs: Set<UUID> = []) {
+    private func exportClips(_ clipsToExport: [SwingClip]) {
         guard !clipsToExport.isEmpty else { return }
 
         isExporting = true
@@ -1053,19 +1028,17 @@ struct TrimView: View {
                 defer {
                     for url in exportedURLs { try? FileManager.default.removeItem(at: url) }
                 }
-                var savedSwings: [UUID: SavedSwing] = [:]
                 var savedClips: [SwingClip] = []
                 var saveFailure: String?
                 for (clip, url) in zip(clipsToExport, exportedURLs) {
                     do {
                         let thumbnail = await immediateLibraryThumbnail(for: clip, exportAsset: exportAsset)
-                        let saved = try await SwingLibrary.shared.saveExportedSwing(
+                        _ = try await SwingLibrary.shared.saveExportedSwing(
                             from: url, vantage: clip.vantage,
                             duration: clip.duration * displayTimeScale,
                             sourceTimeScale: sourceCaptureMode?.sourceTimeScale,
                             initialThumbnail: thumbnail
                         )
-                        savedSwings[clip.id] = saved
                         savedClips.append(clip)
                     } catch {
                         saveFailure = error.localizedDescription
@@ -1074,19 +1047,15 @@ struct TrimView: View {
 
                 await MainActor.run {
                     isExporting = false
-                    let analysisSwings = TrimClipPreparation.analysisSwings(
-                        clips: clipsToExport, selectedIDs: analysisIDs, savedSwings: savedSwings)
                     if savedClips.count == clipsToExport.count {
                         onComplete(savedClips, exportedURLs)
                     } else {
                         let savedIDs = Set(savedClips.map(\.id))
                         clips.removeAll { savedIDs.contains($0.id) }
                         autoDetectedClipIDs.subtract(savedIDs)
-                        analysisClipIDs.subtract(savedIDs)
                         clearSelection()
                         exportError = "Saved \(savedClips.count) of \(clipsToExport.count) swings. \(saveFailure ?? "Try again.") Retry the remaining swings."
                     }
-                    if !analysisSwings.isEmpty { onAnalyzeSwings?(analysisSwings) }
                 }
             } catch {
                 print("❌ Export failed: \(error)")

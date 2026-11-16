@@ -29,7 +29,7 @@ final class LibraryPerformanceProbe: UIResponder, UIApplicationDelegate {
                     SavedSwing(id: UUID(uuidString: String(format: "00000000-0000-0000-0000-%012d", index + 1))!,
                                photoAssetID: "", vantage: .dtl, duration: 4.0,
                                createdAt: Date(timeIntervalSince1970: 0),
-                               notes: String(repeating: "n", count: 128), analyzed: false)
+                               notes: String(repeating: "n", count: 128))
                 }
             }
             func timed(_ action: () -> Void) -> Double {

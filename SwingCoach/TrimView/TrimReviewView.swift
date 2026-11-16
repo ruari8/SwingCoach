@@ -12,8 +12,6 @@ struct TrimReviewView: View {
     let asset: AVAsset
     let clips: [SwingClip]
     @Binding var selection: UUID?
-    @Binding var analysisClipIDs: Set<UUID>
-    let allowsAnalysis: Bool
     let playbackRate: Float
 
     private var selectedIndex: Int { clips.firstIndex { $0.id == selection } ?? 0 }
@@ -23,10 +21,7 @@ struct TrimReviewView: View {
             Color.black.ignoresSafeArea()
             SwingReviewPager(swings: clips, selection: $selection) { clip in
                 TrimReviewPage(asset: asset, clip: clip, isSelected: selection == clip.id,
-                               playbackRate: playbackRate, allowsAnalysis: allowsAnalysis,
-                               analysisSelected: analysisClipIDs.contains(clip.id)) {
-                    if !analysisClipIDs.insert(clip.id).inserted { analysisClipIDs.remove(clip.id) }
-                }
+                               playbackRate: playbackRate)
             }
             VStack {
                 HStack {
@@ -60,9 +55,6 @@ private struct TrimReviewPage: View {
     let clip: SwingClip
     let isSelected: Bool
     let playbackRate: Float
-    let allowsAnalysis: Bool
-    let analysisSelected: Bool
-    let toggleAnalysis: () -> Void
     @State private var playerItem: AVPlayerItem?
     @State private var loadError: String?
 
@@ -74,17 +66,7 @@ private struct TrimReviewPage: View {
                                    allowsFullscreen: false, edgeToEdge: true) {
                     EmptyView()
                 } overlayAccessory: {
-                    if allowsAnalysis {
-                        Button(action: toggleAnalysis) {
-                            Image(systemName: analysisSelected ? "checkmark.circle.fill" : "circle")
-                                .font(.title2)
-                                .foregroundStyle(analysisSelected ? .yellow : .white)
-                                .frame(width: 44, height: 44)
-                                .background(Circle().fill(.black.opacity(0.48)))
-                        }
-                        .accessibilityLabel("Analyze this swing")
-                        .accessibilityValue(analysisSelected ? "Selected" : "Not selected")
-                    }
+                    EmptyView()
                 }
             } else if let loadError {
                 ContentUnavailableView("Couldn’t Open Swing", systemImage: "exclamationmark.triangle",

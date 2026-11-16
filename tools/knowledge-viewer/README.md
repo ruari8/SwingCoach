@@ -21,12 +21,12 @@ Only files explicitly referenced by the corpus are served. Missing local media
 does not prevent reading cases or opening the original source. No media is
 copied, uploaded or cut into separate clips by the viewer.
 
-The viewer and backend share `backend/analysis/knowledge_library.py`. Search
+The viewer reads the corpus through `scripts/knowledge_library.py`. Search
 returns candidate cases, not a diagnosis or a coaching-confidence score.
 
 Verification:
 
 ```bash
-cd backend
+cd scripts
 python3 -m unittest test_knowledge_library
 ```

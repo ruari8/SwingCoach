@@ -1,24 +1,22 @@
 import XCTest
 
 /// A 310-second synthetic Manual recording with swings detected at 2, 150 and
-/// 300 seconds; Trim, export and Photos are production code. Analysis requests
-/// are recorded instead of uploaded. scripts/verify.sh trim also checks the
-/// saved clips' files, durations and audio after each test.
+/// 300 seconds; Trim, export and Photos are production code. scripts/verify.sh
+/// trim also checks the saved clips' files, durations and audio after each test.
 final class TrimReviewUITests: XCTestCase {
     private func fixture(frameRate: Int, context: Bool = false) -> [String] {
         var arguments = Fixture.syntheticCamera + [
             "-ui-testing-recording-seconds", "310", "-ui-testing-detections", "2,150,300",
-            "-ui-testing-frame-rate", "\(frameRate)", "-ui-testing-record-analysis",
+            "-ui-testing-frame-rate", "\(frameRate)",
         ]
         // One second either side of each 1-second swing makes 3-second clips.
         if !context { arguments += ["-capture.extraSecondsBeforeSwing", "1", "-capture.extraSecondsAfterSwing", "1"] }
         return arguments
     }
 
-    func testManualTrimSelectionReviewExportOnlyThenSubsetAnalysis() {
+    func testManualTrimSelectionReviewAndExport() {
         continueAfterFailure = false
-        let arguments = fixture(frameRate: 30)
-        let app = XCUIApplication.launched(seed: "empty", arguments)
+        let app = XCUIApplication.launched(seed: "empty", fixture(frameRate: 30))
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         for _ in 0..<3 {
             guard springboard.alerts.firstMatch.waitForExistence(timeout: 1) else { break }
@@ -28,7 +26,6 @@ final class TrimReviewUITests: XCTestCase {
         XCTAssertTrue(manual.waitForExistence(timeout: 10))
         manual.tap()
         openTrim(app)
-        XCTAssertFalse(app.buttons["trim-export-analyze"].isEnabled)
         app.buttons["trim-clip-3"].tap()
         let playhead = app.otherElements["trim-playhead"]
         XCTAssertTrue(playhead.waitForExistence(timeout: 5))
@@ -62,39 +59,18 @@ final class TrimReviewUITests: XCTestCase {
                                             dy: viewport.midY))
         start.press(forDuration: 0.05, thenDragTo: end)
         XCTAssertTrue(NSPredicate(format: "label == %@", "2 of 3").evaluate(with: waitFor(position, label: "2 of 3")))
-        let analyze = review.buttons["Analyze this swing"]
-        XCTAssertTrue(analyze.waitForExistence(timeout: 5))
-        XCTAssertTrue(analyze.isHittable)
-        analyze.tap()
-        XCTAssertEqual(analyze.value as? String, "Selected")
-        attach("full-review-subset")
+        attach("full-review-second-clip")
         review.buttons["Close trim review"].tap()
         XCTAssertTrue(review.waitForNonExistence(timeout: 5))
         XCTAssertTrue(app.buttons["trim-export-only"].isHittable)
         XCTAssertEqual(playhead.value as? String, "149.00")
         XCTAssertTrue(playhead.isHittable)
-        XCTAssertEqual(app.buttons["Analyze swing 2"].value as? String, "Selected")
-        // Even checked clips do not trigger analysis through Export only.
         app.buttons["trim-export-only"].tap()
         allowPhotosIfRequested(app)
         XCTAssertTrue(app.staticTexts["Trim Swings"].waitForNonExistence(timeout: 90))
         XCTAssertTrue(app.buttons["Start recording"].isHittable)
         XCTAssertTrue(app.tabBars.buttons["Capture"].isSelected)
-        attach("export-only-returned-to-capture")
-        app.relaunch(arguments)
-        XCTAssertTrue(manual.waitForExistence(timeout: 10))
-        manual.tap()
-        openTrim(app)
-        app.buttons["Analyze swing 2"].tap()
-        XCTAssertEqual(app.buttons["trim-export-analyze"].label, "Export & Analyze 1")
-        app.buttons["trim-export-analyze"].tap()
-        allowPhotosIfRequested(app)
-        XCTAssertTrue(app.staticTexts["Trim Swings"].waitForNonExistence(timeout: 90))
-        let coach = app.tabBars.buttons["Coach"]
-        let selected = NSPredicate(format: "selected == true")
-        expectation(for: selected, evaluatedWith: coach)
-        waitForExpectations(timeout: 90)
-        attach("subset-handed-to-coach")
+        attach("export-returned-to-capture")
     }
 
     func testPartialSaveKeepsFailedClipReachableForRetry() {
@@ -109,8 +85,7 @@ final class TrimReviewUITests: XCTestCase {
         XCTAssertTrue(manual.waitForExistence(timeout: 10))
         manual.tap()
         openTrim(app)
-        app.buttons["Analyze swing 1"].tap()
-        app.buttons["trim-export-analyze"].tap()
+        app.buttons["trim-export-only"].tap()
         allowPhotosIfRequested(app)
         let error = app.alerts["Couldn’t Export Swings"]
         XCTAssertTrue(error.waitForExistence(timeout: 60))

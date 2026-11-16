@@ -4,71 +4,6 @@ import AVFoundation
 
 @MainActor
 final class SwingReviewTests: XCTestCase {
-    func testConcurrentAnalysesKeepTheirVideoIdentityAndProgress() async {
-        let a = swing(), b = swing()
-        let service = ControlledAnalysis()
-        let started = expectation(description: "Both requests started")
-        started.expectedFulfillmentCount = 2
-        service.onStart = { started.fulfill() }
-        var saved: [UUID: String] = [:]
-        let model = SwingReviewAnalysis(analyze: service.analyze) { response, swing in
-            saved[swing.id] = response.analysisID
-        }
-
-        let first = Task { await model.run(for: a) }
-        let second = Task { await model.run(for: b) }
-        await fulfillment(of: [started], timeout: 2)
-        // Opening B while A runs must leave A's state intact. Reopening A and
-        // tapping again must not submit another request for the same video.
-        await model.run(for: a)
-        XCTAssertEqual(Set(service.startedIDs), [a.id, b.id])
-        XCTAssertEqual(service.startedIDs.count, 2)
-        service.progress[a.id]?("Uploading A", 0.4)
-        for _ in 0..<5 { await Task.yield() }
-        XCTAssertEqual(model.requests[a.id]?.progressText, "Uploading A")
-        XCTAssertEqual(model.requests[b.id]?.progressText, "Preparing video...")
-
-        service.finish(b, response: response("result-B"))
-        await second.value
-        XCTAssertEqual(model.requests[a.id]?.status, .analyzing)
-        XCTAssertEqual(model.requests[b.id]?.status, .complete)
-        XCTAssertEqual(saved, [b.id: "result-B"])
-
-        service.finish(a, response: response("result-A"))
-        await first.value
-        XCTAssertEqual(saved, [a.id: "result-A", b.id: "result-B"])
-        service.progress[a.id]?("Late progress", 0.8)
-        for _ in 0..<5 { await Task.yield() }
-        XCTAssertNil(model.requests[a.id]?.progressText)
-    }
-
-    func testRetryIgnoresProgressFromFailedRequest() async {
-        let video = swing()
-        let service = ControlledAnalysis()
-        let started = expectation(description: "Initial request started")
-        service.onStart = { started.fulfill() }
-        let model = SwingReviewAnalysis(analyze: service.analyze, save: { _, _ in })
-        let first = Task { await model.run(for: video) }
-        await fulfillment(of: [started], timeout: 2)
-        let staleProgress = service.progress[video.id]
-        service.pending.removeValue(forKey: video.id)?.resume(throwing: URLError(.timedOut))
-        await first.value
-        guard case .failed = model.requests[video.id]?.status else {
-            return XCTFail("A failed request must offer a retry")
-        }
-
-        let retried = expectation(description: "Retry started")
-        service.onStart = { retried.fulfill() }
-        let retry = Task { await model.run(for: video) }
-        await fulfillment(of: [retried], timeout: 2)
-        staleProgress?("Old attempt", 0.9)
-        for _ in 0..<5 { await Task.yield() }
-        XCTAssertEqual(model.requests[video.id]?.progressText, "Preparing video...")
-        service.finish(video, response: response("retry"))
-        await retry.value
-        XCTAssertEqual(model.requests[video.id]?.status, .complete)
-    }
-
     func testDrawingLoadsRotatedVideoDimensionsWithoutPreparingPlayerItem() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("review-\(UUID()).mov")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -90,15 +25,6 @@ final class SwingReviewTests: XCTestCase {
         XCTAssertFalse(portrait.contains(CGPoint(x: 195, y: 10)))
         XCTAssertFalse(landscape.contains(CGPoint(x: 10, y: 195)))
         XCTAssertEqual(landscape.width / landscape.height, 360.0 / 640.0, accuracy: 0.0001)
-    }
-
-    private func swing() -> SavedSwing {
-        SavedSwing(id: UUID(), photoAssetID: "test", vantage: .dtl, duration: 3,
-                   createdAt: Date(), notes: nil, analyzed: false)
-    }
-
-    private func response(_ id: String) -> SwingCoachAPI.AnalysisResponse {
-        .init(analysisID: id, summary: "Test", metrics: [], annotatedVideo: nil, drills: [])
     }
 
     private func writeRotatedVideo(to url: URL) async throws {
@@ -126,26 +52,5 @@ final class SwingReviewTests: XCTestCase {
         input.markAsFinished()
         await writer.finishWriting()
         XCTAssertEqual(writer.status, .completed, writer.error?.localizedDescription ?? "")
-    }
-}
-
-@MainActor
-private final class ControlledAnalysis {
-    var pending: [UUID: CheckedContinuation<SwingCoachAPI.AnalysisResponse, Error>] = [:]
-    var progress: [UUID: (String, Float?) -> Void] = [:]
-    var startedIDs: [UUID] = []
-    var onStart: () -> Void = {}
-
-    func analyze(_ swing: SavedSwing, onProgress: @escaping (String, Float?) -> Void) async throws -> SwingCoachAPI.AnalysisResponse {
-        startedIDs.append(swing.id)
-        progress[swing.id] = onProgress
-        return try await withCheckedThrowingContinuation { continuation in
-            pending[swing.id] = continuation
-            onStart()
-        }
-    }
-
-    func finish(_ swing: SavedSwing, response: SwingCoachAPI.AnalysisResponse) {
-        pending.removeValue(forKey: swing.id)?.resume(returning: response)
     }
 }

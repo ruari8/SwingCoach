@@ -2,7 +2,7 @@
 //  SwingDetailView.swift
 //  SwingCoach
 //
-//  A swing-first workspace for playback, metadata, and attached analysis.
+//  A swing-first workspace for playback, metadata, drawing and coaching.
 //
 
 import SwiftUI
@@ -13,8 +13,6 @@ struct SwingDetailView: View {
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var library = SwingLibrary.shared
-    @StateObject private var analysisLibrary = AnalysisLibrary.shared
-    @StateObject private var reviewAnalysis = SwingReviewAnalysis()
     @StateObject private var positionProcessor = SwingPositionProcessor.shared
 
     @State private var currentSwingID: UUID
@@ -23,9 +21,7 @@ struct SwingDetailView: View {
     @State private var videoAspectRatios: [UUID: Double] = [:]
     @State private var loadingSwingIDs: Set<UUID> = []
     @State private var playbackErrors: [UUID: String] = [:]
-    @State private var showTechnicalDetails = false
     @State private var showMetadata = false
-    @State private var selectedPage = 0
     @State private var isDrawingLines = false
     @State private var controlsLocked = false
     @State private var draftLine: ManualAnnotation?
@@ -51,33 +47,10 @@ struct SwingDetailView: View {
         }
     }
 
-    private var analysisStatus: SwingAnalysis.AnalysisStatus {
-        reviewAnalysis.requests[currentSwingID]?.status ?? .pending
-    }
-
-    private var analysisProgressText: String? {
-        reviewAnalysis.requests[currentSwingID]?.progressText
-    }
-
-    private var analysisProgressValue: Float? {
-        reviewAnalysis.requests[currentSwingID]?.progress
-    }
-
     private var swingPositionText: String? {
         guard navigationSwings.count > 1,
               let index = navigationSwings.firstIndex(where: { $0.id == currentSwing.id }) else { return nil }
         return "\(index + 1) of \(navigationSwings.count)"
-    }
-
-    private var savedAnalysis: SavedAnalysis? {
-        analysisLibrary.analysis(for: currentSwing)
-    }
-
-    private var isAnalyzing: Bool {
-        if case .analyzing = analysisStatus {
-            return true
-        }
-        return false
     }
 
     var body: some View {
@@ -86,22 +59,18 @@ struct SwingDetailView: View {
 
             reviewPager
 
-            if shouldShowAnalysisAction, !isDrawingLines {
-                analysisFloatingLayer
-            }
-
-            if selectedPage == 0, isDrawingLines, videoAspectRatios[currentSwingID] != nil {
+            if isDrawingLines, videoAspectRatios[currentSwingID] != nil {
                 drawingToolBar
             }
 
-            if selectedPage == 0, !isDrawingLines, SwingCoachingStore.canCoach(currentSwing) {
+            if !isDrawingLines, SwingCoachingStore.canCoach(currentSwing) {
                 VStack {
                     SwingCoachingPill(swing: currentSwing, seek: { coachingSeek = $0 }, highlighted: $highlightedMetric)
                         // Clear of the tool rail, which can dock on either side.
                         .padding(.horizontal, 14 + PlayerToolRail.buttonSize + PlayerToolRail.spacing)
                     Spacer(minLength: 0)
                 }
-                .padding(.top, shouldShowAnalysisAction ? 124 : 64)
+                .padding(.top, 64)
             }
         }
         .overlayPreferenceValue(ReviewPlaybackCornerControlsKey.self) { cornerControls in
@@ -121,9 +90,6 @@ struct SwingDetailView: View {
                 await library.loadThumbnails()
             }
         }
-        .onChange(of: selectedPage) { _, page in
-            if page != 0 { isDrawingLines = false }
-        }
         .onChange(of: currentSwingID) { _, _ in
             resetReviewState()
             preparePlaybackWindow()
@@ -131,22 +97,17 @@ struct SwingDetailView: View {
         }
     }
 
-    @ViewBuilder
     private var reviewPager: some View {
-        if selectedPage != 0, let savedAnalysis {
-            analyzedCarousel(savedAnalysis: savedAnalysis, swing: currentSwing)
-        } else {
-            SwingReviewPager(
-                swings: navigationSwings,
-                selection: Binding(
-                    get: { currentSwingID },
-                    set: { if let id = $0 { currentSwingID = id } }
-                ),
-                pagingEnabled: !isDrawingLines,
-                title: { $0.title ?? "Swing video" }
-            ) { pageSwing in
-                originalVideoPage(for: pageSwing)
-            }
+        SwingReviewPager(
+            swings: navigationSwings,
+            selection: Binding(
+                get: { currentSwingID },
+                set: { if let id = $0 { currentSwingID = id } }
+            ),
+            pagingEnabled: !isDrawingLines,
+            title: { $0.title ?? "Swing video" }
+        ) { pageSwing in
+            originalVideoPage(for: pageSwing)
         }
     }
 
@@ -155,18 +116,6 @@ struct SwingDetailView: View {
         let lowerBound = max(navigationSwings.startIndex, currentIndex - 1)
         let upperBound = min(navigationSwings.index(before: navigationSwings.endIndex), currentIndex + 1)
         return Array(navigationSwings[lowerBound...upperBound])
-    }
-
-    private func analyzedCarousel(savedAnalysis: SavedAnalysis, swing: SavedSwing) -> some View {
-        Group {
-            if selectedPage == 0 {
-                originalVideoPage(for: swing)
-            } else if selectedPage == 1 {
-                annotatedVideoPage(savedAnalysis: savedAnalysis)
-            } else {
-                coachNotesPage(savedAnalysis: savedAnalysis)
-            }
-        }
     }
 
     private func originalVideoPage(for swing: SavedSwing) -> some View {
@@ -209,11 +158,6 @@ struct SwingDetailView: View {
             }
             .padding(.horizontal, 14)
 
-            // The drawing bar takes this spot while drawing.
-            if savedAnalysis != nil, !isDrawingLines {
-                analysisPagePicker
-            }
-
             Spacer(minLength: 0)
         }
         .padding(.top, 6)
@@ -226,30 +170,6 @@ struct SwingDetailView: View {
         }
     }
 
-    private var analysisPagePicker: some View {
-        HStack(spacing: 5) {
-            analysisPageButton("play.fill", page: 0, label: "Original video")
-            analysisPageButton("scribble.variable", page: 1, label: "Annotated video")
-            analysisPageButton("text.alignleft", page: 2, label: "Coach notes")
-        }
-        .padding(5)
-        .background(Capsule().fill(Color.black.opacity(0.42)))
-    }
-
-    private func analysisPageButton(_ systemName: String, page: Int, label: String) -> some View {
-        Button {
-            selectedPage = page
-        } label: {
-            Image(systemName: systemName)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(selectedPage == page ? .black : .white)
-                .frame(width: 34, height: 28)
-                .background(Capsule().fill(selectedPage == page ? Color.white : Color.clear))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(label)
-    }
-
     private func navCircleButton(systemName: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
@@ -259,127 +179,6 @@ struct SwingDetailView: View {
                 .background(Circle().fill(Color.black.opacity(0.45)))
         }
         .buttonStyle(.plain)
-    }
-
-    private var analysisFloatingLayer: some View {
-        VStack(spacing: 12) {
-            analysisOverlayButton
-
-            // Clear of the tool rail, which can dock on either side.
-            analysisInlineStatus
-                .padding(.horizontal, 14 + PlayerToolRail.buttonSize + PlayerToolRail.spacing)
-
-            Spacer(minLength: 0)
-        }
-        .padding(.top, 64)
-    }
-
-    @ViewBuilder
-    private func annotatedVideoPage(savedAnalysis: SavedAnalysis) -> some View {
-        if let annotatedVideo = savedAnalysis.annotatedVideo {
-            AnnotatedAnalysisVideo(
-                video: annotatedVideo,
-                analysisID: savedAnalysis.analysisID,
-                presentation: .immersive
-            )
-        } else {
-            statusFullscreen(
-                icon: "video.slash",
-                title: "No annotated video",
-                message: "This analysis has coach notes and metrics, but no rendered video artifact yet."
-            )
-        }
-    }
-
-    private func coachNotesPage(savedAnalysis: SavedAnalysis) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Coach Notes")
-                        .font(.title2.weight(.bold))
-                        .foregroundColor(.white)
-
-                    Text(savedAnalysis.summary)
-                        .font(.body)
-                        .foregroundColor(.white.opacity(0.82))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                if !savedAnalysis.metrics.isEmpty {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Metrics")
-                            .font(.headline)
-                            .foregroundColor(.white)
-
-                        ForEach(savedAnalysis.metrics, id: \.key) { metric in
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack(alignment: .firstTextBaseline) {
-                                    Text(metric.name)
-                                        .foregroundColor(.white.opacity(0.72))
-
-                                    Spacer(minLength: 12)
-
-                                    Text(metric.value)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.white)
-                                        .multilineTextAlignment(.trailing)
-                                }
-                                .font(.subheadline)
-                                if let explanation = metric.explanation {
-                                    Text(explanation).font(.caption).foregroundColor(.white.opacity(0.65))
-                                }
-                                if let confidence = metric.confidence {
-                                    Text("Tracking confidence: \(Int(confidence * 100))%")
-                                        .font(.caption2).foregroundColor(.white.opacity(0.55))
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if let coaching = savedAnalysis.coaching {
-                    GroundedCoachingView(coaching: coaching)
-                        .foregroundStyle(.white)
-                        .environment(\.colorScheme, .dark)
-                }
-
-                if !savedAnalysis.drills.isEmpty {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Drills")
-                            .font(.headline)
-                            .foregroundColor(.white)
-
-                        ForEach(savedAnalysis.drills, id: \.title) { drill in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(drill.title)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundColor(.white)
-
-                                Text(drill.summary)
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.68))
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            .padding()
-                            .background(Color.white.opacity(0.08))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                    }
-                }
-
-            }
-            .padding(.horizontal, 22)
-            .padding(.top, 92)
-            .padding(.bottom, 84)
-        }
-        .background(
-            LinearGradient(
-                colors: [Color.black, Color(red: 0.08, green: 0.09, blue: 0.1)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea(edges: .top)
-        )
     }
 
     private func originalPlayer(for swing: SavedSwing) -> some View {
@@ -465,7 +264,7 @@ struct SwingDetailView: View {
         }
     }
 
-    /// Sits where Analyze Swing does; that button hides while drawing.
+    /// Under the navigation row, where the coaching pill sits otherwise.
     private var drawingToolBar: some View {
         SwingLineControls(
             annotationID: currentSwing.manualAnnotationID,
@@ -474,62 +273,6 @@ struct SwingDetailView: View {
         )
         .padding(.top, 60)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-    }
-
-    private var analysisOverlayButton: some View {
-        Button {
-            startAnalysis()
-        } label: {
-            HStack(spacing: 8) {
-                if isAnalyzing {
-                    ProgressView()
-                        .tint(.black)
-                } else {
-                    Image(systemName: savedAnalysis == nil ? "wand.and.stars" : "arrow.clockwise")
-                }
-
-                Text(actionTitle)
-                    .font(.subheadline.weight(.bold))
-            }
-            .foregroundColor(.black)
-            .padding(.horizontal, 14)
-            .frame(height: 42)
-            .background(Capsule().fill(isAnalyzing ? Color.white.opacity(0.72) : Color.yellow))
-        }
-        .buttonStyle(.plain)
-        .disabled(isAnalyzing)
-    }
-
-    @ViewBuilder
-    private var analysisInlineStatus: some View {
-        switch analysisStatus {
-        case .analyzing:
-            VStack(alignment: .leading, spacing: 8) {
-                Text(analysisProgressTitle)
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(.white.opacity(0.75))
-
-                if let analysisProgressValue {
-                    ProgressView(value: Double(analysisProgressValue))
-                        .tint(.yellow)
-                } else {
-                    ProgressView()
-                        .tint(.yellow)
-                }
-            }
-        case .failed(let error):
-            Button {
-                showTechnicalDetails.toggle()
-            } label: {
-                Label(showTechnicalDetails ? error : "Analysis failed. Tap for details.", systemImage: "exclamationmark.circle.fill")
-                    .font(.caption)
-                    .foregroundColor(.yellow)
-                    .lineLimit(showTechnicalDetails ? nil : 1)
-            }
-            .buttonStyle(.plain)
-        case .pending, .complete:
-            EmptyView()
-        }
     }
 
     private var metadataSheet: some View {
@@ -552,7 +295,6 @@ struct SwingDetailView: View {
                 metadataRow("View", currentSwing.vantage.displayName)
                 metadataRow("Duration", formatDuration(currentSwing.duration))
                 metadataRow("Saved", formatDate(currentSwing.createdAt))
-                metadataRow("Analysis", savedAnalysis == nil ? "Not analyzed" : "Complete")
             }
 
             swingPositionsSection
@@ -604,57 +346,6 @@ struct SwingDetailView: View {
                 .foregroundColor(.secondary)
                 .frame(width: 40, alignment: .trailing)
         }
-    }
-
-    private var shouldShowAnalysisAction: Bool {
-        if currentSwing.isReference {
-            return false
-        }
-        if isAnalyzing || savedAnalysis == nil {
-            return true
-        }
-        if case .failed = analysisStatus {
-            return true
-        }
-        return false
-    }
-
-    private func statusFullscreen(icon: String, title: String, message: String) -> some View {
-        VStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.largeTitle)
-                .foregroundColor(.white.opacity(0.72))
-            Text(title)
-                .font(.headline)
-                .foregroundColor(.white)
-            Text(message)
-                .font(.caption)
-                .foregroundColor(.white.opacity(0.64))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.black.ignoresSafeArea(edges: .top))
-    }
-
-    private var actionTitle: String {
-        if isAnalyzing {
-            return "Analyzing..."
-        }
-        if case .failed = analysisStatus {
-            return "Retry Analysis"
-        }
-        return "Analyze Swing"
-    }
-
-    private var analysisProgressTitle: String {
-        if let analysisProgressText {
-            if let analysisProgressValue {
-                return "\(analysisProgressText) \(Int(analysisProgressValue * 100))%"
-            }
-            return analysisProgressText
-        }
-        return "Analyzing swing..."
     }
 
     private func metadataRow(_ title: String, _ value: String) -> some View {
@@ -714,20 +405,11 @@ struct SwingDetailView: View {
     }
 
     private func resetReviewState() {
-        selectedPage = 0
         isDrawingLines = false
         draftLine = nil
         showMetadata = false
         highlightedMetric = nil
         coachingSeek = nil
-    }
-
-    private func startAnalysis() {
-        let submittedSwing = currentSwing
-        showTechnicalDetails = false
-        Task {
-            await reviewAnalysis.run(for: submittedSwing)
-        }
     }
 
     private func formatDuration(_ seconds: Double) -> String {
@@ -751,8 +433,7 @@ struct SwingDetailView: View {
                 vantage: .dtl,
                 duration: 3.8,
                 createdAt: Date(),
-                notes: nil,
-                analyzed: false
+                notes: nil
             )
         )
     }

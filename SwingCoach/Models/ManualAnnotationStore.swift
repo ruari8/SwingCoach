@@ -95,30 +95,9 @@ final class ManualAnnotationStore: ObservableObject {
         saveToDisk()
     }
 
-    func remove(_ annotationID: UUID) {
-        annotations.removeAll { $0.id == annotationID }
-        saveToDisk()
-    }
-
     func clear(for analysisID: String) {
         annotations.removeAll { $0.analysisID == analysisID }
         saveToDisk()
-    }
-
-    func removeNearest(
-        analysisID: String,
-        to point: ManualAnnotationPoint,
-        at currentTime: Double,
-        threshold: Double = 0.045
-    ) {
-        let candidates = annotations(for: analysisID)
-            .filter { $0.isVisible(at: currentTime) }
-            .compactMap { annotation -> (UUID, Double)? in
-                guard let distance = annotation.points.map({ $0.distance(to: point) }).min() else { return nil }
-                return (annotation.id, distance)
-            }
-        guard let nearest = candidates.min(by: { $0.1 < $1.1 }), nearest.1 <= threshold else { return }
-        remove(nearest.0)
     }
 
     private func saveToDisk() {
@@ -139,13 +118,5 @@ final class ManualAnnotationStore: ObservableObject {
             print("Failed to load manual annotations: \(error)")
             annotations = []
         }
-    }
-}
-
-private extension ManualAnnotationPoint {
-    func distance(to other: ManualAnnotationPoint) -> Double {
-        let dx = x - other.x
-        let dy = y - other.y
-        return (dx * dx + dy * dy).squareRoot()
     }
 }

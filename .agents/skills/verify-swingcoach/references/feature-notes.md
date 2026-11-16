@@ -24,9 +24,7 @@ Traps by area that a check or a hand-driven run can hit. Accessibility labels li
 - Export mutates the app library and, depending on the path, Photos. Confirm both stores.
 - No committed check drives the full Photos-picker import yet.
 
-## Coach
+## Coaching
 
-- `scripts/verify.sh coach` runs a local backend with seeded coaching. It proves upload, progress, and result display; live AI quality needs the VPS backend described in AGENTS.md.
-- DEBUG `Mock analysis` still calls `/mock/analyze` on the backend. It is not an offline stub.
-- From Simulator the local backend is `127.0.0.1`. A physical iPhone needs the Mac's LAN URL and local-network permission.
-- Analysis runs and uploads create remote state. Use a disposable clip and record run IDs.
+- `scripts/verify.sh coaching` checks the UI against stored reports. The Simulator cannot run Vision body pose, so it cannot measure a swing; for real numbers run `detector_workbench/validation/coaching/run.sh` on a Mac, and for speed, dropped frames and heat use a phone.
+- The first reading while Auto records needs the camera and live frames. Only a phone can run it.

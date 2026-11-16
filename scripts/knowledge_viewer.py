@@ -13,8 +13,8 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "backend"))
-from analysis.knowledge_library import KnowledgeLibrary
+sys.path.insert(0, str(ROOT / "scripts"))
+from knowledge_library import KnowledgeLibrary
 
 
 def referenced_files(value):

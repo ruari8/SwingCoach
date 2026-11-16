@@ -22,8 +22,6 @@ import Foundation
 ///   exporter instead of showing reference swings.
 /// - `-ui-testing-detector waiting|unavailable` and `-ui-testing-auto-error`
 ///   set detector and Auto error states.
-/// - `-ui-testing-record-analysis` stores analysis requests in
-///   `ui-testing-analysis-ids` instead of uploading.
 /// - `-ui-testing-save-failure` fails the second Photos save.
 ///
 /// Any `-ui-testing` argument also keeps private bundled reference videos out
@@ -73,7 +71,6 @@ nonisolated enum UITestFixture {
     static let exportsAutoClip = arguments.contains("-ui-testing-auto-export")
     static let detectorState = value(after: "-ui-testing-detector")
     static let showsAutoError = arguments.contains("-ui-testing-auto-error")
-    static let recordsAnalysisRequests = arguments.contains("-ui-testing-record-analysis")
     private static let failsSecondPhotosSave = arguments.contains("-ui-testing-save-failure")
 
     /// Long recordings use a small frame so the file stays quick to write.
@@ -89,10 +86,6 @@ nonisolated enum UITestFixture {
     static func currentAudioPolicy() -> String {
         let audio = AVAudioSession.sharedInstance()
         return "\(audio.category.rawValue) \(audio.mode.rawValue) \(audio.categoryOptions.rawValue)"
-    }
-
-    static func recordAnalysisRequest(ids: [UUID]) {
-        UserDefaults.standard.set(ids.map(\.uuidString), forKey: "ui-testing-analysis-ids")
     }
 
     static func shouldFailPhotosSave() -> Bool {
@@ -144,7 +137,7 @@ extension UITestFixture {
         func personal(_ number: Int, title: String?, vantage: Vantage = .dtl, starred: Bool = false, createdAt: Date) {
             let id = UUID(uuidString: String(format: "00000000-0000-0000-0000-%012d", number))!
             swings.append(SavedSwing(id: id, photoAssetID: "", vantage: vantage, duration: Double(seconds),
-                                     createdAt: createdAt, notes: nil, analyzed: false, isFavorite: starred,
+                                     createdAt: createdAt, notes: nil, isFavorite: starred,
                                      title: title, localVideoFilename: "\(id.uuidString).mp4"))
         }
         func references(_ count: Int) {
@@ -152,7 +145,7 @@ extension UITestFixture {
                 let id = UUID(uuidString: String(format: "93F08C01-6795-46B0-B092-%012X", number))!
                 swings.append(SavedSwing(id: id, photoAssetID: "", vantage: .dtl, duration: Double(seconds),
                                          createdAt: Date(timeIntervalSinceReferenceDate: Double(count + 1 - number)),
-                                         notes: nil, analyzed: false, isFavorite: true, isReference: true,
+                                         notes: nil, isFavorite: true, isReference: true,
                                          title: "Reference swing \(number)", localVideoFilename: "\(id.uuidString).mp4"))
             }
         }
