@@ -38,7 +38,7 @@ Simulator cannot establish real camera input, supported capture frame rates, mic
 
 ## Route 2: Xcode-driven physical iPhone
 
-Use a connected iPhone for Capture, 30/60/120/240 fps selection and output, audio, camera orientation, Auto detection timing, real Photos interoperability, local-network backend access, and performance claims.
+Use a connected iPhone for Capture, 30/60/120/240 fps selection and output, audio, camera orientation, Auto detection timing, real Photos interoperability, swing positions and coaching measurements, and performance claims.
 
 Before changing the phone:
 
@@ -113,7 +113,7 @@ The simplest live device session is:
 When live control is unavailable, ask for the smallest packet that preserves the bug:
 
 ```text
-Feature: <capture / import / trim / coach / library>
+Feature: <capture / import / trim / coaching / library>
 Expected: <one sentence>
 Observed: <one sentence>
 Action: <last tap or gesture before it happened>

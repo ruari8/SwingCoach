@@ -265,7 +265,7 @@ h1{font-size:17px;margin:0 0 3px;font-weight:650}
 "use strict";
 const C=window.COACHING;
 if(!C||!C.sessions||!C.sessions.length){
- document.getElementById('side').innerHTML='<div class="missing">No coaching data found at <code>playgrounds/ui/media/coaching/data.js</code>. It is local only. Build it from harness output with <code>backend/venv/bin/python playgrounds/ui/coaching-media.py range=&lt;out-dir&gt;</code>.</div>';
+ document.getElementById('side').innerHTML='<div class="missing">No coaching data found at <code>playgrounds/ui/media/coaching/data.js</code>. It is local only. Build it from harness output with <code>tools/venv/bin/python playgrounds/ui/coaching-media.py range=&lt;out-dir&gt;</code>.</div>';
  throw new Error('window.COACHING missing');
 }
 // ---------- data helpers

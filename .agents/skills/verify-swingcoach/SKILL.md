@@ -38,15 +38,14 @@ Take every row whose paths or behavior you touched. A shared model (`SwingLibrar
 | Save to Photos, local storage preference | `scripts/verify.sh storage` |
 | `FootageCamera`, `CaptureView` `handleVideoFrame`, rolling-buffer keep setting | `scripts/verify.sh footage` (on request; needs the private `.detectorTestV3/` videos) |
 | `Models/Coaching/`, `SwingCoachingViews`, `AutoCoachingViews`, coaching pill or drawings in the player, coach chip or recap on the camera screen | `scripts/verify.sh coaching` (UI on stored reports; for real numbers run `detector_workbench/validation/coaching/run.sh`, see `docs/COACHING.md`). The first reading during Auto can't run on the Simulator: it needs a phone |
-| `AnalyseView`, `SwingCoachAPI`, coaching display | `scripts/verify.sh coach` (local backend with seeded coaching; proves the app flow, not live AI quality) |
-| `backend/` | The backend tests listed in AGENTS.md |
+| `scripts/knowledge_library.py`, `scripts/knowledge_viewer.py` | `cd scripts && python3 -m unittest test_knowledge_library` |
 | Docs, comments, Git only | Nothing |
 
 When no row covers the behavior, drive it yourself (step 3).
 
 ## 2. Run them
 
-`scripts/verify.sh <area>...` builds once, creates a disposable Simulator, seeds synthetic media through DEBUG launch fixtures, runs the area's XCUITests and unit tests plus its file and Photos checks, and deletes the Simulator on exit. Pass several areas to one run: runs in one checkout share a build, and a second concurrent run reports BLOCKED. `scripts/verify.sh all` runs every default area; `--help` lists them. Exceptions: `trim-clock` runs a macOS probe with no Simulator; `footage` needs the private `.detectorTestV3/` videos (it finds them in the main checkout); `coach` needs `SwingCoach/ReferenceSwings/DaBMIbhpel9_1.mp4` plus `backend/venv` and `backend/models/pose_landmarker_heavy.task`, and reports BLOCKED without them. Read the final `PASS`, `FAIL` or `BLOCKED <reason>` line and the exit status; evidence lands in `.verification-artifacts/verify/`. A run takes minutes, so run it in the background.
+`scripts/verify.sh <area>...` builds once, creates a disposable Simulator, seeds synthetic media through DEBUG launch fixtures, runs the area's XCUITests and unit tests plus its file and Photos checks, and deletes the Simulator on exit. Pass several areas to one run: runs in one checkout share a build, and a second concurrent run reports BLOCKED. `scripts/verify.sh all` runs every default area; `--help` lists them. Exceptions: `trim-clock` runs a macOS probe with no Simulator; `footage` needs the private `.detectorTestV3/` videos (it finds them in the main checkout). Read the final `PASS`, `FAIL` or `BLOCKED <reason>` line and the exit status; evidence lands in `.verification-artifacts/verify/`. A run takes minutes, so run it in the background.
 
 Unit tests, on a Simulator of your own because other agents may be running theirs:
 
@@ -64,7 +63,7 @@ The subshell exits with the test status and deletes its Simulator either way.
 
 Narrow with `-only-testing:SwingCoachTests/<TestClass>` when one file covers your change.
 
-In a git worktree, gitignored assets are missing. For the checks that need them, symlink `backend/venv`, `backend/models/pose_landmarker_heavy.task`, and `SwingCoach/ReferenceSwings/*.mp4` from the main checkout before running, and remove the links before committing.
+In a git worktree, gitignored assets are missing. For the checks that need them, symlink `tools/venv` and `SwingCoach/ReferenceSwings/*.mp4` from the main checkout before running, and remove the links before committing.
 
 Reuse a green result until code it covers changes again.
 
@@ -78,7 +77,7 @@ Reuse a green result until code it covers changes again.
 
 The Simulator has no camera, routes the Mac's microphone instead of the phone's, has no real capture frame timing, and failed Vision body-pose requests on the iOS 26.3 runtime ("Unable to setup request", October 2026). It can check UI orientation policy and audio-session control flow. Camera fps, real recording audio, device rotation, Auto detection timing, swing positions, thermal behavior, and any speed claim need the physical iPhone. Read [references/testing-ladder.md](references/testing-ladder.md) before touching the phone: it requires Ruari's readiness confirmation, holds the device IDs, and forbids uninstalling the app (that deletes Ruari's swings).
 
-Per-area traps (Photos picker, Auto deletion, backend modes) are in [references/feature-notes.md](references/feature-notes.md).
+Per-area traps (Photos picker, Auto deletion) are in [references/feature-notes.md](references/feature-notes.md).
 
 ## 5. Report
 
@@ -86,6 +85,6 @@ State one verdict per check:
 
 - **Pass**: name the assertion that observed the change, plus the artifact path.
 - **Fail**: the failing assertion and log line. Fix and rerun that check only.
-- **Blocked**: the missing condition (fixture, phone readiness, backend), and what was verified instead.
+- **Blocked**: the missing condition (fixture, phone readiness), and what was verified instead.
 
 List phone-only claims as unverified rather than inferring them from the Simulator.

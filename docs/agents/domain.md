@@ -21,7 +21,7 @@ SwingCoach uses the single-context layout:
 │   ├── 0001-example-decision.md
 │   └── 0002-another-decision.md
 ├── SwingCoach/
-└── backend/
+└── SwingCoachTests/
 ```
 
 A multi-context repo instead has a root `GLOSSARY-MAP.md` that points to context-specific `GLOSSARY.md` files and ADR directories.

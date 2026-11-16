@@ -1,6 +1,6 @@
 # Documentation Index
 
-This folder and `backend/docs` are the active documentation set.
+This folder is the active documentation set.
 
 ## Project-level
 
@@ -20,7 +20,6 @@ This folder and `backend/docs` are the active documentation set.
 - [Research supporting real-time swing detection and event-model causality](./research/swing-detector-realtime-evidence.md)
 - [Swing Detector Restart Design](./SWING_DETECTOR_DESIGN.md)
 - [Swing Detector V2 Implementation Plan](./SWING_DETECTOR_V2_IMPLEMENTATION_PLAN.md)
-- [Deployment](./DEPLOYMENT.md)
 - [Swing Annotation Research Notes](./research/swing-annotation-notes.md)
 - [Dom Caminiti Video Annotation Reference](./DOMCAMINITI_VIDEO_ANNOTATION_REFERENCE.md)
 - [Coaching knowledge library and source queue](./coaching-knowledge/README.md)
@@ -39,11 +38,6 @@ This folder and `backend/docs` are the active documentation set.
 - [Persistent UI playground and browser Simulator workflow](./UI_PLAYGROUND.md)
 - [Foundation app performance and verification](./FOUNDATION_PERFORMANCE.md)
 - [iOS console diagnostics and playback regression check](./IOS_CONSOLE_DIAGNOSTICS.md)
-
-## Backend
-
-- [Backend README](../backend/README.md)
-- [Backend Docs Index](../backend/docs/README.md)
 
 ## Maintenance Rule
 

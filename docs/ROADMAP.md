@@ -39,11 +39,11 @@ The current direction remains DTL-first. Checkpoint preparation runs on-device w
 
 ## Verification and release readiness
 
-The [verification skill](../.agents/skills/verify-swingcoach/SKILL.md) supports tickets across all epics. Its Library paging baseline has recorded proof; the feature map is not proof that every listed workflow has passed. Tickets add the relevant UI, hardware, backend, or visual checks as their completion criteria.
+The [verification skill](../.agents/skills/verify-swingcoach/SKILL.md) supports tickets across all epics. Its Library paging baseline has recorded proof; the feature map is not proof that every listed workflow has passed. Tickets add the relevant UI, hardware, or visual checks as their completion criteria.
 
 Physical-iPhone work requires session-specific readiness confirmation. Library organisation preserves originals and separates ambiguous clips for review. No media was changed by this roadmap reorganisation.
 
-Before broader release, the chosen coaching path still needs device coverage, human review of coaching claims, backend reliability checks, and clear upload, retention, deletion, and training-consent rules. These are release requirements, not completed work.
+Before broader release, the chosen coaching path still needs device coverage, human review of coaching claims, and, if a server returns, reliability checks and clear upload, retention, deletion, and training-consent rules. These are release requirements, not completed work.
 
 ## Relationship to older plans
 

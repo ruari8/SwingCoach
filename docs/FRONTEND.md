@@ -5,10 +5,11 @@ For design iteration and showing native Simulator UI in the browser, use the
 
 ## Scope
 
-The frontend is a SwiftUI app in [SwingCoach/](../SwingCoach) with three production tabs:
+The app is SwiftUI, in [SwingCoach/](../SwingCoach), with two production tabs:
 - Library
 - Capture
-- Coach (analysis)
+
+There is no server: everything, including coaching, runs on the phone.
 
 DEBUG builds can show a Replay Debug tab for detector development. The tab is controlled by the in-app Experiments settings.
 
@@ -18,24 +19,21 @@ Primary app root: [AppRootView.swift](../SwingCoach/AppRootView.swift)
 
 ### Entry and Navigation
 
-- Orientation policy: upright portrait only throughout Capture, Library, Trim, review/player, Coach, and Debug. Both Debug and Release declare only `UIInterfaceOrientationPortrait` for iPhone and iPad. iPad requests full-screen presentation for this fixed-orientation UI. There is no rotation toggle. This interface policy does not change camera capture angles or recorded-video track transforms.
+- Orientation policy: upright portrait only throughout Capture, Library, Trim, review/player, and Debug. Both Debug and Release declare only `UIInterfaceOrientationPortrait` for iPhone and iPad. iPad requests full-screen presentation for this fixed-orientation UI. There is no rotation toggle. This interface policy does not change camera capture angles or recorded-video track transforms.
 - App entry: [SwingCoachApp.swift](../SwingCoach/SwingCoachApp.swift)
 - Tab coordinator: [AppRootView.swift](../SwingCoach/AppRootView.swift)
-- Shared handoff state: `swingsToAnalyze` (passed from Library/Capture into Coach tab)
 
 ### Core Domains
 
 - Capture and camera session: [CaptureView.swift](../SwingCoach/CaptureView.swift)
 - Library and playback/import: [LibraryView.swift](../SwingCoach/LibraryView.swift)
 - Trim workflow: [TrimView.swift](../SwingCoach/TrimView/TrimView.swift)
-- Analysis UX: [AnalyseView.swift](../SwingCoach/AnalyseView.swift)
 - DEBUG replay harness: [DebugReplayView.swift](../SwingCoach/DebugReplayView.swift)
 - Experimental settings: [ExperimentalSettingsView.swift](../SwingCoach/ExperimentalSettingsView.swift)
 - Swing detail workspace: [SwingDetailView.swift](../SwingCoach/SwingDetailView.swift)
-- Shared analysis result rendering: [AnnotatedAnalysisVideo.swift](../SwingCoach/AnnotatedAnalysisVideo.swift) and [GroundedCoachingView.swift](../SwingCoach/GroundedCoachingView.swift)
-- API client: [SwingCoachAPI.swift](../SwingCoach/Models/SwingCoachAPI.swift)
 - Persistence: [SwingLibrary.swift](../SwingCoach/Models/SwingLibrary.swift)
-- Local manual analysis drawings: [ManualAnnotationStore.swift](../SwingCoach/Models/ManualAnnotationStore.swift)
+- On-device coaching: [Models/Coaching/](../SwingCoach/Models/Coaching), [SwingCoachingViews.swift](../SwingCoach/SwingCoachingViews.swift), [AutoCoachingViews.swift](../SwingCoach/AutoCoachingViews.swift)
+- Hand-drawn lines on a swing: [ManualAnnotationStore.swift](../SwingCoach/Models/ManualAnnotationStore.swift), [ManualAnnotationCanvas.swift](../SwingCoach/ManualAnnotationCanvas.swift), [SwingLineAnnotations.swift](../SwingCoach/SwingLineAnnotations.swift)
 
 ## Feature Inventory
 
@@ -60,10 +58,9 @@ Implemented feature set:
 - Personal swings are grouped into sessions (`SwingSession`), newest first. A session is a run of swings on one calendar day with no gap over 30 minutes, so a range warm-up and a later round usually split. Each session header shows the day (`Today`, `Yesterday`, or the date), time range and swing count, plus a `Select`/`Deselect` button that selects the whole session, entering multi-select if needed. Cards inside a session show their time. Sessions use `SavedSwing.createdAt`, the time a swing was added to the Library. Capture saves each swing as it is recorded, but a clip imported later from Photos or Files groups by its import time, not its recording time. Opening a session card pages through all personal swings in chronological display order.
 - A session with down-the-line swings that have positions shows a golfer icon on its header. It opens the session review: a dot a swing coloured by its verdict (a dot opens its swing), swings measured and good swings, the faults that kept repeating with `Start here` on the first and two pictures of it (the swing that shows it most, and the best one that doesn't), how the faults sit together, and each one swing by swing against its green band. Opening it queues the session's swings. See [COACHING.md](./COACHING.md).
 - `SavedSwing.isFavorite` persists starred state. Starred personal swings also appear in a `Starred` section above the sessions (hidden during multi-select), display a yellow star, and can be toggled from the card context menu or the swing detail header. Paging from a `Starred` card stays within starred swings.
-- Swing detail is now video-first: opening an unanalyzed swing shows the original video across the usable area above the tab bar, with a bottom analyze action and an optional info sheet for metadata.
-- Analyzed swings show a status indicator on their library card.
+- Swing detail is video-first: opening a swing shows the video across the usable area, with an optional info sheet for metadata.
 - Multi-select supports Photos-style slide to select: in selection mode, a drag that starts sideways on a session card selects every swing between the first card and the card under the finger, across rows and sessions. Starting on a selected card deselects the range instead, and holding near the top or bottom edge autoscrolls. Vertical drags still scroll. Verified on Simulator by `scripts/verify.sh library`.
-- Multi-select for batch analyze and batch delete. Library-only deletion removes the selected entries and app-owned copies in one collection update/save; it does not remove Photos assets. Single-item removal uses the same batch API.
+- Multi-select for batch export and batch delete. Library-only deletion removes the selected entries and app-owned copies in one collection update/save; it does not remove Photos assets. Single-item removal uses the same batch API.
 - Multi-select can export selected swings by copying the underlying Photos video resources into a temporary SwingCoach export folder, adding one `metadata.json` manifest with app, device and swing metadata (including each Auto swing's capture settings read from the diagnostics log) plus the capture diagnostics log lines of the process runs that saved the selected Auto swings, and presenting the iOS share sheet for AirDrop/Files transfer. The manifest is for dataset traceability and is shared alongside the selected videos, not embedded into each movie file.
 - Playback with loading/error states and a shared in-frame scrubber plus gesture-driven transport on the video surface.
 - Review and Trim use `SwingVideoPlayer`, an `AVPlayerViewController` with native controls and optional paused-frame analysis disabled. SwingCoach supplies its own controls; Live Text, subject copying, and Visual Look Up are not offered on these players. This prevents unused VisionKit requests from starting and being cancelled while paging. See [iOS console diagnostics](./IOS_CONSOLE_DIAGNOSTICS.md) for reproduction and remaining framework messages.
@@ -87,7 +84,7 @@ Implemented feature set:
   - `120fps HD`
   - `240fps HD` (default)
 - **Save to Photos** appears at the top of Library > gear > Experiments, under Video storage. It persists across launches and defaults to ON for new and existing users. OFF retains new Auto, Manual, and trimmed clips in app storage without requesting Photos add access or creating Photos items. Turning it on later affects future saves only.
-- Local-only clips support Library and Auto review playback, deletion, batch sharing, and analysis upload preparation. Photos validation preserves them. Library loads local thumbnails before checking Photos access, so saved previews return after relaunch even when Photos is denied. Auto review deletes a local-only clip without Photos permission and labels the action “Delete from SwingCoach”. Local originals participate in device backup; Photos-backed copies and bundled references remain excluded per file.
+- Local-only clips support Library and Auto review playback, deletion and batch sharing. Photos validation preserves them. Library loads local thumbnails before checking Photos access, so saved previews return after relaunch even when Photos is denied. Auto review deletes a local-only clip without Photos permission and labels the action “Delete from SwingCoach”. Local originals participate in device backup; Photos-backed copies and bundled references remain excluded per file.
 - Both Trim range export and **Use Full Video** obey the preference. With ON, using an entire imported Photos video reuses that asset as before. With OFF, it stores a local copy and leaves the imported original in Photos. A partial save leaves Trim open with an error and only the failed clips available for retry, avoiding duplicate saves. Analysis receives only the selected clips that saved successfully.
 - Capture workflow support:
   - `Manual`: existing record/stop flow. Stopping a recording opens Trim with any V3 ranges collected live during that recording.
@@ -115,7 +112,7 @@ Implemented feature set:
 - `scripts/verify.sh capture` also covers the Capture layout, Auto-first ordering, model-stats default/persistence/on-off behavior in both modes, disabled/unavailable/waiting/error states, portrait controls after left/right/upside-down device rotation across tabs, Trim and review, and saved review playback/paging/deletion. It drives production UI with XCUITest; the DEBUG synthetic camera supplies deterministic detector snapshots and synthetic recordings, and Auto's session shows three seeded synthetic references. Real camera preview orientation, recorded-video metadata after physical rotation, detector performance, and Photos deletion remain device checks. The Simulator pass checks the built orientation declarations for both device families (`InterfaceOrientationPolicyTests`) and drives the iPhone UI; it does not verify iPad windowing.
 - Manual → Trim → Cancel runs twice, returns through the tabs, and the runner then checks that no temporary recording is left. Physical camera capture remains a device check.
 - Slow-motion rendering is deferred until explicit clip export instead of blocking the stop-record action.
-- Integration path into library and optional analyze handoff.
+- Integration path into library.
 
 ## 3. Trim Workflow
 
@@ -145,62 +142,46 @@ Implemented feature set:
 - MVP clip export defaults to down-the-line capture; face-on remains in the data model but is not exposed as an equal capture path in the trim header.
 - Press-and-hold frame stepping with acceleration for faster long scrubs.
 - Overview-only timeline for long-session trimming, with no separate precision toggle UI.
-- `Export N Clips` saves all collected clips without opening Coach, even when analysis checkboxes are selected. `Export & Analyze N` saves all clips and queues only the checked, successfully saved library records. Checkboxes are available beneath each clip and in full-screen review. Selection starts empty, and deleting a clip removes it from the analysis selection. Capture and Library use the same `onAnalyzeSwings([SavedSwing])` handoff.
+- `Export N Clips` saves all collected clips to the library.
 - Tapping a clip pauses and seeks the preview to its start, updates the trim handles, and scrolls the timeline to reveal the playhead. Selecting another clip keeps the explicit `Update Swing` edit workflow.
 - Detected Trim ranges use the **Extra swing footage** settings captured when Trim opens, clamped to the available source. Imported slow-motion timelines convert the real-second extensions using the detector's source-time factor. Hand-marked ranges are unchanged.
 - Trim keeps its slow-motion playback and displayed time scale for fresh high-FPS captures. Its periodic observer interval scales with the preview rate to refresh every 0.1 playback seconds: at 240 fps, observe every 0.0125 source seconds at ⅛ speed. This prevents the former 0.8-second timer jumps without changing playback speed or export timing. Already-retimed imports use their existing source timeline.
-- `Review Full Screen` opens the selected collected clip in the shared `PlaybackChromeView` and `SwingReviewPager`. Swipe to adjacent clips, play, scrub, change speed, or check a clip for analysis. Review uses bounded in-memory compositions with the source audio and orientation. Done returns the reviewed clip to the editor and reveals its start on the timeline.
-- Failed Photos saves leave the unsaved clips in Trim with a visible error and remove successfully saved ranges from the retry set. The analysis handoff excludes failed saves.
-- `scripts/verify.sh trim` verifies a long Manual → Trim session, late-clip seeking, full-screen paging/playback, export-only with analysis selected, and chosen-subset handoff after relaunch. It uses a disposable Simulator, a 310-second synthetic recording with detections at 2, 150 and 300 seconds, and real Simulator Photos exports with full access, and records the Coach boundary without contacting the backend. The driver accepts the runtime Photos upgrade prompt when it appears. Unit checks cover padding/clamping, source-time scaling, saved-ID mapping and review duration/orientation. On 2026-09-07, all four unit checks and the complete focused UI case passed; the saved-file check found six 3-second clips with video and audio and exactly one selected library ID at the Coach boundary. Real range camera input, device Photos behavior and live analysis remain device/service checks.
+- `Review Full Screen` opens the selected collected clip in the shared `PlaybackChromeView` and `SwingReviewPager`. Swipe to adjacent clips, play, scrub or change speed. Review uses bounded in-memory compositions with the source audio and orientation. Done returns the reviewed clip to the editor and reveals its start on the timeline.
+- Failed Photos saves leave the unsaved clips in Trim with a visible error and remove successfully saved ranges from the retry set.
+- `scripts/verify.sh trim` verifies a long Manual → Trim session, late-clip seeking, full-screen paging and playback, and export. It uses a disposable Simulator, a 310-second synthetic recording with detections at 2, 150 and 300 seconds, and real Simulator Photos exports with full access. The driver accepts the runtime Photos upgrade prompt when it appears. Unit checks cover padding/clamping, source-time scaling and review duration/orientation; the saved-file check expects three 3-second clips with video and audio. Real range camera input and device Photos behavior remain device checks.
 - The same area injects a failure on the second Photos save (`-ui-testing-save-failure`). It checks that the other two clips save, only the failed clip remains available for retry, and retry leaves exactly three persisted clips with video and audio.
 - It also checks extra-footage setting persistence, asymmetric padding, the 240 fps preview timecode, real encoded buffer chunks spanning multiple files, early-stop completion, monotonic frame timestamps with no overlap duplication, and exported audio/video duration. The other Trim tests pass 1-second padding as launch arguments.
 - `scripts/verify.sh trim-clock` (on request) uses a generated 240 fps video and real AVPlayer at ⅛ speed on macOS to reproduce the old 0.8-second jumps and verify the production observer refreshes in 0.1-second steps.
-- Export to MP4 clips for downstream storage/analysis, with captured high-fps sessions rendered to true slow-motion during export.
+- Export to MP4 clips, with captured high-fps sessions rendered to true slow-motion during export.
 - Newly exported clips enter the library with an immediate frame thumbnail, then refresh from Photos in the background once the asset poster frame is available.
-- Library swing thumbnails show selection, analyzed state, and a yellow star for favourites. Their tap region stays inside the displayed thumbnail, including when a portrait image is cropped to fill, so it cannot cover a neighbouring card’s title.
+- Library swing thumbnails show selection and a yellow star for favourites. Their tap region stays inside the displayed thumbnail, including when a portrait image is cropped to fill, so it cannot cover a neighbouring card’s title.
 
-## 4. Coach Tab (Analysis)
-
-File: [AnalyseView.swift](../SwingCoach/AnalyseView.swift)
-
-Implemented feature set:
-- Queue multiple swings for analysis.
-- Show lightweight queue status (`pending`, `analyzing`, `failed`) without stacking full analysis cards.
-- Show recent completed analyses as dashboard rows that link back to the swing detail workspace.
-- Mark analyzed swings in local library.
-
-## 5. Swing Detail
+## 4. Swing Detail
 
 File: [SwingDetailView.swift](../SwingCoach/SwingDetailView.swift)
 
 Implemented feature set:
 - Treat a saved swing as the primary product object.
 - Show the original swing as a full-screen playback surface by default, with metadata moved behind a top-right info button and no persistent title/metadata caption over the video.
-- Once analysis exists, keep Original, Annotated, and Coach Notes behind explicit top buttons so changing the analysis view does not compete with library navigation.
-- Display original and analyzed swing playback using the shared playback chrome, including timeline, compact cycle-through playback speed control, and full-screen viewing in standalone players.
+- Play the swing in the shared playback chrome, including timeline, compact cycle-through playback speed control, and full-screen viewing in standalone players.
 - Speed cycles 0.25x, 0.5x, 0.75x, 1x on the clip's own timeline. Clips captured above 30 fps are exported as slow motion (240 fps plays 8x slower at 1x), so in Library and Auto review those clips also get a `Real` step after 1x. `Real` plays at the swing's `sourceTimeScale` (`SavedSwing.realTimePlaybackRate`), which shows the swing at real-life speed. Imports and references have no stored scale and no `Real` step. Each clip keeps its own speed.
-- Generated backend annotations are currently reset. When `annotated_video.layers` and track data are empty, the analyzed-video slide plays clean video and hides the annotation/manual rail.
-- Show swing metadata and local analysis status in the detail info sheet or video overlay instead of reserving persistent space beside the footage.
+- Show swing metadata in the detail info sheet instead of reserving persistent space beside the footage.
 - Down-the-line swings captured in the app are coached on the phone: a pill under the top bar gives the verdict ("Good swing", "That's better", or one fault), tapping it pauses on the position the fault was measured at and draws it on the video, and tapping again lists every measurement by position. The coach draws only the one fault the verdict names, and nothing on a good swing; the eye on each measurement always draws it or never draws it, and `Draw every check` draws them all. Chips, clips where the camera moved and clips whose address or impact can't be found are measured but not judged, and the pill says which. Auto review shows the same pill and drawings. Every Auto swing is queued for coaching once it has positions, and its clip is read when Auto pauses or stops; opening a swing puts it first. See [COACHING.md](./COACHING.md).
 - The info sheet lists P1–P10 for down-the-line swings captured in the app, with each position's time on the clip and the model's confidence. Opening a swing without current positions queues them. See [SWING_POSITIONS.md](./SWING_POSITIONS.md).
 - When a swing has positions, the shared player (Library and Auto review) shows a pose strip under the transport row: ten original stick-figure chips, P1 to P10. Tapping a chip jumps to that position; dragging across the strip moves one position per chip, however many frames apart they are. The timeline marks each position with a dot and spaces them by the square root of each stretch's length (`PositionScrubMapping`), so the short downswing opens up without the follow-through collapsing; the scrubber snaps onto a dot within 7 points. While scrubbing, or briefly after a jump, the time badge adds the position's name (`P4 Top · 01.6/03.0`). Moving the finger more than 44 points above or below the bar scrubs at quarter speed. Positions under 50% confidence show as `P8?` on the chip and in the badge. The rail's Positions tool hides or shows the strip and dots for every swing (`playerShowsSwingPositions`, on by default); without positions the timeline is linear. Design study: `playgrounds/ui/web/positions.html`.
-- Run the current R2-backed analysis flow for a single swing, with retry controls reserved for failed analysis attempts.
-- Attach completed analysis to the swing through `AnalysisLibrary`.
-- Analysis requests and progress belong to the submitted swing. Moving to another video keeps the first request running without moving its result or progress to the new video. Swiping back to a video with a pending request shows that request and prevents duplicate submission; failed requests remain retryable.
-- Render analyzed video and coach notes with the shared [AnnotatedAnalysisVideo.swift](../SwingCoach/AnnotatedAnalysisVideo.swift) and [GroundedCoachingView.swift](../SwingCoach/GroundedCoachingView.swift).
 - Drag left or right across the original-video surface to move between library videos without returning to the grid. The shared `SwingReviewPager` uses stable swing IDs and viewport-sized clipped pages. Its scroll-target behavior advances when the projected displacement reaches a quarter-page, and always targets the previous/current/next page relative to `context.originalTarget`, the position at the start of the gesture. Release velocity contributes to that projection, so a short flick can advance; a small slow drag returns to the current page. `ScrollTargetBehaviorProperties.limitsScrolls` enables shorter native scrolling motion so the page settles promptly after release. Restricting the destination to an adjacent page prevents a hard flick from skipping multiple videos in Library or Auto review. ScrollView still handles dragging, cancellation, and deceleration without a timed offset reset. The app keeps the previous/current/next playback items prepared to avoid a black loading handoff. Timeline dragging and stationary edge holds control playback; a moving finger cancels an edge hold. `PlaybackTransportGesture` shares the touch with the pager and distinguishes taps from holds, so releasing a hold stops frame steps without hiding the controls. Drawing mode disables horizontal paging. The header shows the current library position.
 - The review player stays fixed while its video content pages horizontally. `PlaybackChromeView` publishes only the selected page's controls to a `SwingReviewPager` overlay outside the scroll strip. Metadata, playback speed, timeline, transport buttons, pose strip, feedback, gradients, and accessories stay in place in Library and Auto review. Video and its drawn annotations move together. Each page retains its playback state; fixed controls update to act on the selected swing.
 - The player's tool rail (`PlayerToolRail`) holds, top to bottom: fold, Info (Library), Speed, Draw, Positions, and Full screen in standalone players. It uses 38-point buttons with 10-point gaps. In Library it continues the star's column one gap below it; in Auto it takes the empty top-right slot level with Done. The review screen hosts the rail outside the pages, so it stays available when transport controls hide; standalone players keep it inline. Tapping the fold button folds the tools into it (chevron down) and back (chevron up); open is the default. Tool names flash for 1.5 s on reopening and the first time the rail appears, and holding any tool shows its name instead of running it. Dragging the fold button to the other half of the screen docks the rail under Back or Done; the side is the user's choice, remembered in `playerToolRailSide` (right by default), and the transport row does not move. VoiceOver can move it with the fold button's action. A rail with a single tool (Trim review's Speed) has no fold button.
-- Swiping follows the collection opened from Library: personal videos retain the selected vantage filter and starred-first order; reference videos stay in their own collection. The order stays fixed until returning to Library, so changing a star during review does not move the current video. Opening a result from Coach reviews that one swing.
+- Swiping follows the collection opened from Library: personal videos retain the selected vantage filter and starred-first order; reference videos stay in their own collection. The order stays fixed until returning to Library, so changing a star during review does not move the current video.
 - Lock pins playback controls across next and previous clips in both Library and Auto review. Unlock applies to the entire open review and restores tap-to-hide and playback auto-hide. Each review presentation starts unlocked. Auto places delete above the timeline so it remains separate from Lock. `SwingDetailView` and `AutoSwingReviewView` own the preference and pass `controlsLocked: Binding<Bool>` to every player; omitting the binding hides Lock in standalone players.
-- The rail's Draw tool pauses playback and enables a straight-line canvas over the visible video. The transport row keeps working while drawing, so the clip can be played, paused, stepped or scrubbed to the frame to draw on. In drawing mode the tool rail hides (and, in Library, Analyze Swing and the Original / Annotated / Notes picker), and a bar at the top shows Line, Undo, Clear (red), and Done (`SwingLineControls`). Leaving the Original page ends drawing. Yellow guide lines persist per swing in `manual_annotations.json` and remain visible during playback. Drawing coordinates follow the displayed video rectangle rather than the surrounding letterbox.
+- The rail's Draw tool pauses playback and enables a straight-line canvas over the visible video. The transport row keeps working while drawing, so the clip can be played, paused, stepped or scrubbed to the frame to draw on. In drawing mode the tool rail and the coaching pill hide, and a bar at the top shows Line, Undo, Clear (red), and Done (`SwingLineControls`). Yellow guide lines persist per swing in `manual_annotations.json` and remain visible during playback. Drawing coordinates follow the displayed video rectangle rather than the surrounding letterbox.
 - The drawing tool loads the video track's dimensions and orientation before becoming available. Lines follow the visible video when resizing its viewport, and strokes beginning in the letterbox are ignored. Lines saved before this correction may need clearing and redrawing once because the old format did not record the viewport needed to repair their coordinates.
 
 Review regression checks:
 - `scripts/verify.sh review` tests Lock and explicit unlock across forward and backward paging in Library and Auto. The test also checks pinned controls during playback, restored tap-to-hide after unlocking, and a fresh unlocked Library review. It uses three synthetic videos in a disposable Simulator. Auto uses the production review with the DEBUG session fixture; this does not verify live capture or Photos on a phone.
-- `scripts/verify.sh review` also tests per-video analysis ownership and retries, oriented video dimensions, and drawing while the device rotates. `scripts/verify.sh library` drives Library filtering, the Starred and session collections (a Starred card pages through starred swings; a session card pages through all personal swings, newest first), reference navigation, then bulk deletion and relaunch persistence, after which the runner checks that only the references and their files remain on disk. No phone, Photos originals, private reference assets, backend or upload is needed.
+- `scripts/verify.sh review` also tests oriented video dimensions and drawing while the device rotates. `scripts/verify.sh library` drives Library filtering, the Starred and session collections (a Starred card pages through starred swings; a session card pages through all personal swings, newest first), reference navigation, then bulk deletion and relaunch persistence, after which the runner checks that only the references and their files remain on disk. No phone, Photos originals or private reference assets are needed.
 
-## 6. Replay Debug Tab
+## 5. Replay Debug Tab
 
 File: [DebugReplayView.swift](../SwingCoach/DebugReplayView.swift)
 
@@ -231,7 +212,7 @@ Local detector fixture workflow:
 - Run `python3 detector_workbench/validation/analyze_audio_impacts.py` to rescore audio transients on the current `test4` fixture. Audio remains diagnostic, not production capture behavior.
 - Historical V2, Vision/bright-blob, and legacy model-backed findings remain in `docs/EXPERIMENT_SWING_DETECTOR.md`; current reruns should use the V3 command above.
 
-## 7. Experimental Settings
+## 6. Experimental Settings
 
 File: [ExperimentalSettingsView.swift](../SwingCoach/ExperimentalSettingsView.swift)
 
@@ -251,7 +232,7 @@ Implemented feature set:
 ### Swing metadata
 
 - `SavedSwing` model: [SwingLibrary.swift](../SwingCoach/Models/SwingLibrary.swift)
-- Fields include: `photoAssetID`, `vantage`, `duration`, timestamps, notes, analyzed flag, favourite state, reference state, optional title, local video filename, `sourceTimeScale` (slow-motion factor, set for clips captured in the app) and `swingPositions` (P1–P10).
+- Fields include: `photoAssetID`, `vantage`, `duration`, timestamps, notes, favourite state, reference state, optional title, local video filename, `sourceTimeScale` (slow-motion factor, set for clips captured in the app) and `swingPositions` (P1–P10).
 - Persisted to app Documents as `swing_library.json`.
 
 ### Vantage model
@@ -259,71 +240,22 @@ Implemented feature set:
 - Enum in [SwingClip.swift](../SwingCoach/Models/SwingClip.swift)
 - Values: `DTL`, `Face-On`
 
-## Backend Integration Contract
-
-File: [SwingCoachAPI.swift](../SwingCoach/Models/SwingCoachAPI.swift)
-
-Current flow:
-1. `GET /upload-url`
-2. Upload MP4 directly to R2 pre-signed URL
-3. `POST /analysis-runs` with `video_key` + `vantage`
-4. Stream `GET /analysis-runs/{run_id}/events` as Server-Sent Events for stage/progress updates
-5. Fetch `GET /analysis-runs/{run_id}` when the stream reports success, then decode `result` into frontend `AnalysisResponse`
-
-The legacy synchronous `POST /analyze` endpoint remains available, but the app uses async runs for real analysis so the request no longer has to stay open through the full model/render/upload pipeline.
-If a selected backend does not yet expose `/analysis-runs` and returns `404` or `405`, the client falls back to legacy `POST /analyze` for rollout compatibility.
-
-In DEBUG builds, Library > Experiments exposes backend controls:
-- `Backend target`: `Local` (`http://127.0.0.1:8000`), `Deployed` (`https://swingcoach-api.ruari.dev`), or `Custom`.
-- `Mock analysis`: when enabled the app still exports/uploads the swing but calls `POST /mock/analyze`; when disabled it creates a real async analysis run.
-
-DEBUG defaults are `Local` and real analysis so local backend changes can be tested without deploying the VPS. The local target works directly from Simulator. On a physical iPhone, use `Custom` with the Mac's LAN URL, for example `http://192.168.1.23:8000`.
-
-Release builds use the deployed backend and real async analysis runs.
-
-Current frontend `AnalysisResponse` expectation:
-- `analysis_id: String`
-- `summary: String`
-- `metrics: [{key, name, value}]`
-- `annotated_video: {key, url, base_key?, base_url?, tracks_key?, tracks_url?, layers?}?`
-- `drills: [{title, summary}]`
-
-`annotated_video.layers` is currently expected to be empty from the reset backend pipeline. `base_url` points to the clean full-duration analyzed video, while `url` remains the compatibility MP4. `tracks_url` may point to a normalized JSON envelope on the same source timeline, but current frames contain empty `layers` objects and no guide layers or markers.
-
 ## Known Gaps and Risks
 
-1. Async analysis lifecycle
-- Run status is currently server-memory-backed. If the backend restarts while a run is active, the app will lose that run and should show the backend error.
-- SSE is one-way progress only. Cancellation, resumable background processing, and persisted run history are future work.
-
-2. Analyzed video playback
-- UI embeds the analyzed video artifact in the Coach result when available.
-- Saved analyses persist artifact keys and refresh signed video and track URLs through `POST /artifact-url` when stale.
-- Generated overlays are disabled until the next annotation contract is agreed.
-
-3. Trim-to-analyze handoff
-- Trim offers export-only and optional analysis of selected successfully saved clips.
-- Partial saves keep failed clips available for retry while analysis receives only selected successful saves. A Simulator failure-injection check verified the error and retry controls remain reachable and retry creates only the remaining clip.
-- Live backend processing still needs end-to-end verification.
-
-4. Environment setup
-- DEBUG backend target and mock/real analysis mode are configurable from Experiments. Release remains fixed to the deployed backend until a production environment selector or build configuration is needed.
-
-5. Swing auto-detection validation
+1. Swing auto-detection validation
 - On-device detection is intentionally conservative and editable, but needs device/video validation with real range sessions before it should be treated as a high-confidence practice-swing filter.
 - The live path uses `SwingDetectorV3`: YOLO object observations, Apple Vision pose, golfer/club/target relationships, and target-specific contact evidence. It should be tested heavily on irons, mats, grass, marker and downrange balls, glare, partial target occlusion, changed framing, and physical-device timing. The retired bright-blob path remains historical material only.
 
 ## Recommended Next Frontend Documentation Additions
 
-1. Add API migration checklist once async analysis-run persistence/cancellation is designed.
-2. Add screen-by-screen state diagrams for capture -> trim -> analyze.
-3. Add QA matrix (permissions, iCloud assets, missing assets, offline behavior).
+1. Add screen-by-screen state diagrams for capture -> trim -> library.
+2. Add QA matrix (permissions, iCloud assets, missing assets, offline behavior).
 
 ## Verification
 
-`scripts/verify.sh <area>` builds once (reusing `build/verify/DerivedData`), runs each area on a new disposable Simulator, deletes it, and ends with `PASS`, `FAIL` or `BLOCKED <reason>` and the artifact directory. Areas: `smoke`, `unit`, `library`, `review`, `capture`, `trim`, `storage`, or `all`. On request only: `stress`, `console`, `trim-clock`, `coach`, `footage` (see [Footage camera](./FOOTAGE_CAMERA.md)). `--only TestClass[/testMethod]` narrows an area. The runner also checks what XCTest cannot see: files left in the app container, saved clips' durations and (silent) audio, settings, and the Simulator's Photos rows. `trim` needs ffmpeg and ffprobe for that.
+`scripts/verify.sh <area>` builds once (reusing `build/verify/DerivedData`), runs each area on a new disposable Simulator, deletes it, and ends with `PASS`, `FAIL` or `BLOCKED <reason>` and the artifact directory. Areas: `smoke`, `unit`, `library`, `review`, `coaching`, `capture`, `trim`, `storage`, or `all`. On request only: `stress`, `console`, `trim-clock`, `footage` (see [Footage camera](./FOOTAGE_CAMERA.md)). `--only TestClass[/testMethod]` narrows an area. The runner also checks what XCTest cannot see: files left in the app container, saved clips' durations and (silent) audio, settings, and the Simulator's Photos rows. `trim` needs ffmpeg and ffprobe for that.
 
-The tests live in `SwingCoachUITests/` and `SwingCoachTests/` and run with plain `xcodebuild test` through the shared `SwingCoach` scheme. Its test plans, in `TestPlans/`, are `SwingCoach` (default: unit tests and default-area UI tests), `Unit`, and `OnRequest` (the 171-clip stress test and coaching). UI tests put the app in a known state with DEBUG launch arguments read by `SwingCoach/Models/UITestFixture.swift`: `-ui-testing-seed` replaces app data with a synthetic Library, and `-ui-testing-camera` replaces camera hardware. The app writes its synthetic videos itself, so no default area needs the private videos in `SwingCoach/ReferenceSwings/`.
+The tests live in `SwingCoachUITests/` and `SwingCoachTests/` and run with plain `xcodebuild test` through the shared `SwingCoach` scheme. Its test plans, in `TestPlans/`, are `SwingCoach` (default: unit tests and default-area UI tests), `Unit`, and `OnRequest` (the 171-clip stress test and the footage camera). UI tests put the app in a known state with DEBUG launch arguments read by `SwingCoach/Models/UITestFixture.swift`: `-ui-testing-seed` replaces app data with a synthetic Library, and `-ui-testing-camera` replaces camera hardware. The app writes its synthetic videos itself, so no default area needs the private videos in `SwingCoach/ReferenceSwings/`.
 
 ## Local performance verification
 
@@ -340,8 +272,6 @@ have been removed. The V2 and legacy live-model evaluators remain available unde
 Library cards continue to open swing detail. The abandoned direct-playback cover,
 old analysis card, unused transferable import wrapper, and template screen were
 removed. The active Photos picker and shared playback controls are unchanged.
-Saved analysis video URLs retain the 45-minute refresh rule, now owned by
-`SavedAnalysisVideo.needsArtifactRefresh`.
 
 ## Review paging verification
 
@@ -364,7 +294,7 @@ xcodebuild -project SwingCoach.xcodeproj -scheme SwingCoach \
   -only-testing:SwingCoachUITests/LibraryPagingUITests test
 ```
 
-Coach results use explicit Original, Annotated, and Coach Notes buttons. The remaining drag controls edit annotation tools, scrub or trim timelines, or dismiss full-screen playback; they do not page between videos.
+The remaining drag controls draw lines, scrub or trim timelines, or dismiss full-screen playback; they do not page between videos.
 
 ### Save to Photos verification
 
@@ -374,25 +304,10 @@ Coach results use explicit Original, Annotated, and Coach Notes buttons. The rem
 
 `scripts/verify.sh capture --only AutoReviewAnnotationUITests --only CaptureControlsUITests/testSavedReviewStillPlaysPagesAndDeletes` runs these Simulator checks. The synthetic camera's Auto session shows seeded synthetic references, and the test drives the production Capture review and Library UI. It verifies drawing, undo, paging isolation, reopening, disk persistence after relaunch, portrait Library controls after device rotation, clearing from either entry point, playback, and review deletion. Camera input, live detection, capture restart timing, and physical Photos deletion still require an iPhone.
 
-## Grounded coaching foundation
+## Removed: server-side coaching
 
-Coach > Practice context stores a goal, club, handedness and reported shot outcome.
-These notes accompany new analysis requests until edited. The API response now
-includes optional metric confidence/explanations and a versioned `coaching` object.
-Older saved results remain readable. New results persist the full coaching object.
+Until November 2026 the app had a third tab, Coach, and an Analyze Swing button that uploaded a clip to a FastAPI backend and showed an analyzed video and coach notes. That path was judged not useful and was removed with the backend. On-device coaching ([COACHING.md](./COACHING.md)) replaces it.
 
-Swing detail > Coach notes shows the selected focus, rationale, one cue when
-justified, reassessment and missing-evidence questions. Expand the evidence,
-source-moment and limitation sections for support. Original source links open
-externally; the shown timestamp identifies the moment. Body Reference and Hand
-Path toggles draw 2D tracks over clean analyzed video. They do not measure the
-clubface, pressure or 3D rotation. A missing model produces an explicit unavailable
-state, measured evidence and no invented correction.
-
-`scripts/verify.sh coach` (on request) runs a disposable Simulator and local-storage API
-pass. It tests real upload/analysis and persistence, plus a clearly labelled saved
-source-recommendation fixture. No live model or remote R2 requests are made.
-
-## Backend key
-
-The deployed test backend requires a shared key. The app reads it from `SwingCoach/LocalSecrets.plist` (gitignored, key `SwingCoachAPIKey`) and sends it as `X-SwingCoach-Key` on every backend call; pre-signed storage uploads and downloads do not carry it. Without the file the app sends no key, which works only against a backend with `SWINGCOACH_API_KEY` unset. The value must match `SWINGCOACH_API_KEY` in the VPS shared `.env`.
+- Results saved by older builds stay on the phone in `Documents/analysis_library.json`. Nothing reads the file.
+- `SwingCoach/LocalSecrets.plist` held the backend's API key. Nothing reads it; a local copy is ignored by git and kept out of builds, and can be deleted.
+- Older `swing_library.json` files carry an `analyzed` field on each swing. It is ignored when read and dropped on the next save.

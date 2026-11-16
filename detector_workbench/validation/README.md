@@ -146,7 +146,7 @@ overlapping four-real-second windows, preserves every local P7 peak, and
 renders video-only review sheets around selected peaks. It never reads
 SwingDetectorV3 output.
 
-Run it with the SwingCoach backend environment because the tool needs PyTorch,
+Run it with the repo's script environment (`tools/venv`) because the tool needs PyTorch,
 SciPy, Ultralytics, OpenCV, and Pillow:
 
 ```bash
