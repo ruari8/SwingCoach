@@ -83,7 +83,6 @@ struct SwingLineOverlay: View {
 
     var body: some View {
         ManualAnnotationCanvasOverlay(
-            tracks: nil,
             sourceAspectRatio: aspectRatio,
             currentTime: currentTime,
             analysisID: swing.manualAnnotationID,

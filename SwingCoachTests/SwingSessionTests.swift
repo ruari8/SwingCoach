@@ -10,7 +10,7 @@ final class SwingSessionTests: XCTestCase {
 
     private func swing(_ day: Int, _ hour: Int, _ minute: Int) -> SavedSwing {
         let date = calendar.date(from: DateComponents(year: 2026, month: 10, day: day, hour: hour, minute: minute))!
-        return SavedSwing(id: UUID(), photoAssetID: "", vantage: .dtl, duration: 3, createdAt: date, notes: nil, analyzed: false)
+        return SavedSwing(id: UUID(), photoAssetID: "", vantage: .dtl, duration: 3, createdAt: date, notes: nil)
     }
 
     func testGroupsSwingsSplitByGapsAndDaysNewestFirst() {

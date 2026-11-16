@@ -14,7 +14,6 @@ import UIKit
 
 struct LibraryView: View {
     let onNavigateToCapture: () -> Void
-    var onAnalyzeSwings: (([SavedSwing]) -> Void)? = nil
 
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var library = SwingLibrary.shared
@@ -117,16 +116,6 @@ struct LibraryView: View {
                                     .foregroundColor(.blue)
                             }
                             .disabled(isExportingSelectedSwings)
-
-                            // Analyze button
-                            if onAnalyzeSwings != nil {
-                                Button {
-                                    analyzeSelectedSwings()
-                                } label: {
-                                    Image(systemName: "wand.and.stars")
-                                        .foregroundColor(.blue)
-                                }
-                            }
 
                             // Delete button
                             Button {
@@ -244,8 +233,7 @@ struct LibraryView: View {
                     },
                     onCancel: {
                         cleanupImport()
-                    },
-                    onAnalyzeSwings: onAnalyzeSwings
+                    }
                 )
             }
             .overlay {
@@ -795,10 +783,6 @@ struct LibraryView: View {
                                 Image(systemName: "star.fill")
                                     .foregroundColor(.yellow)
                             }
-                            if swing.analyzed {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.green)
-                            }
                         }
                         .font(.system(size: 18, weight: .semibold))
                         .shadow(radius: 2)
@@ -937,12 +921,6 @@ struct LibraryView: View {
     private func deleteSelectedSwings() {
         library.removeSwings(withIDs: selectedSwings)
         exitSelectionMode()
-    }
-
-    private func analyzeSelectedSwings() {
-        let swings = library.swings.filter { selectedSwings.contains($0.id) }
-        exitSelectionMode()
-        onAnalyzeSwings?(swings)
     }
 
     private func exportSelectedSwings() {
@@ -2484,7 +2462,6 @@ private struct SwingLibraryExportManifestItem: Encodable {
     let duration: Double
     let createdAt: Date
     let notes: String?
-    let analyzed: Bool
     /// Absent for imports, manual recordings, and swings older than the log.
     var capture: CaptureRecord?
 }
@@ -2543,8 +2520,7 @@ private enum SwingLibraryBatchExporter {
                         vantage: swing.vantage.rawValue,
                         duration: swing.duration,
                         createdAt: swing.createdAt,
-                        notes: swing.notes,
-                        analyzed: swing.analyzed
+                        notes: swing.notes
                     )
                 )
             }

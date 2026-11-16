@@ -12,7 +12,7 @@ final class AutoCaptureReviewSessionTests: XCTestCase {
         camera.beginAutoReviewSession(id: newSession)
         camera.beginAutoReviewRequest(sessionID: newSession)
         let swing = SavedSwing(id: UUID(), photoAssetID: "", vantage: .dtl, duration: 4,
-                               createdAt: Date(), notes: nil, analyzed: false)
+                               createdAt: Date(), notes: nil)
 
         // Old buffer/export callbacks may arrive after the next session starts.
         camera.beginAutoReviewRequest(sessionID: oldSession)

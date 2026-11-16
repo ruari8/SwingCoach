@@ -12,9 +12,6 @@ struct AppRootView: View {
     #if DEBUG
     @AppStorage(ExperimentalSettingKey.showDebugReplayTab) private var showDebugReplayTab = true
     #endif
-    
-    // Shared state for analysis - set by Library or TrimView, consumed by AnalyseView
-    @State private var swingsToAnalyze: [SavedSwing] = []
 
     init() {
         let initialTab: Tab = ProcessInfo.processInfo.arguments.contains("-ui-testing-library")
@@ -37,34 +34,14 @@ struct AppRootView: View {
 
     private var appTabs: some View {
         TabView(selection: $selection) {
-            LibraryView(
-                onNavigateToCapture: {
-                    selection = .capture
-                },
-                onAnalyzeSwings: { swings in
-                    swingsToAnalyze = swings
-                    selection = .analyse
-                }
-            )
+            LibraryView(onNavigateToCapture: { selection = .capture })
             .tabItem { Label("Library", systemImage: "film") }
             .tag(Tab.library)
             
-            CaptureView(onAnalyzeSwings: { swings in
-                swingsToAnalyze = swings
-                selection = .analyse
-            })
+            CaptureView()
             .tabItem { Label("Capture", systemImage: "camera") }
             .tag(Tab.capture)
             
-            AnalyseView(
-                swingsToAnalyze: $swingsToAnalyze,
-                onNavigateToLibrary: {
-                    selection = .library
-                }
-            )
-            .tabItem { Label("Coach", systemImage: "wand.and.stars") }
-            .tag(Tab.analyse)
-
             #if DEBUG
             if showDebugReplayTab {
                 DebugReplayView()
@@ -98,8 +75,7 @@ private struct AutoReviewFixture: View {
                 guard let source = swings.last else { return }
                 swings.append(SavedSwing(
                     id: UUID(), photoAssetID: "", vantage: source.vantage,
-                    duration: source.duration, createdAt: Date(), notes: nil,
-                    analyzed: false, isReference: true, title: "New fixture swing",
+                    duration: source.duration, createdAt: Date(), notes: nil, isReference: true, title: "New fixture swing",
                     localVideoFilename: source.localVideoFilename
                 ))
             }
@@ -124,7 +100,6 @@ private struct AutoReviewFixtureSession: View {
 enum Tab: Hashable {
     case library
     case capture
-    case analyse
     #if DEBUG
     case debug
     #endif
