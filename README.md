@@ -84,7 +84,7 @@ Heavy local fixture videos, raw detector outputs, model-training outputs and loc
 ## Current Status
 
 - Capture, Auto capture, trim, library and swing review are implemented.
-- On-device coaching is implemented for down-the-line swings and has been checked on a Mac against range sessions. It has not run on a phone yet.
+- On-device coaching is implemented for down-the-line swings and has been checked on a Mac against range sessions. It has run on an iPhone 17 with range footage fed through Auto, not yet at the range.
 - The on-device detector is still experimental. It is useful for clip preselection and Auto, but it is not treated as a solved detection problem.
 - The product path is DTL-first. Face-on exists in the data model, but coaching, swing positions and validation are down-the-line only.
 - Voice, drills and written explanations are not built.

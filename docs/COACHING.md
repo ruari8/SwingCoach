@@ -34,7 +34,7 @@ Coaching starts from the swing's P1–P10 ([SWING_POSITIONS.md](./SWING_POSITION
 ### When a swing is measured
 
 - **Every Auto swing is queued** as soon as it has positions, so a session's swings all have coaching in the Library without being opened. Opening a swing or a session review queues what it needs too, and the swing being looked at goes first.
-- **Clips are read only while Auto is not recording**: paused for review, or stopped. A clip being read when Auto resumes is stopped and goes back to the front of the queue. Reading clips beside the camera has not been checked on a phone.
+- **Clips are read only while Auto is not recording**: paused for review, or stopped. A clip being read when Auto resumes is stopped and goes back to the front of the queue. Reading clips beside the camera has not been tried; a clip takes about 9 s on an iPhone 17 ([On the phone](#on-the-phone)).
 - **With "Measure swings while Auto records" on** (Settings › Coaching, off by default), a swing also gets a **first reading** as it is saved, from the copies of its frames Auto already holds in memory. See [The first reading during Auto](#the-first-reading-during-auto). The clip's reading replaces it later.
 
 ### Evidence
@@ -272,9 +272,27 @@ How this was arrived at, on a Mac. `Configuration.liveCopies` reads a saved clip
 - Following the club at 30 samples a second changed none of the body readings, so it was dropped: that is 10 detector calls a swing instead of about 70.
 - A swing's own verdict changes between the first reading and the clip on a fifth to two fifths of swings, mostly because the clip adds the club faults. The session's body themes don't move.
 
-**This is a Mac simulation of the reading.** It reads the saved clip to imitate the copies. The hand-over from the camera and the join to the saved swing are built but **have not run on a phone**, and the Simulator cannot run them (no Vision body pose, no camera).
+The table is a Mac simulation: it reads the saved clip to imitate the copies. The Simulator cannot run the reading at all (no Vision body pose, no camera).
 
-**Not checked:** anything on a phone. How long a first reading or a clip takes there, and whether the first reading costs frames or heat while Auto records, need a device run; `swing-coaching-live` and `swing-coaching` in the capture diagnostics carry the timings. The Simulator checks the UI against stored reports only.
+### On the phone
+
+iPhone 17, iOS 27.2.1, Debug build of `d75f001`, 16 November 2026 ([#72](https://github.com/ruari8/SwingCoach/issues/72)). Range footage fed through Auto with the [footage camera](./FOOTAGE_CAMERA.md) (test15: 71 s, test14: 206 s, 3 swings each, 8× time scale), real detector, phone plugged in on a desk. Each video ran once with "Measure swings while Auto records" off and once on, back to back.
+
+| | test15 off | test15 on | test14 off | test14 on |
+| --- | --- | --- | --- | --- |
+| Swings saved | 3 of 3 | 3 of 3 | 3 of 3 | 3 of 3 |
+| Positions ready after impact | 0.78–0.80 s | 0.78–0.79 s | 0.80–0.81 s | 0.79–0.81 s |
+| Pool drops (`outOfBuffers`) | 0 | 0 | 0 | 0 |
+| Late footage frames | 16 | 15 | 112 | 63 |
+| Detector, mean / max | 38 / 54 ms | 34 / 54 ms | 40 / 61 ms | 42 / 66 ms |
+| Thermal state, highest | nominal | nominal | nominal | fair |
+| First reading per swing | | 1.0–1.3 s | | 1.1–1.3 s |
+
+- **The first reading costs nothing measurable while Auto records.** Each swing was read from the copies before the next swing, the join to the saved swing worked, and the reports looked at had 15 body checks, with the six club checks left for the clip. Most of the 1.1 s is the person outline (0.7 s) and the club detector (0.3 s); pose is 0.1 s. The first swing after launch takes about 2.6 s while the models load.
+- The one "fair" thermal state came on the fourth run in a row; the off run of the same video, run just before, stayed nominal. Heat over a long session still needs the range.
+- **A saved clip takes 8.8 s** on the phone (median of 76; 6.0–11.5 s), against 3.5 s on a Mac: 5.5 s following the club, 2.1 s reading the position frames, 0.7 s for the outlines. Opening a swing that had not been read showed its pill after 12 s.
+- **Session review of the 15 November session** (52 swings, none read before): 7.7 minutes to read all 52. The app's memory stayed at 460–470 MB throughout (peak 535 MB), CPU about 75% of one core. It found the same body theme as the Mac harness, head stays up through impact on 36 of 47 judged swings (Mac: 36 of 48), but led with "Shaft flat: points outside the ball" (28 of 47), a camera-dependent club reading ([#71](https://github.com/ruari8/SwingCoach/issues/71)).
+- **Not checked on the phone:** a real camera at the range (cadence, heat in the sun), a clip being read when Auto resumes, and reading clips beside the camera.
 
 ## Checking a change
 
@@ -299,7 +317,8 @@ Interaction mock-ups of coaching in Auto and at home, on real swings: [UI playgr
 
 ## Next
 
-- A phone run of the first reading for speed, dropped frames and heat; then turn "Measure swings while Auto records" on by default.
+- Turn "Measure swings while Auto records" on by default: the phone run showed no cost with footage ([On the phone](#on-the-phone)); a range session should confirm heat.
+- Faster clip reading on the phone (9 s a swing, most of it following the club), so a session review doesn't take minutes.
 - A camera-placement check at setup (hand line, hand height), so club readings mean the same thing every session.
 - A better club source for the level-shaft and top-of-swing frames, a real club and swing-type reading, and zones per club. The dataset for one model that sees all of this is being curated in `../detectSwings`.
 - The clubhead trail on real range footage: it is built and drawn, but has only been seen on the fixture's synthetic track.
