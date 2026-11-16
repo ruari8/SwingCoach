@@ -197,11 +197,10 @@ final class CaptureControlsUITests: XCTestCase {
         XCTAssertTrue(back.waitForExistence(timeout: 5))
         assertPortraitAfterRotation(in: app, anchor: back, screen: "library-player")
         back.tap()
-        for tab in ["Coach", "Debug"] {
-            let button = app.tabBars.buttons[tab]
-            button.tap()
-            assertPortraitAfterRotation(in: app, anchor: button, screen: tab.lowercased())
-        }
+        let debug = app.tabBars.buttons["Debug"]
+        debug.tap()
+        assertPortraitAfterRotation(in: app, anchor: debug, screen: "debug")
+        XCTAssertFalse(app.tabBars.buttons["Coach"].exists, "The Coach tab was removed with the backend")
     }
 
     private func assertPortraitAfterRotation(in app: XCUIApplication, anchor: XCUIElement, screen: String) {
