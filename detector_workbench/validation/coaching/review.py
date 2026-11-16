@@ -5,7 +5,7 @@ draws each metric's drawing on the frame of its swing position and writes
 <out-dir>/review/<clip>.jpg plus <out-dir>/review/index.html with the
 session's numbers.
 
-Usage: backend/venv/bin/python detector_workbench/validation/coaching/review.py <out-dir> [--limit N]
+Usage: tools/venv/bin/python detector_workbench/validation/coaching/review.py <out-dir> [--limit N]
 """
 import html
 import json

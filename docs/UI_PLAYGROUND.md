@@ -54,7 +54,7 @@ It needs local media that is not in git. Coach a folder of clips with the harnes
 
 ```bash
 detector_workbench/validation/coaching/run.sh ~/Downloads/15:11_range_session /tmp/coaching-1511 --limit 0
-backend/venv/bin/python playgrounds/ui/coaching-media.py range-2026-11-15=/tmp/coaching-1511
+tools/venv/bin/python playgrounds/ui/coaching-media.py range-2026-11-15=/tmp/coaching-1511
 open playgrounds/ui/web/coaching.html
 ```
 

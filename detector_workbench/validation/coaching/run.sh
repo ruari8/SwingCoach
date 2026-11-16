@@ -28,4 +28,4 @@ swiftc -O -parse-as-library -suppress-warnings -o "$BUILD/harness" \
   SwingCoach/Models/Coaching/Coaching*.swift \
   detector_workbench/validation/coaching/harness.swift
 "$BUILD/harness" "$BUILD/SwingPositionTCN.mlmodelc" "$BUILD/SwingObjectsYOLO11n.mlmodelc" "$SCALE" "$OUT" "$CLIPS"/*.mp4
-backend/venv/bin/python detector_workbench/validation/coaching/review.py "$OUT" "$@"
+tools/venv/bin/python detector_workbench/validation/coaching/review.py "$OUT" "$@"

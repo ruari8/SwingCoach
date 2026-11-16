@@ -8,7 +8,7 @@ import unittest
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from analysis.knowledge_library import KnowledgeLibrary
+from knowledge_library import KnowledgeLibrary
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -41,7 +41,7 @@ class KnowledgeLibraryTests(unittest.TestCase):
             with urlopen(base + "/api/library") as response:
                 catalogue = json.load(response)
             self.assertEqual(len(catalogue["cases"]), 145)
-            for path in ("/media/../../backend/.env", "/backend/.env", "/media/.videos/coaching-knowledge/missing.mp4"):
+            for path in ("/media/../../AGENTS.md", "/AGENTS.md", "/media/.videos/coaching-knowledge/missing.mp4"):
                 with self.assertRaises(HTTPError) as raised:
                     urlopen(base + path)
                 self.assertEqual(raised.exception.code, 404)

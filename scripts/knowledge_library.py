@@ -1,4 +1,4 @@
-"""Source-backed coaching cases shared by the local viewer and coaching pipeline.
+"""Source-backed coaching cases, read by the local viewer.
 
 Loading a case establishes provenance, not applicability to a new golfer.
 """
@@ -15,7 +15,7 @@ class KnowledgeLibrary:
     def __init__(self, directory: Path | None = None):
         self.directory = directory or Path(os.environ.get(
             "SWINGCOACH_KNOWLEDGE_DIR",
-            str(Path(__file__).resolve().parents[2] / "docs/coaching-knowledge/sources"),
+            str(Path(__file__).resolve().parents[1] / "docs/coaching-knowledge/sources"),
         ))
         paths = sorted(self.directory.glob("*.json"))
         if not paths:

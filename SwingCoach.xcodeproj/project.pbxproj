@@ -34,6 +34,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				LocalSecrets.plist,
 				ReferenceSwings/README.md,
 			);
 			target = 9B7EC8A52EB6312D00BE1B9C /* SwingCoach */;

@@ -33,8 +33,16 @@ xcuserdata/
 DerivedData/
 .verification-artifacts/
 
-# Shared API key for the test backend (see SwingCoachAPI.apiKey)
+# The retired backend's API key. Nothing reads it; kept ignored so an old
+# local copy is never committed.
 SwingCoach/LocalSecrets.plist
+
+# The backend was removed from the repo. A checkout that had one can still
+# hold its untracked .env, venv and model weights here.
+/backend/
+
+# Python environment for repo scripts (tools/requirements.txt)
+tools/venv
 
 # Explainer videos (audio, renders)
 explainers/
