@@ -27,6 +27,8 @@ import Foundation
 ///   the newest swing has only a first reading from Auto (body checks), the
 ///   one before it has none, and reading a clip takes that many seconds and
 ///   gives the fixture's full report (or fails) instead of running Vision.
+/// - `-ui-testing-coaching-short`, with the `coaching` seed: the oldest swing
+///   is a chip, measured but not judged.
 ///
 /// Any `-ui-testing` argument also keeps private bundled reference videos out
 /// of the Library, so results never depend on them.
@@ -203,6 +205,7 @@ extension UITestFixture {
                 if simulatedClipRead != nil, index == 3 { continue }
                 // The third swing of the session is the clean one.
                 var report = fixtureCoachingReport(steep: index != 2)
+                if index == 0, arguments.contains("-ui-testing-coaching-short") { report.swingLength = .short }
                 if simulatedClipRead != nil, index == 4 {
                     // A first reading from Auto's copies: body checks, no evidence file.
                     report.fromLiveCopies = true

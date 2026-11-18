@@ -762,8 +762,10 @@ struct SwingCoachingPanel: View {
             .padding(.horizontal, 10)
             .frame(minHeight: 32)
             .background(Capsule().strokeBorder(.white.opacity(0.35), lineWidth: 1))
+            // 44 points to tap, without making the row taller.
+            .padding(.vertical, 6)
             .contentShape(Rectangle())
-            .padding(.vertical, -4)
+            .padding(.vertical, -6)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Every check on this swing")
@@ -1035,6 +1037,9 @@ struct CoachingLayersSheet: View {
                 }
             }
         }
+        // Dark like the player behind it, in the app's lime, not system blue.
+        .preferredColorScheme(.dark)
+        .tint(.swingPositionAccent)
     }
 
     private func row(_ title: String, _ detail: String) -> some View {
@@ -1053,12 +1058,17 @@ struct CoachingLayersChangedTag: View {
         HStack(spacing: 10) {
             Text("Your drawings")
                 .font(.subheadline.weight(.semibold))
-            Button("Reset") { layers = .coachsChoice }
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(.black)
-                .padding(.horizontal, 12)
-                .frame(minHeight: 32)
-                .background(Capsule().fill(Color.white))
+            Button { layers = .coachsChoice } label: {
+                Text("Reset")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, 12)
+                    .frame(minHeight: 32)
+                    .background(Capsule().fill(Color.white))
+                    .padding(.vertical, 6)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
                 .accessibilityLabel("Reset drawings to the coach's choice")
                 .accessibilityIdentifier("coaching-layers-reset")
         }
@@ -1133,6 +1143,8 @@ struct SwingCoachingChecks: View {
                 }
             }
         }
+        .preferredColorScheme(.dark)
+        .tint(.swingPositionAccent)
     }
 
     private var summary: String {

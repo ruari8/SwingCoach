@@ -67,8 +67,9 @@ final class PlayerPositionsUITests: XCTestCase {
         let star = app.buttons["Star swing"]
         XCTAssertEqual(fold.frame.midX, star.frame.midX, accuracy: 1)
         XCTAssertEqual(fold.frame.minY - star.frame.maxY, 10, accuracy: 1)
+        // The clip can be coached, so the rail has the coaching Drawings tool too.
         assertToolOrder(app, ["player-tools-fold", "Show swing metadata", "Change playback speed",
-                              "Draw straight lines", "Hide swing positions"])
+                              "Draw straight lines", "Choose coaching drawings", "Hide swing positions"])
 
         fold.tap()
         XCTAssertEqual(fold.label, "Show player tools")
@@ -79,10 +80,11 @@ final class PlayerPositionsUITests: XCTestCase {
         fold.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.05, thenDragTo: app.coordinate(
             withNormalizedOffset: CGVector(dx: 0.12, dy: fold.frame.midY / app.frame.height)))
         let back = app.buttons["Back to library"]
+        // Done is wider than a rail button: the rail hangs inside its width.
         let docked = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            abs(fold.frame.midX - back.frame.midX) < 1
+            fold.frame.midX > back.frame.minX && fold.frame.midX < back.frame.maxX && fold.frame.minY > back.frame.maxY
         }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [docked], timeout: 2), .completed, "The rail must dock under Back")
+        XCTAssertEqual(XCTWaiter.wait(for: [docked], timeout: 2), .completed, "The rail must dock under Done")
         XCTAssertLessThan(draw.frame.midX, app.frame.midX)
         attach(app, "tool-rail-docked-left")
 

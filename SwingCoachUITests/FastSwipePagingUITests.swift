@@ -74,9 +74,12 @@ private struct FastSwipeChecks {
         app.buttons["Close swing review"].tap()
         app.buttons["Append fixture swing"].tap()
         app.buttons["Review fixture swings"].tap()
-        assertPage(app, count - 1, of: count - 1, title: "New fixture swing")
+        // The new swing is the newest and sits last, after the references
+        // (newest first): it is the last swing hit, and the page before it
+        // is the oldest reference left.
+        assertPage(app, count - 1, of: count - 1, title: "New fixture swing", counter: "Swing \(count - 1) of \(count - 1)")
         app.swipeRight()
-        assertPage(app, count - 2, of: count - 1, title: "Reference swing \(count - 1)")
+        assertPage(app, count - 2, of: count - 1, title: "Reference swing \(count - 1)", counter: "Swing 1 of \(count - 1)")
     }
 
     private func deleteSelectedSwing(_ app: XCUIApplication) {
@@ -100,11 +103,12 @@ private struct FastSwipeChecks {
         }
     }
 
+    /// `counter` overrides the label when the pages are not newest first.
     private func assertPage(_ app: XCUIApplication, _ number: Int, of total: Int? = nil, title: String? = nil,
-                            file: StaticString = #filePath, line: UInt = #line) {
+                            counter: String? = nil, file: StaticString = #filePath, line: UInt = #line) {
         let position = app.staticTexts["swing-position"]
         XCTAssertTrue(position.waitForExistence(timeout: 5), file: file, line: line)
-        let expected = swingCounter("\(number) of \(total ?? count)")
+        let expected = counter ?? swingCounter("\(number) of \(total ?? count)")
         let settled = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "label == %@", expected), object: position)
         XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 3), .completed,

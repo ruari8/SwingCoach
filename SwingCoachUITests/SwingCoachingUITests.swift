@@ -127,6 +127,20 @@ final class SwingCoachingUITests: XCTestCase {
         attach(app, "coaching-read-failed")
     }
 
+    func testSwingThatIsNotJudgedSaysWhyAndDrawsNothing() {
+        let app = XCUIApplication.launched(seed: "coaching", ["-ui-testing-library", "-ui-testing-coaching-short"])
+        app.openLibraryCard("10:00", sessionCard: true)
+        let title = app.staticTexts["coaching-step-title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        XCTAssertEqual(title.label, "Short swing, not judged")
+        XCTAssertTrue(app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label BEGINSWITH %@", "A chip or pitch.")).firstMatch.exists)
+        XCTAssertFalse(app.buttons["coaching-next"].exists)
+        XCTAssertFalse(app.descendants(matching: .any)["coaching-caption-headHeightTop"].exists)
+        XCTAssertFalse(app.buttons["swing-position-P5"].label.contains("out of zone"), "No levels on a swing that isn't judged")
+        attach(app, "coaching-not-judged")
+    }
+
     func testSessionReviewShowsTheThemeItsPicturesAndEachSwing() {
         let app = XCUIApplication.launched(seed: "coaching", ["-ui-testing-library"])
         XCTAssertTrue(app.buttons["Filter swings"].waitForExistence(timeout: 10))
