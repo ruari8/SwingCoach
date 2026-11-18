@@ -24,7 +24,9 @@ Down-the-line clips captured in the app only. Face-on, imports and reference swi
 | Evidence to a report: a value, level and drawing per metric | `CoachingAnalyzer.swift` |
 | What to say: one fault per swing, session themes | `CoachingFeedback.swift` |
 | Background queue, live readings and saved results | `SwingCoachingStore.swift`, `CoachingLiveJoin.swift` |
-| Drawings on the video, verdict pill, measurement list, session review | `SwingCoach/SwingCoachingViews.swift` |
+| The walkthrough's order (verdict first, then the other faults in swing order) and the club-head trail | `CoachingWalkthrough.swift` |
+| In the player: step card, drawings, club path, marks on the pose strip, the Drawings tool, every check | `SwingCoach/CoachingPlayerViews.swift` |
+| Session review | `SwingCoach/SwingCoachingViews.swift` |
 | On the Auto camera screen: coach chip, latest verdict, recap, comparison | `SwingCoach/AutoCoachingViews.swift` |
 
 Coaching starts from the swing's P1–P10 ([SWING_POSITIONS.md](./SWING_POSITIONS.md)). It needs the app's own copy of the clip.
@@ -151,14 +153,32 @@ The 3.5 was set against the pros: 79 of the 94 judged pro swings (84%) come out 
 
 ## In the app
 
-- **Swing detail and Auto review:** a pill under the top bar shows the verdict. The first tap pauses on the position the fault was measured at and draws it; the next tap opens every measurement grouped by position. Tapping a measurement jumps to it.
-- **Drawings** show while the playhead is within one position slot of the frame they were measured on, so they hold when paused there and pass by when playing.
-- **What is drawn:** the coach decides by default. It draws the one fault the verdict names, by every metric that shows it (standing up through impact can draw the hip line, the trail knee and the head box together), and **nothing on a good swing**, however many measurements sit a little outside their zones. In the measurement list, the eye on a check always draws it or never draws it, "Draw every check" draws them all, and "Let the coach decide" clears both. Choices apply to every swing.
+### In the player (Library and Auto review)
+
+Library and Auto review use the same player, the same top row (Done, "Swing 3 of 5" counted in the order hit, the star) and the same coaching.
+
+- **Opens on the coach's first step.** Every way into a swing (Library card, Auto thumbnail, the verdict on the camera screen, a session dot) opens it paused on the frame of its first step, with that step's drawing up. No tap is needed.
+- **The step card** under the video says where in the swing ("Halfway down, step 1 of 2"), the one sentence, the numbers against good players ("You: +20°. Good players: −16° to +6°."), which colour is which (Address, Good players, This swing) and, for a club check, that it depends on where the camera stands. A level shows as a number in a circle, a tick in zone, so colour is never the only cue.
+- **Steps:** first the verdict: the one pointer, "Good swing" (its checks in zone at impact, or where most are, drawn green), "That's better", or "not judged" with the reason and nothing drawn. Then every other fault on the swing, one step each, in swing order (`CoachingWalkthrough`). Supporting checks of the same fault on the same frame draw together. Next and Back move between steps; the last step's main button is Play swing.
+- **On a step** the drawing builds up: address in white, then the green zone, then the swing in its level's colour, each with its number in a tag on the drawing. With Reduce Motion it fades in at once. If the drawing would sit under the card, the video lifts so it clears it.
+- **Playing:** each step's drawing appears at its own frame and holds, faded, until the next step's frame, so it can be read at speed. The club head's path draws as the swing plays.
+- **Paused anywhere else** nothing is drawn, so a drawing only ever sits on the frame it was measured on. The card folds to one line with the verdict; tapping it always goes back to the first step.
+- **The pose strip** marks each position with a judged check: the furthest level out there in its colour, a tick when all are in zone, a ring on the first step. Tapping a marked position shows its step.
+- **All checks** (on the card) lists every measurement by position in words, each with a picture of its frame and drawing, its value against good players and how many steps out it is. Picking one pauses on its frame and shows it on the card, with "Back to the coach".
+- **The Drawings tool** in the player's rail turns the coach's drawings, the club path, and every check on the paused frame on or off, in golf words. The choice lasts for the review and covers every swing in it. While it differs from the coach's, the video says "Your drawings" with Reset.
+- **Reading:** a swing without a reading says "Reading this swing", about 10 seconds on a phone, and how many swings are ahead of it; while Auto records it says it starts when Auto pauses. A failed read says why with Try again. A first reading from Auto says "Body checks only" and that the club checks are coming; when the clip's reading replaces it the card says "Club checks added" and, if the verdict changed, what the body checks alone said. If the golfer hasn't moved through the steps, the player moves to the new first step.
+
+### Club-head trail
+
+The clip's reading follows the club from P1 to P9 (60 samples a real second, every frame through the downswing; see [Club timing](#club-timing)) and stores up to three club-head detections per sample in `evidence.track`. That is enough for a trail. `CoachingClubTrail` keeps one detection per sample, the one nearest the last kept point, drops a detection that sits still in most samples (a bag, a spare club) or jumps further than a club head can move, and fills gaps up to 0.12 real seconds in a straight line, drawn dashed. A first reading from Auto's copies has no track, so it has no trail until the clip is read. The trail is lime, the club colour of the pose strip, never a level's colour: club readings depend on where the camera stands.
+
+### Elsewhere
+
 - **Auto camera screen:** a chip under the top bar sets when the coach speaks: every swing, every 5 swings (the default), every 10, or only when asked. Swings are measured either way.
-  - *Every swing:* the latest swing's verdict sits above the saved-swings button; tapping it opens that swing.
-  - *Every 5 or 10:* when that many more swings of the session have been measured, a recap card comes up: the fault at least three of them (and half of those where it could be seen) shared, a bar per swing, and "Compare them". A bar is green where the theme's check was in zone, amber or red by how far out the swing was, an outline where the check was out the other way (a different fault, not the theme), and grey where the swing wasn't judged. With nothing repeating it says so and how many needed no pointer. Swings already measured when the camera opened, or when the setting changed, are passed over, and deleting a swing doesn't bring an old recap back.
+  - *Every swing:* the latest swing's verdict sits above the saved-swings button as a card big enough to read from the tee ("Swing 5", the sentence, its level, Look); it opens that swing on its first step.
+  - *Every 5 or 10:* when that many more swings of the session have been measured, a recap card comes up: the fault at least three of them (and half of those where it could be seen) shared, a bar per swing, a picture of the swing that shows it most, and "Compare them". A legend under the bars names their fills. A bar is green where the theme's check was in zone, amber or red by how far out the swing was, an outline where the check was out the other way (a different fault, not the theme), and grey where the swing wasn't judged. With nothing repeating it says so and how many needed no pointer. Swings already measured when the camera opened, or when the setting changed, are passed over, and deleting a swing doesn't bring an old recap back.
   - *Only when asked:* nothing comes up. "Recap the last swings" in the chip's menu shows the recap of the last five measured at any time, in every setting.
-  - "Compare them" pauses Auto and shows the recap's swings side by side at the theme's position, each with the theme's drawing and its level. Tapping one opens it in the player.
+  - "Compare them" pauses Auto and shows the recap's swings side by side at the theme's position, each with the theme's drawing and its level. Tapping one opens it in the player on the check in the picture; Back returns to the comparison.
 - **Library:** the golfer icon on a session header opens the session review:
   - a dot a swing in the order hit, coloured by its verdict; a dot opens its swing
   - swings measured, good swings (counted the way the swings' own pills read, "That's better" included) and swings not judged
@@ -167,7 +187,7 @@ The 3.5 was set against the pros: 79 of the 94 judged pro swings (84%) come out 
   - each theme's metric swing by swing against its green band
 
   Opening it queues the session's swings.
-- **Settings › Coaching:** drawings on or off, when the coach speaks in Auto, and "Measure swings while Auto records".
+- **Settings › Coaching:** when the coach speaks in Auto, and "Measure swings while Auto records". Drawings are chosen in the player.
 
 Coaching runs in the background, one swing at a time. A swing deleted while it is being read saves nothing. Without measuring while Auto records, nothing is measured until Auto pauses or stops, so on the camera screen the verdict and the recaps only catch up then.
 
@@ -261,7 +281,7 @@ How this was arrived at, on a Mac. `Configuration.liveCopies` reads a saved clip
 scripts/verify.sh coaching
 ```
 
-runs `SwingCoachingUITests` (the `coaching` launch fixture: five swings with stored reports; with the synthetic camera they are the Auto session) and `SwingCoachingTests` (levels, measurements on synthetic evidence, club timing, the not-judged checks, the feedback rules, recaps and their schedule, the join of a first reading to its swing, the session review's examples).
+runs `SwingCoachingUITests` (the `coaching` launch fixture: five swings with stored reports and a synthetic club track; with the synthetic camera they are the Auto session; `-ui-testing-coaching-reads <seconds>|fail` stands in for a clip read so the first-reading, reading and failed states can be checked), `CoachingWalkthroughTests` (step order, good and not-judged steps, the trail) and `SwingCoachingTests` (levels, measurements on synthetic evidence, club timing, the not-judged checks, the feedback rules, recaps and their schedule, the join of a first reading to its swing, the session review's examples).
 
 No test covers the store's queue (pausing for Auto, a swing deleted mid-run, a first reading end to end) or checks a drawing's shapes against its number; both were reviewed by reading and by the review sheets.
 
@@ -281,4 +301,5 @@ Interaction mock-ups of coaching in Auto and at home, on real swings: [UI playgr
 - A phone run of the first reading for speed, dropped frames and heat; then turn "Measure swings while Auto records" on by default.
 - A camera-placement check at setup (hand line, hand height), so club readings mean the same thing every session.
 - A better club source for the level-shaft and top-of-swing frames, a real club and swing-type reading, and zones per club. The dataset for one model that sees all of this is being curated in `../detectSwings`.
-- The clubhead path as a drawing, face-on metrics, then voice and drills on top of the verdicts.
+- The club-head trail on real range footage: it is built and drawn, but has only been seen on the fixture's synthetic track.
+- Face-on metrics, then voice and drills on top of the verdicts.

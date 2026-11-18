@@ -104,7 +104,7 @@ private struct FastSwipeChecks {
                             file: StaticString = #filePath, line: UInt = #line) {
         let position = app.staticTexts["swing-position"]
         XCTAssertTrue(position.waitForExistence(timeout: 5), file: file, line: line)
-        let expected = "\(number) of \(total ?? count)"
+        let expected = swingCounter("\(number) of \(total ?? count)")
         let settled = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "label == %@", expected), object: position)
         XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 3), .completed,

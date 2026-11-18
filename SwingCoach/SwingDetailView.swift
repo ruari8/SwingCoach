@@ -164,8 +164,9 @@ struct SwingDetailView: View {
         // The player's tool rail starts one gap under the star, or under
         // Done when docked left, without moving the top row.
         .overlay {
+            // Centred under the star, which is wider than a rail button.
             cornerControls
-                .padding(.horizontal, 14)
+                .padding(.horizontal, ReviewTopBar.railInset)
                 .padding(.top, 6)
         }
     }

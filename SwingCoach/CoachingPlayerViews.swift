@@ -548,10 +548,9 @@ struct SwingCoachingPanel: View {
 
     private var readingDetail: String {
         if store.isWaitingForAuto { return "It starts when Auto pauses. The video plays meanwhile." }
-        switch store.queuePosition(of: swing) {
-        case 0?: return "About 10 seconds on the phone. The video plays meanwhile."
-        case let ahead? where ahead > 1:
-            return "\(ahead - 1) swing\(ahead == 2 ? "" : "s") ahead of it, about 10 seconds each. The video plays meanwhile."
+        switch store.swingsAhead(of: swing) {
+        case let ahead? where ahead > 0:
+            return "\(ahead) swing\(ahead == 1 ? "" : "s") ahead of it, about 10 seconds each on the phone. The video plays meanwhile."
         default: return "About 10 seconds on the phone. The video plays meanwhile."
         }
     }

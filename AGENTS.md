@@ -81,7 +81,8 @@ SwingCoach/
 | Settings (gear icon in Library; there is no `SettingsView`) | `SwingCoach/ExperimentalSettingsView.swift` |
 | Swing detail | `SwingCoach/SwingDetailView.swift` |
 | Lines drawn by hand on a swing | `SwingCoach/SwingLineAnnotations.swift`, `ManualAnnotationCanvas.swift` |
-| On-device coaching: drawings, verdict pill, measurement list, session review | `SwingCoach/SwingCoachingViews.swift` |
+| Coaching in the player (Library and Auto): step card, drawings, club path, strip marks, Drawings tool, every check | `SwingCoach/CoachingPlayerViews.swift` |
+| Coaching colours and the session review | `SwingCoach/SwingCoachingViews.swift` |
 | Coaching on the Auto camera screen: coach chip, recap, comparison | `SwingCoach/AutoCoachingViews.swift` |
 | Left/right swing paging | `SwingCoach/SwingReviewPager.swift` |
 | Capture tab, manual + Auto | `SwingCoach/CaptureView.swift` |
@@ -97,7 +98,7 @@ The live detector is `SwingCoach/Models/SwingDetectorV3/` (used by `CaptureView`
 
 ### Coaching (on-device)
 
-`SwingCoach/Models/Coaching/` measures a down-the-line swing on the phone: evidence from Vision pose, person segmentation and the club detector at P1–P10, 21 metrics with zones and levels, a drawing per metric, one pointer per swing, recaps every few swings and session themes. Chips, moved cameras and unclear positions are measured but not judged. Every Auto swing is queued and its clip read when Auto pauses or stops; a setting (off by default) adds a first reading of the body checks while Auto records, from the live copies of the frames. UI is `SwingCoach/SwingCoachingViews.swift` and `SwingCoach/AutoCoachingViews.swift`. No backend. Zones come from 96 pro swings; nothing has run on a phone yet. Design, metric table and the Mac review harness: [COACHING.md](./docs/COACHING.md).
+`SwingCoach/Models/Coaching/` measures a down-the-line swing on the phone: evidence from Vision pose, person segmentation and the club detector at P1–P10, 21 metrics with zones and levels, a drawing per metric, one pointer per swing, recaps every few swings and session themes. Chips, moved cameras and unclear positions are measured but not judged. Every Auto swing is queued and its clip read when Auto pauses or stops; a setting (off by default) adds a first reading of the body checks while Auto records, from the live copies of the frames. A swing opens paused on the coach's first step with its drawing up, and a card walks the other faults in swing order (`CoachingWalkthrough.swift`). UI is `SwingCoach/CoachingPlayerViews.swift`, `SwingCoach/SwingCoachingViews.swift` and `SwingCoach/AutoCoachingViews.swift`. No backend. Zones come from 96 pro swings; nothing has run on a phone yet. Design, metric table and the Mac review harness: [COACHING.md](./docs/COACHING.md).
 
 ### Swing positions
 

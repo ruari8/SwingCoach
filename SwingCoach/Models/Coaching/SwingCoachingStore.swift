@@ -142,11 +142,12 @@ final class SwingCoachingStore: ObservableObject {
         return trail
     }
 
-    /// Where the swing is in the reading queue: 0 while it is being read,
-    /// 1 when it is next, nil when it isn't waiting.
-    func queuePosition(of swing: SavedSwing) -> Int? {
+    /// How many swings will be read before this one: 0 while it is being
+    /// read or when it is next, nil when it isn't waiting.
+    func swingsAhead(of swing: SavedSwing) -> Int? {
         if running?.live == false, running?.id == swing.id { return 0 }
-        return queue.firstIndex(of: swing.id).map { $0 + 1 }
+        guard let index = queue.firstIndex(of: swing.id) else { return nil }
+        return index + (running == nil ? 0 : 1)
     }
 
     /// True when Auto is recording, so clips wait.

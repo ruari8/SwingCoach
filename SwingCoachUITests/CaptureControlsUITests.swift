@@ -117,7 +117,7 @@ final class CaptureControlsUITests: XCTestCase {
         saved.tap()
         let position = app.staticTexts["swing-position"]
         XCTAssertTrue(position.waitForExistence(timeout: 5))
-        XCTAssertEqual(position.label, "3 of 3")
+        XCTAssertEqual(position.label, swingCounter("3 of 3"))
         let close = app.buttons["Close swing review"]
         XCTAssertTrue(close.exists)
         XCTAssertTrue(app.buttons["Delete this swing"].exists)
@@ -133,14 +133,14 @@ final class CaptureControlsUITests: XCTestCase {
         let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.43))
         start.press(forDuration: 0.05, thenDragTo: end)
         let paged = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            position.label == "2 of 3"
+            position.label == swingCounter("2 of 3")
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [paged], timeout: 5), .completed)
         attach(app, "auto-review-shared-player")
         app.buttons["Delete this swing"].tap()
         app.buttons["Delete from SwingCoach"].tap()
         let deleted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            position.label == "2 of 2"
+            position.label == swingCounter("2 of 2")
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [deleted], timeout: 5), .completed)
         close.tap()

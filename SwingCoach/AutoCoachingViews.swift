@@ -244,13 +244,15 @@ struct CoachingRecapCard: View {
                                 .font(.title3.weight(.bold))
                                 .fixedSize(horizontal: false, vertical: true)
                         }
-                        Text("\(theme.swings) of \(theme.measured) swings · P\(theme.position) \(SwingPosition.names[theme.position - 1].lowercased())")
+                        Text("\(theme.swings) of \(theme.measured) swings, \(CoachingWalkthrough.place(theme.position).lowercased()) (P\(theme.position))")
                             .font(.footnote)
                             .foregroundStyle(.white.opacity(0.78))
+                            .fixedSize(horizontal: false, vertical: true)
                         if CoachingMetricDefinition.definition(theme.metric).dependsOnCamera {
-                            Text("A club reading: it shifts with where the camera stands.")
+                            Text("A club reading: it depends on where the camera stands.")
                                 .font(.caption)
-                                .foregroundStyle(.white.opacity(0.72))
+                                .foregroundStyle(.white.opacity(0.75))
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                     Spacer(minLength: 0)
@@ -422,9 +424,11 @@ struct CoachingCompareView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(theme.text).font(.title3.weight(.bold))
-                        Text("P\(theme.position) \(SwingPosition.names[theme.position - 1].lowercased()) · white is where you were at address, green is where good players are, the colour is this swing")
+                        Text("\(CoachingWalkthrough.place(theme.position)) (P\(theme.position)) on each swing. Tap one to walk through it.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+                        CoachingLegend(results: Array(swings.lazy.compactMap { store.report(for: $0.swing)?.metric(theme.metric) }.prefix(1)))
+                            .padding(.top, 4)
                     }
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 14) {
                         ForEach(swings, id: \.swing.id) { entry in

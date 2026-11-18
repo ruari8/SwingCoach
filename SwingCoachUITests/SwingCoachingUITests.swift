@@ -3,52 +3,128 @@ import XCTest
 /// On-device coaching in the review player, the session review and on the
 /// Auto camera screen, on the `coaching` seed: five DTL clips in one
 /// session with stored reports, four of which steepen the shaft in
-/// transition (drawn at P5, 1.85 s). With the synthetic camera, those five
-/// are the Auto session.
+/// transition (drawn at P5, 1.85 s); hips are one step out at P7 (1.95 s)
+/// and the head is in zone at P4 (1.6 s). With the synthetic camera, those
+/// five are the Auto session.
 final class SwingCoachingUITests: XCTestCase {
-    func testVerdictJumpsToItsDrawingAndListsTheMeasurements() throws {
+    func testSwingOpensOnItsPointerAndWalksThroughTheFindings() throws {
         let app = XCUIApplication.launched(seed: "coaching", ["-ui-testing-library"])
         app.openLibraryCard("Coaching DTL", sessionCard: true)
-        let pill = app.buttons["swing-coaching-pill"]
-        XCTAssertTrue(pill.waitForExistence(timeout: 5))
-        XCTAssertEqual(pill.label, "Coaching: Shaft steepens coming down")
         let timeline = try XCTUnwrap(app.otherElements.matching(identifier: "playback-timeline")
             .allElementsBoundByIndex.first { $0.isHittable })
+        let title = app.staticTexts["coaching-step-title"]
+        let count = app.staticTexts["coaching-step-count"]
         let transitionCaption = app.descendants(matching: .any)["coaching-caption-transition"]
         let hipsCaption = app.descendants(matching: .any)["coaching-caption-hipDepthImpact"]
 
-        // First tap: pause on the position the finding was measured at.
-        pill.tap()
+        // No tap: paused on the pointer's frame with its drawing up.
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        XCTAssertEqual(title.label, "Shaft steepens coming down")
+        XCTAssertEqual(count.label, "Halfway down, step 1 of 2")
         XCTAssertEqual(Double(timeline.value as? String ?? "") ?? 0, 1.85, accuracy: 0.01)
         XCTAssertTrue(app.buttons["swing-position-P5"].isSelected)
-        XCTAssertTrue(transitionCaption.waitForExistence(timeout: 2), "The drawing is captioned")
-        XCTAssertTrue(transitionCaption.label.contains("Shaft steepens coming down"), transitionCaption.label)
-        attach(app, "coaching-drawing-on-P5")
+        XCTAssertTrue(app.buttons["swing-position-P5"].label.contains("out of zone, up to level 5, the coach starts here"))
+        XCTAssertTrue(transitionCaption.waitForExistence(timeout: 2), "The drawing carries its number")
+        XCTAssertTrue(app.descendants(matching: .any)["coaching-legend"].exists)
+        XCTAssertFalse(app.buttons["Play"].exists, "On a step the card carries Play")
+        attach(app, "coaching-step-1")
 
-        // Second tap: every measurement, grouped by position.
-        pill.tap()
+        // Next: the other fault, in swing order.
+        app.buttons["coaching-next"].tap()
+        XCTAssertTrue(hipsCaption.waitForExistence(timeout: 3))
+        XCTAssertEqual(title.label, "Hips moved toward the ball")
+        XCTAssertEqual(count.label, "At impact, step 2 of 2")
+        XCTAssertEqual(Double(timeline.value as? String ?? "") ?? 0, 1.95, accuracy: 0.01)
+        XCTAssertFalse(transitionCaption.exists, "A drawing shows only on its own frame")
+        XCTAssertFalse(app.buttons["coaching-next"].exists, "The last step offers Play instead")
+        app.buttons["coaching-back"].tap()
+        XCTAssertEqual(title.label, "Shaft steepens coming down")
+
+        // Away from the walkthrough's frames nothing is drawn, and one line
+        // brings the walkthrough back.
+        app.buttons["swing-position-P1"].tap()
+        XCTAssertFalse(transitionCaption.exists)
+        XCTAssertFalse(hipsCaption.exists)
+        let folded = app.buttons["swing-coaching-pill"]
+        XCTAssertTrue(folded.waitForExistence(timeout: 2))
+        XCTAssertEqual(folded.label, "Coaching: Shaft steepens coming down")
+        XCTAssertTrue(app.buttons["Play"].exists, "Off the walkthrough the transport row is back")
+        folded.tap()
+        XCTAssertEqual(Double(timeline.value as? String ?? "") ?? 0, 1.85, accuracy: 0.01)
+
+        // Every check, with its numbers; picking one shows it on its frame.
+        app.buttons["coaching-all-checks"].firstMatch.tap()
         let summary = app.descendants(matching: .any)["coaching-summary"]
         XCTAssertTrue(summary.waitForExistence(timeout: 3))
-        XCTAssertTrue(summary.label.contains("1 of 3 measurements in zone."), summary.label)
-        XCTAssertTrue(app.buttons["coaching-metric-headHeightTop"].exists)
-        attach(app, "coaching-measurements")
-        // Impact is further down the list.
-        let hips = app.buttons["coaching-metric-hipDepthImpact"]
-        for _ in 0..<3 where !(hips.exists && hips.isHittable) {
-            app.collectionViews.firstMatch.swipeUp(velocity: .slow)
-        }
-        XCTAssertTrue(hips.exists && hips.isHittable)
+        XCTAssertTrue(summary.label.contains("1 of 3 checks in zone."), summary.label)
+        let head = app.buttons["coaching-metric-headHeightTop"]
+        XCTAssertTrue(head.exists)
+        XCTAssertTrue(head.label.contains("Good players: −6% to 0%"), head.label)
+        attach(app, "coaching-every-check")
+        head.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["coaching-caption-headHeightTop"].waitForExistence(timeout: 3))
+        XCTAssertEqual(title.label, "Head height at the top: in zone")
+        XCTAssertEqual(Double(timeline.value as? String ?? "") ?? 0, 1.6, accuracy: 0.01)
+        app.buttons["coaching-back-to-steps"].tap()
+        XCTAssertEqual(title.label, "Shaft steepens coming down")
+    }
 
-        // Picking one moves the player to its position and draws it.
-        hips.tap()
-        XCTAssertTrue(hipsCaption.waitForExistence(timeout: 3))
-        XCTAssertTrue(hipsCaption.label.contains("Hips moved toward the ball"), hipsCaption.label)
-        XCTAssertEqual(Double(timeline.value as? String ?? "") ?? 0, 1.95, accuracy: 0.01)
+    func testDrawingsToolTurnsTheCoachsDrawingOffAndBack() {
+        let app = XCUIApplication.launched(seed: "coaching", ["-ui-testing-library"])
+        app.openLibraryCard("Coaching DTL", sessionCard: true)
+        let caption = app.descendants(matching: .any)["coaching-caption-transition"]
+        XCTAssertTrue(caption.waitForExistence(timeout: 5))
 
-        // Away from a measured position nothing is drawn.
-        app.buttons["swing-position-P1"].tap()
-        XCTAssertFalse(hipsCaption.exists)
-        XCTAssertFalse(transitionCaption.exists)
+        app.buttons["player-tool-drawings"].tap()
+        let coach = app.switches["coaching-layer-coach"]
+        XCTAssertTrue(coach.waitForExistence(timeout: 3))
+        XCTAssertTrue(app.switches["coaching-layer-club"].exists)
+        coach.switches.firstMatch.tap()
+        app.navigationBars["Drawings"].buttons["Done"].tap()
+
+        XCTAssertFalse(caption.waitForExistence(timeout: 1))
+        let changed = app.descendants(matching: .any)["coaching-layers-custom"]
+        XCTAssertTrue(changed.waitForExistence(timeout: 2), "The video says the drawings differ from the coach's")
+        attach(app, "coaching-drawings-changed")
+        app.buttons["coaching-layers-reset"].tap()
+        XCTAssertTrue(caption.waitForExistence(timeout: 2))
+        XCTAssertFalse(changed.exists)
+    }
+
+    func testFirstReadingSaysWhatTheClipReadingChanged() {
+        let app = XCUIApplication.launched(seed: "coaching", ["-ui-testing-library", "-ui-testing-coaching-reads", "6"])
+        app.openLibraryCard("Coaching DTL", sessionCard: true)
+        let title = app.staticTexts["coaching-step-title"]
+        let note = app.descendants(matching: .any)["coaching-reading-note"]
+        // Body checks only: no transition, so the swing reads as good.
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        XCTAssertEqual(title.label, "Good swing")
+        XCTAssertTrue(note.label.contains("Body checks only. Adding the club checks now."), note.label)
+        attach(app, "coaching-first-reading")
+
+        // The clip's reading adds the club checks and moves to the new pointer.
+        let updated = NSPredicate(format: "label CONTAINS %@", "On the body checks alone it was: Good swing")
+        expectation(for: updated, evaluatedWith: note)
+        waitForExpectations(timeout: 12)
+        XCTAssertEqual(title.label, "Shaft steepens coming down")
+        attach(app, "coaching-clip-reading-replaced")
+        app.buttons["coaching-next"].tap()
+        XCTAssertFalse(note.exists, "The note goes once the golfer moves on")
+
+        // The swing before it had no reading yet: it is read after this one.
+        app.buttons["Back to library"].tap()
+        app.openLibraryCard("10:06", sessionCard: true)
+        XCTAssertTrue(title.waitForExistence(timeout: 10))
+    }
+
+    func testFailedReadSaysSoAndOffersRetry() {
+        let app = XCUIApplication.launched(seed: "coaching", ["-ui-testing-library", "-ui-testing-coaching-reads", "fail"])
+        app.openLibraryCard("10:06", sessionCard: true)
+        let failed = app.descendants(matching: .any)["swing-coaching-failed"]
+        XCTAssertTrue(failed.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Couldn't read this swing"].exists)
+        XCTAssertTrue(app.buttons["coaching-retry"].exists)
+        attach(app, "coaching-read-failed")
     }
 
     func testSessionReviewShowsTheThemeItsPicturesAndEachSwing() {
@@ -83,14 +159,16 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertTrue(trend.label.contains("1 of 5 swings in the green band"), trend.label)
         attach(app, "session-coaching-trend")
 
-        // A dot opens its swing.
+        // A dot opens its swing, on what went right.
         for _ in 0..<4 where !(third.exists && third.isHittable) {
             app.collectionViews.firstMatch.swipeDown(velocity: .slow)
         }
         third.tap()
-        let pill = app.buttons["swing-coaching-pill"]
-        XCTAssertTrue(pill.waitForExistence(timeout: 5))
-        XCTAssertEqual(pill.label, "Coaching: Good swing")
+        let title = app.staticTexts["coaching-step-title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        XCTAssertEqual(title.label, "Good swing")
+        XCTAssertTrue(app.descendants(matching: .any)["coaching-caption-headHeightTop"].waitForExistence(timeout: 2),
+                      "A good swing draws its checks in zone")
     }
 
     func testRecapOnTheCameraComparesTheLastSwingsAndOpensOne() {
@@ -113,7 +191,8 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertTrue(recap.waitForExistence(timeout: 3))
         XCTAssertTrue(app.staticTexts["Last 5 swings"].exists)
         XCTAssertTrue(app.staticTexts["Shaft steepens coming down"].exists)
-        XCTAssertTrue(app.staticTexts["4 of 5 swings · P5 lead arm parallel down"].exists)
+        XCTAssertTrue(app.staticTexts["4 of 5 swings, halfway down (P5)"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["coach-recap-picture"].exists, "The recap pictures the theme")
         attach(app, "capture-recap")
 
         app.buttons["coach-recap-open"].tap()
@@ -123,13 +202,17 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["in zone"].exists, "The clean swing is in zone on the theme")
         attach(app, "capture-recap-compare")
 
-        // A swing in the comparison opens in the player.
+        // A swing in the comparison opens on the check it pictured, and
+        // Back returns to the comparison.
         third.tap()
-        let pill = app.buttons.matching(identifier: "swing-coaching-pill").allElementsBoundByIndex
-            .first { $0.isHittable } ?? app.buttons["swing-coaching-pill"]
-        XCTAssertTrue(pill.waitForExistence(timeout: 5))
-        XCTAssertEqual(pill.label, "Coaching: Good swing")
-        XCTAssertEqual(app.staticTexts["swing-position"].label, "3 of 5")
+        let title = app.staticTexts.matching(identifier: "coaching-step-title").allElementsBoundByIndex
+            .first { $0.isHittable } ?? app.staticTexts["coaching-step-title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        XCTAssertEqual(title.label, "Transition: in zone")
+        XCTAssertEqual(app.staticTexts["swing-position"].label, "Swing 3 of 5")
+        attach(app, "capture-compare-opens-at-check")
+        app.buttons["Back to the comparison"].tap()
+        XCTAssertTrue(third.waitForExistence(timeout: 3))
     }
 
     func testEverySwingSettingShowsTheLastVerdictOnTheCamera() {
@@ -148,6 +231,14 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertFalse(verdict.exists)
         app.buttons["coach-recap-close"].tap()
         XCTAssertTrue(verdict.waitForExistence(timeout: 3))
+
+        // It opens that swing on its pointer, drawn.
+        verdict.tap()
+        let title = app.staticTexts.matching(identifier: "coaching-step-title").allElementsBoundByIndex
+            .first { $0.isHittable } ?? app.staticTexts["coaching-step-title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        XCTAssertEqual(title.label, "Shaft steepens coming down")
+        XCTAssertTrue(app.descendants(matching: .any)["coaching-caption-transition"].firstMatch.waitForExistence(timeout: 2))
     }
 
     private func attach(_ app: XCUIApplication, _ name: String) {

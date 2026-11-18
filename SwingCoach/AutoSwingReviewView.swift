@@ -101,7 +101,7 @@ struct AutoSwingReviewView: View {
         }
         .overlayPreferenceValue(ReviewPlaybackCornerControlsKey.self) { toolRail in
             toolRail
-                .padding(.horizontal, 14)
+                .padding(.horizontal, ReviewTopBar.railInset)
                 .padding(.top, 8)
         }
         .overlayPreferenceValue(SwingLineControlsKey.self) { controls in

@@ -58,7 +58,7 @@ final class LibraryCollectionUITests: XCTestCase {
     private func assertPosition(_ label: String, title: String, in app: XCUIApplication) {
         let position = app.staticTexts["swing-position"]
         let expected = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "label == %@ AND value == %@", label, title), object: position
+            predicate: NSPredicate(format: "label == %@ AND value == %@", swingCounter(label), title), object: position
         )
         XCTAssertEqual(XCTWaiter.wait(for: [expected], timeout: 3), .completed,
                        "Expected \(label), \(title); actual \(position.label), \(String(describing: position.value))")
