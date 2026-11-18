@@ -448,9 +448,8 @@ struct SwingCoachingOverlay: View {
     private func tags(_ results: [CoachingMetricResult], in rect: CGRect) -> some View {
         ForEach(results, id: \.id) { result in
             if let anchor = CoachingDrawingLayer.anchor(of: result, in: rect) {
-                let text = results.count == 1 ? CoachingWords.value(result)
-                    : "\(result.definition.title) \(CoachingWords.value(result))"
-                Text(text)
+                // A name, not a number: the numbers are in All checks.
+                Text(result.definition.title)
                     .font(.footnote.weight(.bold).monospacedDigit())
                     .dynamicTypeSize(...DynamicTypeSize.xxLarge)
                     .foregroundStyle(.black)
@@ -656,11 +655,10 @@ struct SwingCoachingPanel: View {
             if let notJudged {
                 Text(CoachingWords.exclusion(notJudged))
             } else if step.kind == .good {
-                let judged = report.metrics.filter(\.definition.scored)
-                let inZone = judged.filter(\.inZone).count
-                Text("Nothing worth changing on this one. \(inZone) of \(judged.count) checks in zone; the ones drawn here are green.")
+                Text("Nothing worth changing on this one.")
             } else if let lead {
-                Text(step.kind == .better ? "Back in zone. " + CoachingWords.numbers(lead) : CoachingWords.numbers(lead))
+                // Numbers stay in All checks: on the card the drawing says it.
+                if step.kind == .better { Text("Back in zone.") }
                 if lead.definition.dependsOnCamera {
                     Text("A club reading: it depends on where the camera stands.")
                         .font(.footnote)
@@ -792,10 +790,6 @@ struct SwingCoachingPanel: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("coaching-step-title")
             }
-            Text(CoachingWords.numbers(result) + (result.inZone ? "" : " " + CoachingWords.level(result) + "."))
-                .font(.callout)
-                .foregroundStyle(.white.opacity(0.88))
-                .fixedSize(horizontal: false, vertical: true)
             CoachingLegend(results: [result])
             HStack(spacing: 10) {
                 Button {
