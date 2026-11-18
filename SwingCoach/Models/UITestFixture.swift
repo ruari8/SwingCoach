@@ -23,6 +23,10 @@ import Foundation
 /// - `-ui-testing-detector waiting|unavailable` and `-ui-testing-auto-error`
 ///   set detector and Auto error states.
 /// - `-ui-testing-save-failure` fails the second Photos save.
+/// - `-ui-testing-coaching-reads <seconds>|fail`, with the `coaching` seed:
+///   the newest swing has only a first reading from Auto (body checks), the
+///   one before it has none, and reading a clip takes that many seconds and
+///   gives the fixture's full report (or fails) instead of running Vision.
 ///
 /// Any `-ui-testing` argument also keeps private bundled reference videos out
 /// of the Library, so results never depend on them.
@@ -71,6 +75,9 @@ nonisolated enum UITestFixture {
     static let exportsAutoClip = arguments.contains("-ui-testing-auto-export")
     static let detectorState = value(after: "-ui-testing-detector")
     static let showsAutoError = arguments.contains("-ui-testing-auto-error")
+    static let simulatedClipRead: (seconds: Double, fails: Bool)? = value(after: "-ui-testing-coaching-reads").map { value in
+        value == "fail" ? (1, true) : (Double(value) ?? 3, false)
+    }
     private static let failsSecondPhotosSave = arguments.contains("-ui-testing-save-failure")
 
     /// Long recordings use a small frame so the file stays quick to write.
@@ -192,10 +199,20 @@ extension UITestFixture {
             for index in swings.indices {
                 swings[index].swingPositions = fixturePositions
                 swings[index].sourceTimeScale = 8
+                let id = swings[index].id.uuidString
+                if simulatedClipRead != nil, index == 3 { continue }
                 // The third swing of the session is the clean one.
-                let report = fixtureCoachingReport(steep: index != 2)
+                var report = fixtureCoachingReport(steep: index != 2)
+                if simulatedClipRead != nil, index == 4 {
+                    // A first reading from Auto's copies: body checks, no evidence file.
+                    report.fromLiveCopies = true
+                    report.metrics.removeAll { $0.definition.needsClip }
+                } else {
+                    try! JSONEncoder().encode(fixtureEvidence())
+                        .write(to: coaching.appendingPathComponent("\(id).evidence.json"))
+                }
                 try! JSONEncoder().encode(report)
-                    .write(to: coaching.appendingPathComponent("\(swings[index].id.uuidString).report.json"))
+                    .write(to: coaching.appendingPathComponent("\(id).report.json"))
             }
         }
 
@@ -220,6 +237,9 @@ extension UITestFixture {
             CoachingDrawing(kind: .line, role: role, points: [CoachingPoint(x: a.0, y: a.1), CoachingPoint(x: b.0, y: b.1)],
                             dashed: dashed)
         }
+        func area(_ corners: [(Double, Double)]) -> CoachingDrawing {
+            CoachingDrawing(kind: .area, role: .zone, points: corners.map { CoachingPoint(x: $0.0, y: $0.1) })
+        }
         let transition = CoachingMetricDefinition.definition(.transition)
         let hips = CoachingMetricDefinition.definition(.hipDepthImpact)
         let head = CoachingMetricDefinition.definition(.headHeightTop)
@@ -228,18 +248,51 @@ extension UITestFixture {
             CoachingMetricResult(id: .headHeightTop, position: 4, clipTime: 1.6, value: -3, level: head.level(for: -3),
                                  confidence: 0.8, drawings: [
                                     CoachingDrawing(kind: .circle, role: .reference, points: [CoachingPoint(x: 0.5, y: 0.3)], size: 0.04),
+                                    area([(0.47, 0.3), (0.53, 0.3), (0.53, 0.335), (0.47, 0.335)]),
+                                    CoachingDrawing(kind: .dot, role: .subject, points: [CoachingPoint(x: 0.5, y: 0.315)]),
                                  ]),
             CoachingMetricResult(id: .transition, position: 5, clipTime: 1.85, value: steepening,
                                  level: transition.level(for: steepening), confidence: 0.9, drawings: [
+                                    area([(0.45, 0.45), (0.19, 0.25), (0.23, 0.19), (0.27, 0.15)]),
                                     line(.reference, (0.45, 0.45), (0.25, 0.2), dashed: true),
                                     line(.subject, (0.45, 0.45), (0.33, 0.15)),
                                  ]),
             CoachingMetricResult(id: .hipDepthImpact, position: 7, clipTime: 1.95, value: 4, level: hips.level(for: 4),
                                  confidence: 0.85, drawings: [
+                                    area([(0.284, 0.4), (0.312, 0.4), (0.312, 0.7), (0.284, 0.7)]),
                                     line(.reference, (0.3, 0.4), (0.3, 0.7)),
                                     CoachingDrawing(kind: .dot, role: .subject, points: [CoachingPoint(x: 0.33, y: 0.55)]),
                                  ]),
         ], unavailable: [.takeawayClub])
+    }
+
+    /// Evidence with only a club track: the club head swinging round an
+    /// oval from address (P1, 0.4 s) to the top (P4) and through (P9),
+    /// lost for three samples just before impact. Enough to draw a trail.
+    static func fixtureEvidence() -> SwingCoachingEvidence {
+        func head(at time: Double) -> (x: Double, y: Double) {
+            let degrees: Double
+            let squeeze: Double
+            switch time {
+            case ..<1.6: degrees = 90 + 135 * (time - 0.4) / 1.2; squeeze = 1
+            case ..<1.95: degrees = 225 - 135 * (time - 1.6) / 0.35; squeeze = 0.88
+            default: degrees = 90 - 120 * (time - 1.95) / 0.2; squeeze = 1
+            }
+            let radians = degrees * .pi / 180
+            return (0.45 + 0.3 * squeeze * cos(radians), 0.48 + 0.33 * sin(radians))
+        }
+        var track: [CoachingFrameEvidence] = []
+        var time = 0.4
+        while time <= 2.15 + 1e-9 {
+            var sample = CoachingFrameEvidence(position: 0, clipTime: time)
+            if !(1.8...1.9).contains(time) {
+                let point = head(at: time)
+                sample.clubheads = [CoachingBox(x: point.x - 0.01, y: point.y - 0.006, width: 0.02, height: 0.012, confidence: 0.8)]
+            }
+            track.append(sample)
+            time += time >= 1.6 ? 0.025 : 0.05
+        }
+        return SwingCoachingEvidence(frameWidth: 360, frameHeight: 640, timeScale: 8, frames: [], track: track)
     }
 
     /// Positions on the 3-second fixture clip, bunched through the downswing

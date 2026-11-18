@@ -1120,6 +1120,16 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     let drawing: Binding<Bool>?
     /// Set to a clip time to pause there; the player clears it once it has.
     let seekRequest: Binding<Double?>?
+    /// Marks on the pose strip's chips, by position number.
+    let positionMarks: [Int: SwingPositionMark]
+    /// More tools for the rail, after Draw.
+    let extraTools: [PlayerTool]
+    /// Clip times the player stops on for a walkthrough. Paused on one, the
+    /// transport row gives way to `bottomPanel`, which carries its own
+    /// play and step buttons.
+    let walkthroughStops: [Double]
+    /// Sits above the timeline: the coaching card in review.
+    let bottomPanel: ((PlayerPanelContext) -> AnyView)?
 
     private let header: Header
     private let overlayAccessory: OverlayAccessory
@@ -1177,6 +1187,10 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         swingPositions: SwingPositions? = nil,
         drawing: Binding<Bool>? = nil,
         seekRequest: Binding<Double?>? = nil,
+        positionMarks: [Int: SwingPositionMark] = [:],
+        extraTools: [PlayerTool] = [],
+        walkthroughStops: [Double] = [],
+        bottomPanel: ((PlayerPanelContext) -> AnyView)? = nil,
         contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
         @ViewBuilder header: () -> Header,
         @ViewBuilder overlayAccessory: () -> OverlayAccessory
@@ -1196,6 +1210,10 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         self.swingPositions = swingPositions
         self.drawing = drawing
         self.seekRequest = seekRequest
+        self.positionMarks = positionMarks
+        self.extraTools = extraTools
+        self.walkthroughStops = walkthroughStops
+        self.bottomPanel = bottomPanel
         self.header = header()
         self.overlayAccessory = overlayAccessory()
         self.contentOverlay = contentOverlay
@@ -1225,7 +1243,10 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             cleanup()
         }
         .onChange(of: playbackEnabled) { _, enabled in
-            guard !enabled else { return }
+            guard !enabled else {
+                applyPendingSeek()
+                return
+            }
             player?.pause()
             isPlaying = false
             stopContinuousStep()
@@ -1234,12 +1255,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             // Drawing keeps the controls up; leaving it restarts auto-hide.
             showControls()
         }
-        .onChange(of: seekRequest?.wrappedValue) { _, requested in
-            guard let requested, playbackEnabled else { return }
-            player?.pause()
-            isPlaying = false
-            seek(to: CMTime(seconds: requested, preferredTimescale: 600))
-            seekRequest?.wrappedValue = nil
+        .onChange(of: seekRequest?.wrappedValue) { _, _ in
+            applyPendingSeek()
         }
         .onChange(of: isLocked) { _, _ in
             // Other pages can change the shared preference while this player
@@ -1271,6 +1288,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 )
 
                 contentOverlay(currentTime, geometry.size)
+                    .environment(\.playerIsPlaying, isPlaying)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .allowsHitTesting(contentOverlayAllowsHitTesting)
 
@@ -1330,18 +1348,30 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                         // Timeline sits ABOVE the buttons (Twitter-style) and well
                         // clear of the home-indicator zone so dragging it never gets
                         // hijacked by the system swipe-up gesture.
+                        if let bottomPanel, !isDrawing {
+                            bottomPanel(panelContext)
+                                .padding(.horizontal, 12)
+                                .padding(.bottom, 10)
+                                .transition(.opacity)
+                        }
+
                         integratedTimeline(width: timelineWidth)
                             .padding(.horizontal, 16)
                             .padding(.bottom, 6)
 
-                        transportControlBar
-                            .padding(.horizontal, 22)
-                            .padding(.bottom, visiblePositions == nil ? bottomControlPadding + 10 : 8)
+                        if isAtWalkthroughStop {
+                            Color.clear.frame(height: visiblePositions == nil ? bottomControlPadding : 4)
+                        } else {
+                            transportControlBar
+                                .padding(.horizontal, 22)
+                                .padding(.bottom, visiblePositions == nil ? bottomControlPadding + 10 : 8)
+                        }
 
                         if let positions = visiblePositions {
                             SwingPositionStrip(
                                 positions: positions,
                                 selectedNumber: currentPositionNumber,
+                                marks: positionMarks,
                                 onSelect: jump(to:)
                             )
                             .padding(.horizontal, 12)
@@ -1410,7 +1440,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .frame(height: visiblePositions == nil ? 160 : 230)
+            .frame(height: (visiblePositions == nil ? 160 : 230) + (bottomPanel == nil ? 0 : 140))
         }
         .allowsHitTesting(false)
     }
@@ -1501,8 +1531,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             - (bottomControlPadding + 10)
     }
     /// Hosted by the review screen, the rail starts one gap under its corner
-    /// buttons (Library's star or Back, Auto's Done).
-    private var navigationToolRailTop: CGFloat { PlayerToolRail.buttonSize + PlayerToolRail.spacing }
+    /// buttons (the star, or Done when docked left).
+    private var navigationToolRailTop: CGFloat { ReviewTopBar.railTop }
     /// Inline, the rail takes the empty top-right slot, or docks under the
     /// header's leading button (Done, Back) on the left.
     private var inlineLeadingToolRailTop: CGFloat { PlayerToolRail.buttonSize + PlayerToolRail.spacing }
@@ -1554,6 +1584,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 drawing.wrappedValue = true
             })
         }
+        tools += extraTools
         if swingPositions?.positions.isEmpty == false {
             tools.append(PlayerTool(id: "positions", title: "Positions",
                                     accessibilityLabel: showsSwingPositions ? "Hide swing positions" : "Show swing positions",
@@ -1568,6 +1599,43 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             })
         }
         return tools
+    }
+
+    /// Paused on one of the walkthrough's frames.
+    private var isAtWalkthroughStop: Bool {
+        guard bottomPanel != nil, !isPlaying, !isScrubbing else { return false }
+        let now = seconds(currentTime)
+        return walkthroughStops.contains { abs($0 - now) <= 0.02 }
+    }
+
+    private var panelContext: PlayerPanelContext {
+        PlayerPanelContext(
+            currentTime: seconds(currentTime),
+            duration: seconds(duration),
+            isPlaying: isPlaying,
+            seek: { time in
+                player?.pause()
+                isPlaying = false
+                showControls()
+                seek(to: CMTime(seconds: time, preferredTimescale: 600))
+            },
+            play: { start in
+                guard playbackEnabled, let player else { return }
+                if let start { seek(to: CMTime(seconds: start, preferredTimescale: 600)) }
+                player.rate = playbackSpeed
+                isPlaying = true
+                scheduleAutoHide()
+            }
+        )
+    }
+
+    /// Pauses on a requested clip time once this player can play.
+    private func applyPendingSeek() {
+        guard let requested = seekRequest?.wrappedValue, playbackEnabled, player != nil else { return }
+        player?.pause()
+        isPlaying = false
+        seek(to: CMTime(seconds: requested, preferredTimescale: 600))
+        seekRequest?.wrappedValue = nil
     }
 
     private func toolRail(trailingTop: CGFloat, leadingTop: CGFloat) -> some View {
@@ -1843,6 +1911,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             }
         }
 
+        applyPendingSeek()
         guard playbackEnabled, startsPlaying else { return }
         newPlayer.playImmediately(atRate: playbackSpeed)
         isPlaying = true

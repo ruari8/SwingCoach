@@ -149,11 +149,53 @@ extension Color {
 
 // MARK: - Pose strip
 
+/// A mark on a pose chip: what was found at that position. The shape says
+/// it as well as the colour does.
+struct SwingPositionMark: Equatable {
+    enum Shape: Equatable {
+        /// Checked and in zone.
+        case tick
+        /// Out of zone by this many steps.
+        case level(Int)
+    }
+
+    var shape: Shape
+    var colour: Color
+    /// The walkthrough starts here: drawn with a ring.
+    var isStart = false
+    /// Read out after the position's name.
+    var accessibilityText: String
+}
+
+private struct PlayerIsPlayingKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// True while the player's video plays; set for its content overlay.
+    var playerIsPlaying: Bool {
+        get { self[PlayerIsPlayingKey.self] }
+        set { self[PlayerIsPlayingKey.self] = newValue }
+    }
+}
+
+/// What a panel above the timeline can see and do in the player.
+struct PlayerPanelContext {
+    let currentTime: Double
+    let duration: Double
+    let isPlaying: Bool
+    /// Pauses on a clip time.
+    let seek: (Double) -> Void
+    /// Plays, from a clip time when given.
+    let play: (Double?) -> Void
+}
+
 /// Ten pose chips for jumping straight to a position. Dragging across the
 /// strip moves one whole position per chip, however many frames apart they are.
 struct SwingPositionStrip: View {
     let positions: [SwingPosition]
     let selectedNumber: Int?
+    var marks: [Int: SwingPositionMark] = [:]
     let onSelect: (SwingPosition) -> Void
 
     @State private var draggedIndex: Int?
@@ -210,11 +252,45 @@ struct SwingPositionStrip: View {
         }
         .frame(width: 34, height: 46)
         .background(Capsule().fill(selected ? Color.white : Color.clear))
+        .overlay(alignment: .topTrailing) {
+            if let mark = marks[position.number] {
+                markBadge(mark)
+                    .offset(x: 6, y: -7)
+            }
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityIdentifier("swing-position-\(position.label)")
-        .accessibilityLabel("\(position.label), \(position.name)\(unsure ? ", unsure" : "")")
+        .accessibilityLabel("\(position.label), \(position.name)\(unsure ? ", unsure" : "")"
+            + (marks[position.number].map { ", \($0.accessibilityText)" } ?? ""))
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
         .accessibilityAction { onSelect(position) }
+    }
+}
+
+extension SwingPositionStrip {
+    /// A level number in a filled circle, a tick for in zone; a white ring
+    /// round the walkthrough's first stop.
+    fileprivate func markBadge(_ mark: SwingPositionMark) -> some View {
+        ZStack {
+            Circle().fill(mark.colour)
+            switch mark.shape {
+            case .tick:
+                Image(systemName: "checkmark")
+                    .font(.system(size: 8, weight: .black))
+                    .foregroundColor(.black)
+            case .level(let level):
+                Text("\(level)")
+                    .font(.system(size: 10, weight: .heavy).monospacedDigit())
+                    .foregroundColor(.black)
+            }
+        }
+        .frame(width: mark.shape == .tick ? 13 : 16, height: mark.shape == .tick ? 13 : 16)
+        .overlay(Circle().strokeBorder(Color.black.opacity(0.55), lineWidth: 1))
+        .padding(mark.isStart ? 2 : 0)
+        .overlay {
+            if mark.isStart { Circle().strokeBorder(Color.white, lineWidth: 1.5) }
+        }
+        .allowsHitTesting(false)
     }
 }
 
@@ -240,6 +316,32 @@ struct PositionMarksIcon: View {
     }
 }
 
+/// Icon for the coaching drawings tool: the three parts every drawing has.
+struct DrawingLayersIcon: View {
+    var dark = false
+
+    var body: some View {
+        Canvas { context, size in
+            let unit = min(size.width, size.height) / 24
+            var band = Path()
+            band.addLines([CGPoint(x: 9 * unit, y: 4 * unit), CGPoint(x: 15 * unit, y: 4 * unit),
+                           CGPoint(x: 15 * unit, y: 20 * unit), CGPoint(x: 9 * unit, y: 20 * unit)])
+            band.closeSubpath()
+            context.fill(band, with: .color(Color(red: 0.24, green: 0.86, blue: 0.43).opacity(dark ? 0.9 : 0.75)))
+            var address = Path()
+            address.move(to: CGPoint(x: 12 * unit, y: 3 * unit))
+            address.addLine(to: CGPoint(x: 12 * unit, y: 21 * unit))
+            context.stroke(address, with: .color(dark ? .black : .white), style: StrokeStyle(lineWidth: 2 * unit, lineCap: .round))
+            var swing = Path()
+            swing.move(to: CGPoint(x: 5 * unit, y: 19 * unit))
+            swing.addLine(to: CGPoint(x: 20 * unit, y: 6 * unit))
+            context.stroke(swing, with: .color(Color(red: 1.0, green: 0.75, blue: 0.16)), style: StrokeStyle(lineWidth: 2.4 * unit, lineCap: .round))
+        }
+        .frame(width: 20, height: 20)
+        .accessibilityHidden(true)
+    }
+}
+
 // MARK: - Tool rail
 
 enum PlayerToolSide: String {
@@ -251,6 +353,8 @@ struct PlayerTool: Identifiable {
         case system(String)
         case text(String)
         case positionMarks
+        /// A white line, a green band and a coloured line: the coaching drawings.
+        case drawingLayers
     }
 
     let id: String
@@ -499,6 +603,7 @@ private struct RailToolRow: View {
                 if !pressed, holdTask != nil { endPress() }
             }
             .accessibilityElement(children: .ignore)
+            .accessibilityIdentifier("player-tool-\(tool.id)")
             .accessibilityLabel(tool.accessibilityLabel)
             .accessibilityValue(tool.accessibilityValue ?? "")
             .accessibilityAddTraits(.isButton)
@@ -530,6 +635,8 @@ private struct RailToolRow: View {
                 .fixedSize()
         case .positionMarks:
             PositionMarksIcon(color: tool.isOn ? .black : .white)
+        case .drawingLayers:
+            DrawingLayersIcon(dark: tool.isOn)
         }
     }
 }

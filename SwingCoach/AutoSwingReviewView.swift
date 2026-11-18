@@ -5,6 +5,12 @@ struct AutoSwingReviewView: View {
     @Environment(\.dismiss) private var dismiss
     let swings: [SavedSwing]
     let onDelete: @MainActor (SavedSwing) async throws -> Void
+    /// The check to open the start swing on, from a comparison.
+    let focus: CoachingMetricID?
+    /// The top-left button: "Done" closes the review; from a comparison
+    /// it is "Back" and returns there.
+    let leadingTitle: String
+    let onLeading: (() -> Void)?
 
     @State private var selectedSwingID: UUID?
     @State private var swingPendingDeletion: SavedSwing?
@@ -12,17 +18,29 @@ struct AutoSwingReviewView: View {
     @State private var isDeleting = false
     @State private var isDrawingLines = false
     @State private var controlsLocked = false
+    @State private var coachingLayers = CoachingLayers.coachsChoice
+    @State private var showsCoachingLayers = false
+    @ObservedObject private var library = SwingLibrary.shared
+    @ObservedObject private var coachingStore = SwingCoachingStore.shared
 
-    init(swings: [SavedSwing], startAt: UUID? = nil,
+    init(swings: [SavedSwing], startAt: UUID? = nil, focus: CoachingMetricID? = nil,
+         leadingTitle: String = "Done", onLeading: (() -> Void)? = nil,
          onDelete: @escaping @MainActor (SavedSwing) async throws -> Void) {
         self.swings = swings
         self.onDelete = onDelete
+        self.focus = focus
+        self.leadingTitle = leadingTitle
+        self.onLeading = onLeading
         // Capture appends clips chronologically. A presentation starts at
         // the newest clip unless it was opened on a particular swing, while
         // the others remain a swipe away.
         let start = startAt.flatMap { id in swings.first { $0.id == id } } ?? swings.last
         _selectedSwingID = State(initialValue: start?.id)
+        _focusSwingID = State(initialValue: focus == nil ? nil : start?.id)
     }
+
+    /// The swing `focus` applies to, until the golfer pages away.
+    @State private var focusSwingID: UUID?
 
     var body: some View {
         ZStack {
@@ -41,18 +59,37 @@ struct AutoSwingReviewView: View {
                     AutoSwingReviewPage(
                         swing: swing,
                         isSelected: selectedSwingID == swing.id,
+                        focus: swing.id == focusSwingID ? focus : nil,
                         isDrawingLines: $isDrawingLines,
                         deleteDisabled: isDeleting,
                         controlsLocked: $controlsLocked,
+                        layers: $coachingLayers,
+                        onShowLayers: { showsCoachingLayers = true },
                         onDelete: { swingPendingDeletion = swing }
                     )
                 }
             }
 
-            // Only the close button and page label live up top; the player's
-            // tool rail takes the top-right slot, and delete sits in the
-            // player's bottom-right accessory slot.
+            // The same top row as Library; the player's tool rail hangs
+            // under the star and holds Delete.
             reviewToolbar
+
+            if !isDrawingLines, !coachingLayers.isCoachsChoice {
+                VStack {
+                    HStack {
+                        CoachingLayersChangedTag(layers: $coachingLayers)
+                        Spacer(minLength: 0)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 14)
+                .padding(.top, 8 + ReviewTopBar.railTop)
+            }
+        }
+        .sheet(isPresented: $showsCoachingLayers) {
+            CoachingLayersSheet(layers: $coachingLayers,
+                                hasTrail: selectedSwing.map { coachingStore.clubTrail(for: $0) != nil } ?? false)
+                .presentationDetents([.height(380), .large])
         }
         .overlayPreferenceValue(ReviewPlaybackCornerControlsKey.self) { toolRail in
             toolRail
@@ -63,7 +100,7 @@ struct AutoSwingReviewView: View {
             // While drawing, the line bar sits under Done and the page count.
             VStack {
                 controls
-                    .padding(.top, 58)
+                    .padding(.top, 8 + ReviewTopBar.railTop)
                 Spacer(minLength: 0)
             }
         }
@@ -71,8 +108,9 @@ struct AutoSwingReviewView: View {
             if let selectedSwingID, ids.contains(selectedSwingID) { return }
             self.selectedSwingID = ids.first
         }
-        .onChange(of: selectedSwingID) { _, _ in
+        .onChange(of: selectedSwingID) { _, id in
             isDrawingLines = false
+            if id != focusSwingID { focusSwingID = nil }
         }
         .confirmationDialog(
             "Delete this swing?",
@@ -100,54 +138,25 @@ struct AutoSwingReviewView: View {
         }
     }
 
+    private var selectedSwing: SavedSwing? {
+        guard let selectedSwingID else { return nil }
+        return library.swings.first { $0.id == selectedSwingID } ?? swings.first { $0.id == selectedSwingID }
+    }
+
     private var reviewToolbar: some View {
         VStack {
-            HStack {
-                closeButton
-                    .frame(width: 70)
-                    .accessibilityLabel("Close swing review")
-
-                Spacer()
-
-                Text(pageLabel)
-                    .accessibilityIdentifier("swing-position")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Capsule().fill(.black.opacity(0.48)))
-
-                Spacer()
-
-                // Balances the close button so the page label stays centered.
-                Color.clear
-                    .frame(width: 70, height: 36)
-            }
+            ReviewTopBar(
+                leadingTitle: leadingTitle,
+                leadingAccessibilityLabel: onLeading == nil ? "Close swing review" : "Back to the comparison",
+                onLeading: { if let onLeading { onLeading() } else { dismiss() } },
+                counter: selectedSwingID.flatMap { ReviewTopBar.counter(for: $0, in: swings, id: \.id, date: \.createdAt) },
+                isStarred: selectedSwing?.isFavorite ?? false,
+                onStar: { if let selectedSwing { library.toggleFavorite(selectedSwing) } }
+            )
             .padding(.horizontal, 14)
             .padding(.top, 8)
 
             Spacer()
-        }
-    }
-
-    private var pageLabel: String {
-        guard let selectedSwingID,
-              let index = swings.firstIndex(where: { $0.id == selectedSwingID })
-        else {
-            return "0 of \(swings.count)"
-        }
-        return "\(index + 1) of \(swings.count)"
-    }
-
-    @ViewBuilder
-    private var closeButton: some View {
-        let button = Button("Done") { dismiss() }
-            .font(.subheadline.weight(.semibold))
-            .tint(.white)
-        if #available(iOS 26, *) {
-            button.buttonStyle(.glass)
-        } else {
-            button.buttonStyle(.bordered).buttonBorderShape(.capsule)
         }
     }
 
@@ -172,9 +181,12 @@ struct AutoSwingReviewView: View {
 private struct AutoSwingReviewPage: View {
     let swing: SavedSwing
     let isSelected: Bool
+    let focus: CoachingMetricID?
     @Binding var isDrawingLines: Bool
     let deleteDisabled: Bool
     @Binding var controlsLocked: Bool
+    @Binding var layers: CoachingLayers
+    let onShowLayers: () -> Void
     let onDelete: () -> Void
 
     @State private var playerItem: AVPlayerItem?
@@ -182,6 +194,8 @@ private struct AutoSwingReviewPage: View {
     @State private var draftLine: ManualAnnotation?
     @State private var coachingSeek: Double?
     @State private var highlightedMetric: CoachingMetricID?
+    @State private var coachInteracted = false
+    @State private var showsCoachingChecks = false
     @ObservedObject private var library = SwingLibrary.shared
     @ObservedObject private var coachingStore = SwingCoachingStore.shared
 
@@ -190,16 +204,19 @@ private struct AutoSwingReviewPage: View {
         library.swings.first { $0.id == swing.id } ?? swing
     }
 
-    /// Positions arrive about a second after the save, after the session list
-    /// copied the swing, so read them from the library.
-    private var swingPositions: SwingPositions? {
-        library.swings.first { $0.id == swing.id }?.swingPositions ?? swing.swingPositions
-    }
-
     private var drawingEnabled: Bool { isSelected && isDrawingLines }
-    /// The session list holds copies, so read the star from the library.
-    private var isStarred: Bool {
-        library.swings.first { $0.id == swing.id }?.isFavorite ?? swing.isFavorite
+    private var canCoach: Bool { SwingCoachingStore.canCoach(librarySwing) }
+
+    private var tools: [PlayerTool] {
+        var tools: [PlayerTool] = []
+        if canCoach {
+            tools.append(.coachingDrawings(changed: !layers.isCoachsChoice, action: onShowLayers))
+        }
+        tools.append(PlayerTool(id: "delete", title: "Delete", accessibilityLabel: "Delete this swing",
+                                icon: .system("trash")) {
+            if !deleteDisabled { onDelete() }
+        })
+        return tools
     }
 
     var body: some View {
@@ -216,17 +233,31 @@ private struct AutoSwingReviewPage: View {
                     edgeToEdge: true,
                     controlsLocked: $controlsLocked,
                     realTimeRate: swing.realTimePlaybackRate,
-                    swingPositions: swingPositions,
+                    // Positions arrive about a second after the save, after
+                    // the session list copied the swing: read the library's.
+                    swingPositions: librarySwing.swingPositions,
                     drawing: videoAspectRatio != nil ? $isDrawingLines : nil,
                     seekRequest: isSelected ? $coachingSeek : nil,
+                    positionMarks: coachingStore.stripMarks(for: librarySwing),
+                    extraTools: tools,
+                    walkthroughStops: coachingStore.walkthroughStops(
+                        for: librarySwing, highlighted: isSelected ? highlightedMetric : nil),
+                    bottomPanel: canCoach ? { context in
+                        AnyView(SwingCoachingPanel(
+                            swing: librarySwing, context: context, highlighted: $highlightedMetric,
+                            onShowChecks: { showsCoachingChecks = true },
+                            onInteract: { coachInteracted = true }
+                        ))
+                    } : nil,
                     contentOverlay: { currentTime, _ in
                         AnyView(ZStack {
                             SwingCoachingOverlay(
-                                report: coachingStore.report(for: swing),
-                                picks: coachingStore.coachPicks(for: swing),
+                                report: coachingStore.report(for: librarySwing),
+                                steps: coachingStore.steps(for: librarySwing),
+                                trail: coachingStore.clubTrail(for: librarySwing),
+                                layers: layers,
                                 aspectRatio: videoAspectRatio,
                                 currentTime: currentTime,
-                                timeScale: swing.sourceTimeScale ?? 1,
                                 highlighted: isSelected ? highlightedMetric : nil
                             )
                             SwingLineOverlay(
@@ -241,35 +272,10 @@ private struct AutoSwingReviewPage: View {
                 ) {
                     EmptyView()
                 } overlayAccessory: {
-                    VStack(spacing: 10) {
-                        // Star a good one without leaving the session for Library.
-                        Button {
-                            library.toggleFavorite(swing)
-                        } label: {
-                            Image(systemName: isStarred ? "star.fill" : "star")
-                                .font(.system(size: 17, weight: .semibold))
-                                .foregroundStyle(isStarred ? .yellow : .white)
-                                .frame(width: 42, height: 42)
-                                .background(Circle().fill(.black.opacity(0.48)))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(isStarred ? "Remove star" : "Star swing")
-
-                        Button(action: onDelete) {
-                            Image(systemName: "trash")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .frame(width: 42, height: 42)
-                                .background(Circle().fill(.black.opacity(0.48)))
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(deleteDisabled)
-                        .accessibilityLabel("Delete this swing")
-                    }
+                    EmptyView()
                 }
-                // The review toolbar hosts the rail, level with Done.
+                // The review screen hosts the rail, under the star.
                 .environment(\.reviewCornerControlsInNavigation, true)
-                .environment(\.reviewToolRailTrailingTop, 0)
                 .preference(
                     key: SwingLineControlsKey.self,
                     value: isSelected && videoAspectRatio != nil ? AnyView(SwingLineControls(
@@ -284,11 +290,18 @@ private struct AutoSwingReviewPage: View {
                     .tint(.white)
             }
         }
-        .overlay(alignment: .top) {
-            if isSelected, !drawingEnabled, SwingCoachingStore.canCoach(librarySwing) {
-                SwingCoachingPill(swing: librarySwing, seek: { coachingSeek = $0 }, highlighted: $highlightedMetric)
-                    .padding(.horizontal, 14 + PlayerToolRail.buttonSize + PlayerToolRail.spacing)
-                    .padding(.top, 64)
+        .swingCoachingOpening(swing: librarySwing, isActive: isSelected, focus: focus, seek: $coachingSeek,
+                              interacted: $coachInteracted, highlighted: $highlightedMetric)
+        .sheet(isPresented: $showsCoachingChecks) {
+            if let report = coachingStore.report(for: librarySwing) {
+                SwingCoachingChecks(swing: librarySwing, report: report,
+                                    verdict: coachingStore.verdict(for: librarySwing, report: report)) { result in
+                    coachInteracted = true
+                    highlightedMetric = result.id
+                    coachingSeek = result.clipTime
+                    showsCoachingChecks = false
+                }
+                .presentationDetents([.medium, .large])
             }
         }
         .task(id: swing.id) {

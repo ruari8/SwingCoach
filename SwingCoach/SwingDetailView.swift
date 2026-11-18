@@ -27,6 +27,10 @@ struct SwingDetailView: View {
     @State private var draftLine: ManualAnnotation?
     @State private var coachingSeek: Double?
     @State private var highlightedMetric: CoachingMetricID?
+    @State private var coachInteracted = false
+    @State private var coachingLayers = CoachingLayers.coachsChoice
+    @State private var showsCoachingLayers = false
+    @State private var showsCoachingChecks = false
     @ObservedObject private var coachingStore = SwingCoachingStore.shared
 
     init(swing: SavedSwing, reviewSwings: [SavedSwing]? = nil) {
@@ -48,9 +52,7 @@ struct SwingDetailView: View {
     }
 
     private var swingPositionText: String? {
-        guard navigationSwings.count > 1,
-              let index = navigationSwings.firstIndex(where: { $0.id == currentSwing.id }) else { return nil }
-        return "\(index + 1) of \(navigationSwings.count)"
+        ReviewTopBar.counter(for: currentSwing.id, in: navigationSwings, id: \.id, date: \.createdAt)
     }
 
     var body: some View {
@@ -63,14 +65,34 @@ struct SwingDetailView: View {
                 drawingToolBar
             }
 
-            if !isDrawingLines, SwingCoachingStore.canCoach(currentSwing) {
+            if !isDrawingLines, !coachingLayers.isCoachsChoice {
                 VStack {
-                    SwingCoachingPill(swing: currentSwing, seek: { coachingSeek = $0 }, highlighted: $highlightedMetric)
-                        // Clear of the tool rail, which can dock on either side.
-                        .padding(.horizontal, 14 + PlayerToolRail.buttonSize + PlayerToolRail.spacing)
+                    HStack {
+                        CoachingLayersChangedTag(layers: $coachingLayers)
+                        Spacer(minLength: 0)
+                    }
                     Spacer(minLength: 0)
                 }
-                .padding(.top, 64)
+                .padding(.horizontal, 14)
+                .padding(.top, 6 + ReviewTopBar.railTop)
+            }
+        }
+        .swingCoachingOpening(swing: currentSwing, isActive: true, seek: $coachingSeek,
+                              interacted: $coachInteracted, highlighted: $highlightedMetric)
+        .sheet(isPresented: $showsCoachingLayers) {
+            CoachingLayersSheet(layers: $coachingLayers, hasTrail: coachingStore.clubTrail(for: currentSwing) != nil)
+                .presentationDetents([.height(380), .large])
+        }
+        .sheet(isPresented: $showsCoachingChecks) {
+            if let report = coachingStore.report(for: currentSwing) {
+                SwingCoachingChecks(swing: currentSwing, report: report,
+                                    verdict: coachingStore.verdict(for: currentSwing, report: report)) { result in
+                    coachInteracted = true
+                    highlightedMetric = result.id
+                    coachingSeek = result.clipTime
+                    showsCoachingChecks = false
+                }
+                .presentationDetents([.medium, .large])
             }
         }
         .overlayPreferenceValue(ReviewPlaybackCornerControlsKey.self) { cornerControls in
@@ -125,60 +147,27 @@ struct SwingDetailView: View {
 
     private func topNavOverlay(cornerControls: AnyView?) -> some View {
         VStack(spacing: 10) {
-            HStack {
-                navCircleButton(systemName: "chevron.left") { dismiss() }
-                    .accessibilityLabel("Back to library")
-
-                Spacer()
-
-                if let swingPositionText {
-                    Text(swingPositionText)
-                        .accessibilityIdentifier("swing-position")
-                        .accessibilityValue(currentSwing.title ?? "")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 10)
-                        .frame(height: 32)
-                        .background(Capsule().fill(Color.black.opacity(0.45)))
-                }
-
-                Spacer()
-
-                Button {
-                    library.toggleFavorite(currentSwing)
-                } label: {
-                    Image(systemName: currentSwing.isFavorite ? "star.fill" : "star")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(currentSwing.isFavorite ? .yellow : .white)
-                        .frame(width: 38, height: 38)
-                        .background(Circle().fill(Color.black.opacity(0.45)))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(currentSwing.isFavorite ? "Remove star" : "Star swing")
-            }
+            ReviewTopBar(
+                leadingTitle: "Done",
+                leadingAccessibilityLabel: "Back to library",
+                onLeading: { dismiss() },
+                counter: swingPositionText,
+                counterValue: currentSwing.title ?? "",
+                isStarred: currentSwing.isFavorite,
+                onStar: { library.toggleFavorite(currentSwing) }
+            )
             .padding(.horizontal, 14)
 
             Spacer(minLength: 0)
         }
         .padding(.top, 6)
-        // The player's tool rail starts one gap under the star, or under Back
-        // when docked left, without moving the navigation row.
+        // The player's tool rail starts one gap under the star, or under
+        // Done when docked left, without moving the top row.
         .overlay {
             cornerControls
                 .padding(.horizontal, 14)
                 .padding(.top, 6)
         }
-    }
-
-    private func navCircleButton(systemName: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
-                .frame(width: 38, height: 38)
-                .background(Circle().fill(Color.black.opacity(0.45)))
-        }
-        .buttonStyle(.plain)
     }
 
     private func originalPlayer(for swing: SavedSwing) -> some View {
@@ -201,15 +190,29 @@ struct SwingDetailView: View {
                 swingPositions: swing.swingPositions,
                 drawing: videoAspectRatios[swing.id] != nil ? $isDrawingLines : nil,
                 seekRequest: swing.id == currentSwingID ? $coachingSeek : nil,
+                positionMarks: coachingStore.stripMarks(for: swing),
+                extraTools: SwingCoachingStore.canCoach(swing) ? [.coachingDrawings(changed: !coachingLayers.isCoachsChoice) {
+                    showsCoachingLayers = true
+                }] : [],
+                walkthroughStops: coachingStore.walkthroughStops(
+                    for: swing, highlighted: swing.id == currentSwingID ? highlightedMetric : nil),
+                bottomPanel: SwingCoachingStore.canCoach(swing) ? { context in
+                    AnyView(SwingCoachingPanel(
+                        swing: swing, context: context, highlighted: $highlightedMetric,
+                        onShowChecks: { showsCoachingChecks = true },
+                        onInteract: { coachInteracted = true }
+                    ))
+                } : nil,
                 contentOverlay: { currentTime, _ in
                     AnyView(
                         ZStack {
                             SwingCoachingOverlay(
                                 report: coachingStore.report(for: swing),
-                                picks: coachingStore.coachPicks(for: swing),
+                                steps: coachingStore.steps(for: swing),
+                                trail: coachingStore.clubTrail(for: swing),
+                                layers: coachingLayers,
                                 aspectRatio: videoAspectRatios[swing.id],
                                 currentTime: currentTime,
-                                timeScale: swing.sourceTimeScale ?? 1,
                                 highlighted: swing.id == currentSwingID ? highlightedMetric : nil
                             )
                             SwingLineOverlay(
@@ -409,7 +412,6 @@ struct SwingDetailView: View {
         draftLine = nil
         showMetadata = false
         highlightedMetric = nil
-        coachingSeek = nil
     }
 
     private func formatDuration(_ seconds: Double) -> String {

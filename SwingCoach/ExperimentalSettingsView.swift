@@ -20,7 +20,6 @@ enum ExperimentalSettingKey {
     static let detectorDefaultsRevision = "experimental.detectorDefaultsRevision"
     static let keepAutoRecordings = "experimental.keepAutoRecordings"
     static let coachDuringAuto = "coaching.coachDuringAuto"
-    static let showCoachingDrawings = "coaching.showDrawings"
 }
 
 enum ExperimentalDetectorDefaults {
@@ -53,7 +52,6 @@ struct ExperimentalSettingsView: View {
     @AppStorage(ExperimentalSettingKey.showCaptureModelStats) private var showCaptureModelStats = false
     @AppStorage(ExperimentalSettingKey.showDebugReplayTab) private var showDebugReplayTab = true
     @AppStorage(ExperimentalSettingKey.coachDuringAuto) private var coachDuringAuto = false
-    @AppStorage(ExperimentalSettingKey.showCoachingDrawings) private var showCoachingDrawings = true
     @AppStorage(CoachingCadence.key) private var coachingCadence = CoachingCadence.standard.rawValue
     #if DEBUG
     @AppStorage(ExperimentalSettingKey.keepAutoRecordings) private var keepAutoRecordings = false
@@ -120,7 +118,6 @@ struct ExperimentalSettingsView: View {
             }
 
             Section {
-                Toggle("Drawings on the video", isOn: $showCoachingDrawings)
                 Picker("Coach speaks in Auto", selection: $coachingCadence) {
                     ForEach(CoachingCadence.allCases) { Text($0.title).tag($0.rawValue) }
                 }

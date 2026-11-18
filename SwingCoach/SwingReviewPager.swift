@@ -131,3 +131,68 @@ private struct SingleVideoScrollTargetBehavior: ScrollTargetBehavior {
         target.rect.size.width = width
     }
 }
+
+/// The review player's top row, the same in Library and Auto review: a
+/// button out on the left, the swing's number in the order hit in the
+/// middle, the star on the right. The tool rail hangs under the star.
+struct ReviewTopBar: View {
+    let leadingTitle: String
+    let leadingAccessibilityLabel: String
+    let onLeading: () -> Void
+    /// "Swing 3 of 5", or nil for a single swing.
+    let counter: String?
+    var counterValue: String = ""
+    let isStarred: Bool
+    let onStar: () -> Void
+
+    static let buttonSize: CGFloat = 44
+    /// Where a tool rail under the star starts.
+    static let railTop: CGFloat = buttonSize + 10
+
+    var body: some View {
+        HStack {
+            Button(action: onLeading) {
+                Text(leadingTitle)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .frame(minWidth: Self.buttonSize, minHeight: Self.buttonSize)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.black.opacity(0.55)))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(leadingAccessibilityLabel)
+            .accessibilityIdentifier("review-leading")
+
+            Spacer(minLength: 8)
+
+            if let counter {
+                Text(counter)
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.8), radius: 3, y: 1)
+                    .accessibilityIdentifier("swing-position")
+                    .accessibilityValue(counterValue)
+            }
+
+            Spacer(minLength: 8)
+
+            Button(action: onStar) {
+                Image(systemName: isStarred ? "star.fill" : "star")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(isStarred ? Color.yellow : Color.white)
+                    .frame(width: Self.buttonSize, height: Self.buttonSize)
+                    .background(Circle().fill(Color.black.opacity(0.55)))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isStarred ? "Remove star" : "Star swing")
+        }
+    }
+
+    /// The swing's number in the order the swings were hit, oldest first.
+    static func counter<Item>(for id: UUID, in swings: [Item], id key: (Item) -> UUID, date: (Item) -> Date) -> String? {
+        guard swings.count > 1 else { return nil }
+        let ordered = swings.sorted { date($0) < date($1) }
+        guard let index = ordered.firstIndex(where: { key($0) == id }) else { return nil }
+        return "Swing \(index + 1) of \(swings.count)"
+    }
+}
