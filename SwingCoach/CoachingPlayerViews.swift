@@ -636,7 +636,7 @@ struct SwingCoachingPanel: View {
     }
 
     private func placeLine(_ step: CoachingStep) -> String {
-        if case .notJudged = step.kind { return "Not judged" }
+        if case .notJudged = step.kind { return "Measured only" }
         return CoachingWalkthrough.place(step.position)
     }
 
