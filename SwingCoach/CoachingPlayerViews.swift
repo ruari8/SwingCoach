@@ -41,6 +41,7 @@ private let stopTolerance = 0.02
 extension CoachingUnit {
     /// One decimal where the number has one, as zone edges do.
     func formatEdge(_ value: Double) -> String {
+        if value == 0 { return self == .degrees ? "0°" : "0%" }
         let whole = value.rounded() == value
         let number = whole ? String(format: "%+.0f", value) : String(format: "%+.1f", value)
         let signed = number.replacingOccurrences(of: "-", with: "−")
@@ -103,6 +104,27 @@ extension SwingCoachingStore {
         var stops = steps(for: swing).map(\.clipTime)
         if let highlighted, let result = report(for: swing)?.metric(highlighted) { stops.append(result.clipTime) }
         return stops
+    }
+
+    /// Top to bottom (0...1) of what is drawn at a stop, so the player
+    /// can keep it clear of the step card.
+    func focusRange(for swing: SavedSwing, at time: Double, highlighted: CoachingMetricID?) -> ClosedRange<Double>? {
+        guard let report = report(for: swing) else { return nil }
+        var ids: [CoachingMetricID] = []
+        if let highlighted, let result = report.metric(highlighted), abs(result.clipTime - time) <= stopTolerance {
+            ids = [highlighted]
+        } else if let step = steps(for: swing).first(where: { abs($0.clipTime - time) <= stopTolerance }) {
+            ids = step.metrics
+        }
+        var ys: [Double] = []
+        for result in ids.compactMap(report.metric) {
+            for shape in result.drawings {
+                let size = shape.size ?? 0
+                ys += shape.points.flatMap { [$0.y - size, $0.y + size] }
+            }
+        }
+        guard let low = ys.min(), let high = ys.max() else { return nil }
+        return max(0, low)...min(1, high)
     }
 
     func stripMarks(for swing: SavedSwing) -> [Int: SwingPositionMark] {
@@ -580,22 +602,19 @@ struct SwingCoachingPanel: View {
         let lead = step.lead.flatMap(report.metric)
         let notJudged: CoachingExclusion? = if case .notJudged(let exclusion) = step.kind { exclusion } else { nil }
         let results = step.metrics.compactMap(report.metric)
-        return VStack(alignment: .leading, spacing: 10) {
+        return VStack(alignment: .leading, spacing: 8) {
             readingNote(report)
-            HStack(alignment: .firstTextBaseline) {
-                Text(placeLine(step))
+            HStack(alignment: .center) {
+                Text(placeLine(step) + (steps.count > 1 ? ", step \(index + 1) of \(steps.count)" : ""))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.82))
+                    .accessibilityIdentifier("coaching-step-count")
                 Spacer(minLength: 8)
-                if steps.count > 1 {
-                    Text("\(index + 1) of \(steps.count)")
-                        .font(.subheadline.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(.white.opacity(0.82))
-                        .accessibilityIdentifier("coaching-step-count")
-                }
+                allChecksButton
             }
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 badge(step, lead: lead)
+                    .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 6 }
                 Text(step.text)
                     .font(.title3.weight(.bold))
                     .fixedSize(horizontal: false, vertical: true)
@@ -643,9 +662,9 @@ struct SwingCoachingPanel: View {
             } else if let lead {
                 Text(step.kind == .better ? "Back in zone. " + CoachingWords.numbers(lead) : CoachingWords.numbers(lead))
                 if lead.definition.dependsOnCamera {
-                    Text("A club reading: it changes with where the camera stands.")
+                    Text("A club reading: it depends on where the camera stands.")
                         .font(.footnote)
-                        .foregroundStyle(.white.opacity(0.75))
+                        .foregroundStyle(.white.opacity(0.78))
                 }
             }
         }
@@ -688,15 +707,14 @@ struct SwingCoachingPanel: View {
 
     private func buttons(index: Int, of steps: [CoachingStep]) -> some View {
         let isLast = index == steps.count - 1
-        return VStack(alignment: .leading, spacing: 6) {
-        HStack(spacing: 10) {
+        return HStack(spacing: 10) {
             if index > 0 {
                 Button {
                     go(to: steps[index - 1])
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.body.weight(.bold))
-                        .frame(width: 50, height: 50)
+                        .frame(width: 48, height: 48)
                         .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.16)))
                 }
                 .buttonStyle(.plain)
@@ -708,7 +726,7 @@ struct SwingCoachingPanel: View {
             } label: {
                 Label("Play swing", systemImage: "play.fill")
                     .font(.body.weight(.semibold))
-                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .frame(maxWidth: .infinity, minHeight: 48)
                     .background(RoundedRectangle(cornerRadius: 14).fill(isLast ? Color.white : Color.white.opacity(0.16)))
                     .foregroundStyle(isLast ? Color.black : Color.white)
             }
@@ -723,7 +741,7 @@ struct SwingCoachingPanel: View {
                         Image(systemName: "chevron.right")
                     }
                     .font(.body.weight(.bold))
-                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .frame(maxWidth: .infinity, minHeight: 48)
                     .background(RoundedRectangle(cornerRadius: 14).fill(.white))
                     .foregroundStyle(.black)
                 }
@@ -732,16 +750,25 @@ struct SwingCoachingPanel: View {
                 .accessibilityIdentifier("coaching-next")
             }
         }
+    }
+
+    /// Every check on the swing, from the card's top row.
+    private var allChecksButton: some View {
         Button(action: showChecks) {
-            Text("Every check on this swing")
-                .font(.subheadline.weight(.semibold))
-                .underline()
-                .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
+            HStack(spacing: 3) {
+                Text("All checks")
+                Image(systemName: "chevron.right").font(.caption.weight(.bold))
+            }
+            .font(.subheadline.weight(.semibold))
+            .padding(.horizontal, 10)
+            .frame(minHeight: 32)
+            .background(Capsule().strokeBorder(.white.opacity(0.35), lineWidth: 1))
+            .contentShape(Rectangle())
+            .padding(.vertical, -4)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.white.opacity(0.88))
+        .accessibilityLabel("Every check on this swing")
         .accessibilityIdentifier("coaching-all-checks")
-        }
     }
 
     /// A check picked from the list, on its own frame.
@@ -769,7 +796,7 @@ struct SwingCoachingPanel: View {
                 } label: {
                     Text("Back to the coach")
                         .font(.body.weight(.semibold))
-                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .frame(maxWidth: .infinity, minHeight: 48)
                         .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.16)))
                 }
                 .buttonStyle(.plain)
@@ -777,7 +804,7 @@ struct SwingCoachingPanel: View {
                 Button(action: showChecks) {
                     Text("Every check")
                         .font(.body.weight(.bold))
-                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .frame(maxWidth: .infinity, minHeight: 48)
                         .background(RoundedRectangle(cornerRadius: 14).fill(.white))
                         .foregroundStyle(.black)
                 }
@@ -806,7 +833,7 @@ struct SwingCoachingPanel: View {
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
-                Text(steps.count > 1 ? "Steps" : "Show")
+                Text(steps.count > 1 ? "Show steps" : "Show")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.82))
                 Image(systemName: "chevron.up")
@@ -1138,9 +1165,12 @@ struct SwingCoachingChecks: View {
                 Text(CoachingWords.numbers(result))
                     .font(.footnote.monospacedDigit())
                     .foregroundStyle(.secondary)
-                Text(CoachingWords.level(result) + (result.definition.dependsOnCamera ? ". Depends on where the camera stands." : "."))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                if !result.inZone || result.definition.dependsOnCamera {
+                    Text((result.inZone ? "" : CoachingWords.level(result) + ". ")
+                         + (result.definition.dependsOnCamera ? "Depends on where the camera stands." : ""))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
             Spacer(minLength: 0)
         }

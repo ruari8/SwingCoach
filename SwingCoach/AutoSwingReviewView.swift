@@ -20,6 +20,7 @@ struct AutoSwingReviewView: View {
     @State private var controlsLocked = false
     @State private var coachingLayers = CoachingLayers.coachsChoice
     @State private var showsCoachingLayers = false
+    @State private var showsInfo = false
     @ObservedObject private var library = SwingLibrary.shared
     @ObservedObject private var coachingStore = SwingCoachingStore.shared
 
@@ -65,6 +66,7 @@ struct AutoSwingReviewView: View {
                         controlsLocked: $controlsLocked,
                         layers: $coachingLayers,
                         onShowLayers: { showsCoachingLayers = true },
+                        onShowInfo: { showsInfo = true },
                         onDelete: { swingPendingDeletion = swing }
                     )
                 }
@@ -84,6 +86,12 @@ struct AutoSwingReviewView: View {
                 }
                 .padding(.horizontal, 14)
                 .padding(.top, 8 + ReviewTopBar.railTop)
+            }
+        }
+        .sheet(isPresented: $showsInfo) {
+            if let selectedSwing {
+                SwingInfoView(swing: selectedSwing)
+                    .presentationDetents([.medium])
             }
         }
         .sheet(isPresented: $showsCoachingLayers) {
@@ -187,6 +195,7 @@ private struct AutoSwingReviewPage: View {
     @Binding var controlsLocked: Bool
     @Binding var layers: CoachingLayers
     let onShowLayers: () -> Void
+    let onShowInfo: () -> Void
     let onDelete: () -> Void
 
     @State private var playerItem: AVPlayerItem?
@@ -232,6 +241,7 @@ private struct AutoSwingReviewPage: View {
                     contentOverlayAllowsHitTesting: drawingEnabled,
                     edgeToEdge: true,
                     controlsLocked: $controlsLocked,
+                    infoAction: onShowInfo,
                     realTimeRate: swing.realTimePlaybackRate,
                     // Positions arrive about a second after the save, after
                     // the session list copied the swing: read the library's.
@@ -249,6 +259,7 @@ private struct AutoSwingReviewPage: View {
                             onInteract: { coachInteracted = true }
                         ))
                     } : nil,
+                    stopFocus: { time in coachingStore.focusRange(for: librarySwing, at: time, highlighted: isSelected ? highlightedMetric : nil) },
                     contentOverlay: { currentTime, _ in
                         AnyView(ZStack {
                             SwingCoachingOverlay(
@@ -301,7 +312,7 @@ private struct AutoSwingReviewPage: View {
                     coachingSeek = result.clipTime
                     showsCoachingChecks = false
                 }
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.fraction(0.62), .large])
             }
         }
         .task(id: swing.id) {

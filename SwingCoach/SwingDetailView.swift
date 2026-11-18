@@ -92,7 +92,7 @@ struct SwingDetailView: View {
                     coachingSeek = result.clipTime
                     showsCoachingChecks = false
                 }
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.fraction(0.62), .large])
             }
         }
         .overlayPreferenceValue(ReviewPlaybackCornerControlsKey.self) { cornerControls in
@@ -102,7 +102,7 @@ struct SwingDetailView: View {
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .sheet(isPresented: $showMetadata) {
-            metadataSheet
+            SwingInfoView(swing: currentSwing)
                 .presentationDetents([.medium])
         }
         .onAppear {
@@ -203,6 +203,7 @@ struct SwingDetailView: View {
                         onInteract: { coachInteracted = true }
                     ))
                 } : nil,
+                stopFocus: { time in coachingStore.focusRange(for: swing, at: time, highlighted: swing.id == currentSwingID ? highlightedMetric : nil) },
                 contentOverlay: { currentTime, _ in
                     AnyView(
                         ZStack {
@@ -278,7 +279,68 @@ struct SwingDetailView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
-    private var metadataSheet: some View {
+    private func preparePlaybackWindow() {
+        guard let currentIndex = navigationSwings.firstIndex(where: { $0.id == currentSwingID }) else { return }
+        let lowerBound = max(navigationSwings.startIndex, currentIndex - 1)
+        let upperBound = min(navigationSwings.index(before: navigationSwings.endIndex), currentIndex + 1)
+        let window = navigationSwings[lowerBound...upperBound]
+        let retainedIDs = Set(window.map(\.id))
+
+        playerItems = playerItems.filter { retainedIDs.contains($0.key) }
+        videoAspectRatios = videoAspectRatios.filter { retainedIDs.contains($0.key) }
+        playbackErrors = playbackErrors.filter { retainedIDs.contains($0.key) }
+
+        for swing in window {
+            preparePlayback(for: swing)
+        }
+    }
+
+    private func preparePlayback(for swing: SavedSwing) {
+        guard playerItems[swing.id] == nil, !loadingSwingIDs.contains(swing.id) else { return }
+        loadingSwingIDs.insert(swing.id)
+        playbackErrors[swing.id] = nil
+
+        Task {
+            let item = await library.getPlayerItem(for: swing)
+            let aspectRatio: Double?
+            if let item {
+                aspectRatio = try? await VideoDisplayGeometry.aspectRatio(for: item.asset)
+            } else {
+                aspectRatio = nil
+            }
+            loadingSwingIDs.remove(swing.id)
+
+            guard reviewWindow.contains(where: { $0.id == swing.id }) else { return }
+
+            if let item {
+                videoAspectRatios[swing.id] = aspectRatio
+                playerItems[swing.id] = item
+            } else {
+                playbackErrors[swing.id] = "The original video could not be loaded. It may have been deleted from Photos."
+            }
+        }
+    }
+
+    private func resetReviewState() {
+        isDrawingLines = false
+        draftLine = nil
+        showMetadata = false
+        highlightedMetric = nil
+    }
+
+}
+
+
+/// Swing Info: the clip's details and its P1–P10, in Library and Auto review.
+struct SwingInfoView: View {
+    let swing: SavedSwing
+    @ObservedObject private var positionProcessor = SwingPositionProcessor.shared
+
+    private var currentSwing: SavedSwing { swing }
+
+    var body: some View { metadataSheet }
+
+    var metadataSheet: some View {
         NavigationStack {
             ScrollView {
                 metadataContent
@@ -363,55 +425,6 @@ struct SwingDetailView: View {
                 .font(.subheadline.weight(.medium))
                 .multilineTextAlignment(.trailing)
         }
-    }
-
-    private func preparePlaybackWindow() {
-        guard let currentIndex = navigationSwings.firstIndex(where: { $0.id == currentSwingID }) else { return }
-        let lowerBound = max(navigationSwings.startIndex, currentIndex - 1)
-        let upperBound = min(navigationSwings.index(before: navigationSwings.endIndex), currentIndex + 1)
-        let window = navigationSwings[lowerBound...upperBound]
-        let retainedIDs = Set(window.map(\.id))
-
-        playerItems = playerItems.filter { retainedIDs.contains($0.key) }
-        videoAspectRatios = videoAspectRatios.filter { retainedIDs.contains($0.key) }
-        playbackErrors = playbackErrors.filter { retainedIDs.contains($0.key) }
-
-        for swing in window {
-            preparePlayback(for: swing)
-        }
-    }
-
-    private func preparePlayback(for swing: SavedSwing) {
-        guard playerItems[swing.id] == nil, !loadingSwingIDs.contains(swing.id) else { return }
-        loadingSwingIDs.insert(swing.id)
-        playbackErrors[swing.id] = nil
-
-        Task {
-            let item = await library.getPlayerItem(for: swing)
-            let aspectRatio: Double?
-            if let item {
-                aspectRatio = try? await VideoDisplayGeometry.aspectRatio(for: item.asset)
-            } else {
-                aspectRatio = nil
-            }
-            loadingSwingIDs.remove(swing.id)
-
-            guard reviewWindow.contains(where: { $0.id == swing.id }) else { return }
-
-            if let item {
-                videoAspectRatios[swing.id] = aspectRatio
-                playerItems[swing.id] = item
-            } else {
-                playbackErrors[swing.id] = "The original video could not be loaded. It may have been deleted from Photos."
-            }
-        }
-    }
-
-    private func resetReviewState() {
-        isDrawingLines = false
-        draftLine = nil
-        showMetadata = false
-        highlightedMetric = nil
     }
 
     private func formatDuration(_ seconds: Double) -> String {

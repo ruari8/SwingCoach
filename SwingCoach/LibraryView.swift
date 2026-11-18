@@ -1130,6 +1130,10 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     let walkthroughStops: [Double]
     /// Sits above the timeline: the coaching card in review.
     let bottomPanel: ((PlayerPanelContext) -> AnyView)?
+    /// The part of the frame (top to bottom, 0...1) that matters at a
+    /// walkthrough stop. Paused there, the video lifts so that part clears
+    /// the panel.
+    let stopFocus: ((Double) -> ClosedRange<Double>?)?
 
     private let header: Header
     private let overlayAccessory: OverlayAccessory
@@ -1166,6 +1170,11 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     @State private var isFineScrubbing = false
     @State private var positionBadgeTask: Task<Void, Never>?
     @State private var showsPositionBadge = false
+    /// Width over height of the displayed video, once loaded.
+    @State private var videoAspect: Double?
+    /// Top of the bottom panel on screen, for lifting the video above it.
+    @State private var panelTop: CGFloat?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var speedOptions: [Float] {
         [0.25, 0.5, 0.75, 1.0] + (realTimeRate.map { [$0] } ?? [])
@@ -1191,6 +1200,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         extraTools: [PlayerTool] = [],
         walkthroughStops: [Double] = [],
         bottomPanel: ((PlayerPanelContext) -> AnyView)? = nil,
+        stopFocus: ((Double) -> ClosedRange<Double>?)? = nil,
         contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
         @ViewBuilder header: () -> Header,
         @ViewBuilder overlayAccessory: () -> OverlayAccessory
@@ -1214,6 +1224,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         self.extraTools = extraTools
         self.walkthroughStops = walkthroughStops
         self.bottomPanel = bottomPanel
+        self.stopFocus = stopFocus
         self.header = header()
         self.overlayAccessory = overlayAccessory()
         self.contentOverlay = contentOverlay
@@ -1273,6 +1284,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             ZStack {
                 // Video fills its container; in edge-to-edge mode it extends behind
                 // the notch/home indicator while the chrome below keeps its insets.
+                let lift = stopLift(in: geometry)
                 fillLayer(
                     Group {
                         if let player {
@@ -1286,10 +1298,12 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 )
+                .offset(y: -lift)
 
                 contentOverlay(currentTime, geometry.size)
                     .environment(\.playerIsPlaying, isPlaying)
                     .frame(width: geometry.size.width, height: geometry.size.height)
+                    .offset(y: -lift)
                     .allowsHitTesting(contentOverlayAllowsHitTesting)
 
                 // A tap toggles controls; holding either edge fast-scrubs.
@@ -1303,7 +1317,23 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 }
             }
             .background(Color.black)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: stopLift(in: geometry))
         }
+    }
+
+    /// How far to lift the video so the part that matters at a stop sits
+    /// above the panel, without pushing its top under the top row.
+    private func stopLift(in geometry: GeometryProxy) -> CGFloat {
+        guard isAtWalkthroughStop, let stopFocus, let focus = stopFocus(seconds(currentTime)),
+              let aspect = videoAspect, aspect > 0, let panelTop else { return 0 }
+        let size = geometry.size
+        let height = size.width / max(size.height, 1) > CGFloat(aspect) ? size.height : size.width / CGFloat(aspect)
+        let videoTop = geometry.frame(in: .global).minY + (size.height - height) / 2
+        let bottom = videoTop + CGFloat(focus.upperBound) * height + 24
+        let top = videoTop + CGFloat(focus.lowerBound) * height - 24
+        let wanted = max(0, bottom - panelTop)
+        let room = max(0, top - (geometry.frame(in: .global).minY + 64))
+        return min(wanted, room, size.height * 0.4).rounded()
     }
 
     /// Layout is measured where the controls are displayed: the fixed pager
@@ -1352,6 +1382,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                             bottomPanel(panelContext)
                                 .padding(.horizontal, 12)
                                 .padding(.bottom, 10)
+                                .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { panelTop = $0 }
+                                .onDisappear { panelTop = nil }
                                 .transition(.opacity)
                         }
 
@@ -1894,6 +1926,14 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             }
             // Load the real frame rate so a single step lands exactly one frame
             // on 60/120/240 fps swing clips (otherwise we'd assume 30 fps).
+            if let track = try? await playbackItem.asset.loadTracks(withMediaType: .video).first,
+               let size = try? await track.load(.naturalSize),
+               let transform = try? await track.load(.preferredTransform) {
+                let shown = CGRect(origin: .zero, size: size).applying(transform)
+                if abs(shown.height) > 0 {
+                    await MainActor.run { videoAspect = Double(abs(shown.width) / abs(shown.height)) }
+                }
+            }
             if let track = try? await playbackItem.asset.loadTracks(withMediaType: .video).first,
                let fps = try? await track.load(.nominalFrameRate), fps > 0 {
                 await MainActor.run {
