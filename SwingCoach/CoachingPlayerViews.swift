@@ -522,7 +522,8 @@ struct SwingCoachingPanel: View {
             }
         }
         .foregroundStyle(.white)
-        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+        // Large text grows the card, not past the point where it hides the swing.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
     // MARK: States without a report
@@ -723,13 +724,19 @@ struct SwingCoachingPanel: View {
             Button {
                 play()
             } label: {
-                Label("Play swing", systemImage: "play.fill")
+                // "Play" alone when large text leaves no room for "Play swing".
+                ViewThatFits(in: .horizontal) {
+                    Label("Play swing", systemImage: "play.fill").fixedSize()
+                    Label("Play", systemImage: "play.fill").fixedSize()
+                    Image(systemName: "play.fill")
+                }
                     .font(.body.weight(.semibold))
                     .frame(maxWidth: .infinity, minHeight: 48)
                     .background(RoundedRectangle(cornerRadius: 14).fill(isLast ? Color.white : Color.white.opacity(0.16)))
                     .foregroundStyle(isLast ? Color.black : Color.white)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Play swing")
             .accessibilityIdentifier("coaching-play")
             if !isLast {
                 Button {
@@ -785,7 +792,7 @@ struct SwingCoachingPanel: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("coaching-step-title")
             }
-            Text(CoachingWords.numbers(result) + " " + CoachingWords.level(result) + ".")
+            Text(CoachingWords.numbers(result) + (result.inZone ? "" : " " + CoachingWords.level(result) + "."))
                 .font(.callout)
                 .foregroundStyle(.white.opacity(0.88))
                 .fixedSize(horizontal: false, vertical: true)
@@ -890,16 +897,23 @@ struct CoachingLegend: View {
     var body: some View {
         let roles = Set(results.flatMap { $0.drawings.map(\.role) })
         let level = results.first?.level ?? 0
-        HStack(spacing: 14) {
-            if roles.contains(.reference) { item(.reference, "Address", level) }
-            if roles.contains(.zone) { item(.zone, "Good players", level) }
-            if roles.contains(.subject) { item(.subject, "This swing", level) }
+        // One row when it fits, a column at large text sizes.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 14) { items(roles, level) }
+            VStack(alignment: .leading, spacing: 4) { items(roles, level) }
         }
         .font(.footnote.weight(.medium))
         .foregroundStyle(.white.opacity(0.88))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText(roles))
         .accessibilityIdentifier("coaching-legend")
+    }
+
+    @ViewBuilder
+    private func items(_ roles: Set<CoachingDrawing.Role>, _ level: Int) -> some View {
+        if roles.contains(.reference) { item(.reference, "Address", level) }
+        if roles.contains(.zone) { item(.zone, "Good players", level) }
+        if roles.contains(.subject) { item(.subject, "This swing", level) }
     }
 
     private func item(_ role: CoachingDrawing.Role, _ title: String, _ level: Int) -> some View {
@@ -920,7 +934,7 @@ struct CoachingLegend: View {
                 }
             }
             .frame(width: 18, height: 10)
-            Text(title)
+            Text(title).fixedSize()
         }
     }
 
