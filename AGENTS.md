@@ -83,7 +83,7 @@ SwingCoach/
 | Shared look: accent colour, player chrome, player sheet style, library card sizes, position and low-confidence tags, wrapping layout | `SwingCoach/Theme.swift` |
 | Swing detail | `SwingCoach/SwingDetailView.swift` |
 | Lines drawn by hand on a swing | `SwingCoach/SwingLineAnnotations.swift`, `ManualAnnotationCanvas.swift` |
-| Coaching in the player (Library and Auto): step card, drawings, club path, strip marks, Drawings tool, every check | `SwingCoach/CoachingPlayerViews.swift` |
+| Coaching in the player (Library and Auto): step card, drawings, club path, strip marks, Layers tool, every check | `SwingCoach/CoachingPlayerViews.swift` |
 | Coaching colours and the session review | `SwingCoach/SwingCoachingViews.swift` |
 | Coaching on the Auto camera screen: coach chip, recap, comparison | `SwingCoach/AutoCoachingViews.swift` |
 | Left/right swing paging | `SwingCoach/SwingReviewPager.swift` |

@@ -80,7 +80,7 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertTrue(coach.waitForExistence(timeout: 3))
         XCTAssertTrue(app.switches["coaching-layer-club"].exists)
         coach.switches.firstMatch.tap()
-        app.navigationBars["Drawing layers"].buttons["Done"].tap()
+        app.navigationBars["Layers"].buttons["Done"].tap()
 
         XCTAssertFalse(caption.waitForExistence(timeout: 1))
         let changed = app.descendants(matching: .any)["coaching-layers-custom"]

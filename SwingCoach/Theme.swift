@@ -88,6 +88,26 @@ extension Color {
     })
 }
 
+// MARK: - Help footers
+
+/// A section's help under a list group, as short paragraphs in
+/// `Color.helpText`: the first says what to do, the next ones the
+/// details. No paragraph runs past three lines on an iPhone.
+struct HelpFooter: View {
+    let paragraphs: [String]
+
+    init(_ paragraphs: String...) {
+        self.paragraphs = paragraphs
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(paragraphs, id: \.self) { Text($0) }
+        }
+        .foregroundStyle(Color.helpText)
+    }
+}
+
 // MARK: - Section headings
 
 extension Color {
@@ -149,15 +169,19 @@ enum PlayerChrome {
     static let panelEdge = Color.white.opacity(0.12)
     static let panelRadius: CGFloat = 20
     /// An opaque dark surface for a state that must read on any camera
-    /// picture: Auto's on/off capsule on Capture.
+    /// picture: Auto's on/off panel on Capture.
     static let solidPanel = Color(white: 0.1)
     /// A state on `solidPanel` read from a tripod a few metres away: title
-    /// size (28 points) in bold, a 24-point indicator, and an edge in the
-    /// indicator's colour.
+    /// size (28 points) in bold, a 24-point indicator, on a rounded panel
+    /// with no coloured edge, so it reads as a status, never as a button.
     static let stateFont = Font.title.weight(.bold)
+    /// The line under a state that says what to do ("Switch to Manual to
+    /// stop"): the label size, near-white.
+    static let stateHintFont = Font.appLabel
+    static let stateHintColour = Color.white.opacity(0.9)
     static let stateIndicatorSize: CGFloat = 24
     static let stateMinHeight: CGFloat = 64
-    static let stateEdgeWidth: CGFloat = 2
+    static let stateRadius: CGFloat = 16
     /// Background of every sheet over the player: dark and near opaque, so
     /// the card and strip behind never ghost through.
     static let sheetBackground = Color(white: 0.09).opacity(0.97)

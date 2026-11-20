@@ -114,6 +114,9 @@ struct SessionCoachingView: View {
                         }
                     } header: {
                         SectionHeading("What kept happening")
+                    } footer: {
+                        Text("Each count is out of the swings with a reading for that check.")
+                            .foregroundStyle(Color.helpText)
                     }
                     if shown.count > 1 {
                         Section {
@@ -210,26 +213,31 @@ struct SessionCoachingView: View {
         .padding(.horizontal, -9)
     }
 
-    /// What the marks mean, in one line straight under them.
+    /// What the marks mean, in one line straight under them, and what a
+    /// step is.
     private var symbolKey: some View {
-        FlowLayout(spacing: 10, lineSpacing: 4) {
-            HStack(spacing: 4) {
-                CoachingLevelBadge(level: 0, size: 16)
-                Text("good")
+        VStack(alignment: .leading, spacing: 4) {
+            FlowLayout(spacing: 10, lineSpacing: 4) {
+                HStack(spacing: 4) {
+                    CoachingLevelBadge(level: 0, size: 16)
+                    Text("good")
+                }
+                HStack(spacing: 4) {
+                    CoachingLevelBadge(level: 4, size: 16)
+                    Text("= steps out")
+                }
+                HStack(spacing: 4) {
+                    CoachingLevelBadge(level: 0, neutral: true, size: 16)
+                    Text("not judged")
+                }
             }
-            HStack(spacing: 4) {
-                CoachingLevelBadge(level: 4, size: 16)
-                Text("= steps out")
-            }
-            HStack(spacing: 4) {
-                CoachingLevelBadge(level: 0, neutral: true, size: 16)
-                Text("not judged")
-            }
+            Text(CoachingWords.stepDefinition)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .font(.appCaption)
         .foregroundStyle(Color.helpText)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Marks: a tick is a good swing, a number is steps out, a dash is not judged. Tap one to open the swing.")
+        .accessibilityLabel("Marks: a tick is a good swing, a number is steps out, a dash is not judged. \(CoachingWords.stepDefinition) Tap one to open the swing.")
         .accessibilityIdentifier("session-coaching-key")
     }
 

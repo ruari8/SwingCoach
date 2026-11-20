@@ -1999,7 +1999,7 @@ struct CaptureView: View {
                 // Auto's state leads, full width, readable from the tripod;
                 // the saved count is a quieter control on the line under it.
                 VStack(spacing: 8) {
-                    AutoStateCapsule(title: autoStatusTitle, indicator: autoStatusIndicator,
+                    AutoStatePanel(title: autoStatusTitle, indicator: autoStatusIndicator,
                                      stopHint: autoStopHint)
                     HStack(alignment: .center, spacing: 16) {
                         CaptureStatusLabel(
@@ -2099,8 +2099,8 @@ struct CaptureView: View {
         return camera.autoCaptureStatus.isActive ? "Auto is on" : "Auto is off"
     }
 
-    /// How to stop Auto, said inside its capsule while it is on. The
-    /// capsule itself isn't a control: the Manual segment above stops Auto.
+    /// How to stop Auto, said inside its panel while it is on. The
+    /// panel itself isn't a control: the Manual segment above stops Auto.
     private var autoStopHint: String? {
         guard camera.autoCaptureStatus.isActive, camera.autoCaptureStatus.lastErrorMessage == nil,
               camera.liveSwingDetection.status != .unavailable else { return nil }
@@ -2307,10 +2307,11 @@ struct FocusIndicatorView: View {
 }
 
 /// Auto's on/off, read from the tripod two or three metres away: the
-/// state at title size with a large indicator, on a solid capsule the full
-/// width of the controls, edged in the indicator's colour. While Auto is
-/// on, a line under the state says how to stop it.
-private struct AutoStateCapsule: View {
+/// state at title size with a large indicator, on a solid rounded panel
+/// the full width of the controls. It is a status, not a control, so it
+/// has no button-like outline. While Auto is on, a line under the state
+/// says how to stop it.
+private struct AutoStatePanel: View {
     let title: String
     let indicator: Color
     var stopHint: String? = nil
@@ -2329,18 +2330,19 @@ private struct AutoStateCapsule: View {
                     .accessibilityIdentifier("capture-status-title")
                 if let stopHint {
                     Text(stopHint)
-                        .font(.appCaptionLabel)
-                        .foregroundStyle(.white.opacity(0.78))
+                        .font(PlayerChrome.stateHintFont)
+                        .foregroundStyle(PlayerChrome.stateHintColour)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                         .accessibilityIdentifier("capture-stop-hint")
                 }
             }
+            Spacer(minLength: 0)
         }
+        .padding(.vertical, 10)
         .frame(maxWidth: .infinity, minHeight: PlayerChrome.stateMinHeight)
         .padding(.horizontal, 20)
-        .background(Capsule().fill(PlayerChrome.solidPanel))
-        .overlay(Capsule().strokeBorder(indicator, lineWidth: PlayerChrome.stateEdgeWidth))
+        .background(RoundedRectangle(cornerRadius: PlayerChrome.stateRadius).fill(PlayerChrome.solidPanel))
     }
 }
 
@@ -2348,7 +2350,7 @@ private struct CaptureStatusLabel: View {
     let title: String
     let detail: String
     var indicator: Color? = nil
-    /// False when the title is shown elsewhere (Auto's capsule): only the
+    /// False when the title is shown elsewhere (Auto's panel): only the
     /// detail line and the model stats.
     var showsTitle = true
     var modelSnapshot: LiveSwingDetectionSnapshot? = nil

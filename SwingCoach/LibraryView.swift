@@ -878,7 +878,7 @@ struct LibraryView: View {
                 isSelecting = true
             }
         } label: {
-            Text("Select")
+            Text("Select swings")
         }
         .disabled(library.swings.isEmpty)
     }
@@ -1828,7 +1828,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     private var scrubTimeBadge: some View {
         HStack(spacing: 0) {
             if let number = currentPositionNumber, let position = visiblePositions?.first(where: { $0.number == number }) {
-                Text(position.isLowConfidence ? "\(position.name) (\(position.label)?) · Low" : position.title)
+                // Doubt named in words, not only a "?".
+                Text(position.isLowConfidence ? "\(position.name) · Low confidence" : position.title)
                     .font(FixedType.readout)
                     .foregroundColor(.accentLime)
                 Text(" · ")

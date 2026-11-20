@@ -67,9 +67,9 @@ final class PlayerPositionsUITests: XCTestCase {
         let star = app.buttons["Star swing"]
         XCTAssertEqual(fold.frame.midX, star.frame.midX, accuracy: 1)
         XCTAssertEqual(fold.frame.minY - star.frame.maxY, 10, accuracy: 1)
-        // The clip can be coached, so the rail has the coaching Drawings tool too.
+        // The clip can be coached, so the rail has the coaching Layers tool too.
         assertToolOrder(app, ["player-tools-fold", "Show swing metadata", "Change playback speed",
-                              "Draw straight lines", "Choose coaching drawings", "Hide swing positions"])
+                              "Draw straight lines", "Choose layers", "Hide swing positions"])
 
         fold.tap()
         XCTAssertEqual(fold.label, "Show player tools")

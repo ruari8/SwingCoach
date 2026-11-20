@@ -176,28 +176,15 @@ struct AutoCoachingPanel: View {
 }
 
 extension CoachingThemeShowing {
-    var colour: Color {
-        switch self {
-        case .notJudged: .gray.opacity(0.6)
-        case .inZone: .coachingLevel(0)
-        case .shows(let level), .otherWay(let level): .coachingLevel(level)
-        }
-    }
-
-    /// Solid, except out the other way: that is not the theme, so it is
-    /// only outlined.
-    var fill: Color {
-        if case .otherWay = self { return .clear }
-        return colour
-    }
-
     /// The shared level badge for this swing on the theme: a tick in zone,
-    /// the level out of it, a dash not judged.
+    /// the level out of it, a dash not judged. Out the other way is not the
+    /// theme, so its badge is only outlined.
     func badge(size: CGFloat) -> CoachingLevelBadge {
         switch self {
         case .notJudged: CoachingLevelBadge(level: 0, neutral: true, size: size)
         case .inZone: CoachingLevelBadge(level: 0, size: size)
-        case .shows(let level), .otherWay(let level): CoachingLevelBadge(level: level, size: size)
+        case .shows(let level): CoachingLevelBadge(level: level, size: size)
+        case .otherWay(let level): CoachingLevelBadge(level: level, size: size, outlined: true)
         }
     }
 }
@@ -209,7 +196,7 @@ struct CoachingRecapCard: View {
         let report: SwingCoachingReport
         let metric: CoachingMetricID
         let number: Int
-        /// How this swing stands on the theme, as its bar shows it.
+        /// How this swing stands on the theme, as its badge shows it.
         var showing: CoachingThemeShowing?
     }
 
@@ -265,9 +252,9 @@ struct CoachingRecapCard: View {
                                 .frame(width: 62, height: 110)
                                 .clipShape(.rect(cornerRadius: 8))
                             HStack(spacing: 4) {
-                                // The same look as this swing's bar below.
+                                // The same badge as this swing's slot below.
                                 if let showing = example.showing {
-                                    RecapBar(showing: showing).frame(width: 12)
+                                    showing.badge(size: 16)
                                 }
                                 Text("Swing \(example.number)" + (example.showing == nil ? "" : " ·"))
                                     .font(.appCaptionLabel.monospacedDigit())
@@ -288,8 +275,8 @@ struct CoachingRecapCard: View {
                         .accessibilityIdentifier("coach-recap-picture")
                     }
                 }
-                levelBars
-                barLegend
+                levelSlots
+                slotKey
             } else {
                 Text(recap.judged == 0 ? "None of these could be judged" : "Nothing kept repeating")
                     .font(.appTitle)
@@ -320,26 +307,25 @@ struct CoachingRecapCard: View {
         .accessibilityIdentifier("coach-recap")
     }
 
-    /// What the slots mean, said once under them: the number is steps out
-    /// of zone, with the tick, the dash and an outlined bar keyed only
-    /// when a slot has one. The bar's colour repeats the level; the badge
-    /// says it by number and shape.
-    private var barLegend: some View {
+    /// What the slots mean, said once under them: the number is steps out,
+    /// with the tick, the dash and an outlined badge keyed only when a slot
+    /// has one.
+    private var slotKey: some View {
         let showings = recap.swings
         let hasNumber = showings.contains { if case .shows = $0 { true } else if case .otherWay = $0 { true } else { false } }
         let hasTick = showings.contains(.inZone)
         let hasDash = showings.contains(.notJudged)
         let otherWay = showings.first { if case .otherWay = $0 { true } else { false } }
         var spoken: [String] = []
-        if hasNumber { spoken.append("a number is steps out of zone") }
+        if hasNumber { spoken.append("a number is steps out") }
         if hasTick { spoken.append("a tick is in zone") }
         if hasDash { spoken.append("a dash is not judged") }
-        if otherWay != nil { spoken.append("an outlined bar is out the other way") }
+        if otherWay != nil { spoken.append("an outlined badge is out the other way") }
         return FlowLayout(spacing: 12, lineSpacing: 4) {
             if hasNumber {
                 HStack(spacing: 4) {
                     CoachingLevelBadge(level: 2, size: 16)
-                    Text("Number = steps out of zone")
+                    Text("Number = steps out")
                 }
             }
             if hasTick {
@@ -356,7 +342,7 @@ struct CoachingRecapCard: View {
             }
             if let otherWay {
                 HStack(spacing: 4) {
-                    RecapBar(showing: otherWay).frame(width: 16)
+                    otherWay.badge(size: 16)
                     Text("Other way")
                 }
             }
@@ -368,16 +354,14 @@ struct CoachingRecapCard: View {
         .accessibilityIdentifier("coach-recap-key")
     }
 
-    /// One slot per swing: a bar, green where the theme's check was in
-    /// zone, amber or red by how far out it was, an outline where it was
-    /// out the other way, grey where the swing couldn't be judged; under it
-    /// the level badge, so the shape and number say it as well as the
-    /// colour, and the swing's number.
-    private var levelBars: some View {
+    /// One slot per swing: its level badge (a tick in zone, the steps out
+    /// in amber or red, outlined where it was out the other way, a dash
+    /// where the swing couldn't be judged), so shape and number say it as
+    /// well as colour, and the swing's number under it.
+    private var levelSlots: some View {
         HStack(alignment: .top, spacing: 6) {
             ForEach(Array(zip(numbers, recap.swings).enumerated()), id: \.offset) { _, entry in
                 VStack(spacing: 5) {
-                    RecapBar(showing: entry.1)
                     entry.1.badge(size: CoachingLevelBadge.markSize)
                     Text("Swing \(entry.0)")
                         .font(.appCaptionLabel.monospacedDigit())
@@ -387,24 +371,10 @@ struct CoachingRecapCard: View {
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Swing \(entry.0): \(entry.1.label)")
+                .frame(maxWidth: .infinity)
             }
         }
         .padding(.top, 2)
-    }
-}
-
-/// One swing's bar on the recap, also its key in the legend and its mark
-/// on the thumbnail and in the comparison: solid in its level's colour,
-/// outlined when out the other way, grey when not judged.
-struct RecapBar: View {
-    let showing: CoachingThemeShowing
-
-    var body: some View {
-        Capsule()
-            .fill(showing.fill)
-            .overlay(Capsule().strokeBorder(showing.colour, lineWidth: 1.5))
-            .frame(height: 6)
-            .accessibilityHidden(true)
     }
 }
 
@@ -600,8 +570,8 @@ struct CoachingCompareView: View {
                 .aspectRatio(CoachingPreview.compareAspect, contentMode: .fit)
                 .clipShape(.rect(cornerRadius: 12))
                 HStack(spacing: 6) {
-                    // The same look as the swing's bar on the recap.
-                    RecapBar(showing: showing).frame(width: 14)
+                    // The same badge as the swing's slot on the recap.
+                    showing.badge(size: 20)
                     Text("Swing \(number)").font(.appLabel)
                     Spacer(minLength: 0)
                     Text(showing.label)

@@ -348,8 +348,10 @@ struct PlayerToolRail: View {
     private var drag = FoldDrag()
     @State private var peekedToolID: String?
 
-    /// The fold button.
+    /// The fold button: a chevron over its caption ("Hide", "Show"), so
+    /// no control on the player is a bare glyph.
     static let buttonSize: CGFloat = 38
+    static let buttonHeight: CGFloat = 46
     /// The tools' capsule: wide enough for a caption such as "Positions",
     /// a few points wider than the fold button.
     static let width: CGFloat = 56
@@ -419,51 +421,57 @@ struct PlayerToolRail: View {
     }
 
     private func foldButton(width: CGFloat) -> some View {
-        Image(systemName: isOpen ? "chevron.up" : "chevron.down")
-            .font(.system(size: 15, weight: .bold))
-            .foregroundColor(.white)
-            .frame(width: Self.buttonSize, height: Self.buttonSize)
-            .playerChromeBackground(Circle())
-            .scaleEffect(isDragging ? 1.12 : 1)
-            .shadow(color: .black.opacity(isDragging ? 0.45 : 0), radius: 8, y: 3)
-            .contentShape(Circle())
-            // Global space: the button moves with the finger, so a local
-            // translation would stay near zero.
-            .gesture(
-                DragGesture(minimumDistance: 0, coordinateSpace: .global)
-                    .updating($drag) { value, drag, _ in
-                        drag.translation = value.translation
-                        if hypot(value.translation.width, value.translation.height) > 6 { drag.started = true }
-                    }
-                    .onEnded { value in
-                        if hypot(value.translation.width, value.translation.height) > 6 {
-                            dock(width: width, translation: value.translation)
-                        } else {
-                            toggleOpen()
-                        }
-                    }
-            )
-            .onChange(of: drag.started) { _, started in
-                if started { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
-            }
-            .accessibilityElement(children: .ignore)
-            .accessibilityIdentifier("player-tools-fold")
-            .accessibilityLabel(isOpen ? "Hide player tools" : "Show player tools")
-            .accessibilityAddTraits(.isButton)
-            .accessibilityAction { toggleOpen() }
-            .accessibilityAction(named: side == .leading ? "Move tools to the right" : "Move tools to the left") {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-                    side = side == .leading ? .trailing : .leading
+        VStack(spacing: 2) {
+            Image(systemName: isOpen ? "chevron.up" : "chevron.down")
+                .font(.system(size: 13, weight: .bold))
+            Text(isOpen ? "Hide" : "Show")
+                .font(FixedType.railCaption)
+                .lineLimit(1)
+                .fixedSize()
+        }
+        .foregroundColor(.white)
+        .frame(width: Self.buttonSize, height: Self.buttonHeight)
+        .playerChromeBackground(Capsule())
+        .scaleEffect(isDragging ? 1.12 : 1)
+        .shadow(color: .black.opacity(isDragging ? 0.45 : 0), radius: 8, y: 3)
+        .contentShape(Capsule())
+        // Global space: the button moves with the finger, so a local
+        // translation would stay near zero.
+        .gesture(
+            DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                .updating($drag) { value, drag, _ in
+                    drag.translation = value.translation
+                    if hypot(value.translation.width, value.translation.height) > 6 { drag.started = true }
                 }
+                .onEnded { value in
+                    if hypot(value.translation.width, value.translation.height) > 6 {
+                        dock(width: width, translation: value.translation)
+                    } else {
+                        toggleOpen()
+                    }
+                }
+        )
+        .onChange(of: drag.started) { _, started in
+            if started { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityIdentifier("player-tools-fold")
+        .accessibilityLabel(isOpen ? "Hide player tools" : "Show player tools")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { toggleOpen() }
+        .accessibilityAction(named: side == .leading ? "Move tools to the right" : "Move tools to the left") {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                side = side == .leading ? .trailing : .leading
             }
+        }
     }
 
     private func dockOutline(highlighted: Bool) -> some View {
-        Circle()
+        Capsule()
             .strokeBorder(highlighted ? Color.accentLime : Color.white.opacity(0.7),
                           style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
-            .background(Circle().fill(highlighted ? Color.accentLime.opacity(0.2) : .clear))
-            .frame(width: Self.buttonSize, height: Self.buttonSize)
+            .background(Capsule().fill(highlighted ? Color.accentLime.opacity(0.2) : .clear))
+            .frame(width: Self.buttonSize, height: Self.buttonHeight)
             .frame(width: Self.width)
             .allowsHitTesting(false)
     }
