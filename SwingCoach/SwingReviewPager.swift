@@ -158,15 +158,10 @@ struct ReviewTopBar: View {
 
     var body: some View {
         HStack {
-            Button(action: onLeading) {
-                Text(leadingTitle)
-                    .font(.appLabel)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 14)
-                    .frame(minWidth: Self.buttonSize, minHeight: Self.buttonSize)
-                    .playerChromeBackground(RoundedRectangle(cornerRadius: 12))
-            }
-            .buttonStyle(.plain)
+            // A capsule as tall as the star's circle, so the row's two
+            // buttons read as one family.
+            Button(leadingTitle, action: onLeading)
+                .buttonStyle(PlayerChromeCapsuleButtonStyle())
             .accessibilityLabel(leadingAccessibilityLabel)
             .accessibilityIdentifier("review-leading")
 

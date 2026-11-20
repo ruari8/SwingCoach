@@ -60,7 +60,7 @@ nonisolated struct CoachingMetricDefinition {
     /// Size of one level outside the zone, in `unit`.
     let step: Double
     /// What the swing did when the value is under / over the zone: a
-    /// finding's title. Said as what happened ("Head didn't drop into
+    /// finding's title. Said as what happened ("Head stayed high at
     /// impact"), never as something to do, so it can't read as a cue.
     let below: String
     let above: String
@@ -164,7 +164,7 @@ nonisolated struct CoachingMetricDefinition {
               below: "Hips backed away a lot", above: "Hips moved toward the ball",
               measures: "Backside against its address line at impact.", weight: 1.3),
         .init(id: .headHeightImpact, title: "Head height at impact", position: 7, unit: .bodyPercent, zone: -12...(-3), step: 2,
-              below: "Head dropped a lot into impact", above: "Head didn't drop into impact",
+              below: "Head dropped a lot into impact", above: "Head stayed high at impact",
               measures: "Head height against address at impact. Good players lower it.", weight: 0.9),
         .init(id: .headDepthImpact, title: "Head at impact", position: 7, unit: .bodyPercent, zone: -5.5...2, step: 2,
               below: "Head backed away from the ball", above: "Head moved toward the ball",

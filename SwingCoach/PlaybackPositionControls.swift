@@ -166,11 +166,23 @@ private struct PlayerIsPlayingKey: EnvironmentKey {
     static let defaultValue = false
 }
 
+private struct PlayerPanelIsShownKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
 extension EnvironmentValues {
     /// True while the player's video plays; set for its content overlay.
     var playerIsPlaying: Bool {
         get { self[PlayerIsPlayingKey.self] }
         set { self[PlayerIsPlayingKey.self] = newValue }
+    }
+
+    /// True while the panel under the video (the coaching card) is on
+    /// screen; set for the content overlay, so a drawing's name tag can
+    /// give way to the card that already names it.
+    var playerPanelIsShown: Bool {
+        get { self[PlayerPanelIsShownKey.self] }
+        set { self[PlayerPanelIsShownKey.self] = newValue }
     }
 }
 
@@ -207,6 +219,10 @@ struct SwingPositionStrip: View {
     static let height: CGFloat = 56
     /// A low-confidence position's pose, dimmed inside its dashed outline.
     static let unsureGlyphOpacity = 0.45
+    /// A chip's level badge: 18 points with 12-point digits.
+    static let markSize: CGFloat = 18
+    /// Between a mark and its cell's corner, so it sits fully inside.
+    static let markInset: CGFloat = 1
 
     var body: some View {
         GeometryReader { geometry in
@@ -271,8 +287,10 @@ struct SwingPositionStrip: View {
                     .padding(selected ? 2 : 0)
             }
         }
-        // The shared low-confidence glyph on the dashed chip's other
-        // corner, the same mark as by the time and in Swing Info.
+        // The whole cell is the target, the strip's full height.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // The shared low-confidence glyph in the cell's other top corner,
+        // the same mark as by the time and in Swing Info.
         .overlay(alignment: .topLeading) {
             if unsure {
                 Image(systemName: LowConfidenceGlyph.symbol)
@@ -280,21 +298,19 @@ struct SwingPositionStrip: View {
                     .foregroundStyle(.white)
                     .frame(width: LowConfidenceGlyph.chipDisc, height: LowConfidenceGlyph.chipDisc)
                     .background(Circle().fill(Color(white: 0.12)))
-                    .offset(x: -1, y: -4)
+                    .padding(Self.markInset)
                     .accessibilityHidden(true)
             }
         }
-        // The level badge belongs to its pose: pinned to the chip's
-        // top-trailing corner, inside the strip, so it never pairs with a
-        // neighbour or sits among the scrubber's dots.
+        // The level badge belongs to its pose: inside its own cell's
+        // top-trailing corner, never perched on the edge, so it never
+        // pairs with a neighbour or sits among the scrubber's dots.
         .overlay(alignment: .topTrailing) {
             if let mark = marks[position.number] {
                 markBadge(mark)
-                    .offset(x: 3, y: -4)
+                    .padding(Self.markInset)
             }
         }
-        // The whole cell is the target, the strip's full height.
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityIdentifier("swing-position-\(position.label)")
@@ -314,15 +330,15 @@ extension SwingPositionStrip {
             switch mark.shape {
             case .tick:
                 Image(systemName: "checkmark")
-                    .font(.system(size: 8, weight: .black))
+                    .font(.system(size: 10, weight: .black))
                     .foregroundColor(.black)
             case .level(let level):
                 Text("\(level)")
-                    .font(.system(size: 10, weight: .heavy).monospacedDigit())
+                    .font(.system(size: 12, weight: .heavy).monospacedDigit())
                     .foregroundColor(.black)
             }
         }
-        .frame(width: mark.shape == .tick ? 13 : 16, height: mark.shape == .tick ? 13 : 16)
+        .frame(width: Self.markSize, height: Self.markSize)
         .overlay(Circle().strokeBorder(Color.black.opacity(0.55), lineWidth: 1))
         .allowsHitTesting(false)
     }
@@ -338,6 +354,9 @@ struct PlayerTool: Identifiable {
     enum Icon {
         case system(String)
         case text(String)
+        /// A position's stick-figure pose, as on the pose strip: a line
+        /// drawing, the same weight as the rail's outline symbols.
+        case pose(Int)
     }
 
     let id: String
@@ -378,9 +397,11 @@ struct PlayerToolRail: View {
     /// no control on the player is a bare glyph.
     static let buttonSize: CGFloat = 38
     static let buttonHeight: CGFloat = 46
-    /// The tools' capsule: wide enough for a caption such as "Positions",
-    /// a few points wider than the fold button.
-    static let width: CGFloat = 56
+    /// The tools' capsule: wide enough for a caption such as "Positions"
+    /// with `captionInset` either side.
+    static let width: CGFloat = 66
+    /// Between a caption and the capsule's edges.
+    static let captionInset: CGFloat = 6
     /// One tool in the capsule: past the 44 pt minimum target.
     static let cellHeight: CGFloat = 46
     /// Space between the capsule's edge and its first and last tool.
@@ -588,7 +609,8 @@ private struct RailToolRow: View {
             Text(tool.caption ?? tool.title)
                 .font(FixedType.railCaption)
                 .lineLimit(1)
-                .minimumScaleFactor(0.85)
+                .minimumScaleFactor(0.9)
+                .padding(.horizontal, PlayerToolRail.captionInset)
                 .accessibilityHidden(true)
         }
         .foregroundColor(tool.isOn ? .black : tool.isDestructive ? Self.destructiveColour : .white)
@@ -658,6 +680,10 @@ private struct RailToolRow: View {
                 .font(FixedType.readout)
                 .lineLimit(1)
                 .fixedSize()
+        case .pose(let number):
+            let colour: Color = tool.isOn ? .black : tool.isDestructive ? Self.destructiveColour : .white
+            SwingPositionGlyph(number: number, figure: colour, club: colour)
+                .frame(width: 20, height: 20)
         }
     }
 }

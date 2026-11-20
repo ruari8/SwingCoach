@@ -908,8 +908,11 @@ struct LibraryView: View {
                 isSelecting = true
             }
         } label: {
-            Text("Select swings")
+            // An icon beside the gear and +, so it never reads like the
+            // session header's "Select".
+            Image(systemName: "checkmark.circle")
         }
+        .accessibilityLabel("Select swings")
         .disabled(library.swings.isEmpty)
     }
 
@@ -1208,8 +1211,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     @GestureState private var timelineDragActive = false
     @State private var scrubFraction: Double = 0
     @State private var isFineScrubbing = false
-    @State private var positionBadgeTask: Task<Void, Never>?
-    @State private var showsPositionBadge = false
     /// Width over height of the displayed video, once loaded.
     @State private var videoAspect: Double?
     /// Top of the bottom panel on screen, for lifting the video above it.
@@ -1342,6 +1343,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
                 contentOverlay(currentTime, geometry.size)
                     .environment(\.playerIsPlaying, isPlaying)
+                    .environment(\.playerPanelIsShown, controlsVisible && bottomPanel != nil && !isDrawing)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .offset(y: -lift)
                     .allowsHitTesting(contentOverlayAllowsHitTesting)
@@ -1414,11 +1416,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                                 .padding(.bottom, isScrubbing ? 16 : 30)
                         }
 
-                        if isScrubbing || showsPositionBadge || isOnUnsurePosition {
-                            scrubTimeBadge
-                                .padding(.bottom, 10)
-                        }
-
                         // Timeline sits ABOVE the buttons (Twitter-style) and well
                         // clear of the home-indicator zone so dragging it never gets
                         // hijacked by the system swipe-up gesture.
@@ -1427,24 +1424,24 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                         if let bottomPanel, !isDrawing {
                             bottomPanel(panelContext)
                                 .padding(.horizontal, 12)
-                                .padding(.bottom, 2)
+                                .padding(.bottom, PlayerChrome.bandGap)
                                 .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { panelTop = $0 }
                                 .onDisappear { panelTop = nil }
                                 .transition(.opacity)
                         }
 
+                        // One gap token between the bands: card, scrubber,
+                        // transport row, pose strip.
                         integratedTimeline(width: timelineWidth)
                             .padding(.horizontal, 16)
-                            .padding(.bottom, 6)
+                            .padding(.bottom, PlayerChrome.bandGap)
 
-                        // A clear gap between the scrubber's dots and the
-                        // pose strip's badges.
                         if isAtWalkthroughStop {
-                            Color.clear.frame(height: visiblePositions == nil ? bottomControlPadding : 8)
+                            Color.clear.frame(height: visiblePositions == nil ? bottomControlPadding : 0)
                         } else {
                             transportControlBar
                                 .padding(.horizontal, 22)
-                                .padding(.bottom, visiblePositions == nil ? bottomControlPadding + 10 : 8)
+                                .padding(.bottom, visiblePositions == nil ? bottomControlPadding + 10 : PlayerChrome.bandGap)
                         }
 
                         if let positions = visiblePositions {
@@ -1526,18 +1523,16 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     }
 
     private var transportControlBar: some View {
-        HStack(spacing: 0) {
-            // Left: time readout (fixed width balances the right side so the
-            // transport buttons stay centered). fixedSize stops it wrapping into
-            // a vertical "0/0/./0" column when space gets tight.
-            Text(formatTime(currentTime) + " s")
-                .font(FixedType.readout.monospacedDigit())
-                .foregroundColor(.white.opacity(0.85))
-                .lineLimit(1)
-                .fixedSize()
-                .frame(width: 58, alignment: .leading)
-
-            Spacer(minLength: 0)
+        ZStack {
+            // Left: where the playhead is, the position's name on a
+            // position, else the time; right: Lock. The transport
+            // buttons stay centred over both.
+            HStack(spacing: 0) {
+                transportReadout
+                    .frame(maxWidth: Self.transportReadoutWidth, alignment: .leading)
+                Spacer(minLength: 0)
+                lockSlot
+            }
 
             HStack(spacing: 26) {
                 frameStepButton(systemImage: "backward.frame.fill", direction: -1)
@@ -1556,9 +1551,57 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
                 frameStepButton(systemImage: "forward.frame.fill", direction: 1)
             }
+        }
+    }
 
-            Spacer(minLength: 0)
+    /// The transport row's left slot: wide enough for a position's name
+    /// on two short lines, clear of the step-back button on a 375-point
+    /// phone.
+    private static var transportReadoutWidth: CGFloat { 84 }
 
+    /// The one readout of where the playhead is: the position's name on a
+    /// position (with the low-confidence glyph when the model was unsure),
+    /// else the time; "¼ speed" under it while fine-scrubbing. Neutral
+    /// grey, never the accent, and no total duration (Swing Info has it).
+    private var transportReadout: some View {
+        let position = currentPositionNumber.flatMap { number in visiblePositions?.first { $0.number == number } }
+        return VStack(alignment: .leading, spacing: 3) {
+            Group {
+                if let position {
+                    Group {
+                        if position.isLowConfidence {
+                            Text("\(LowConfidenceGlyph.image) \(position.name)")
+                        } else {
+                            Text(position.name)
+                        }
+                    }
+                        .accessibilityLabel(position.isLowConfidence
+                                            ? "\(position.title), \(SwingPosition.lowConfidenceWords)" : position.title)
+                } else {
+                    Text(formatTime(currentTime) + " s")
+                        .monospacedDigit()
+                }
+            }
+            .font(FixedType.readout)
+            .foregroundColor(PlayerChrome.secondaryText)
+            .lineLimit(2)
+            .minimumScaleFactor(0.85)
+            .fixedSize(horizontal: false, vertical: true)
+            if isFineScrubbing {
+                Text("¼ speed")
+                    .font(FixedType.cellLabel)
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(Capsule().fill(Color.accentLime))
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("playback-readout")
+    }
+
+    @ViewBuilder
+    private var lockSlot: some View {
             // Right: pin the controls for this review, or explicitly unlock.
             if controlsLocked != nil {
                 Button {
@@ -1586,7 +1629,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             } else {
                 Color.clear.frame(width: 58, height: 1)
             }
-        }
     }
 
     private func frameStepButton(systemImage: String, direction: Int) -> some View {
@@ -1687,7 +1729,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             // strip is up: the strip itself says it is on.
             tools.append(PlayerTool(id: "positions", title: "Positions",
                                     accessibilityLabel: showsSwingPositions ? "Hide swing positions" : "Show swing positions",
-                                    icon: .system("figure.golf")) {
+                                    icon: .pose(4)) {
                 withAnimation(.easeInOut(duration: 0.2)) { showsSwingPositions.toggle() }
             })
         }
@@ -1748,13 +1790,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         }
         showControls()
         seek(to: CMTime(seconds: position.clipTime, preferredTimescale: 600))
-        showsPositionBadge = true
-        positionBadgeTask?.cancel()
-        positionBadgeTask = Task {
-            try? await Task.sleep(nanoseconds: 1_200_000_000)
-            guard !Task.isCancelled else { return }
-            await MainActor.run { showsPositionBadge = false }
-        }
     }
 
     private var fullscreenPlayback: some View {
@@ -1863,50 +1898,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             .foregroundColor(.white)
             .frame(width: 48, height: 48)
             .background(Circle().fill(Color.black.opacity(0.46)))
-    }
-
-    /// Paused on a position the model was unsure of: the badge by the time
-    /// says so in words, not only while scrubbing.
-    private var isOnUnsurePosition: Bool {
-        guard !isPlaying, let number = currentPositionNumber,
-              let position = visiblePositions?.first(where: { $0.number == number }) else { return false }
-        return position.isLowConfidence
-    }
-
-    private var scrubTimeBadge: some View {
-        HStack(spacing: 0) {
-            if let number = currentPositionNumber, let position = visiblePositions?.first(where: { $0.number == number }) {
-                // Doubt named in words, not only by the strip's dashed chip.
-                Text(position.isLowConfidence
-                     ? "\(position.name) · \(LowConfidenceGlyph.image) \(SwingPosition.lowConfidenceWords)"
-                     : "\(position.title)")
-                    .font(FixedType.readout)
-                    .foregroundColor(.accentLime)
-                Text(" · ")
-                    .font(FixedType.readout)
-            }
-            Text("\(formatTime(currentTime)) / \(formatTime(duration)) s")
-                .font(FixedType.readout.monospacedDigit())
-            if isFineScrubbing {
-                Text("¼ speed")
-                    .font(FixedType.cellLabel)
-                    .foregroundColor(.black)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 1)
-                    .background(Capsule().fill(Color.accentLime))
-                    .padding(.leading, 6)
-            }
-        }
-        .foregroundColor(.white)
-        .lineLimit(1)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 7)
-        .background(
-            Capsule()
-                .fill(Color.black.opacity(0.7))
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("playback-scrub-badge")
     }
 
     private func integratedTimeline(width: CGFloat) -> some View {
@@ -2044,7 +2035,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         player = nil
         stopContinuousStep()
         autoHideTask?.cancel()
-        positionBadgeTask?.cancel()
     }
 
     private func togglePlayback() {

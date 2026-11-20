@@ -62,8 +62,10 @@ extension Font {
 /// over the video, Trim's timeline and labels drawn on a frame. Level
 /// badges size their glyphs to the badge. Everything else uses the ramp.
 enum FixedType {
-    /// The tool rail's captions and the timeline's ticks.
-    static let railCaption = Font.system(size: 10, weight: .semibold)
+    /// The tool rail's captions and the timeline's ticks: 11 points, with
+    /// `PlayerToolRail.captionInset` either side, so "Positions" never
+    /// touches the rail's edges.
+    static let railCaption = Font.system(size: 11, weight: .semibold)
     /// A label inside a fixed cell: the strip's "P3", "¼ speed", Trim's
     /// detector line.
     static let cellLabel = Font.system(size: 11, weight: .semibold)
@@ -195,6 +197,9 @@ enum PlayerChrome {
     /// Background of every sheet over the player: dark and near opaque, so
     /// the card and strip behind never ghost through.
     static let sheetBackground = Color(white: 0.09).opacity(0.97)
+    /// The one gap between the bands at the player's bottom: the coaching
+    /// card, the scrubber, the transport row and the pose strip.
+    static let bandGap: CGFloat = 8
 }
 
 /// Sheets' lists: the margin above a sheet's first card, instead of the
@@ -202,6 +207,9 @@ enum PlayerChrome {
 /// the first card starts about 14 points under the title bar.
 enum SheetLayout {
     static let contentTop: CGFloat = 8
+    /// Under a sheet's last row: more than the sheet's corner radius, so
+    /// the corner never cuts a row when the list is scrolled to its end.
+    static let contentBottom: CGFloat = 48
 }
 
 extension View {
@@ -234,7 +242,7 @@ extension View {
         self
             .scrollContentBackground(.hidden)
             .sheetContentTop()
-            .contentMargins(.bottom, 32, for: .scrollContent)
+            .contentMargins(.bottom, SheetLayout.contentBottom, for: .scrollContent)
             .background(PlayerChrome.sheetBackground)
             .presentationBackground(PlayerChrome.sheetBackground)
             .preferredColorScheme(.dark)
@@ -302,9 +310,12 @@ enum LibraryGrid {
 /// away while the phone sits on a tripod.
 enum CaptureControl {
     static let height: CGFloat = 44
-    /// The dot beside the switch while Auto is chosen: small and quiet,
-    /// the switch itself carries the mode.
-    static let indicatorSize: CGFloat = 8
+    /// The mark beside the switch while Auto is chosen, with a shape per
+    /// state (a filled dot listening, a hollow ring paused, a warning
+    /// glyph on a problem), so colour is never the only signal. The
+    /// switch itself carries the mode: its Auto segment fills with the
+    /// accent while Auto listens.
+    static let indicatorSize: CGFloat = 12
     /// The Auto / Manual switch's width: two segments wide enough for
     /// "Manual" at the larger size.
     static let modeWidth: CGFloat = 184
@@ -317,9 +328,11 @@ enum CoachingPreview {
     /// clip, which the tile cuts toward the golfer and club, so its sky
     /// and foreground don't push the other swings off screen.
     static let compareAspect: CGFloat = 4.0 / 5.0
-    /// The recap card's picture over the camera: short, cut toward the
-    /// golfer and club, so the card stays low in the viewfinder.
-    static let recapThumbnail = CGSize(width: 64, height: 88)
+    /// The recap card's picture over the camera: as tall as the card,
+    /// cut toward the golfer and club, wide enough to read from the
+    /// tripod, with that swing's own badge on its corner.
+    static let recapPictureWidth: CGFloat = 96
+    static let recapPictureMinHeight: CGFloat = 120
 }
 
 // MARK: - Capsule buttons
@@ -366,6 +379,116 @@ struct PrimaryCapsuleButtonStyle: ButtonStyle {
             .opacity(configuration.isPressed ? 0.7 : 1)
             .padding(.vertical, CapsuleButton.tapPadding)
             .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Hit areas
+
+/// Every control is at least 44 points to tap, whatever it looks like.
+enum HitArea {
+    static let minimum: CGFloat = 44
+}
+
+extension View {
+    /// Grows the tappable area to `HitArea.minimum` around a control drawn
+    /// `visible` big, without changing the layout around it.
+    func minimumHitArea(visible: CGSize) -> some View {
+        let dx = max(0, (HitArea.minimum - visible.width) / 2)
+        let dy = max(0, (HitArea.minimum - visible.height) / 2)
+        return padding(.horizontal, dx)
+            .padding(.vertical, dy)
+            .contentShape(Rectangle())
+            .padding(.horizontal, -dx)
+            .padding(.vertical, -dy)
+    }
+}
+
+/// A secondary action on a dark panel over the video (the step card's
+/// All checks): an outlined capsule drawn 28 points tall, 44 to tap.
+struct PanelCapsuleButtonStyle: ButtonStyle {
+    static let height: CGFloat = 28
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.appLabel)
+            .foregroundStyle(.white)
+            .lineLimit(1)
+            .padding(.horizontal, 10)
+            .frame(height: Self.height)
+            .background(Capsule().strokeBorder(.white.opacity(0.35), lineWidth: 1))
+            .opacity(configuration.isPressed ? 0.6 : 1)
+            .minimumHitArea(visible: CGSize(width: HitArea.minimum, height: Self.height))
+    }
+}
+
+/// Closes a card over the camera (the recap): an xmark in a 28-point
+/// circle, 44 to tap, without making the card's row taller.
+struct CloseButtonStyle: ButtonStyle {
+    static let size: CGFloat = 28
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(width: Self.size, height: Self.size)
+            .background(Circle().fill(.white.opacity(configuration.isPressed ? 0.24 : 0.14)))
+            .minimumHitArea(visible: CGSize(width: Self.size, height: Self.size))
+    }
+}
+
+/// A button over the video (the player's Done and Back): a capsule with
+/// the player chrome's fill and edge, as tall as the star beside it.
+struct PlayerChromeCapsuleButtonStyle: ButtonStyle {
+    static let height: CGFloat = 44
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.appLabel)
+            .foregroundStyle(.white)
+            .lineLimit(1)
+            .padding(.horizontal, 16)
+            .frame(minWidth: Self.height, minHeight: Self.height)
+            .playerChromeBackground(Capsule())
+            .opacity(configuration.isPressed ? 0.7 : 1)
+            .contentShape(Capsule())
+    }
+}
+
+// MARK: - Mode switch
+
+/// A segmented switch whose chosen segment can fill with the accent (dark
+/// text on lime): Capture's Auto / Manual, filled while Auto listens, so
+/// the switch itself shows the state with nothing over the viewfinder.
+/// It stays a system segmented control, so VoiceOver and Voice Control
+/// read it as one.
+struct AccentSegmentedControl: UIViewRepresentable {
+    let titles: [String]
+    @Binding var selectedIndex: Int
+    /// Fill the chosen segment with the accent.
+    var accentsSelection: Bool
+    var identifier: String
+
+    func makeUIView(context: Context) -> UISegmentedControl {
+        let control = UISegmentedControl(items: titles)
+        control.accessibilityIdentifier = identifier
+        control.addAction(UIAction { [binding = $selectedIndex] action in
+            guard let control = action.sender as? UISegmentedControl else { return }
+            binding.wrappedValue = control.selectedSegmentIndex
+        }, for: .valueChanged)
+        return control
+    }
+
+    func updateUIView(_ control: UISegmentedControl, context: Context) {
+        if control.selectedSegmentIndex != selectedIndex {
+            control.selectedSegmentIndex = selectedIndex
+        }
+        let body = UIFont.preferredFont(forTextStyle: .callout)
+        let chosen = UIFont.systemFont(ofSize: body.pointSize, weight: .semibold)
+        control.selectedSegmentTintColor = accentsSelection ? UIColor(Color.accentLime) : nil
+        control.setTitleTextAttributes([.font: body, .foregroundColor: UIColor.white], for: .normal)
+        control.setTitleTextAttributes([.font: chosen,
+                                        .foregroundColor: accentsSelection ? UIColor.black : UIColor.white],
+                                       for: .selected)
     }
 }
 

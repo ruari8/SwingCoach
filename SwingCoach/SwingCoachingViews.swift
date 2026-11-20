@@ -79,20 +79,18 @@ struct SessionCoachingView: View {
                         if !measured.isEmpty {
                             VStack(alignment: .leading, spacing: 4) {
                                 swingDots(measured, verdicts)
+                                // The swings without a level, and why, as
+                                // one caption under their dashes.
+                                if judged.count < reports.count {
+                                    Text(notJudgedTotal(reports))
+                                        .font(.appCaption.monospacedDigit())
+                                        .foregroundStyle(Color.helpText)
+                                        .accessibilityIdentifier("session-coaching-not-judged")
+                                }
                                 symbolKey(hasDash: judged.count < reports.count)
-                            }
-                            Divider()
-                        }
-                        // Each count names what it is out of.
-                        VStack(spacing: 4) {
-                            LabeledContent("Measured", value: "\(reports.count) of \(swings.count) swings")
-                            if judged.count < reports.count {
-                                LabeledContent("Not judged", value: notJudgedTotal(reports))
+                                    .padding(.top, 2)
                             }
                         }
-                        .font(.appBody.monospacedDigit())
-                        .accessibilityElement(children: .contain)
-                        .accessibilityIdentifier("session-coaching-totals")
                     }
                     .padding(.vertical, 2)
                 }
@@ -176,28 +174,16 @@ struct SessionCoachingView: View {
     }
 
     /// The session in one line, the count large: "7 of 11 judged swings
-    /// good", the swings the coach had nothing to say about, and under it
-    /// what good means, so a theme seen on every swing doesn't contradict it.
+    /// good", the swings the coach had nothing to say about.
     private func headline(good: Int, judged: Int) -> some View {
         // Proportional digits: a headline number, never a column, so "11"
         // never reads as "1 1".
         let count = Text("\(good) of \(judged)").font(.appDisplay)
-        return VStack(alignment: .leading, spacing: 4) {
-            Text("\(count) judged swing\(judged == 1 ? "" : "s") good")
-                .font(.appTitle)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("session-coaching-headline")
-            Text(Self.goodMeaning)
-                .font(.appCaption)
-                .foregroundStyle(Color.helpText)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("session-coaching-good-meaning")
-        }
+        return Text("\(count) judged swing\(judged == 1 ? "" : "s") good")
+            .font(.appTitle)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("session-coaching-headline")
     }
-
-    /// What "good" counts, as the coaching rules define it: no fault far
-    /// enough out for a pointer (about 4 steps, or two agreeing checks).
-    static let goodMeaning = "Good = nothing far enough out to point at."
 
 
     /// Between the summary's headline, marks and counts.
@@ -207,11 +193,11 @@ struct SessionCoachingView: View {
     private static let dotWidth: CGFloat = 44
     private static let dotHeight: CGFloat = 36
 
-    /// "1 swing", and why when every one of them shares the reason: "1
-    /// swing · camera moved".
+    /// "1 not judged", and why when every one of them shares the reason:
+    /// "1 not judged · short swing".
     private func notJudgedTotal(_ reports: [SwingCoachingReport]) -> String {
         let exclusions = reports.compactMap(\.exclusion)
-        let count = "\(exclusions.count) swing\(exclusions.count == 1 ? "" : "s")"
+        let count = "\(exclusions.count) not judged"
         guard let reason = exclusions.first, exclusions.allSatisfy({ $0 == reason }) else { return count }
         return "\(count) · \(CoachingWords.reason(reason))"
     }
@@ -245,7 +231,7 @@ struct SessionCoachingView: View {
             Text(Self.markScope)
                 .font(.appCaptionLabel)
                 .foregroundStyle(Color.sectionHeading)
-            CoachingMarkKey(tick: "Good", dash: hasDash)
+            CoachingLegend(marks: .init(tick: "Good", dash: hasDash))
         }
         .font(.appCaption)
         .foregroundStyle(Color.helpText)
@@ -316,10 +302,11 @@ struct SessionCoachingView: View {
                 opened = measured[index].id
             } label: {
                 VStack(alignment: .leading, spacing: 5) {
+                    // What the picture is, above it, so it is read first.
+                    Text(title).font(.appCaptionLabel)
                     CoachingFrameView(swing: measured[index], report: report, metric: metric)
                         .aspectRatio(9.0 / 16.0, contentMode: .fit)
                         .clipShape(.rect(cornerRadius: 10))
-                    Text(title).font(.appCaptionLabel)
                     // The swing and where it sits against the zone; the
                     // signed numbers are in All checks.
                     Text("Swing \(index + 1) · \(CoachingWords.steps(result.level))")

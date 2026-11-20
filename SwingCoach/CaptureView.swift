@@ -1976,17 +1976,19 @@ struct CaptureView: View {
                         if workflowMode == .auto {
                             autoIndicator
                         }
-                        Picker("Capture", selection: $workflowMode) {
-                            ForEach(CaptureWorkflowMode.allCases) { mode in
-                                Text(mode.displayName).tag(mode)
-                            }
-                        }
-                        .pickerStyle(.segmented)
                         // Tapped from a step away to stop Auto: the shared
-                        // Capture control height, 44 points.
-                        .controlSize(.large)
+                        // Capture control height, 44 points. While Auto
+                        // listens its segment fills with the accent.
+                        AccentSegmentedControl(
+                            titles: CaptureWorkflowMode.allCases.map(\.displayName),
+                            selectedIndex: Binding(
+                                get: { CaptureWorkflowMode.allCases.firstIndex(of: workflowMode) ?? 0 },
+                                set: { workflowMode = CaptureWorkflowMode.allCases[$0] }
+                            ),
+                            accentsSelection: workflowMode == .auto && autoIndicatorState == .listening,
+                            identifier: "capture-mode"
+                        )
                         .frame(width: CaptureControl.modeWidth, height: CaptureControl.height)
-                        .accessibilityIdentifier("capture-mode")
                     }
                 }
             }
@@ -2125,16 +2127,38 @@ struct CaptureView: View {
             || camera.liveSwingDetection.status == .unavailable || showCaptureModelStats
     }
 
-    /// A small dot beside the Auto / Manual switch while Auto is chosen:
-    /// lime when armed, orange when it needs attention, grey when paused.
+    private enum AutoIndicatorState { case listening, paused, problem }
+
+    private var autoIndicatorState: AutoIndicatorState {
+        if camera.autoCaptureStatus.lastErrorMessage != nil || camera.liveSwingDetection.status == .unavailable {
+            return .problem
+        }
+        return camera.autoCaptureStatus.isActive ? .listening : .paused
+    }
+
+    /// The mark beside the Auto / Manual switch while Auto is chosen, a
+    /// shape per state so colour is never the only signal: a filled lime
+    /// dot listening, a hollow grey ring paused, an orange warning glyph
+    /// when it needs attention.
     private var autoIndicator: some View {
-        Circle()
-            .fill(autoStatusIndicator)
-            .frame(width: CaptureControl.indicatorSize, height: CaptureControl.indicatorSize)
-            .padding(.trailing, 2)
-            .accessibilityElement()
-            .accessibilityLabel(autoStatusTitle)
-            .accessibilityIdentifier("capture-auto-indicator")
+        let size = CaptureControl.indicatorSize
+        return Group {
+            switch autoIndicatorState {
+            case .listening:
+                Circle().fill(autoStatusIndicator)
+            case .paused:
+                Circle().strokeBorder(autoStatusIndicator, lineWidth: 2)
+            case .problem:
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: size, weight: .bold))
+                    .foregroundStyle(autoStatusIndicator)
+            }
+        }
+        .frame(width: size, height: size)
+        .padding(.trailing, 2)
+        .accessibilityElement()
+        .accessibilityLabel(autoStatusTitle)
+        .accessibilityIdentifier("capture-auto-indicator")
     }
 
     private var autoStatusDetail: String {

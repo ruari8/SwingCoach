@@ -343,14 +343,23 @@ struct SwingInfoView: View {
     var body: some View { metadataSheet }
 
     var metadataSheet: some View {
+        // The inset cards of the other sheets over the player (All checks,
+        // Layers), with the shared room under the last row.
         NavigationStack {
-            ScrollView {
-                // The sheet's shared top inset is above the first row, with
-                // the few points a list's section inset adds.
-                metadataContent
-                    .padding([.horizontal, .bottom])
-                    .padding(.top, 6)
+            List {
+                Section {
+                    metadataRow("View", currentSwing.vantage.displayName)
+                    metadataRow("Duration", formatDuration(currentSwing.duration))
+                    metadataRow("Saved", formatDate(currentSwing.createdAt))
+                } header: {
+                    SectionHeading("Details")
+                }
+                swingPositionsSection
             }
+            .listStyle(.insetGrouped)
+            // A table, not a settings list: compact rows, so more of
+            // P1–P10 shows at the sheet's height.
+            .environment(\.defaultMinListRowHeight, Self.rowHeight)
             .navigationTitle("Swing Info")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -362,51 +371,38 @@ struct SwingInfoView: View {
         .playerSheetStyle()
     }
 
-    private var metadataContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Details")
-                .font(.appLabel)
-
-            VStack(spacing: 10) {
-                metadataRow("View", currentSwing.vantage.displayName)
-                metadataRow("Duration", formatDuration(currentSwing.duration))
-                metadataRow("Saved", formatDate(currentSwing.createdAt))
-            }
-
-            swingPositionsSection
-        }
-    }
-
     @ViewBuilder
     private var swingPositionsSection: some View {
         if SwingPositionProcessor.canFindPositions(for: currentSwing) {
-            Text("Swing positions")
-                .font(.appLabel)
-                .padding(.top, 8)
-
-            if let positions = currentSwing.swingPositions?.positions {
-                VStack(spacing: 8) {
+            Section {
+                if let positions = currentSwing.swingPositions?.positions {
                     positionColumnHeaders
+                        .listRowInsets(Self.rowInsets)
                     ForEach(positions, id: \.number) { position in
                         swingPositionRow(position)
+                            .listRowInsets(Self.rowInsets)
+                    }
+                } else if positionProcessor.failed.contains(currentSwing.id) {
+                    Text("Swing positions could not be found for this clip.")
+                        .font(.appCaption)
+                        .foregroundStyle(Color.helpText)
+                } else {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text("Finding swing positions…")
+                            .font(.appCaption)
+                            .foregroundStyle(Color.helpText)
                     }
                 }
-                .accessibilityIdentifier("swing-positions")
-                Text("Times are on the clip's slow-motion timeline. A ? and Low mark positions the model was unsure of.")
-                    .font(.appCaption)
-                    .foregroundStyle(Color.helpText)
-            } else if positionProcessor.failed.contains(currentSwing.id) {
-                Text("Swing positions could not be found for this clip.")
-                    .font(.appCaption)
-                    .foregroundStyle(Color.helpText)
-            } else {
-                HStack(spacing: 8) {
-                    ProgressView()
-                    Text("Finding swing positions…")
-                        .font(.appCaption)
+            } header: {
+                SectionHeading("Swing positions")
+            } footer: {
+                if currentSwing.swingPositions?.positions != nil {
+                    Text("Times are on the clip's slow-motion timeline. A ? and Low mark positions the model was unsure of.")
                         .foregroundStyle(Color.helpText)
                 }
             }
+            .accessibilityIdentifier("swing-positions")
         }
     }
 
@@ -425,6 +421,8 @@ struct SwingInfoView: View {
     }
 
     private static let confidenceWidth: CGFloat = 96
+    private static let rowHeight: CGFloat = 36
+    private static let rowInsets = EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16)
     /// Time and confidence: the body size in tabular figures.
     private static let numberFont = Font.appBody.monospacedDigit()
 

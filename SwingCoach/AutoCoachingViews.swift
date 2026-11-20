@@ -219,13 +219,22 @@ struct CoachingRecapCard: View {
                 examplePicture(example)
             }
             VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .top, spacing: 10) {
+                HStack(alignment: severityWord == nil ? .top : .center, spacing: 10) {
                     levelBadge
-                        .padding(.top, 1)
-                    Text(title)
-                        .font(.appTitle)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, severityWord == nil ? 1 : 0)
+                    VStack(alignment: .leading, spacing: 0) {
+                        // How far out it typically is, in one plain word.
+                        if let severityWord, let theme = recap.theme {
+                            Text(severityWord)
+                                .font(.appCaptionLabel)
+                                .foregroundStyle(Color.coachingLevelText(theme.medianLevel))
+                                .accessibilityIdentifier("coach-recap-severity")
+                        }
+                        Text(title)
+                            .font(.appTitle)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     closeButton
                 }
                 Button(action: onOpen) {
@@ -242,10 +251,18 @@ struct CoachingRecapCard: View {
                 .accessibilityIdentifier("coach-recap-open")
             }
         }
+        // The picture fills the card's height, set by the words beside it.
+        .fixedSize(horizontal: false, vertical: true)
         .foregroundStyle(.white)
         .solidPanelBackground()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("coach-recap")
+    }
+
+    /// "Typically well out": the theme's typical level as the plain word.
+    private var severityWord: String? {
+        guard let theme = recap.theme, let word = CoachingWords.severity(theme.medianLevel) else { return nil }
+        return "Typically " + word.prefix(1).lowercased() + word.dropFirst()
     }
 
     private var title: String {
@@ -275,29 +292,32 @@ struct CoachingRecapCard: View {
             .accessibilityIdentifier("coach-recap-level")
     }
 
+    /// The shared close style: drawn 28 points, 44 to tap, without making
+    /// the title row taller.
     private var closeButton: some View {
         Button(action: onClose) {
             Image(systemName: "xmark")
-                .font(.system(size: 11, weight: .bold))
-                .frame(width: 28, height: 28)
-                .background(Circle().fill(.white.opacity(0.14)))
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        // 44 points to tap without making the title row taller.
-        .padding(.vertical, -8)
-        .padding(.trailing, -8)
+        .buttonStyle(CloseButtonStyle())
         .accessibilityLabel("Close recap")
         .accessibilityIdentifier("coach-recap-close")
     }
 
-    /// The swing that shows it most: a short picture, cut toward the
-    /// golfer and club, so the card stays low in the viewfinder.
+    /// The swing that shows it most, as tall as the card, cut toward the
+    /// golfer and club, with that swing's own badge on its corner, so the
+    /// line's colour always matches a badge.
     private func examplePicture(_ example: Example) -> some View {
         CoachingFrameView(swing: example.swing, report: example.report, metric: example.metric, cropsToGolfer: true)
-            .frame(width: CoachingPreview.recapThumbnail.width, height: CoachingPreview.recapThumbnail.height)
+            .frame(width: CoachingPreview.recapPictureWidth)
+            .frame(minHeight: CoachingPreview.recapPictureMinHeight, maxHeight: .infinity)
             .clipShape(.rect(cornerRadius: 8))
+            .overlay(alignment: .topLeading) {
+                if let showing = example.showing {
+                    showing.badge(size: 22)
+                        .background(Circle().fill(PlayerChrome.solidPanel).padding(-2))
+                        .padding(5)
+                }
+            }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Picture of swing \(example.number)"
                 + (example.showing.map { ", \($0.label)" } ?? "") + ", which shows it most")
@@ -426,16 +446,13 @@ struct CoachingCompareView: View {
                         Text(CoachingWords.recapShare(theme, judged: judgedCount))
                             .font(.appBody)
                             .accessibilityIdentifier("coach-compare-share")
-                        Text("\(SwingPosition.title(theme.position)) on each swing. Tap a judged swing to walk through it.")
-                            .font(.appCaption)
-                            .foregroundStyle(Color.helpText)
+                        // The drawing's key and, kept off the recap card
+                        // over the camera, a club check's caveat: one
+                        // caption line.
                         CoachingLegend(results: Array(swings.lazy.compactMap { store.report(for: $0.swing)?.metric(theme.metric) }.prefix(1)),
-                                       subjectColours: subjectColours)
+                                       subjectColours: subjectColours,
+                                       cameraCaveat: CoachingMetricDefinition.definition(theme.metric).dependsOnCamera)
                             .padding(.top, 4)
-                        // Kept off the recap card over the camera; said here.
-                        if CoachingMetricDefinition.definition(theme.metric).dependsOnCamera {
-                            CoachingCameraCaveat()
-                        }
                     }
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 14) {
                         ForEach(swings, id: \.swing.id) { entry in

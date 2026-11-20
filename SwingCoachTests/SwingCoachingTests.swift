@@ -150,7 +150,7 @@ final class SwingCoachingTests: XCTestCase {
         XCTAssertEqual(head.level, 4)
         // Head depth carries the same picture, so it draws when it leads.
         XCTAssertEqual(report.metric(.headDepthImpact)?.drawings, head.drawings)
-        XCTAssertEqual(head.finding, "Head didn't drop into impact")
+        XCTAssertEqual(head.finding, "Head stayed high at impact")
 
         let transition = try XCTUnwrap(report.metric(.transition))
         // 13 degrees steeper is 7 outside the zone's 6: three steps of 3.
