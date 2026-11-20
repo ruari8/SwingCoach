@@ -40,6 +40,7 @@ Scores are 1–10 per metric (see [rubric.md](rubric.md)). Columns: typo = typog
 | 12 | `c7ddd21` | opus | 6.5 | 7.3 | 6.5 | 7.1 |
 | 12 | `c7ddd21` | fable | 6.8 | 7.5 | 6.1 | 7.4 |
 | 12 | `c7ddd21` | gemini | 6.3 | 7.4 | 6.6 | 8.0 |
+| 13 | `a0a49d5` | sol | 6.7 | 8.0 | 7.3 | 7.8 |
 
 ## Round 0
 
@@ -535,3 +536,40 @@ Declined:
 | Onform | 8.1 | 8.0 | 7.8 | 8.0 | 7.9 | 7.1 | 7.4 | 8.4 | 7.8 | 7.3 | 7.6 | 8.2 | 8.0 | 7.1 |
 
 Full council (all four). Lowest score across members: 6.3 (Gemini, accessibility). Every member's top accessibility complaint is the P1–P10 strip's cell width.
+
+## Round 13
+
+Build: `a0a49d5`
+
+Changes this round:
+
+- One severity system (CoachingSeverity): amber 1–3 'A little out', red 4+ 'Well out', green 'In zone', one threshold for colour and word; 'N steps out' only in All checks rows (Opus, Fable).
+- Session dots are shapes only (tick, '!', dash); theme chips use the word tier; captions 'Swing 8' (Fable, Opus).
+- Recap shows the finding and picture only, no level word (Sol, Opus, Fable).
+- Dashed address ring hidden on a stop; zone an outlined band above the rings (Opus, Fable).
+- Scrubber dots hide while the step card shows; the stop lift may use the black band so feet and ball clear the card (Opus, Fable).
+- Auto's state mark inside the Auto segment (dot armed, ring paused, warning on a problem); separate dot removed (Fable, Opus).
+- Theme meta in one caption with a camera glyph (Fable).
+- All checks rows lead with the word; numbers with their unit; 64 pt thumbnails (Fable, Sol).
+- Library header one caption line; 'down the line' spelled out; impact (P7) frame as the tile poster (Fable, Opus, Sol).
+- Same sheet dimming in both appearances; Layers sheet sized to content (Fable, Opus).
+- 11 pt text floor in the ramp; 'Low confidence' at 12 pt (Opus, Fable).
+- Rail 16 pt from the edge; Speed has a gauge symbol (Fable, Opus).
+- Settings footers one line; 'Show recap now'; 'Coach's drawings' (Opus, Fable).
+- Not-judged comparison tile half height (Opus).
+- The review lock captioned 'Controls', which is what it locks (Opus).
+- Tiles ignore the finger lift at the end of a pinch (bug found by the new pinch test).
+
+Declined:
+
+- A dimmer Next button (Fable): the primary action from the tripod stays brightest.
+- Removing the toolbar select icon (Fable): library-wide selection is a feature.
+- 'Session swing N of 12', a 'Watching' word, a scrolling P strip, rewording the coaching-rule footer (Sol): unchanged decisions.
+
+**sol**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 8.0 | 8.1 | 7.8 | 8.3 | 7.5 | 7.4 | 6.7 | 9.1 | 8.3 | 7.1 | 7.4 | 8.2 | 8.0 | 6.7 |
+| Sportsbox | 7.0 | 7.2 | 6.6 | 7.4 | 7.1 | 6.8 | 6.2 | 7.9 | 7.6 | 8.6 | 6.9 | 7.3 | 7.3 | 6.2 |
+| Onform | 7.5 | 7.8 | 7.3 | 7.6 | 7.9 | 7.1 | 6.7 | 9.0 | 8.0 | 7.2 | 7.4 | 8.1 | 7.8 | 6.7 |

@@ -267,5 +267,23 @@
    "Removing the toolbar select icon (Fable): library-wide selection is a feature.",
    "'Session swing N of 12', a 'Watching' word, a scrolling P strip, rewording the coaching-rule footer (Sol): unchanged decisions."
   ]
+ },
+ "14": {
+  "changes": [
+   "Auto segment reads 'Auto ready' while detection is active, plain 'Auto' when paused; same 184 \u00d7 44 pt control (Sol).",
+   "Recap button 'Compare last 5' (Sol).",
+   "Amber '!' and red '!!' verdict dots (Sol).",
+   "Folded card: 'Jump to impact finding' (Sol).",
+   "Comparison keys only what its tiles draw; camera caveat in All checks only (Sol).",
+   "Guide rows say 'Reference only' (Sol).",
+   "Comparison tiles all one size again (Sol; reverses round 13's half-height tile).",
+   "Footer: 'Listed in swing order. Work on the earliest first.' (Sol, third ask).",
+   "'Show Auto recap' in Settings; 'Recap: every 5 swings' chip (Sol)."
+  ],
+  "declined": [
+   "'4 steps out' instead of the severity word (Sol): Ruari wants words for beginners; the badge carries the number.",
+   "Redrawing the shaft line from the grip (Sol): the line shows where the shaft points, extended to the ground."
+  ],
+  "notes": "A usage limit stopped the first round-14 implementer before it changed any code; it was rerun from the same HEAD after the reset. The full council scores this round (moved up from 15)."
  }
 }
