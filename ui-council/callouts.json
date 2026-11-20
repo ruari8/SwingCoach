@@ -1,0 +1,45 @@
+{
+ "earlier": {
+  "05-player-open": [
+   {
+    "x": 0.5,
+    "y": 0.7,
+    "what": "A step card replaces the verdict pill.",
+    "why": "The finding, where it happened and Play/Next sit together, so the swing opens on its first finding rather than on the address frame with nothing drawn.",
+    "who": "the earlier pass (Opus and Fable reviews)"
+   },
+   {
+    "x": 0.55,
+    "y": 0.38,
+    "what": "The drawing is up on the finding's own frame.",
+    "why": "Showing the problem without a tap: the player is paused where the fault is.",
+    "who": "the earlier pass"
+   },
+   {
+    "x": 0.5,
+    "y": 0.9,
+    "what": "Level badges on the P1\u2013P10 strip.",
+    "why": "The strip doubles as a map of where the swing went wrong.",
+    "who": "the earlier pass"
+   }
+  ],
+  "07-all-checks": [
+   {
+    "x": 0.5,
+    "y": 0.25,
+    "what": "'Every check' sheet with a summary line.",
+    "why": "One place for every number, kept off the step card and the drawings (Ruari asked for numbers to move out of the coaching card).",
+    "who": "Ruari"
+   }
+  ],
+  "11-auto-recap": [
+   {
+    "x": 0.5,
+    "y": 0.72,
+    "what": "Recap card with a picture of the theme.",
+    "why": "The camera screen shows what kept happening in the last swings, with one example.",
+    "who": "the earlier pass"
+   }
+  ]
+ }
+}

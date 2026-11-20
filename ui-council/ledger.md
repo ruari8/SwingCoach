@@ -36,6 +36,9 @@ Scores are 1–10 per metric (see [rubric.md](rubric.md)). Columns: typo = typog
 | 9 | `3bad0b4` | fable | 6.6 | 7.5 | 6.5 | 7.9 |
 | 10 | `32a6525` | sol | 6.6 | 7.7 | 7.5 | 8.0 |
 | 11 | `4d540ad` | sol | 6.8 | 8.0 | 7.3 | 7.8 |
+| 12 | `c7ddd21` | sol | 6.6 | 8.0 | 7.6 | 8.1 |
+| 12 | `c7ddd21` | opus | 6.5 | 7.3 | 6.5 | 7.1 |
+| 12 | `c7ddd21` | fable | 6.8 | 7.5 | 6.1 | 7.4 |
 
 ## Round 0
 
@@ -475,3 +478,49 @@ Declined:
 | SwingCoach | 8.0 | 7.7 | 7.5 | 8.1 | 7.9 | 7.7 | 6.8 | 8.6 | 8.5 | 7.4 | 7.4 | 8.2 | 8.0 | 6.8 |
 | Sportsbox | 7.0 | 7.3 | 6.9 | 7.2 | 7.1 | 6.5 | 6.3 | 7.5 | 7.4 | 8.1 | 6.8 | 7.3 | 7.3 | 6.3 |
 | Onform | 7.6 | 7.7 | 7.6 | 7.6 | 8.1 | 7.1 | 6.8 | 8.6 | 8.3 | 7.0 | 7.4 | 8.2 | 7.8 | 6.8 |
+
+## Round 12
+
+Build: `c7ddd21`
+
+Changes this round:
+
+- Walkthrough opens with the tool rail folded; its reveal control is captioned 'Tools' (Sol).
+- Recap thumbnail has no badge, only 'Swing 5' (Sol).
+- Session tally at section-heading size; tighter marks; the large-title size dropped from the ramp (Sol).
+- Dashed address ring 1 pt at 25% (Sol).
+- P strip: a 16 pt badge slot above each pose; strip 66 pt tall (Sol, Opus).
+- 'Address' with 'Low confidence' on a second line in the transport row (Sol).
+- All checks summary keys only the badge and the not-judged dash (Sol).
+- 'Show all drawings here' toggle (Sol).
+- '240 fps' in the coach chip's capsule; both 44 pt taps (Gemini).
+- Plain filter glyph in the Library bar (Gemini).
+
+Declined:
+
+- A status word beside the Auto toggle (Sol, again): Ruari says the toggle is enough.
+- Rewording the 'earliest often causes the later ones' footer (Sol): it's the coaching rule in COACHING.md, not a UI claim.
+
+**sol**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 8.2 | 7.7 | 7.6 | 8.0 | 7.7 | 7.3 | 6.6 | 8.7 | 7.6 | 7.2 | 7.1 | 8.3 | 8.0 | 6.6 |
+| Sportsbox | 7.1 | 7.5 | 6.9 | 7.3 | 7.5 | 6.8 | 6.6 | 7.8 | 7.1 | 8.4 | 7.0 | 7.6 | 7.6 | 6.6 |
+| Onform | 7.6 | 7.7 | 7.5 | 7.7 | 8.1 | 7.2 | 7.0 | 8.8 | 8.1 | 7.1 | 7.7 | 8.2 | 8.1 | 7.0 |
+
+**opus**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.6 | 7.4 | 7.2 | 7.3 | 6.5 | 7.2 | 6.9 | 7.3 | 7.3 | 7.2 | 7.2 | 7.6 | 7.3 | 6.5 |
+| Sportsbox | 6.3 | 6.4 | 6.0 | 6.2 | 6.2 | 5.9 | 5.6 | 6.3 | 6.4 | 7.4 | 6.0 | 6.4 | 6.5 | 5.6 |
+| Onform | 7.2 | 6.8 | 6.9 | 7.0 | 7.3 | 6.4 | 6.6 | 7.6 | 7.2 | 6.3 | 6.6 | 7.6 | 7.1 | 6.3 |
+
+**fable**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.4 | 7.7 | 7.3 | 7.8 | 7.1 | 7.4 | 6.8 | 7.6 | 7.8 | 6.9 | 7.8 | 7.8 | 7.5 | 6.8 |
+| Sportsbox | 5.8 | 6.0 | 5.8 | 6.0 | 5.5 | 5.5 | 5.2 | 7.0 | 6.5 | 6.8 | 5.8 | 6.0 | 6.1 | 5.2 |
+| Onform | 7.2 | 7.0 | 7.6 | 7.4 | 7.8 | 6.2 | 6.5 | 8.6 | 7.2 | 6.0 | 6.8 | 8.3 | 7.4 | 6.0 |

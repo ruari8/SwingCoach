@@ -241,5 +241,30 @@
    "A status word beside the Auto toggle (Sol, again): Ruari says the toggle is enough.",
    "Rewording the 'earliest often causes the later ones' footer (Sol): it's the coaching rule in COACHING.md, not a UI claim."
   ]
+ },
+ "13": {
+  "changes": [
+   "One severity system (CoachingSeverity): amber 1\u20133 'A little out', red 4+ 'Well out', green 'In zone', one threshold for colour and word; 'N steps out' only in All checks rows (Opus, Fable).",
+   "Session dots are shapes only (tick, '!', dash); theme chips use the word tier; captions 'Swing 8' (Fable, Opus).",
+   "Recap shows the finding and picture only, no level word (Sol, Opus, Fable).",
+   "Dashed address ring hidden on a stop; zone an outlined band above the rings (Opus, Fable).",
+   "Scrubber dots hide while the step card shows; the stop lift may use the black band so feet and ball clear the card (Opus, Fable).",
+   "Auto's state mark inside the Auto segment (dot armed, ring paused, warning on a problem); separate dot removed (Fable, Opus).",
+   "Theme meta in one caption with a camera glyph (Fable).",
+   "All checks rows lead with the word; numbers with their unit; 64 pt thumbnails (Fable, Sol).",
+   "Library header one caption line; 'down the line' spelled out; impact (P7) frame as the tile poster (Fable, Opus, Sol).",
+   "Same sheet dimming in both appearances; Layers sheet sized to content (Fable, Opus).",
+   "11 pt text floor in the ramp; 'Low confidence' at 12 pt (Opus, Fable).",
+   "Rail 16 pt from the edge; Speed has a gauge symbol (Fable, Opus).",
+   "Settings footers one line; 'Show recap now'; 'Coach's drawings' (Opus, Fable).",
+   "Not-judged comparison tile half height (Opus).",
+   "The review lock captioned 'Controls', which is what it locks (Opus).",
+   "Tiles ignore the finger lift at the end of a pinch (bug found by the new pinch test)."
+  ],
+  "declined": [
+   "A dimmer Next button (Fable): the primary action from the tripod stays brightest.",
+   "Removing the toolbar select icon (Fable): library-wide selection is a feature.",
+   "'Session swing N of 12', a 'Watching' word, a scrolling P strip, rewording the coaching-rule footer (Sol): unchanged decisions."
+  ]
  }
 }
