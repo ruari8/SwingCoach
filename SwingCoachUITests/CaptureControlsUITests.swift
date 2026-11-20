@@ -11,7 +11,8 @@ final class CaptureControlsUITests: XCTestCase {
 
     func testStatsDefaultOffPersistAndFollowBothCaptureModes() {
         let app = launch()
-        let auto = app.segmentedControls.buttons["Auto"]
+        // Listening, the Auto segment says so in words.
+        let auto = app.segmentedControls.buttons["Auto ready"]
         let manual = app.segmentedControls.buttons["Manual"]
         XCTAssertTrue(auto.waitForExistence(timeout: 5))
         XCTAssertTrue(auto.isSelected)

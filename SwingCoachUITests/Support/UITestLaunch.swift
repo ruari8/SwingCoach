@@ -35,6 +35,12 @@ extension XCUIApplication {
         if fold.label == "Show player tools" { fold.tap() }
     }
 
+    /// Capture's Auto segment in either state: "Auto ready" while Auto
+    /// listens, "Auto" paused, on a problem or while Manual is chosen.
+    var autoModeSegment: XCUIElement {
+        segmentedControls.buttons.matching(NSPredicate(format: "label == 'Auto' OR label == 'Auto ready'")).firstMatch
+    }
+
     /// Relaunches without reseeding, so the data the test built persists.
     func relaunch(_ arguments: [String]) {
         terminate()

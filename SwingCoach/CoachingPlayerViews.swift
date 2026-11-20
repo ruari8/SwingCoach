@@ -88,11 +88,15 @@ enum CoachingWords {
         return steps == 0 ? "In zone" : "\(steps) step\(steps == 1 ? "" : "s") out"
     }
 
-    /// Why a check isn't judged, short enough for a row: "a guide",
-    /// "short swing".
-    static func notJudgedReason(_ result: CoachingMetricResult, exclusion: CoachingExclusion?) -> String {
+    /// A guide's word beside its name and in the key for the dashed
+    /// range it is drawn against: drawn for reference, never judged.
+    static let referenceOnly = "Reference only"
+
+    /// Why a check isn't judged, short enough for a row: "short swing";
+    /// nil for a guide, which says `referenceOnly` instead.
+    static func notJudgedReason(_ result: CoachingMetricResult, exclusion: CoachingExclusion?) -> String? {
         if let exclusion { return reason(exclusion) }
-        return result.definition.scored ? "" : "a guide"
+        return result.definition.scored ? "" : nil
     }
 
     /// Why a swing isn't judged, as a caption says it after "Not judged ·".
@@ -859,9 +863,10 @@ struct SwingCoachingOverlay: View {
 /// out in the level's colour, a dash for a guide that isn't judged.
 /// Outlined (a ring and the number in the level's colour, no fill) for a
 /// swing out the other way on a recap: out, but not the theme. The glyph
-/// kind puts a "!" where the number would be, for marks that sum up a
-/// swing or a theme (the session review), so their numbers never disagree
-/// with a check's own.
+/// kind puts a glyph where the number would be ("!" a little out, "!!"
+/// well out, `CoachingSeverity.markSymbol`, so amber and red differ by
+/// shape too), for marks that sum up a swing or a theme (the session
+/// review), so their numbers never disagree with a check's own.
 struct CoachingLevelBadge: View {
     enum Mark { case number, glyph }
 
@@ -888,8 +893,8 @@ struct CoachingLevelBadge: View {
                 Image(systemName: "minus").font(.system(size: size * 0.45, weight: .heavy))
             } else if level == 0 {
                 Image(systemName: "checkmark").font(.system(size: size * 0.45, weight: .heavy))
-            } else if mark == .glyph {
-                Image(systemName: "exclamationmark").font(.system(size: size * 0.5, weight: .heavy))
+            } else if mark == .glyph, let symbol = CoachingSeverity(level: level).markSymbol {
+                Image(systemName: symbol).font(.system(size: size * 0.5, weight: .heavy))
             } else {
                 Text("\(abs(level))").font(.system(size: size * 0.55, weight: .heavy).monospacedDigit())
             }
@@ -1034,9 +1039,9 @@ struct CoachingZoneTrack: View {
     }
 }
 
-/// The badge with its severity word after it ("! Typically well out",
+/// The badge with its severity word after it ("!! Typically well out",
 /// "✓ In zone"), where a word goes with a badge across swings: the themes
-/// of the session review. The badge is the glyph kind (a "!" out, no
+/// of the session review. The badge is the glyph kind ("!" or "!!", no
 /// numeral), so a typical level never reads as one swing's count. The
 /// words are the level's text ink, so they read on the dark player and on
 /// light Library sheets alike.
@@ -1437,8 +1442,8 @@ struct SwingCoachingPanel: View {
             HStack(spacing: 10) {
                 badge(first, lead: lead)
                 VStack(alignment: .leading, spacing: 1) {
-                    // Which finding this is and where, so it never reads
-                    // as a verdict on the frame on screen.
+                    // What a tap does and where it goes, so the finding
+                    // never reads as a verdict on the frame on screen.
                     if let caption = foldedCaption(first) {
                         Text(caption)
                             .font(.appCaptionLabel)
@@ -1476,15 +1481,16 @@ struct SwingCoachingPanel: View {
         .accessibilityIdentifier("swing-coaching-pill")
     }
 
-    /// "Swing's top finding · at impact": off the walkthrough the line says
-    /// it is the whole swing's first finding, not the frame on screen, and
-    /// where in the swing that is.
+    /// "Jump to impact finding": off the walkthrough the line is an
+    /// action, so the finding under it never reads as a verdict on the
+    /// frame on screen (whose position the transport row names), and it
+    /// says where in the swing the tap goes.
     private func foldedCaption(_ step: CoachingStep) -> String? {
-        let place = CoachingWalkthrough.place(step.position)
-        let at = place.prefix(1).lowercased() + place.dropFirst()
+        let name = SwingPosition.names[min(max(step.position, 1), SwingPosition.names.count) - 1]
+        let place = name.prefix(1).lowercased() + name.dropFirst()
         switch step.kind {
-        case .pointer, .finding: return "Swing's top finding · \(at)"
-        case .better: return "Back in zone · \(at)"
+        case .pointer, .finding: return "Jump to \(place) finding"
+        case .better: return "Jump to \(place) · back in zone"
         case .good, .notJudged: return nil
         }
     }
@@ -1621,14 +1627,22 @@ struct CoachingLegend: View {
     var neutral = false
     /// Adds the club readings' camera caveat at the end of the line.
     var cameraCaveat = false
+    /// Keys only what the pictures beside it show the way the key draws
+    /// it (the recap's comparison): You, the zone, and Address only where
+    /// it is the dashed ring round the head. The full key and the camera
+    /// caveat are in All checks.
+    var picturedOnly = false
     /// Keys the zone tracks of All checks' rows once, in its header: you
     /// as a dot in your level's colour, good players' zone as a band.
     var trackKey = false
+    /// Keys a guide's rows (All checks): the dash badge and the dashed
+    /// range together, "Reference only", the words beside the guide.
+    var referenceKey = false
 
     static let badgeSize: CGFloat = 16
 
     var body: some View {
-        let roles = Set(results.flatMap { $0.drawings.map(\.role) })
+        let roles = keyedRoles
         FlowLayout(spacing: 12, lineSpacing: 4) {
             if let title {
                 Text(title)
@@ -1651,6 +1665,12 @@ struct CoachingLegend: View {
                 entry(CoachingKeyGlyph(role: .you, colours: [.coachingLevel(0), .coachingLevel(1),
                                                              .coachingLevel(CoachingSeverity.wellOutFrom)]), "You")
                 entry(CoachingKeyGlyph(role: .zone), "Good zone")
+            }
+            if referenceKey {
+                entry(HStack(spacing: 4) {
+                    CoachingLevelBadge(level: 0, neutral: true, size: Self.badgeSize)
+                    CoachingKeyGlyph(role: .zone, judged: false)
+                }, CoachingWords.referenceOnly)
             }
             if roles.contains(.subject) {
                 entry(CoachingKeyGlyph(role: .you, judged: judged, colours: subjectColours ?? [subjectColour]), "You")
@@ -1675,6 +1695,16 @@ struct CoachingLegend: View {
 
     private var judged: Bool { !neutral && (results.first?.definition.scored ?? true) }
 
+    /// The drawing's parts to key: every role the results draw, less, for
+    /// `picturedOnly`, an address drawn as anything but the ring.
+    private var keyedRoles: Set<CoachingDrawing.Role> {
+        var roles = Set(results.flatMap { $0.drawings.map(\.role) })
+        if picturedOnly, !results.contains(where: { $0.drawings.contains { $0.role == .reference && $0.kind == .circle } }) {
+            roles.remove(.reference)
+        }
+        return roles
+    }
+
     private var subjectColour: Color {
         results.first.map { CoachingDrawingLayer.subjectColour($0, swingNeutral: neutral) } ?? .coachingLevel(0)
     }
@@ -1694,6 +1724,7 @@ struct CoachingLegend: View {
             if marks.dash { parts.append("a dash is \(marks.dashWord.lowercased())") }
         }
         if trackKey { parts.append("on each track the dot is you, in your level's colour, and the green band is the good zone") }
+        if referenceKey { parts.append("a dash and a dashed range are reference only, not judged") }
         if roles.contains(.subject) { parts.append(judged ? "you are drawn in your level's colour" : "you are drawn in grey") }
         if roles.contains(.zone) {
             parts.append(results.first?.definition.scored == false ? "the outline is a reference range"
@@ -1976,8 +2007,10 @@ struct SwingCoachingChecks: View {
             .accessibilityIdentifier("coaching-summary")
             if report.exclusion == nil {
                 // The one key for every row: the badges (a number only
-                // where a check is out) and the track's marks.
-                CoachingLegend(marks: .init(number: judged.contains { $0.level != 0 }, dash: guides > 0), trackKey: true)
+                // where a check is out), the track's marks, and a guide's
+                // dash and dashed range as "Reference only".
+                CoachingLegend(marks: .init(number: judged.contains { $0.level != 0 }), trackKey: true,
+                               referenceKey: guides > 0)
             }
         }
         .padding(.vertical, 2)
@@ -2007,7 +2040,7 @@ struct SwingCoachingChecks: View {
                         .font(.appLabel)
                         .fixedSize(horizontal: false, vertical: true)
                     if !judged {
-                        Text(CoachingWords.notJudged(reason))
+                        Text(reason.map { CoachingWords.notJudged($0) } ?? CoachingWords.referenceOnly)
                             .font(.appCaptionLabel)
                             .foregroundStyle(Color.helpText)
                             .fixedSize()

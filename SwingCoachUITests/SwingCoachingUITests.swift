@@ -202,7 +202,7 @@ final class SwingCoachingUITests: XCTestCase {
         let app = XCUIApplication.launched(seed: "coaching", Fixture.syntheticCamera)
         let chip = app.buttons["coach-cadence"]
         XCTAssertTrue(chip.waitForExistence(timeout: 10))
-        XCTAssertEqual(chip.label, "Coach speaks: Every 5 swings")
+        XCTAssertEqual(chip.label, "Recap: Every 5 swings")
         // The session's five measured swings arrive once the camera is
         // up: the recap comes up by itself, and there is no verdict per swing.
         let recap = app.descendants(matching: .any)["coach-recap"]
@@ -253,7 +253,7 @@ final class SwingCoachingUITests: XCTestCase {
         let verdict = app.buttons["coach-latest-verdict"]
         XCTAssertTrue(verdict.waitForExistence(timeout: 10))
         XCTAssertEqual(verdict.label, "Last swing: Shaft steepened coming down")
-        XCTAssertEqual(app.buttons["coach-cadence"].label, "Coach speaks: Every swing")
+        XCTAssertEqual(app.buttons["coach-cadence"].label, "Recap: Every swing")
         attach(app, "capture-latest-verdict")
 
         // Closing the recap brings the verdict back.

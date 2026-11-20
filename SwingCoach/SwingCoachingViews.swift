@@ -69,7 +69,7 @@ struct SessionCoachingView: View {
                         if !measured.isEmpty {
                             VStack(alignment: .leading, spacing: 4) {
                                 // Shapes, no numerals and no key: a tick,
-                                // a "!" in its level's colour, a dash.
+                                // "!" amber or "!!" red, a dash.
                                 // Then the swings without a level, and why.
                                 swingDots(measured, verdicts)
                                 if judged.count < reports.count {
@@ -115,7 +115,7 @@ struct SessionCoachingView: View {
                         } header: {
                             SectionHeading("How they sit together")
                         } footer: {
-                            Text("Earliest first: it often causes the later ones.")
+                            Text("Listed in swing order. Work on the earliest first.")
                         }
                     }
                     Section {
@@ -193,8 +193,9 @@ struct SessionCoachingView: View {
     }
 
     /// A mark a swing, each a 44 point target, wrapping in the order hit:
-    /// a tick for a good swing, a "!" in the top finding's level colour
-    /// (amber a little out, red well out), a dash not judged. No numeral,
+    /// a tick for a good swing, the top finding's level as a glyph in its
+    /// colour ("!" amber a little out, "!!" red well out), a dash not
+    /// judged. No numeral,
     /// so a swing's mark never disagrees with a theme's word below.
     private func swingDots(_ measured: [SavedSwing], _ verdicts: [CoachingVerdict]) -> some View {
         FlowLayout(spacing: 0, lineSpacing: 0) {

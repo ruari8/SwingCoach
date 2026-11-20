@@ -79,6 +79,9 @@ enum CaptureWorkflowMode: String, CaseIterable, Identifiable {
         case .auto: return "Auto"
         }
     }
+
+    /// The Auto segment's title while detection listens.
+    static let autoReadyTitle = "Auto ready"
 }
 
 struct AutoCaptureStatus: Equatable {
@@ -1975,22 +1978,26 @@ struct CaptureView: View {
                         Spacer()
                         // Tapped from a step away to stop Auto: the shared
                         // Capture control height, 44 points. While Auto
-                        // listens its segment fills with the accent, and
-                        // its state mark sits inside the segment.
+                        // listens its segment reads "Auto ready" and fills
+                        // with the accent; its state mark sits inside the
+                        // segment, before the title.
                         AccentSegmentedControl(
-                            titles: CaptureWorkflowMode.allCases.map(\.displayName),
+                            titles: CaptureWorkflowMode.allCases.map(modeTitle),
                             selectedIndex: Binding(
                                 get: { CaptureWorkflowMode.allCases.firstIndex(of: workflowMode) ?? 0 },
                                 set: { workflowMode = CaptureWorkflowMode.allCases[$0] }
                             ),
-                            accentsSelection: workflowMode == .auto && autoIndicatorState == .listening,
-                            identifier: "capture-mode"
+                            accentsSelection: autoIsReady,
+                            identifier: "capture-mode",
+                            font: CaptureControl.modeFont,
+                            firstSegmentWidth: CaptureControl.autoSegmentWidth,
+                            firstTitleShift: workflowMode == .auto ? CaptureControl.autoTitleShift : 0
                         )
                         .frame(width: CaptureControl.modeWidth, height: CaptureControl.height)
                         .overlay(alignment: .leading) {
                             if workflowMode == .auto {
                                 autoIndicator
-                                    .offset(x: CaptureControl.autoMarkOffset(title: CaptureWorkflowMode.auto.displayName))
+                                    .offset(x: CaptureControl.autoMarkOffset(title: modeTitle(.auto)))
                                     .allowsHitTesting(false)
                             }
                         }
@@ -2133,6 +2140,16 @@ struct CaptureView: View {
     }
 
     private enum AutoIndicatorState { case listening, paused, problem }
+
+    /// Auto is chosen and detection is listening.
+    private var autoIsReady: Bool { workflowMode == .auto && autoIndicatorState == .listening }
+
+    /// A segment's title: Auto's says its state in words while it listens
+    /// ("Auto ready"); paused or on a problem it is plain "Auto" beside
+    /// its mark.
+    private func modeTitle(_ mode: CaptureWorkflowMode) -> String {
+        mode == .auto && autoIsReady ? CaptureWorkflowMode.autoReadyTitle : mode.displayName
+    }
 
     private var autoIndicatorState: AutoIndicatorState {
         if camera.autoCaptureStatus.lastErrorMessage != nil || camera.liveSwingDetection.status == .unavailable {

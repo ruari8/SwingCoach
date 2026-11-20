@@ -179,6 +179,17 @@ enum CoachingSeverity: Equatable {
         }
     }
 
+    /// A summing-up mark's glyph out of zone (`CoachingLevelBadge`'s
+    /// `.glyph` kind): one "!" a little out, "!!" well out, so amber and
+    /// red differ by shape as well as colour. Nil in zone (a tick).
+    var markSymbol: String? {
+        switch self {
+        case .inZone: nil
+        case .littleOut: "exclamationmark"
+        case .wellOut: "exclamationmark.2"
+        }
+    }
+
     /// The word mid-sentence, after "Typically": "typically well out".
     var lowercasedWord: String { word.prefix(1).lowercased() + word.dropFirst() }
 
@@ -408,29 +419,46 @@ enum LibraryGrid {
 /// away while the phone sits on a tripod.
 enum CaptureControl {
     static let height: CGFloat = 44
+    /// The switch's titles: subheadline, one step under body, so "Auto
+    /// ready" and its mark fit the Auto segment. Capped at its default
+    /// size, since the switch keeps one width (`modeWidth`) and a title
+    /// may not outgrow its segment.
+    static var modeFont: UIFont {
+        UIFontMetrics(forTextStyle: .subheadline)
+            .scaledFont(for: .systemFont(ofSize: modeFontSize), maximumPointSize: modeFontSize)
+    }
+    static let modeFontSize: CGFloat = 15
     /// The state mark inside the switch's Auto segment while Auto is
     /// chosen, with a shape per state (a filled dot listening, a hollow
     /// ring paused, a warning glyph on a problem), so colour is never the
-    /// only signal. The switch itself carries the mode: its Auto segment
-    /// fills with the accent while Auto listens. As tall as the title's
-    /// capitals, so it reads as part of the word.
+    /// only signal. The switch itself carries the mode and Auto's state in
+    /// words: its Auto segment reads "Auto ready" and fills with the
+    /// accent while Auto listens, plain "Auto" otherwise. As tall as the
+    /// title's capitals, so it reads as part of the word.
     static var indicatorSize: CGFloat {
-        UIFont.preferredFont(forTextStyle: .callout).capHeight.rounded()
+        modeFont.capHeight.rounded()
     }
     /// Between the state mark and the Auto title.
     static let indicatorGap: CGFloat = 5
-    /// The Auto / Manual switch's width: two segments wide enough for
-    /// "Manual" at the larger size.
+    /// The Auto / Manual switch's width: unchanged as Auto's title grows
+    /// to "Auto ready"; the Auto segment takes the larger share
+    /// (`autoSegmentWidth`), Manual the rest.
     static let modeWidth: CGFloat = 184
+    /// The Auto segment: room for the mark and "Auto ready" with a margin
+    /// each side; Manual keeps 76 points.
+    static let autoSegmentWidth: CGFloat = 108
+    /// How far the Auto title moves right while its mark shows, so the
+    /// mark and title sit centred in the segment together.
+    static var autoTitleShift: CGFloat { (indicatorGap + indicatorSize) / 2 }
 
     /// Where the state mark sits from the switch's leading edge: just
-    /// before the first segment's title, which the switch centres in its
-    /// half (`AccentSegmentedControl` sets the chosen title semibold).
+    /// before the Auto segment's title, which the switch centres in the
+    /// segment and moves right by `autoTitleShift` (`AccentSegmentedControl`
+    /// sets the chosen title semibold).
     static func autoMarkOffset(title: String) -> CGFloat {
-        let body = UIFont.preferredFont(forTextStyle: .callout)
-        let font = UIFont.systemFont(ofSize: body.pointSize, weight: .semibold)
+        let font = UIFont.systemFont(ofSize: modeFont.pointSize, weight: .semibold)
         let titleWidth = (title as NSString).size(withAttributes: [.font: font]).width
-        return max(4, (modeWidth / 2 - titleWidth) / 2 - indicatorGap - indicatorSize)
+        return max(4, (autoSegmentWidth - titleWidth - indicatorGap - indicatorSize) / 2)
     }
     /// A menu chip over the camera (the frame rate, the coach's cadence):
     /// drawn this tall, 44 to tap.
@@ -597,6 +625,13 @@ struct AccentSegmentedControl: UIViewRepresentable {
     /// Fill the chosen segment with the accent.
     var accentsSelection: Bool
     var identifier: String
+    var font: UIFont = .preferredFont(forTextStyle: .callout)
+    /// The first segment's width, the rest sharing what is left; nil
+    /// shares the width evenly.
+    var firstSegmentWidth: CGFloat? = nil
+    /// Moves the first segment's title right, to make room for a mark
+    /// drawn before it.
+    var firstTitleShift: CGFloat = 0
 
     func makeUIView(context: Context) -> UISegmentedControl {
         let control = UISegmentedControl(items: titles)
@@ -609,13 +644,18 @@ struct AccentSegmentedControl: UIViewRepresentable {
     }
 
     func updateUIView(_ control: UISegmentedControl, context: Context) {
+        for (index, title) in titles.enumerated() where control.titleForSegment(at: index) != title {
+            control.setTitle(title, forSegmentAt: index)
+        }
         if control.selectedSegmentIndex != selectedIndex {
             control.selectedSegmentIndex = selectedIndex
         }
-        let body = UIFont.preferredFont(forTextStyle: .callout)
-        let chosen = UIFont.systemFont(ofSize: body.pointSize, weight: .semibold)
+        control.setWidth(firstSegmentWidth ?? 0, forSegmentAt: 0)
+        control.setContentPositionAdjustment(UIOffset(horizontal: firstTitleShift, vertical: 0),
+                                             forSegmentType: .left, barMetrics: .default)
+        let chosen = UIFont.systemFont(ofSize: font.pointSize, weight: .semibold)
         control.selectedSegmentTintColor = accentsSelection ? UIColor(Color.accentLime) : nil
-        control.setTitleTextAttributes([.font: body, .foregroundColor: UIColor.white], for: .normal)
+        control.setTitleTextAttributes([.font: font, .foregroundColor: UIColor.white], for: .normal)
         control.setTitleTextAttributes([.font: chosen,
                                         .foregroundColor: accentsSelection ? UIColor.black : UIColor.white],
                                        for: .selected)

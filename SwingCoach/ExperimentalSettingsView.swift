@@ -118,7 +118,7 @@ struct ExperimentalSettingsView: View {
             }
 
             Section {
-                Picker("Coach speaks in Auto", selection: $coachingCadence) {
+                Picker("Show Auto recap", selection: $coachingCadence) {
                     ForEach(CoachingCadence.allCases) { Text($0.title).tag($0.rawValue) }
                 }
                 .accessibilityIdentifier("coach-cadence-setting")
