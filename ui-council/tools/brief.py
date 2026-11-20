@@ -38,6 +38,7 @@ Context that is not a design flaw:
 - On Capture the viewfinder is black because the Simulator has no camera; on a phone it shows the live camera. Judge what sits over it.
 - The player and camera screens are dark by design in both appearances; the Library, Settings and some sheets follow the system appearance.
 - Scope is visual and interaction design of the existing screens. Do not ask for new features.
+- SwingCoach's UI must stay original. The reference apps are only for calibrating your scores: never propose a fix that imitates their layouts, visuals or patterns, and judge our app on its own design language.
 
 ## What to return
 

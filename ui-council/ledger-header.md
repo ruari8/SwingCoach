@@ -9,3 +9,4 @@ Scores are 1–10 per metric (see [rubric.md](rubric.md)). Columns: typo = typog
 - **Privacy.** The repo is public and the footage is Ruari's, so screenshots and the report stay out of git; the report is published as a private page.
 - **References.** Sportsbox 3D Golf (AI swing analysis from one phone video, 4.9★, 3.8k ratings) and Onform (video analysis with drawing tools and AI auto-detect, 4.8★, 8.7k ratings), App Store screenshots of 20 Nov 2026.
 - **Rubric.** Merged from Sol, Opus and Fable's proposals; Gemini's arrived after the freeze.
+- **Originality (Ruari, 20 Nov, round 4).** The UI stays original: the references only calibrate scores. From round 5, member briefs forbid fixes that imitate a reference app, and implementers decline any that would.

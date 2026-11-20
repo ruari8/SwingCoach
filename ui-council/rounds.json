@@ -3,7 +3,7 @@
   "changes": [
    "Baseline: the coaching walkthrough pass from coaching-player-ux (0ebe504), plus the tour's fixture flag."
   ],
-  "notes": "Gemini's round 0 scores were still running when round 1 started; they are added when they arrive."
+  "notes": "Gemini's round 0 scores arrived during round 4's fixes and were folded in here. Known capture gap: on the pre-PR build (d75f001) the tour's recap path left a review player open, so that build's '14-auto-camera' shot is a player, not the camera; Sol and Fable noticed and scored around it."
  },
  "1": {
   "changes": [
@@ -64,5 +64,23 @@
    "Session links are neutral connectors: 'Seen together on N swings' (Sol)."
   ],
   "declined": []
+ },
+ "4": {
+  "changes": [
+   "A walkthrough stop draws only its own finding; supporting drawings only with 'Every check on the frame' (Sol).",
+   "Finding titles describe what the swing did, past tense: 'Head didn't drop into impact', 'Shaft steepened coming down' (Sol).",
+   "Auto armed state: full-width solid capsule, 28 pt bold, 24 pt indicator with a matching 2 pt edge; saved count beneath (Sol, Gemini).",
+   "Step card about 18 pt shorter (3 pt rows, 7 pt padding); All checks capsule drawn at 28 pt with a 44 pt tap (Sol).",
+   "Comparison tiles share one 4:5 preview cropped to the golfer and club; four swings show on the first view (Sol).",
+   "'Finding 1 of 2' for progress, 'N steps out' for severity; 'Show findings' (Sol).",
+   "Shared Color.sectionHeading (about 9.5:1) for every list section heading (Sol).",
+   "Recap line: 'On all 4 swings with a halfway-back (P3) reading' (Sol).",
+   "'Start here' above the first theme's title in grey secondary style (Sol).",
+   "Session header button reads 'Select session' (Sol, Gemini).",
+   "The Layers rail tool opens 'Drawing layers' (Sol)."
+  ],
+  "declined": [
+   "Horizontally scrolling P strip with 44 pt-wide cells (Sol, second time): ten positions in 402 pt cannot each be 44 pt wide without hiding some; the strip's job is to show all ten. Cells are full-height 56 pt targets."
+  ]
  }
 }
