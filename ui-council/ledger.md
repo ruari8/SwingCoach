@@ -10,6 +10,7 @@ Scores are 1–10 per metric (see [rubric.md](rubric.md)). Columns: typo = typog
 - **References.** Sportsbox 3D Golf (AI swing analysis from one phone video, 4.9★, 3.8k ratings) and Onform (video analysis with drawing tools and AI auto-detect, 4.8★, 8.7k ratings), App Store screenshots of 20 Nov 2026.
 - **Rubric.** Merged from Sol, Opus and Fable's proposals; Gemini's arrived after the freeze.
 - **Originality (Ruari, 20 Nov, round 4).** The UI stays original: the references only calibrate scores. From round 5, member briefs forbid fixes that imitate a reference app, and implementers decline any that would.
+- **Product principles (Ruari, 20 Nov, after round 8).** The golfer glances at the phone from the tripod; beginners want visuals over words; the live camera view comes first and the Auto/Manual toggle already shows the mode; the Library should show more at a glance like Photos. The 'Auto is on' banner grown in rounds 2–8 at the council's request was called cramped and is reverted in round 9. Member briefs carry these principles from round 8's scoring on.
 
 ## Summary
 
@@ -27,6 +28,7 @@ Scores are 1–10 per metric (see [rubric.md](rubric.md)). Columns: typo = typog
 | 6 | `79a8e8b` | sol | 7.0 | 7.8 | 7.5 | 8.0 |
 | 6 | `79a8e8b` | opus | 6.8 | 7.3 | 6.8 | 7.2 |
 | 6 | `79a8e8b` | fable | 6.8 | 7.3 | 6.2 | 7.6 |
+| 7 | `854493c` | sol | 7.1 | 8.0 | 7.6 | 8.1 |
 
 ## Round 0
 
@@ -277,3 +279,44 @@ Declined:
 | Onform | 7.5 | 7.3 | 7.5 | 7.5 | 7.8 | 6.3 | 6.8 | 8.5 | 7.5 | 6.5 | 7.0 | 8.0 | 7.6 | 6.3 |
 
 Decision: Sol's lowest metric held at 6.8, 6.7, 6.8 over rounds 3–5, so round 6 is scored by the full council for a fresh read rather than waiting for Sol to clear 9.5 alone. Gemini's round 6 scores were still running when round 7 started.
+
+## Round 7
+
+Build: `854493c`
+
+Changes this round:
+
+- Head drawing: address one thin dashed light ring with a dark halo, this swing one solid ring; legend swatches match the drawn shape (all three).
+- One key ('Number = steps out', one 16 pt badge) and one camera caveat ('Depends on camera position') everywhere (Opus, Fable).
+- Session key says a swing's number is its top finding; theme captions name their check (Opus).
+- Folded finding bar: 10 pt padding, one-line title, chevron only (Opus, Fable).
+- Step card: even ~8 pt text gaps, legend in caption type (Fable).
+- Sheets start ~14 pt under the title (Opus, Fable).
+- 'Low' tag in the not-judged grey; regular-weight row (Opus, Fable).
+- Dark amber ink for light-mode pill text (Opus).
+- Recap card: finding, pill, caveat, 'Shows it most' picture and Compare; per-swing slots moved to the comparison; recap, verdict and Auto panel share one surface (Sol, Opus).
+- Library session header: meta on its own line, one capsule height, 'Select all 12' (Opus, Fable, Sol).
+- Zone edges get a dark halo and ~0.75 pt more weight (Opus).
+- Lock captioned; time reads '7.8 s' (Opus, Fable).
+- 'Not judged' gives its reason (Fable, Sol).
+- Proportional digits on headline numerals (Fable).
+- Takeaway zone band runs past the club head so an in-zone reading sits inside it (Sol); coaching report version 8 → 9, redrawn from stored evidence.
+- P strip labels 12 pt; low confidence as a dimmed pose in a dashed chip, named by the time when current (Fable, Sol).
+- Auto review Delete last in the rail, after a divider, in red (Fable).
+- Coach menu 'Recap last 5' (Fable, Sol).
+- Empty saved-count box shows a neutral golfer glyph (Opus).
+- Tighter session summary; caveat at higher contrast; '11 of 16 judged checks in zone' (Sol).
+
+Declined:
+
+- Horizontally scrolling P strip with 44 pt-wide cells (Sol, fifth time): left for Ruari; labels and low-confidence styling improved instead.
+
+**sol**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.8 | 8.1 | 7.6 | 8.0 | 8.0 | 7.7 | 7.1 | 8.3 | 8.2 | 7.6 | 8.0 | 8.2 | 8.0 | 7.1 |
+| Sportsbox | 7.1 | 7.6 | 7.0 | 7.6 | 7.5 | 7.0 | 6.8 | 8.1 | 7.5 | 8.3 | 7.0 | 7.7 | 7.6 | 6.8 |
+| Onform | 7.7 | 8.1 | 8.0 | 7.6 | 8.2 | 7.2 | 7.2 | 8.7 | 7.9 | 7.1 | 7.3 | 8.3 | 8.1 | 7.1 |
+
+The report version bump makes the app re-score the seed's swings at launch, which also re-times P1–P10 to the frames the drawings were measured on (existing behaviour, as on a phone). From round 7 the Swing Info times differ slightly from earlier rounds for that reason.

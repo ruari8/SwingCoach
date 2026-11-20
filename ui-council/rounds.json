@@ -148,5 +148,34 @@
    "Horizontally scrolling P strip with 44 pt-wide cells (Sol, fifth time): left for Ruari; labels and low-confidence styling improved instead."
   ],
   "notes": "The report version bump makes the app re-score the seed's swings at launch, which also re-times P1\u2013P10 to the frames the drawings were measured on (existing behaviour, as on a phone). From round 7 the Swing Info times differ slightly from earlier rounds for that reason."
+ },
+ "8": {
+  "changes": [
+   "'Tap Manual to stop' larger; Auto/Manual targets about 48 pt (Sol).",
+   "Recap example thumbnail shorter, one caption line (Sol).",
+   "Keys scoped: 'Top finding per swing'; theme pills 'Typically 5 steps out' (Sol).",
+   "Head rings: zone cut away under each ring; thinner address ring (Sol).",
+   "Comparison caption 'Tap a judged swing to walk through it' (Sol).",
+   "Shared low-confidence glyph on dashed chips, in the time label and the 'Low' tag (Sol).",
+   "Guide rows say 'Reference range' (Sol).",
+   "Settings footer leads with one line (Sol)."
+  ],
+  "declined": [
+   "Horizontally scrolling P strip (Sol, sixth time): left for Ruari.",
+   "'Session swing 2 of 12' (Sol, second time): would break consistency with the Library player's counter."
+  ]
+ },
+ "9": {
+  "changes": [
+   "Ruari's direction: the full-width 'Auto is on' panel and stop hint are gone; a small dot by the Auto/Manual switch shows Auto; compact '12 saved' capsule; a status line only when there's news.",
+   "Recap card cut to the picture, the finding with its number badge, and Compare (~130 pt).",
+   "Step card: position and '1/4' counter, badge and finding, Back / Play / Next and All checks; legend and camera caveat moved to All checks.",
+   "Library as a Photos-style grid: square tiles, 2 pt gutters, 3 columns, pinch between 2, 3 and 5 (remembered); duration in the corner; vantage tag only when a session mixes views; 'Select'. New UI test for the pinch.",
+   "Session review and All checks trimmed to one short line under each headline."
+  ],
+  "declined": [
+   "All council asks this round: the round implements only Ruari's direction."
+  ],
+  "notes": "Thumbnails are now square at 220 pt \u00d7 screen scale, about 2.4\u00d7 the memory of round 8's."
  }
 }

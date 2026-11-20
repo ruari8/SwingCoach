@@ -33,6 +33,11 @@ You are a senior product designer on a review council for SwingCoach, an iPhone 
 {screens}
 3. Reference apps, App Store screenshots: `{root}/references/sportsbox/` (Sportsbox 3D Golf) and `{root}/references/onform/` (Onform). Judge only the UI inside the phone frames.{extra_txt}
 
+How the app is used (from its product owner; take it into account when you score and when you propose fixes):
+- The golfer barely looks at the phone. It sits on a tripod recording them; they walk back to it between shots to review. Screens are read at a glance, not studied.
+- Many users are beginners (high handicappers): a drawing, a badge and one short finding help them; extra words, caveats and legends mostly don't. Detail belongs one tap deeper.
+- On Capture the live camera view comes first. The Auto/Manual toggle already shows the mode; don't propose larger banners or panels over the viewfinder.
+
 Context that is not a design flaw:
 - The **Debug** tab exists only in developer builds; ignore it.
 - On Capture the viewfinder is black because the Simulator has no camera; on a phone it shows the live camera. Judge what sits over it.
