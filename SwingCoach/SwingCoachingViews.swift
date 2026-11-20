@@ -100,7 +100,7 @@ struct SessionCoachingView: View {
                 if !themes.isEmpty {
                     // Three is plenty to think about; the rest are weaker.
                     let shown = Array(themes.prefix(3))
-                    Section("What kept happening") {
+                    Section {
                         ForEach(Array(shown.enumerated()), id: \.element.id) { index, theme in
                             VStack(alignment: .leading, spacing: 10) {
                                 themeRow(theme, leads: index == 0)
@@ -112,28 +112,34 @@ struct SessionCoachingView: View {
                             .accessibilityElement(children: .contain)
                             .accessibilityIdentifier("session-theme-\(theme.id)")
                         }
+                    } header: {
+                        SectionHeading("What kept happening")
                     }
                     if shown.count > 1 {
                         Section {
                             links(shown.sorted { ($0.position, $0.id) < ($1.position, $1.id) }, reports)
                         } header: {
-                            Text("How they sit together")
+                            SectionHeading("How they sit together")
                         } footer: {
                             Text("In swing order. An earlier fault often causes a later one, so the earliest is the one to work on first.")
                         }
                     }
-                    Section("Swing by swing") {
+                    Section {
                         ForEach(shown) { theme in
                             trend(of: theme, measured, reports)
                         }
+                    } header: {
+                        SectionHeading("Swing by swing")
                     }
                     if themes.count > 3 {
-                        Section("Also seen, weaker") {
+                        Section {
                             ForEach(Array(themes.dropFirst(3))) { theme in
                                 Text("\(theme.text) · \(CoachingWords.themeShare(theme))")
                                     .font(.footnote)
                                     .foregroundStyle(Color.helpText)
                             }
+                        } header: {
+                            SectionHeading("Also seen, weaker")
                         }
                     }
                 }
@@ -225,6 +231,14 @@ struct SessionCoachingView: View {
     private func themeRow(_ theme: CoachingTheme, leads: Bool) -> some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
+                // Above the title in the secondary style, so it reads as
+                // where to begin, never as a level.
+                if leads {
+                    Text("Start here")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Color.helpText)
+                        .accessibilityIdentifier("session-start-here")
+                }
                 Text(theme.text).font(.subheadline.weight(.semibold))
                 // The typical level, with its word, so the number never
                 // reads as a count of swings.
@@ -236,11 +250,6 @@ struct SessionCoachingView: View {
                     Text("A club reading: it shifts with where the camera stands. Check it with the camera on your hand line.")
                         .font(.footnote)
                         .foregroundStyle(Color.helpText)
-                }
-                if leads {
-                    Text("Start here")
-                        .font(.footnote.weight(.bold))
-                        .foregroundStyle(Color.coachingLevelText(1))
                 }
             }
         }

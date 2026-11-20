@@ -542,8 +542,9 @@ struct LibraryView: View {
                     }
                 }
             } label: {
-                // Secondary to the toolbar's Select: plain grey text.
-                Text(isWholeSessionSelected ? "Deselect" : "Select")
+                // Secondary to the toolbar's Select: plain grey text that
+                // says what it selects, so the two never read the same.
+                Text(isWholeSessionSelected ? "Deselect session" : "Select session")
                     .font(.subheadline)
                     .foregroundStyle(Color.helpText)
                     .frame(minHeight: 44)

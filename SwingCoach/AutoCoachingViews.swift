@@ -407,6 +407,10 @@ struct CoachingFrameView: View {
     let swing: SavedSwing
     let report: SwingCoachingReport
     let metric: CoachingMetricID
+    /// Fill the view and cut toward the golfer and club (everything drawn
+    /// on this frame) instead of fitting the whole frame with its sky and
+    /// foreground.
+    var cropsToGolfer = false
 
     /// The last frame read, and what it was read for. A frame read for
     /// another time is never shown under this reading's drawing.
@@ -419,7 +423,19 @@ struct CoachingFrameView: View {
         let frame = current?.frame
         ZStack {
             Color.black
-            if let frame {
+            if let frame, cropsToGolfer {
+                GeometryReader { geometry in
+                    let rect = croppedRect(of: frame.size, in: geometry.size, around: result)
+                    Image(uiImage: frame)
+                        .resizable()
+                        .frame(width: rect.width, height: rect.height)
+                        .position(x: rect.midX, y: rect.midY)
+                    if let result {
+                        CoachingDrawingLayer(results: [result], rect: rect, still: true, neutral: report.exclusion != nil)
+                    }
+                }
+                .clipped()
+            } else if let frame {
                 Image(uiImage: frame)
                     .resizable()
                     .scaledToFit()
@@ -444,6 +460,29 @@ struct CoachingFrameView: View {
             guard !Task.isCancelled else { return }
             loaded = (request, image)
         }
+    }
+
+    /// Where the frame sits when it fills `size`: centred on everything
+    /// drawn on this frame (the golfer's body and the club), kept inside
+    /// the frame's own edges.
+    private func croppedRect(of image: CGSize, in size: CGSize, around result: CoachingMetricResult?) -> CGRect {
+        let scale = max(size.width / max(image.width, 1), size.height / max(image.height, 1))
+        let width = image.width * scale, height = image.height * scale
+        var xs: [Double] = [], ys: [Double] = []
+        if let result {
+            for other in report.metrics where abs(other.clipTime - result.clipTime) < 0.02 {
+                for shape in other.drawings {
+                    let radius = shape.size ?? 0
+                    xs += shape.points.map(\.x)
+                    ys += shape.points.flatMap { [$0.y - radius, $0.y + radius] }
+                }
+            }
+        }
+        let centreX = xs.isEmpty ? 0.5 : (xs.min()! + xs.max()!) / 2
+        let centreY = ys.isEmpty ? 0.5 : (ys.min()! + ys.max()!) / 2
+        let x = min(0, max(size.width - width, size.width / 2 - CGFloat(centreX) * width))
+        let y = min(0, max(size.height - height, size.height / 2 - CGFloat(centreY) * height))
+        return CGRect(x: x, y: y, width: width, height: height)
     }
 
     private static func frame(of swing: SavedSwing, at clipTime: Double?) async -> UIImage? {
@@ -531,7 +570,7 @@ struct CoachingCompareView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Group {
                     if let report, let metric {
-                        CoachingFrameView(swing: swing, report: report, metric: metric)
+                        CoachingFrameView(swing: swing, report: report, metric: metric, cropsToGolfer: true)
                     } else {
                         // The same bounds as a picture, on a neutral fill,
                         // so it reads as a swing with nothing to show, not
@@ -547,7 +586,9 @@ struct CoachingCompareView: View {
                         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.white.opacity(0.14), lineWidth: 1))
                     }
                 }
-                .aspectRatio(9.0 / 16.0, contentMode: .fit)
+                // One capped height for every tile, cut toward the golfer
+                // and club, so more swings fit on the first view.
+                .aspectRatio(CoachingPreview.compareAspect, contentMode: .fit)
                 .clipShape(.rect(cornerRadius: 12))
                 HStack(spacing: 6) {
                     // The same look as the swing's bar on the recap.

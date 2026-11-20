@@ -1996,22 +1996,25 @@ struct CaptureView: View {
             }
 
             if workflowMode == .auto {
-                // Auto's state leads; the saved count is a quieter control
-                // kept apart on the other side.
-                HStack(alignment: .center, spacing: 20) {
-                    CaptureStatusLabel(
-                        title: autoStatusTitle,
-                        detail: autoStatusDetail,
-                        indicator: autoStatusIndicator,
-                        prominent: true,
-                        modelSnapshot: showCaptureModelStats && camera.autoCaptureStatus.isActive
-                            ? camera.liveSwingDetection : nil
-                    )
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    savedSwingsButton
-                        .fixedSize()
+                // Auto's state leads, full width, readable from the tripod;
+                // the saved count is a quieter control on the line under it.
+                VStack(spacing: 8) {
+                    AutoStateCapsule(title: autoStatusTitle, indicator: autoStatusIndicator)
+                    HStack(alignment: .center, spacing: 16) {
+                        CaptureStatusLabel(
+                            title: autoStatusTitle,
+                            detail: autoStatusDetail,
+                            showsTitle: false,
+                            modelSnapshot: showCaptureModelStats && camera.autoCaptureStatus.isActive
+                                ? camera.liveSwingDetection : nil
+                        )
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        savedSwingsButton
+                            .fixedSize()
+                    }
+                    .padding(.horizontal, 4)
                 }
-                .padding(.bottom, 22)
+                .padding(.bottom, 14)
             } else {
                 HStack(spacing: 8) {
                     Group {
@@ -2294,36 +2297,44 @@ struct FocusIndicatorView: View {
     }
 }
 
+/// Auto's on/off, read from the tripod two or three metres away: the
+/// state at title size with a large indicator, on a solid capsule the full
+/// width of the controls, edged in the indicator's colour.
+private struct AutoStateCapsule: View {
+    let title: String
+    let indicator: Color
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Circle().fill(indicator)
+                .frame(width: PlayerChrome.stateIndicatorSize, height: PlayerChrome.stateIndicatorSize)
+                .overlay(Circle().strokeBorder(.black.opacity(0.35), lineWidth: 1))
+                .accessibilityHidden(true)
+            Text(title)
+                .font(PlayerChrome.stateFont)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .accessibilityIdentifier("capture-status-title")
+        }
+        .frame(maxWidth: .infinity, minHeight: PlayerChrome.stateMinHeight)
+        .padding(.horizontal, 20)
+        .background(Capsule().fill(PlayerChrome.solidPanel))
+        .overlay(Capsule().strokeBorder(indicator, lineWidth: PlayerChrome.stateEdgeWidth))
+    }
+}
+
 private struct CaptureStatusLabel: View {
     let title: String
     let detail: String
     var indicator: Color? = nil
-    /// Auto's state, read from the tripod two or three metres away: a
-    /// large label and indicator on a dark capsule.
-    var prominent = false
+    /// False when the title is shown elsewhere (Auto's capsule): only the
+    /// detail line and the model stats.
+    var showsTitle = true
     var modelSnapshot: LiveSwingDetectionSnapshot? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            if prominent {
-                HStack(spacing: 12) {
-                    if let indicator {
-                        Circle().fill(indicator).frame(width: 20, height: 20)
-                            .overlay(Circle().strokeBorder(.black.opacity(0.35), lineWidth: 1))
-                            .accessibilityHidden(true)
-                    }
-                    Text(title)
-                        .font(.title2.weight(.semibold))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                        .accessibilityIdentifier("capture-status-title")
-                }
-                .padding(.leading, 16)
-                .padding(.trailing, 20)
-                .frame(minHeight: 54)
-                .background(Capsule().fill(PlayerChrome.solidPanel))
-                .overlay(Capsule().strokeBorder(PlayerChrome.edge, lineWidth: 1))
-            } else {
+            if showsTitle {
                 HStack(spacing: 7) {
                     if let indicator {
                         Circle().fill(indicator).frame(width: 6, height: 6)
@@ -2335,10 +2346,9 @@ private struct CaptureStatusLabel: View {
                 }
             }
             Text(detail)
-                .font(prominent ? .footnote : .caption2)
-                .foregroundStyle(.white.opacity(0.75))
+                .font(showsTitle ? .caption2 : .footnote)
+                .foregroundStyle(.white.opacity(showsTitle ? 0.75 : 0.85))
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.leading, prominent ? 16 : 0)
                 .accessibilityIdentifier("capture-status-detail")
 
             if let snapshot = modelSnapshot,

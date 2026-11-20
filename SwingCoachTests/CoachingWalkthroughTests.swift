@@ -16,7 +16,7 @@ final class CoachingWalkthroughTests: XCTestCase {
         let steps = CoachingWalkthrough.steps(for: report, verdict: verdict)
         XCTAssertEqual(steps.map(\.kind), [.pointer, .finding])
         XCTAssertEqual(steps.map(\.lead), [.transition, .hipDepthImpact])
-        XCTAssertEqual(steps[0].text, "Shaft steepens coming down")
+        XCTAssertEqual(steps[0].text, "Shaft steepened coming down")
         XCTAssertEqual(steps[0].clipTime, 1.85, accuracy: 1e-9)
         XCTAssertEqual(steps[1].position, 7)
         XCTAssertEqual(CoachingWalkthrough.place(steps[1].position), "At impact")

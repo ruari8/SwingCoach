@@ -86,7 +86,7 @@ struct ExperimentalSettingsView: View {
                 Toggle("Save to Photos", isOn: $saveToPhotos)
                     .accessibilityIdentifier("save-to-photos")
             } header: {
-                Text("Video storage")
+                SectionHeading("Video storage")
             } footer: {
                 Text("Also saves new Auto, Manual, and trimmed clips to Photos. When off, clips stay in SwingCoach's library and review. Existing videos are unchanged.")
                     .foregroundStyle(Color.helpText)
@@ -96,7 +96,7 @@ struct ExperimentalSettingsView: View {
                 clipContextControl("Before swing", value: $extraSecondsBefore, identifier: "swing-context-before")
                 clipContextControl("After swing", value: $extraSecondsAfter, identifier: "swing-context-after")
             } header: {
-                Text("Extra swing footage")
+                SectionHeading("Extra swing footage")
             } footer: {
                 Text("Add 0–30 seconds before or after the detected swing in Auto and Manual/Trim. Use +/− for half seconds, or enter a value. These are real seconds before slow-motion export. Auto waits for the extra footage; stopping early saves what was recorded. Existing clips are unchanged.")
                     .foregroundStyle(Color.helpText)
@@ -106,7 +106,7 @@ struct ExperimentalSettingsView: View {
                 Toggle("Record sound", isOn: $recordsSound)
                     .accessibilityIdentifier("record-sound")
             } header: {
-                Text("Sound")
+                SectionHeading("Sound")
             } footer: {
                 Text("Off by default. When on, Manual recordings include microphone sound. Auto clips never have sound. Clips play alongside your music either way.")
                     .foregroundStyle(Color.helpText)
@@ -115,7 +115,7 @@ struct ExperimentalSettingsView: View {
             Section {
                 Toggle("Capture practice swings", isOn: $capturePracticeSwings)
             } header: {
-                Text("Auto & Manual Capture")
+                SectionHeading("Auto & Manual Capture")
             } footer: {
                 Text("Off by default: detect real shots only. Turn this on to include practice swings in Auto capture and Manual recording's detected trim ranges. Replay Debug has its own option under Advanced.")
                     .foregroundStyle(Color.helpText)
@@ -129,7 +129,7 @@ struct ExperimentalSettingsView: View {
                 Toggle("Measure swings while Auto records", isOn: $coachDuringAuto)
                     .accessibilityIdentifier("coach-during-auto-toggle")
             } header: {
-                Text("Coaching")
+                SectionHeading("Coaching")
             } footer: {
                 Text("Every down-the-line swing is measured on the phone. That happens when Auto pauses or stops, so the coach has nothing to say while you hit. Turn on measuring while Auto records to get a first reading of each swing as it is saved (body checks only; the clip fills in the rest later). It is off by default: it has not been checked on a phone for dropped frames or heat.")
                     .foregroundStyle(Color.helpText)
@@ -153,7 +153,7 @@ struct ExperimentalSettingsView: View {
                 Toggle("Show model stats", isOn: $showCaptureModelStats)
                     .accessibilityIdentifier("show-capture-model-stats")
             } header: {
-                Text("Capture diagnostics")
+                SectionHeading("Capture diagnostics")
             } footer: {
                 Text("Shows measured detector FPS and average model processing time beneath the capture status in Auto and Manual. Off by default; this does not change detection or recording.")
                     .foregroundStyle(Color.helpText)

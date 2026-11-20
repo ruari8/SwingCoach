@@ -47,6 +47,34 @@ extension Color {
     })
 }
 
+// MARK: - Section headings
+
+extension Color {
+    /// Every list section's heading ("What kept happening", "Coaching").
+    /// The system's header grey is about 3.3:1 on grouped grey in light
+    /// appearance; this is 9.5:1 there and 10:1 or more on the dark
+    /// grouped backgrounds (8:1 on an elevated sheet's).
+    static let sectionHeading = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.8, green: 0.8, blue: 0.82, alpha: 1)
+            : UIColor(red: 0.235, green: 0.235, blue: 0.263, alpha: 1)
+    })
+}
+
+/// A list section's heading in `Color.sectionHeading`; use it for every
+/// `Section` header so they all read the same.
+struct SectionHeading: View {
+    let title: String
+
+    init(_ title: String) {
+        self.title = title
+    }
+
+    var body: some View {
+        Text(title).foregroundStyle(Color.sectionHeading)
+    }
+}
+
 // MARK: - Level colours as text
 
 extension Color {
@@ -82,6 +110,13 @@ enum PlayerChrome {
     /// An opaque dark surface for a state that must read on any camera
     /// picture: Auto's on/off capsule on Capture.
     static let solidPanel = Color(white: 0.1)
+    /// A state on `solidPanel` read from a tripod a few metres away: title
+    /// size (28 points) in bold, a 24-point indicator, and an edge in the
+    /// indicator's colour.
+    static let stateFont = Font.title.weight(.bold)
+    static let stateIndicatorSize: CGFloat = 24
+    static let stateMinHeight: CGFloat = 64
+    static let stateEdgeWidth: CGFloat = 2
     /// Background of every sheet over the player: dark and near opaque, so
     /// the card and strip behind never ghost through.
     static let sheetBackground = Color(white: 0.09).opacity(0.97)
@@ -141,6 +176,15 @@ enum LibraryCard {
     /// Where a portrait clip's thumbnail is cut, from 0 (its top) to 1 (its
     /// bottom): above the middle, so a down-the-line golfer's head shows.
     static let thumbnailFocus: CGFloat = 0.38
+}
+
+// MARK: - Coaching previews
+
+enum CoachingPreview {
+    /// Width over height of a comparison tile: shorter than a portrait
+    /// clip, which the tile cuts toward the golfer and club, so its sky
+    /// and foreground don't push the other swings off screen.
+    static let compareAspect: CGFloat = 4.0 / 5.0
 }
 
 // MARK: - Position tags

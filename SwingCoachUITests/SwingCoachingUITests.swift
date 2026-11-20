@@ -19,8 +19,8 @@ final class SwingCoachingUITests: XCTestCase {
 
         // No tap: paused on the pointer's frame with its drawing up.
         XCTAssertTrue(title.waitForExistence(timeout: 5))
-        XCTAssertEqual(title.label, "Shaft steepens coming down")
-        XCTAssertEqual(count.label, "Halfway down, step 1 of 2")
+        XCTAssertEqual(title.label, "Shaft steepened coming down")
+        XCTAssertEqual(count.label, "Halfway down, finding 1 of 2")
         XCTAssertEqual(Double(timeline.value as? String ?? "") ?? 0, 1.85, accuracy: 0.01)
         XCTAssertTrue(app.buttons["swing-position-P5"].isSelected)
         XCTAssertTrue(app.buttons["swing-position-P5"].label.contains("out of zone, up to 5 steps out, the coach starts here"))
@@ -33,12 +33,12 @@ final class SwingCoachingUITests: XCTestCase {
         app.buttons["coaching-next"].tap()
         XCTAssertTrue(hipsCaption.waitForExistence(timeout: 3))
         XCTAssertEqual(title.label, "Hips moved toward the ball")
-        XCTAssertEqual(count.label, "At impact, step 2 of 2")
+        XCTAssertEqual(count.label, "At impact, finding 2 of 2")
         XCTAssertEqual(Double(timeline.value as? String ?? "") ?? 0, 1.95, accuracy: 0.01)
         XCTAssertFalse(transitionCaption.exists, "A drawing shows only on its own frame")
         XCTAssertFalse(app.buttons["coaching-next"].exists, "The last step offers Play instead")
         app.buttons["coaching-back"].tap()
-        XCTAssertEqual(title.label, "Shaft steepens coming down")
+        XCTAssertEqual(title.label, "Shaft steepened coming down")
 
         // Away from the walkthrough's frames nothing is drawn, and one line
         // brings the walkthrough back.
@@ -47,7 +47,7 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertFalse(hipsCaption.exists)
         let folded = app.buttons["swing-coaching-pill"]
         XCTAssertTrue(folded.waitForExistence(timeout: 2))
-        XCTAssertEqual(folded.label, "Coaching: Shaft steepens coming down")
+        XCTAssertEqual(folded.label, "Coaching: Shaft steepened coming down")
         XCTAssertTrue(app.buttons["Play"].exists, "Off the walkthrough the transport row is back")
         folded.tap()
         XCTAssertEqual(Double(timeline.value as? String ?? "") ?? 0, 1.85, accuracy: 0.01)
@@ -66,7 +66,7 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertEqual(title.label, "Head height at the top: in zone")
         XCTAssertEqual(Double(timeline.value as? String ?? "") ?? 0, 1.6, accuracy: 0.01)
         app.buttons["coaching-back-to-steps"].tap()
-        XCTAssertEqual(title.label, "Shaft steepens coming down")
+        XCTAssertEqual(title.label, "Shaft steepened coming down")
     }
 
     func testDrawingsToolTurnsTheCoachsDrawingOffAndBack() {
@@ -80,7 +80,7 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertTrue(coach.waitForExistence(timeout: 3))
         XCTAssertTrue(app.switches["coaching-layer-club"].exists)
         coach.switches.firstMatch.tap()
-        app.navigationBars["Drawings"].buttons["Done"].tap()
+        app.navigationBars["Drawing layers"].buttons["Done"].tap()
 
         XCTAssertFalse(caption.waitForExistence(timeout: 1))
         let changed = app.descendants(matching: .any)["coaching-layers-custom"]
@@ -106,7 +106,7 @@ final class SwingCoachingUITests: XCTestCase {
         let updated = NSPredicate(format: "label CONTAINS %@", "On the body checks alone it was: Good swing")
         expectation(for: updated, evaluatedWith: note)
         waitForExpectations(timeout: 12)
-        XCTAssertEqual(title.label, "Shaft steepens coming down")
+        XCTAssertEqual(title.label, "Shaft steepened coming down")
         attach(app, "coaching-clip-reading-replaced")
         app.buttons["coaching-next"].tap()
         XCTAssertFalse(note.exists, "The note goes once the golfer moves on")
@@ -148,8 +148,8 @@ final class SwingCoachingUITests: XCTestCase {
 
         let theme = app.descendants(matching: .any)["session-theme-steepTransition-transition-1"]
         XCTAssertTrue(theme.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Shaft steepens coming down"].firstMatch.exists)
-        XCTAssertTrue(app.staticTexts["4 of 5 swings with a halfway down (P5) reading"].exists)
+        XCTAssertTrue(app.staticTexts["Shaft steepened coming down"].firstMatch.exists)
+        XCTAssertTrue(app.staticTexts["On 4 of 5 swings with a halfway-down (P5) reading"].exists)
         XCTAssertTrue(app.staticTexts["Start here"].exists)
 
         // A dot a swing, in the order hit. The fifth is the first with four
@@ -157,7 +157,7 @@ final class SwingCoachingUITests: XCTestCase {
         let third = app.buttons["session-swing-dot-3"]
         XCTAssertTrue(third.exists)
         XCTAssertEqual(third.label, "Swing 3: Good swing")
-        XCTAssertEqual(app.buttons["session-swing-dot-5"].label, "Swing 5: Shaft steepens coming down")
+        XCTAssertEqual(app.buttons["session-swing-dot-5"].label, "Swing 5: Shaft steepened coming down")
 
         // The theme at its worst and at its best, as pictures.
         XCTAssertTrue(app.buttons["session-example-1"].waitForExistence(timeout: 5), "Shows it most")
@@ -204,8 +204,8 @@ final class SwingCoachingUITests: XCTestCase {
         app.buttons["Recap the last swings"].tap()
         XCTAssertTrue(recap.waitForExistence(timeout: 3))
         XCTAssertTrue(app.staticTexts["Last 5 swings"].exists)
-        XCTAssertTrue(app.staticTexts["Shaft steepens coming down"].exists)
-        XCTAssertTrue(app.staticTexts["4 of 5 swings with a halfway down (P5) reading"].exists)
+        XCTAssertTrue(app.staticTexts["Shaft steepened coming down"].exists)
+        XCTAssertTrue(app.staticTexts["On 4 of 5 swings with a halfway-down (P5) reading"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["coach-recap-picture"].exists, "The recap pictures the theme")
         attach(app, "capture-recap")
 
@@ -234,7 +234,7 @@ final class SwingCoachingUITests: XCTestCase {
         let app = XCUIApplication.launched(seed: "coaching", Fixture.syntheticCamera + ["-coaching.cadence", "everySwing"])
         let verdict = app.buttons["coach-latest-verdict"]
         XCTAssertTrue(verdict.waitForExistence(timeout: 10))
-        XCTAssertEqual(verdict.label, "Last swing: Shaft steepens coming down")
+        XCTAssertEqual(verdict.label, "Last swing: Shaft steepened coming down")
         XCTAssertEqual(app.buttons["coach-cadence"].label, "Coach speaks: Every swing")
         attach(app, "capture-latest-verdict")
 
@@ -251,7 +251,7 @@ final class SwingCoachingUITests: XCTestCase {
         let title = app.staticTexts.matching(identifier: "coaching-step-title").allElementsBoundByIndex
             .first { $0.isHittable } ?? app.staticTexts["coaching-step-title"]
         XCTAssertTrue(title.waitForExistence(timeout: 5))
-        XCTAssertEqual(title.label, "Shaft steepens coming down")
+        XCTAssertEqual(title.label, "Shaft steepened coming down")
         XCTAssertTrue(app.descendants(matching: .any)["coaching-caption-transition"].firstMatch.waitForExistence(timeout: 2))
     }
 

@@ -113,14 +113,22 @@ enum CoachingWords {
         "\(steps(result.level)), \(value(result))"
     }
 
-    /// A theme's share with its denominator named: "4 of 8 swings with a
-    /// takeaway (P2) reading", or "4 of 8 swings with a reading" beside a
-    /// position tag that already names it.
+    /// Which swings showed a theme, said as what happened, with its
+    /// denominator named: "On 4 of 8 swings with a takeaway (P2)
+    /// reading", "On all 4 swings with a halfway-back (P3) reading", or
+    /// "On 4 of 8 swings with a reading" beside a position tag that
+    /// already names it.
     static func themeShare(_ theme: CoachingTheme, namingPosition: Bool = true) -> String {
-        guard namingPosition else { return "\(theme.swings) of \(theme.measured) swings with a reading" }
-        let name = SwingPosition.names[min(max(theme.position, 1), SwingPosition.names.count) - 1].lowercased()
+        let count = switch theme.measured {
+        case 1: "the 1 swing"
+        case theme.swings where theme.swings > 1: "all \(theme.measured) swings"
+        default: "\(theme.swings) of \(theme.measured) swings"
+        }
+        guard namingPosition else { return "On \(count) with a reading" }
+        let name = SwingPosition.names[min(max(theme.position, 1), SwingPosition.names.count) - 1]
+            .lowercased().replacingOccurrences(of: " ", with: "-")
         let article = name.first.map { "aeiou".contains($0) } == true ? "an" : "a"
-        return "\(theme.swings) of \(theme.measured) swings with \(article) \(name) (P\(theme.position)) reading"
+        return "On \(count) with \(article) \(name) (P\(theme.position)) reading"
     }
 
     /// What a check says, in or out of its zone.
@@ -157,16 +165,16 @@ extension SwingCoachingStore {
         return stops
     }
 
-    /// Top to bottom (0...1) of what is drawn at a stop, and down to the
-    /// club head on that frame (at the ball around impact), so the player
-    /// can keep both clear of the step card.
+    /// Top to bottom (0...1) of the step's own finding at a stop (or the
+    /// picked check), and down to the club head on that frame (at the ball
+    /// around impact), so the player can keep both clear of the step card.
     func focusRange(for swing: SavedSwing, at time: Double, highlighted: CoachingMetricID?) -> ClosedRange<Double>? {
         guard let report = report(for: swing) else { return nil }
         var ids: [CoachingMetricID] = []
         if let highlighted, let result = report.metric(highlighted), abs(result.clipTime - time) <= stopTolerance {
             ids = [highlighted]
         } else if let step = steps(for: swing).first(where: { abs($0.clipTime - time) <= stopTolerance }) {
-            ids = step.metrics
+            ids = step.lead.map { [$0] } ?? []
         }
         var ys: [Double] = []
         for result in ids.compactMap(report.metric) {
@@ -238,9 +246,6 @@ struct CoachingDrawingLayer: View {
     var revealed = 3
     /// Not judged: the swing is drawn grey, not in a level's colour.
     var neutral = false
-    /// Supporting checks: still drawn, thinner and fainter than the step's
-    /// own finding.
-    var muted: Set<CoachingMetricID> = []
 
     var body: some View {
         ZStack {
@@ -255,9 +260,7 @@ struct CoachingDrawingLayer: View {
         Canvas { context, _ in
             for result in results {
                 var layer = context
-                let isMuted = muted.contains(result.id)
-                var lineWeight = isMuted ? weight * 0.6 : weight
-                if isMuted { layer.opacity = Self.mutedOpacity }
+                var lineWeight = weight
                 // Address is where the swing is measured from, not the
                 // point: thinner and dimmer, so where it meets the swing's
                 // mark and the zone the three never stack into one blob.
@@ -276,8 +279,6 @@ struct CoachingDrawingLayer: View {
 
     /// The swing's line on a swing that isn't judged, and on a guide.
     static let neutralColour = Color(white: 0.82)
-    /// A supporting check's drawing beside the step's own finding.
-    static let mutedOpacity = 0.5
     /// The address reference against the swing's own line.
     static let referenceWeight: CGFloat = 0.55
     static let referenceOpacity = 0.7
@@ -462,16 +463,15 @@ struct SwingCoachingOverlay: View {
         var showsTrail = false
         /// The checks that get a name tag; every one drawn when nil.
         var tagged: Set<CoachingMetricID>?
-        /// Supporting checks, drawn fainter and without a tag.
-        var muted: Set<CoachingMetricID> = []
     }
 
-    /// A step's own finding gets the tag; the checks supporting it stay
-    /// drawn but muted, so one label speaks for the frame.
+    /// A step draws only its own finding, so the eye goes to one place on
+    /// the body; the checks supporting it are drawn only with "Every check
+    /// on the frame".
     private func leadOnly(_ shown: inout Shown) {
-        guard let lead = shown.results.first?.id else { return }
-        shown.tagged = [lead]
-        shown.muted = Set(shown.results.dropFirst().map(\.id))
+        guard let lead = shown.results.first else { return }
+        shown.results = [lead]
+        shown.tagged = [lead.id]
     }
 
     private func shown(at now: Double) -> Shown {
@@ -521,7 +521,7 @@ struct SwingCoachingOverlay: View {
                     if !shown.results.isEmpty {
                         CoachingDrawingLayer(results: shown.results, rect: rect,
                                              revealed: shown.stopKey == nil ? 3 : (revealKey == shown.stopKey ? revealed : 0),
-                                             neutral: report?.exclusion != nil, muted: shown.muted)
+                                             neutral: report?.exclusion != nil)
                             .opacity(shown.held ? 0.55 : 1)
                         if !shown.held {
                             tags(shown.results, tagged: shown.tagged, in: rect,
@@ -919,11 +919,13 @@ struct SwingCoachingPanel: View {
     private func stepCard(_ step: CoachingStep, index: Int, of steps: [CoachingStep], report: SwingCoachingReport) -> some View {
         let lead = step.lead.flatMap(report.metric)
         let notJudged: CoachingExclusion? = if case .notJudged(let exclusion) = step.kind { exclusion } else { nil }
-        let results = step.metrics.compactMap(report.metric)
+        // The legend keys what is drawn: the step's own finding only.
+        let results = lead.map { [$0] } ?? []
         return VStack(alignment: .leading, spacing: Self.rowGap) {
             readingNote(report)
             HStack(alignment: .center) {
-                Text(placeLine(step) + (steps.count > 1 ? ", step \(index + 1) of \(steps.count)" : ""))
+                // "Finding", not "step": "steps out" is the level's word.
+                Text(placeLine(step) + (steps.count > 1 ? ", finding \(index + 1) of \(steps.count)" : ""))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.82))
                     .accessibilityIdentifier("coaching-step-count")
@@ -1091,12 +1093,12 @@ struct SwingCoachingPanel: View {
             }
             .font(.subheadline.weight(.semibold))
             .padding(.horizontal, 10)
-            .frame(minHeight: 32)
+            .frame(minHeight: Self.allChecksHeight)
             .background(Capsule().strokeBorder(.white.opacity(0.35), lineWidth: 1))
             // 44 points to tap, without making the row taller.
-            .padding(.vertical, 6)
+            .padding(.vertical, (Self.buttonHeight - Self.allChecksHeight) / 2)
             .contentShape(Rectangle())
-            .padding(.vertical, -6)
+            .padding(.vertical, -(Self.buttonHeight - Self.allChecksHeight) / 2)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("All checks on this swing")
@@ -1169,7 +1171,7 @@ struct SwingCoachingPanel: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
-                Text(steps.count > 1 ? "Show steps" : "Show")
+                Text(steps.count > 1 ? "Show findings" : "Show")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.82))
                 Image(systemName: "chevron.up")
@@ -1183,7 +1185,7 @@ struct SwingCoachingPanel: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Coaching: \(first.text)")
-        .accessibilityHint("Pauses on the coach's first step")
+        .accessibilityHint("Pauses on the coach's first finding")
         .accessibilityIdentifier("swing-coaching-pill")
     }
 
@@ -1206,9 +1208,12 @@ struct SwingCoachingPanel: View {
     }
 
     /// Kept tight so the card covers as little of the swing as it can.
-    private static let rowGap: CGFloat = 5
+    private static let rowGap: CGFloat = 3
     /// The card's top and bottom padding, as tight as its rounded corners allow.
-    private static let cardPadding: CGFloat = 9
+    private static let cardPadding: CGFloat = 7
+    /// The All checks capsule: drawn shorter than its row's text needs
+    /// room for, and still 44 points to tap.
+    private static let allChecksHeight: CGFloat = 28
     /// The card's buttons: the 44 pt minimum, no taller.
     private static let buttonHeight: CGFloat = 44
 
@@ -1380,7 +1385,7 @@ struct CoachingLayersSheet: View {
             List {
                 Section {
                     Toggle(isOn: $layers.coach) {
-                        row("The coach's drawings", "The lines for each step on the swing.")
+                        row("The coach's drawings", "The lines for each finding on the swing.")
                     }
                     .accessibilityIdentifier("coaching-layer-coach")
                     Toggle(isOn: $layers.clubPath) {
@@ -1402,7 +1407,7 @@ struct CoachingLayersSheet: View {
                     }
                 }
             }
-            .navigationTitle("Drawings")
+            .navigationTitle("Drawing layers")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -1490,19 +1495,23 @@ struct SwingCoachingChecks: View {
                     .accessibilityIdentifier("coaching-summary")
                 }
                 ForEach(positions, id: \.self) { position in
-                    Section(SwingPosition.title(position)) {
+                    Section {
                         ForEach(report.metrics.filter { $0.position == position }, id: \.id) { result in
                             Button { onSelect(result) } label: { row(result) }
                                 .buttonStyle(.plain)
                                 .accessibilityIdentifier("coaching-metric-\(result.id.rawValue)")
                         }
+                    } header: {
+                        SectionHeading(SwingPosition.title(position))
                     }
                 }
                 if !report.unavailable.isEmpty {
-                    Section("Not measured on this swing") {
+                    Section {
                         Text(report.unavailable.map { CoachingMetricDefinition.definition($0).title }.joined(separator: ", "))
                             .font(.footnote)
                             .foregroundStyle(Color.helpText)
+                    } header: {
+                        SectionHeading("Not measured on this swing")
                     }
                 }
             }

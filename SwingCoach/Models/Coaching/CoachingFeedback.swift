@@ -95,7 +95,7 @@ nonisolated struct CoachingFinding: Codable, Equatable {
     let metric: CoachingMetricID
     let position: Int
     let level: Int
-    /// The finding in a few words, e.g. "Shaft steepens coming down".
+    /// The finding in a few words, e.g. "Shaft steepened coming down".
     let text: String
     /// Other out-of-zone metrics of the same fault on this swing.
     let supporting: [CoachingMetricID]
