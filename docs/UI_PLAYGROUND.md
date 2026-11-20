@@ -134,7 +134,7 @@ sits bottom left. Auto uses a red active dot and a saved-swing shortcut bottom
 right. Saved swings use the shared player with Done and delete controls.
 
 Production Capture also has an off-by-default `Show model stats` setting under
-Library > Experiments > Capture diagnostics. It exposes measured detector FPS
+Library > Settings > Capture diagnostics. It exposes measured detector FPS
 and average processing milliseconds beneath the status in Auto and Manual.
 The native study preserves the approved visual comparison; use production
 Capture and its verification driver to inspect real settings and status handling.

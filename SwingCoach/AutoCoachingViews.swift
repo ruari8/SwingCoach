@@ -160,7 +160,8 @@ struct AutoCoachingPanel: View {
         var example: CoachingRecapCard.Example?
         if let theme = recap.theme, let most = CoachingFeedback.examples(of: theme, in: group.map(\.report)).most,
            let metric = CoachingFeedback.metric(showing: theme, in: group[most].report) {
-            example = .init(swing: group[most].swing, report: group[most].report, metric: metric, number: numbers[most])
+            example = .init(swing: group[most].swing, report: group[most].report, metric: metric, number: numbers[most],
+                            showing: recap.swings.indices.contains(most) ? recap.swings[most] : nil)
         }
         return CoachingRecapCard(recap: recap, numbers: numbers, example: example) {
             if let theme = recap.theme {
@@ -175,6 +176,27 @@ struct AutoCoachingPanel: View {
 }
 
 extension CoachingThemeShowing {
+    /// A recap bar's look, and the key that explains it: the colour, and
+    /// solid or outlined. Bars that look the same share a key.
+    struct Look: Hashable {
+        let colourLevel: Int?
+        let outlined: Bool
+    }
+
+    var isShows: Bool {
+        if case .shows = self { return true }
+        return false
+    }
+
+    var look: Look {
+        switch self {
+        case .notJudged: Look(colourLevel: nil, outlined: false)
+        case .inZone: Look(colourLevel: 0, outlined: false)
+        case .shows(let level): Look(colourLevel: abs(level) >= 4 ? 4 : 1, outlined: false)
+        case .otherWay(let level): Look(colourLevel: abs(level) >= 4 ? 4 : 1, outlined: true)
+        }
+    }
+
     var colour: Color {
         switch self {
         case .notJudged: .gray.opacity(0.6)
@@ -191,16 +213,6 @@ extension CoachingThemeShowing {
     }
 }
 
-extension CoachingVerdict {
-    var colour: Color {
-        switch self {
-        case .notJudged: .gray
-        case .good, .better: .coachingLevel(0)
-        case .focus(let finding): .coachingLevel(finding.level)
-        }
-    }
-}
-
 /// What the last few swings had in common, over the camera.
 struct CoachingRecapCard: View {
     struct Example {
@@ -208,6 +220,8 @@ struct CoachingRecapCard: View {
         let report: SwingCoachingReport
         let metric: CoachingMetricID
         let number: Int
+        /// How this swing stands on the theme, as its bar shows it.
+        var showing: CoachingThemeShowing?
     }
 
     let recap: CoachingRecap
@@ -244,7 +258,7 @@ struct CoachingRecapCard: View {
                                 .font(.title3.weight(.bold))
                                 .fixedSize(horizontal: false, vertical: true)
                         }
-                        Text("\(theme.swings) of \(theme.measured) swings, \(CoachingWalkthrough.place(theme.position).lowercased()) (P\(theme.position))")
+                        Text("\(theme.swings) of \(theme.measured) swings · \(SwingPosition.title(theme.position))")
                             .font(.footnote)
                             .foregroundStyle(.white.opacity(0.78))
                             .fixedSize(horizontal: false, vertical: true)
@@ -261,9 +275,15 @@ struct CoachingRecapCard: View {
                             CoachingFrameView(swing: example.swing, report: example.report, metric: example.metric)
                                 .frame(width: 62, height: 110)
                                 .clipShape(.rect(cornerRadius: 8))
-                            Text("Swing \(example.number)")
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.white.opacity(0.78))
+                            HStack(spacing: 4) {
+                                // The same look as this swing's bar below.
+                                if let showing = example.showing {
+                                    RecapBar(showing: showing).frame(width: 12)
+                                }
+                                Text("Swing \(example.number)")
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.white.opacity(0.78))
+                            }
                         }
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel("Picture of swing \(example.number), which shows it most")
@@ -302,24 +322,45 @@ struct CoachingRecapCard: View {
         .accessibilityIdentifier("coach-recap")
     }
 
-    /// What the bars' fills mean, said once under them.
+    /// What the bars mean, said once under them: one key for each look
+    /// the bars have, drawn exactly as that bar is.
     private var barLegend: some View {
-        HStack(spacing: 12) {
-            legendItem(fill: .coachingLevel(4), stroke: .coachingLevel(4), "Shows it")
-            legendItem(fill: .coachingLevel(0), stroke: .coachingLevel(0), "In zone")
-            legendItem(fill: .clear, stroke: .coachingLevel(2), "Other way")
-            legendItem(fill: .gray.opacity(0.6), stroke: .gray.opacity(0.6), "Not judged")
+        let looks = recap.swings.reduce(into: [CoachingThemeShowing]()) { kept, showing in
+            if !kept.contains(where: { $0.look == showing.look }) { kept.append(showing) }
+        }
+        .sorted { Self.legendOrder($0) < Self.legendOrder($1) }
+        // "Shows it" twice only when both amber and red bars show it.
+        let showsBoth = Set(looks.filter(\.isShows).map(\.look)).count > 1
+        let keys = looks.map { (showing: $0, title: legendTitle($0, showsBoth: showsBoth)) }
+        return FlowLayout(spacing: 12, lineSpacing: 4) {
+            ForEach(keys, id: \.title) { key in
+                HStack(spacing: 4) {
+                    RecapBar(showing: key.showing).frame(width: 16)
+                    Text(key.title)
+                }
+            }
         }
         .font(.caption2.weight(.medium))
         .foregroundStyle(.white.opacity(0.78))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Bars: coloured shows it, green in zone, outlined out the other way, grey not judged")
+        .accessibilityLabel("Bars: " + keys.map(\.title).joined(separator: ", ").lowercased())
     }
 
-    private func legendItem(fill: Color, stroke: Color, _ title: String) -> some View {
-        HStack(spacing: 4) {
-            Capsule().fill(fill).overlay(Capsule().strokeBorder(stroke, lineWidth: 1)).frame(width: 14, height: 6)
-            Text(title)
+    private static func legendOrder(_ showing: CoachingThemeShowing) -> Int {
+        switch showing {
+        case .shows(let level): abs(level) >= 4 ? 1 : 0
+        case .inZone: 2
+        case .otherWay: 3
+        case .notJudged: 4
+        }
+    }
+
+    private func legendTitle(_ showing: CoachingThemeShowing, showsBoth: Bool) -> String {
+        switch showing {
+        case .shows(let level): showsBoth ? (abs(level) >= 4 ? "Shows it, far out" : "Shows it, a little") : "Shows it"
+        case .inZone: "In zone"
+        case .otherWay: "Other way"
+        case .notJudged: "Not judged"
         }
     }
 
@@ -330,10 +371,7 @@ struct CoachingRecapCard: View {
         HStack(alignment: .top, spacing: 6) {
             ForEach(Array(zip(numbers, recap.swings).enumerated()), id: \.offset) { _, entry in
                 VStack(spacing: 5) {
-                    Capsule()
-                        .fill(entry.1.fill)
-                        .overlay(Capsule().strokeBorder(entry.1.colour, lineWidth: 1))
-                        .frame(height: 6)
+                    RecapBar(showing: entry.1)
                     Text("\(entry.0)")
                         .font(.caption2.weight(.semibold).monospacedDigit())
                         .foregroundStyle(.white.opacity(0.7))
@@ -343,6 +381,21 @@ struct CoachingRecapCard: View {
             }
         }
         .padding(.top, 2)
+    }
+}
+
+/// One swing's bar on the recap, also its key in the legend and its mark
+/// on the thumbnail and in the comparison: solid in its level's colour,
+/// outlined when out the other way, grey when not judged.
+struct RecapBar: View {
+    let showing: CoachingThemeShowing
+
+    var body: some View {
+        Capsule()
+            .fill(showing.fill)
+            .overlay(Capsule().strokeBorder(showing.colour, lineWidth: 1.5))
+            .frame(height: 6)
+            .accessibilityHidden(true)
     }
 }
 
@@ -424,10 +477,11 @@ struct CoachingCompareView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(theme.text).font(.title3.weight(.bold))
-                        Text("\(CoachingWalkthrough.place(theme.position)) (P\(theme.position)) on each swing. Tap one to walk through it.")
+                        Text("\(SwingPosition.title(theme.position)) on each swing. Tap one to walk through it.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
-                        CoachingLegend(results: Array(swings.lazy.compactMap { store.report(for: $0.swing)?.metric(theme.metric) }.prefix(1)))
+                        CoachingLegend(results: Array(swings.lazy.compactMap { store.report(for: $0.swing)?.metric(theme.metric) }.prefix(1)),
+                                       subjectColours: subjectColours)
                             .padding(.top, 4)
                     }
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 14) {
@@ -447,7 +501,22 @@ struct CoachingCompareView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .tint(.appAccent)
         .accessibilityIdentifier("coach-compare")
+    }
+
+    /// The colours the tiles draw their swing in, so the legend's "This
+    /// swing" shows each of them, not only the first swing's.
+    private var subjectColours: [Color] {
+        var colours: [Color] = []
+        for entry in swings {
+            guard let report = store.report(for: entry.swing),
+                  let metric = CoachingFeedback.metric(showing: theme, in: report),
+                  let result = report.metric(metric) else { continue }
+            let colour = report.exclusion != nil ? CoachingDrawingLayer.neutralColour : .coachingLevel(result.level)
+            if !colours.contains(colour) { colours.append(colour) }
+        }
+        return colours
     }
 
     @ViewBuilder
@@ -464,15 +533,15 @@ struct CoachingCompareView: View {
                     if let report, let metric {
                         CoachingFrameView(swing: swing, report: report, metric: metric)
                     } else {
-                        Color.black.overlay(Text("Not measured").font(.caption).foregroundStyle(.secondary))
+                        Color.black.overlay(Text(showing.label.prefix(1).uppercased() + showing.label.dropFirst())
+                            .font(.caption).foregroundStyle(.secondary))
                     }
                 }
                 .aspectRatio(9.0 / 16.0, contentMode: .fit)
                 .clipShape(.rect(cornerRadius: 12))
                 HStack(spacing: 6) {
-                    Circle().fill(showing.fill)
-                        .overlay(Circle().strokeBorder(showing.colour, lineWidth: 1.5))
-                        .frame(width: 8, height: 8)
+                    // The same look as the swing's bar on the recap.
+                    RecapBar(showing: showing).frame(width: 14)
                     Text("Swing \(number)").font(.subheadline.weight(.semibold))
                     Spacer(minLength: 0)
                     Text(showing.label)

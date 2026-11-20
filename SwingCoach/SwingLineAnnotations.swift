@@ -60,7 +60,7 @@ struct SwingLineControls: View {
                         .foregroundColor(.black)
                         .padding(.horizontal, 14)
                         .frame(height: 36)
-                        .background(Capsule().fill(Color.swingPositionAccent))
+                        .background(Capsule().fill(Color.accentLime))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Finish drawing lines")

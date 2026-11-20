@@ -113,7 +113,6 @@ struct LibraryView: View {
                                 exportSelectedSwings()
                             } label: {
                                 Image(systemName: "square.and.arrow.up")
-                                    .foregroundColor(.blue)
                             }
                             .disabled(isExportingSelectedSwings)
 
@@ -132,7 +131,7 @@ struct LibraryView: View {
                         } label: {
                             Image(systemName: "gearshape")
                         }
-                        .accessibilityLabel("Experimental settings")
+                        .accessibilityLabel("Settings")
                         selectButton
                         importButton
                     }
@@ -403,10 +402,10 @@ struct LibraryView: View {
                 } label: {
                     Label("Record", systemImage: "camera.fill")
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundColor(.onAccent)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
-                        .background(Color.blue)
+                        .background(Color.appAccent)
                         .cornerRadius(10)
                 }
 
@@ -415,10 +414,10 @@ struct LibraryView: View {
                 } label: {
                     Label("Import", systemImage: "photo.on.rectangle")
                         .font(.headline)
-                        .foregroundColor(.blue)
+                        .foregroundColor(.appAccent)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
-                        .background(Color.blue.opacity(0.1))
+                        .background(Color.appAccent.opacity(0.12))
                         .cornerRadius(10)
                 }
             }
@@ -543,20 +542,28 @@ struct LibraryView: View {
                     }
                 }
             } label: {
+                // Secondary to the toolbar's Select: plain grey text.
                 Text(isWholeSessionSelected ? "Deselect" : "Select")
-                    .font(.subheadline.weight(.medium))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
             .accessibilityLabel("\(isWholeSessionSelected ? "Deselect" : "Select") \(title) session")
 
             if session.swings.contains(where: SwingCoachingStore.canCoach) {
                 Button {
                     coachingSession = session
                 } label: {
-                    Image(systemName: "figure.golf")
-                        .font(.subheadline.weight(.medium))
+                    Label("Review", systemImage: "figure.golf")
+                        .font(.subheadline.weight(.semibold))
                 }
-                .padding(.leading, 10)
-                .accessibilityLabel("Coaching for \(title) session")
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .controlSize(.small)
+                .padding(.leading, 6)
+                .accessibilityLabel("Review coaching for \(title) session")
                 .accessibilityIdentifier("session-coaching-button")
             }
         }
@@ -760,7 +767,7 @@ struct LibraryView: View {
                             Spacer()
                             Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                                 .font(.system(size: 24))
-                                .foregroundColor(isSelected ? .blue : .white)
+                                .foregroundColor(isSelected ? .appAccent : .white)
                                 .shadow(radius: 2)
                         }
                     }
@@ -791,10 +798,10 @@ struct LibraryView: View {
                 }
                 .padding(6)
             }
-            .cornerRadius(8)
+            .clipShape(.rect(cornerRadius: LibraryCard.thumbnailRadius))
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 3)
+                RoundedRectangle(cornerRadius: LibraryCard.thumbnailRadius)
+                    .stroke(isSelected ? Color.appAccent : Color.clear, lineWidth: 3)
             )
 
             // Info
@@ -822,8 +829,7 @@ struct LibraryView: View {
             }
         }
         .padding(8)
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .background(LibraryCard.fill, in: .rect(cornerRadius: LibraryCard.radius))
         .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
     }
 
@@ -1326,13 +1332,17 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     private func stopLift(in geometry: GeometryProxy) -> CGFloat {
         guard isAtWalkthroughStop, let stopFocus, let focus = stopFocus(seconds(currentTime)),
               let aspect = videoAspect, aspect > 0, let panelTop else { return 0 }
-        let size = geometry.size
+        // Edge to edge, the video is centred in the whole screen, not in
+        // the safe area this reader measures.
+        let insets = edgeToEdge ? geometry.safeAreaInsets : EdgeInsets()
+        let size = CGSize(width: geometry.size.width + insets.leading + insets.trailing,
+                          height: geometry.size.height + insets.top + insets.bottom)
         let height = size.width / max(size.height, 1) > CGFloat(aspect) ? size.height : size.width / CGFloat(aspect)
-        let videoTop = geometry.frame(in: .global).minY + (size.height - height) / 2
+        let videoTop = geometry.frame(in: .global).minY - insets.top + (size.height - height) / 2
         let bottom = videoTop + CGFloat(focus.upperBound) * height + 24
         let top = videoTop + CGFloat(focus.lowerBound) * height - 24
         let wanted = max(0, bottom - panelTop)
-        let room = max(0, top - (geometry.frame(in: .global).minY + 64))
+        let room = max(0, top - (geometry.frame(in: .global).minY + ReviewTopBar.topPadding + ReviewTopBar.buttonSize + 12))
         return min(wanted, room, size.height * 0.4).rounded()
     }
 
@@ -1520,7 +1530,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(isLocked ? .black : .white)
                         .frame(width: 36, height: 36)
-                        .background(Circle().fill(isLocked ? Color.yellow : Color.black.opacity(0.45)))
+                        .background(Circle().fill(isLocked ? Color.accentLime : PlayerChrome.fill))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(isLocked ? "Unlock controls" : "Keep controls on screen")
@@ -1618,9 +1628,11 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         }
         tools += extraTools
         if swingPositions?.positions.isEmpty == false {
+            // Shown is the default, so the button is not filled while the
+            // strip is up: the strip itself says it is on.
             tools.append(PlayerTool(id: "positions", title: "Positions",
                                     accessibilityLabel: showsSwingPositions ? "Hide swing positions" : "Show swing positions",
-                                    isOn: showsSwingPositions, icon: .positionMarks) {
+                                    icon: .positionMarks) {
                 withAnimation(.easeInOut(duration: 0.2)) { showsSwingPositions.toggle() }
             })
         }
@@ -1801,9 +1813,9 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     private var scrubTimeBadge: some View {
         HStack(spacing: 0) {
             if let number = currentPositionNumber, let position = visiblePositions?.first(where: { $0.number == number }) {
-                Text(position.confidence < 0.5 ? "\(position.label) \(position.name)?" : "\(position.label) \(position.name)")
+                Text(position.confidence < 0.5 ? "\(position.name) (\(position.label)?)" : position.title)
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.swingPositionAccent)
+                    .foregroundColor(.accentLime)
                 Text(" · ")
                     .font(.system(size: 12, weight: .semibold))
             }
@@ -1815,7 +1827,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     .foregroundColor(.black)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1)
-                    .background(Capsule().fill(Color.swingPositionAccent))
+                    .background(Capsule().fill(Color.accentLime))
                     .padding(.leading, 6)
             }
         }
@@ -1839,14 +1851,14 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 .frame(height: 4)
 
             Capsule()
-                .fill(Color.yellow)
+                .fill(Color.accentLime)
                 .frame(width: progressWidth(in: width), height: 4)
 
             if let positions = visiblePositions {
                 ForEach(positions, id: \.number) { position in
                     let current = position.number == currentPositionNumber
                     Circle()
-                        .fill(current ? Color.swingPositionAccent : Color.white.opacity(0.75))
+                        .fill(current ? Color.accentLime : Color.white.opacity(0.75))
                         .frame(width: current ? 5 : 4, height: current ? 5 : 4)
                         .offset(x: CGFloat(mapping.fraction(at: position.clipTime)) * width - (current ? 2.5 : 2), y: 8)
                 }
@@ -2473,11 +2485,11 @@ struct FPSExportSheet: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(fps.displayName)
                                         .font(.headline)
-                                        .foregroundColor(isSelected ? .white : .primary)
+                                        .foregroundColor(isSelected ? .onAccent : .primary)
 
                                     Text("Duration: \(formatDuration(duration))")
                                         .font(.subheadline)
-                                        .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
+                                        .foregroundColor(isSelected ? Color.onAccent.opacity(0.8) : .secondary)
                                 }
 
                                 Spacer()
@@ -2485,13 +2497,13 @@ struct FPSExportSheet: View {
                                 if isSelected {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(.title2)
-                                        .foregroundColor(.white)
+                                        .foregroundColor(.onAccent)
                                 }
                             }
                             .padding()
                             .background(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .fill(isSelected ? Color.blue : Color(.secondarySystemBackground))
+                                    .fill(isSelected ? Color.appAccent : Color(.secondarySystemBackground))
                             )
                         }
                         .buttonStyle(.plain)
@@ -2507,10 +2519,10 @@ struct FPSExportSheet: View {
                 } label: {
                     Text("Export at \(selectedFPS.shortName)")
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundColor(.onAccent)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.blue)
+                        .background(Color.appAccent)
                         .cornerRadius(12)
                 }
                 .padding(.horizontal)

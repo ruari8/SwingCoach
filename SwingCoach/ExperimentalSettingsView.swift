@@ -167,7 +167,9 @@ struct ExperimentalSettingsView: View {
                 Text("Shows the DEBUG-only video replay tool used to test auto swing detection with saved footage.")
             }
         }
-        .navigationTitle("Experiments")
+        .navigationTitle("Settings")
+        // Sheets don't reliably inherit the app's tint; toggles need it set.
+        .tint(.appAccent)
         .onAppear { ExperimentalDetectorDefaults.migrateIfNeeded() }
     }
 }

@@ -19,29 +19,6 @@ extension Color {
     }
 }
 
-/// A metric's level as a number in its colour: a tick in zone, otherwise
-/// 1...10 with an arrow for the side of the zone it is on.
-private struct LevelMeter: View {
-    let level: Int
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.coachingLevel(level).opacity(0.18))
-            if level == 0 {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(Color.coachingLevel(0))
-            } else {
-                Text("\(abs(level))")
-                    .font(.system(size: 15, weight: .bold).monospacedDigit())
-                    .foregroundStyle(Color.coachingLevel(level))
-            }
-        }
-        .frame(width: 34, height: 34)
-    }
-}
-
 // MARK: - Session review
 
 /// A session's coaching: how each swing went, what kept happening with a
@@ -97,11 +74,11 @@ struct SessionCoachingView: View {
                     LabeledContent("Swings measured", value: "\(reports.count) of \(swings.count)")
                     LabeledContent("Good swings", value: "\(good) of \(judged.count)")
                     if judged.count < reports.count {
-                        LabeledContent("Not judged (chips, moved camera, unclear)", value: "\(reports.count - judged.count)")
+                        LabeledContent("Not judged", value: "\(reports.count - judged.count)")
                     }
                 } footer: {
                     if !measured.isEmpty {
-                        Text("One dot a swing, in the order hit. Green needed no pointer, amber or red had one, grey wasn't judged. Tap a dot to open the swing.")
+                        Text("One mark a swing, in the order hit. A tick needed no pointer, a number had one at that level, a dash wasn't judged: a chip, a moved camera or unclear positions. Tap one to open the swing.")
                     }
                 }
                 if themes.isEmpty, waiting == 0 {
@@ -155,6 +132,9 @@ struct SessionCoachingView: View {
             }
             .navigationTitle("Session coaching")
             .navigationBarTitleDisplayMode(.inline)
+            // A bar of its own once the list scrolls, so the title and
+            // Done never sit on the photos.
+            .hardTopScrollEdge()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
@@ -166,22 +146,23 @@ struct SessionCoachingView: View {
                 }
             }
         }
+        .tint(.appAccent)
         // Positions can arrive while the sheet is open.
         .task(id: coachable.map(\.id)) {
             for swing in coachable { store.coachIfNeeded(swing) }
         }
     }
 
+    /// A level badge a swing, the same badge as the player's, each in a
+    /// 44 point target, wrapping in the order hit.
     private func swingDots(_ measured: [SavedSwing], _ verdicts: [CoachingVerdict]) -> some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 22, maximum: 22), spacing: 2)], alignment: .leading, spacing: 2) {
+        FlowLayout(spacing: 0, lineSpacing: 0) {
             ForEach(Array(zip(measured, verdicts).enumerated()), id: \.element.0.id) { index, entry in
                 Button {
                     opened = entry.0.id
                 } label: {
-                    Circle()
-                        .fill(entry.1.colour)
-                        .frame(width: 12, height: 12)
-                        .frame(width: 22, height: 22)
+                    badge(entry.1)
+                        .frame(width: 44, height: 44)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.borderless)
@@ -189,26 +170,34 @@ struct SessionCoachingView: View {
                 .accessibilityIdentifier("session-swing-dot-\(index + 1)")
             }
         }
-        .padding(.vertical, 2)
+        .padding(.horizontal, -9)
+    }
+
+    private func badge(_ verdict: CoachingVerdict) -> CoachingLevelBadge {
+        switch verdict {
+        case .notJudged: CoachingLevelBadge(level: 0, neutral: true, size: 26)
+        case .good, .better: CoachingLevelBadge(level: 0, size: 26)
+        case .focus(let finding): CoachingLevelBadge(level: finding.level, size: 26)
+        }
     }
 
     private func themeRow(_ theme: CoachingTheme, leads: Bool) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            LevelMeter(level: theme.medianLevel)
+            CoachingLevelBadge(level: theme.medianLevel, size: 28)
             VStack(alignment: .leading, spacing: 3) {
                 Text(theme.text).font(.subheadline.weight(.semibold))
-                Text("\(theme.swings) of \(theme.measured) swings · P\(theme.position) \(SwingPosition.names[theme.position - 1].lowercased())")
+                Text("\(theme.swings) of \(theme.measured) swings · \(SwingPosition.title(theme.position))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 if CoachingMetricDefinition.definition(theme.metric).dependsOnCamera {
                     Text("A club reading: it shifts with where the camera stands. Check it with the camera on your hand line.")
-                        .font(.caption2)
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
                 if leads {
                     Text("Start here")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(Color.coachingLevel(1))
+                        .font(.footnote.weight(.bold))
+                        .foregroundStyle(Color.coachingLevelText(1))
                 }
             }
         }
@@ -260,11 +249,7 @@ struct SessionCoachingView: View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(Array(ordered.enumerated()), id: \.element.id) { index, theme in
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Text("P\(theme.position)")
-                        .font(.caption.weight(.bold).monospacedDigit())
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(Color.coachingLevel(theme.medianLevel).opacity(0.22), in: .rect(cornerRadius: 6))
+                    PositionTag(position: theme.position)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(theme.text).font(.subheadline.weight(.semibold))
                         Text("\(theme.swings) of \(theme.measured) swings")

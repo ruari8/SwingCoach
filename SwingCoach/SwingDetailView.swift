@@ -74,7 +74,7 @@ struct SwingDetailView: View {
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, 14)
-                .padding(.top, 6 + ReviewTopBar.railTop)
+                .padding(.top, ReviewTopBar.topPadding + ReviewTopBar.railTop)
             }
         }
         .swingCoachingOpening(swing: currentSwing, isActive: true, seek: $coachingSeek,
@@ -160,14 +160,14 @@ struct SwingDetailView: View {
 
             Spacer(minLength: 0)
         }
-        .padding(.top, 6)
+        .padding(.top, ReviewTopBar.topPadding)
         // The player's tool rail starts one gap under the star, or under
         // Done when docked left, without moving the top row.
         .overlay {
             // Centred under the star, which is wider than a rail button.
             cornerControls
                 .padding(.horizontal, ReviewTopBar.railInset)
-                .padding(.top, 6)
+                .padding(.top, ReviewTopBar.topPadding)
         }
     }
 
@@ -336,6 +336,7 @@ struct SwingDetailView: View {
 struct SwingInfoView: View {
     let swing: SavedSwing
     @ObservedObject private var positionProcessor = SwingPositionProcessor.shared
+    @Environment(\.dismiss) private var dismiss
 
     private var currentSwing: SavedSwing { swing }
 
@@ -349,12 +350,18 @@ struct SwingInfoView: View {
             }
             .navigationTitle("Swing Info")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
         }
+        .playerSheetStyle()
     }
 
     private var metadataContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Metadata")
+            Text("Details")
                 .font(.subheadline.weight(.semibold))
 
             VStack(spacing: 10) {
@@ -376,6 +383,7 @@ struct SwingInfoView: View {
 
             if let positions = currentSwing.swingPositions?.positions {
                 VStack(spacing: 8) {
+                    positionColumnHeaders
                     ForEach(positions, id: \.number) { position in
                         swingPositionRow(position)
                     }
@@ -399,10 +407,26 @@ struct SwingInfoView: View {
         }
     }
 
+    /// Names the table's number columns.
+    private var positionColumnHeaders: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("Position")
+            Spacer(minLength: 12)
+            Text("Time")
+            Text("Confidence")
+                .frame(width: Self.confidenceWidth, alignment: .trailing)
+        }
+        .font(.caption.weight(.semibold))
+        .foregroundColor(.secondary)
+        .accessibilityHidden(true)
+    }
+
+    private static let confidenceWidth: CGFloat = 84
+
     private func swingPositionRow(_ position: SwingPosition) -> some View {
         HStack(alignment: .firstTextBaseline) {
             // Below 0.5 the model found no clear peak for this position.
-            Text(position.confidence < 0.5 ? "\(position.label)? \(position.name)" : "\(position.label) \(position.name)")
+            Text(position.confidence < 0.5 ? "\(position.name) (\(position.label)?)" : position.title)
                 .font(.subheadline)
             Spacer(minLength: 12)
             Text(String(format: "%.2fs", position.clipTime))
@@ -410,8 +434,12 @@ struct SwingInfoView: View {
             Text("\(Int((position.confidence * 100).rounded()))%")
                 .font(.caption.monospacedDigit())
                 .foregroundColor(.secondary)
-                .frame(width: 40, alignment: .trailing)
+                .frame(width: Self.confidenceWidth, alignment: .trailing)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(position.title)\(position.confidence < 0.5 ? ", unsure" : ""): "
+            + String(format: "%.2f seconds", position.clipTime)
+            + ", confidence \(Int((position.confidence * 100).rounded())) percent")
     }
 
     private func metadataRow(_ title: String, _ value: String) -> some View {

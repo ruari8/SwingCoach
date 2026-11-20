@@ -41,11 +41,18 @@ nonisolated struct SwingPosition: Codable, Equatable {
 
     var label: String { "P\(number)" }
     var name: String { Self.names[number - 1] }
+    /// How the app names a position everywhere: "Halfway back (P3)".
+    var title: String { Self.title(number) }
 
+    /// Plain names, the same words the coaching uses ("Halfway back",
+    /// "At impact"). The model's own definitions (lead arm parallel and
+    /// so on) are in docs/SWING_POSITIONS.md.
     static let names = [
-        "Address", "Takeaway", "Lead arm parallel", "Top", "Lead arm parallel down",
-        "Shaft parallel down", "Impact", "Shaft parallel through", "Arm parallel through", "Finish",
+        "Address", "Takeaway", "Halfway back", "Top", "Halfway down",
+        "Just before impact", "Impact", "Just after impact", "Halfway through", "Finish",
     ]
+
+    static func title(_ number: Int) -> String { "\(names[number - 1]) (P\(number))" }
 }
 
 /// One Vision body-pose result on the training extractor's conventions:

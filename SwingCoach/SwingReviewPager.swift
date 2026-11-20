@@ -135,6 +135,9 @@ private struct SingleVideoScrollTargetBehavior: ScrollTargetBehavior {
 /// The review player's top row, the same in Library and Auto review: a
 /// button out on the left, the swing's number in the order hit in the
 /// middle, the star on the right. The tool rail hangs under the star.
+/// It is pinned `topPadding` under the safe area in every player state,
+/// never to the video, and its buttons carry an edge so they read on
+/// the black around a letterboxed or lifted clip as well as on video.
 struct ReviewTopBar: View {
     let leadingTitle: String
     let leadingAccessibilityLabel: String
@@ -146,6 +149,8 @@ struct ReviewTopBar: View {
     let onStar: () -> Void
 
     static let buttonSize: CGFloat = 44
+    /// Gap between the safe area's top and the row, in every player.
+    static let topPadding: CGFloat = 8
     /// Where a tool rail under the star starts.
     static let railTop: CGFloat = buttonSize + 10
     /// Side inset that centres the rail's buttons under the star.
@@ -159,7 +164,7 @@ struct ReviewTopBar: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 14)
                     .frame(minWidth: Self.buttonSize, minHeight: Self.buttonSize)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.black.opacity(0.55)))
+                    .playerChromeBackground(RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(.plain)
             .accessibilityLabel(leadingAccessibilityLabel)
@@ -183,7 +188,7 @@ struct ReviewTopBar: View {
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(isStarred ? Color.yellow : Color.white)
                     .frame(width: Self.buttonSize, height: Self.buttonSize)
-                    .background(Circle().fill(Color.black.opacity(0.55)))
+                    .playerChromeBackground(Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(isStarred ? "Remove star" : "Star swing")

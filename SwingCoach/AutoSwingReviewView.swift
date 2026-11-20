@@ -85,7 +85,7 @@ struct AutoSwingReviewView: View {
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, 14)
-                .padding(.top, 8 + ReviewTopBar.railTop)
+                .padding(.top, ReviewTopBar.topPadding + ReviewTopBar.railTop)
             }
         }
         .sheet(isPresented: $showsInfo) {
@@ -102,13 +102,13 @@ struct AutoSwingReviewView: View {
         .overlayPreferenceValue(ReviewPlaybackCornerControlsKey.self) { toolRail in
             toolRail
                 .padding(.horizontal, ReviewTopBar.railInset)
-                .padding(.top, 8)
+                .padding(.top, ReviewTopBar.topPadding)
         }
         .overlayPreferenceValue(SwingLineControlsKey.self) { controls in
             // While drawing, the line bar sits under Done and the page count.
             VStack {
                 controls
-                    .padding(.top, 8 + ReviewTopBar.railTop)
+                    .padding(.top, ReviewTopBar.topPadding + ReviewTopBar.railTop)
                 Spacer(minLength: 0)
             }
         }
@@ -162,7 +162,7 @@ struct AutoSwingReviewView: View {
                 onStar: { if let selectedSwing { library.toggleFavorite(selectedSwing) } }
             )
             .padding(.horizontal, 14)
-            .padding(.top, 8)
+            .padding(.top, ReviewTopBar.topPadding)
 
             Spacer()
         }

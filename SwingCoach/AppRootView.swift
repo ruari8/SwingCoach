@@ -50,6 +50,9 @@ struct AppRootView: View {
             }
             #endif
         }
+        // One accent for the whole app: tab selection, Select, Done,
+        // toggles and links. Lime on dark surfaces, its ink on light ones.
+        .tint(.appAccent)
         #if DEBUG
         .onChange(of: showDebugReplayTab) { _, isVisible in
             if !isVisible, selection == .debug {

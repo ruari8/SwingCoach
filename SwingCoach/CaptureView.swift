@@ -2001,6 +2001,7 @@ struct CaptureView: View {
                         title: autoStatusTitle,
                         detail: autoStatusDetail,
                         indicator: autoStatusIndicator,
+                        prominent: true,
                         modelSnapshot: showCaptureModelStats && camera.autoCaptureStatus.isActive
                             ? camera.liveSwingDetection : nil
                     )
@@ -2101,11 +2102,13 @@ struct CaptureView: View {
         return camera.autoCaptureStatus.isActive ? "Swings save automatically" : "Capture is paused"
     }
 
+    /// Armed is the accent, not red: red means a recording is running
+    /// (Manual's timer and record button).
     private var autoStatusIndicator: Color {
         if camera.autoCaptureStatus.lastErrorMessage != nil || camera.liveSwingDetection.status == .unavailable {
             return .orange
         }
-        return camera.autoCaptureStatus.isActive ? .red : .gray
+        return camera.autoCaptureStatus.isActive ? .accentLime : .gray
     }
 
     private var manualStatusTitle: String {
@@ -2292,23 +2295,45 @@ private struct CaptureStatusLabel: View {
     let title: String
     let detail: String
     var indicator: Color? = nil
+    /// Auto's state, read from the tripod two or three metres away: a
+    /// large label and indicator on a dark capsule.
+    var prominent = false
     var modelSnapshot: LiveSwingDetectionSnapshot? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 7) {
-                if let indicator {
-                    Circle().fill(indicator).frame(width: 6, height: 6)
-                        .accessibilityHidden(true)
+            if prominent {
+                HStack(spacing: 10) {
+                    if let indicator {
+                        Circle().fill(indicator).frame(width: 14, height: 14)
+                            .accessibilityHidden(true)
+                    }
+                    Text(title)
+                        .font(.title3.weight(.semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                        .accessibilityIdentifier("capture-status-title")
                 }
-                Text(title)
-                    .font(.subheadline.weight(.medium))
-                    .accessibilityIdentifier("capture-status-title")
+                .padding(.horizontal, 14)
+                .frame(minHeight: 44)
+                .background(Capsule().fill(Color.black.opacity(0.6)))
+                .overlay(Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 0.5))
+            } else {
+                HStack(spacing: 7) {
+                    if let indicator {
+                        Circle().fill(indicator).frame(width: 6, height: 6)
+                            .accessibilityHidden(true)
+                    }
+                    Text(title)
+                        .font(.subheadline.weight(.medium))
+                        .accessibilityIdentifier("capture-status-title")
+                }
             }
             Text(detail)
-                .font(.caption2)
+                .font(prominent ? .footnote : .caption2)
                 .foregroundStyle(.white.opacity(0.75))
                 .fixedSize(horizontal: false, vertical: true)
+                .padding(.leading, prominent ? 14 : 0)
                 .accessibilityIdentifier("capture-status-detail")
 
             if let snapshot = modelSnapshot,

@@ -106,8 +106,9 @@ extension SwingCoachingStore {
         return stops
     }
 
-    /// Top to bottom (0...1) of what is drawn at a stop, so the player
-    /// can keep it clear of the step card.
+    /// Top to bottom (0...1) of what is drawn at a stop, and down to the
+    /// club head on that frame (at the ball around impact), so the player
+    /// can keep both clear of the step card.
     func focusRange(for swing: SavedSwing, at time: Double, highlighted: CoachingMetricID?) -> ClosedRange<Double>? {
         guard let report = report(for: swing) else { return nil }
         var ids: [CoachingMetricID] = []
@@ -123,7 +124,13 @@ extension SwingCoachingStore {
                 ys += shape.points.flatMap { [$0.y - size, $0.y + size] }
             }
         }
-        guard let low = ys.min(), let high = ys.max() else { return nil }
+        guard let low = ys.min(), var high = ys.max() else { return nil }
+        // The club head only pushes the bottom down: a club high in the
+        // backswing must not stop the frame lifting.
+        if let head = clubTrail(for: swing)?.points.min(by: { abs($0.clipTime - time) < abs($1.clipTime - time) }),
+           abs(head.clipTime - time) <= 0.05 {
+            high = max(high, head.y + 0.03)
+        }
         return max(0, low)...min(1, high)
     }
 
@@ -138,7 +145,7 @@ extension SwingCoachingStore {
 enum CoachingStripMarks {
     /// A mark on each position with a judged check: the furthest level out
     /// of zone there, or a tick when every check there is in zone. The
-    /// walkthrough's first stop is ringed.
+    /// walkthrough's first stop says so to VoiceOver.
     static func marks(for report: SwingCoachingReport?, steps: [CoachingStep]) -> [Int: SwingPositionMark] {
         guard let report, report.exclusion == nil else { return [:] }
         var marks: [Int: SwingPositionMark] = [:]
@@ -199,8 +206,11 @@ struct CoachingDrawingLayer: View {
 
     private var weight: CGFloat { still ? max(1.5, min(3, rect.height / 110)) : 4 }
 
+    /// The swing's line on a swing that isn't judged.
+    static let neutralColour = Color(white: 0.82)
+
     private func draw(_ shape: CoachingDrawing, of result: CoachingMetricResult, context: inout GraphicsContext) {
-        let subject: Color = neutral ? Color(white: 0.82) : .coachingLevel(result.level)
+        let subject: Color = neutral ? Self.neutralColour : .coachingLevel(result.level)
         let colour: Color = switch shape.role {
         case .reference: .white
         case .zone: .coachingLevel(0)
@@ -289,14 +299,15 @@ struct CoachingDrawingLayer: View {
     }
 }
 
-/// The club head's path up to the playhead: lime, the colour of the clubs
-/// on the pose strip, never a level's colour. Filled-in stretches are dashed.
+/// The club head's path up to the playhead: the accent lime, the colour of
+/// the clubs on the pose strip, never a level's colour. Filled-in stretches
+/// are dashed.
 struct CoachingTrailLayer: View {
     let trail: CoachingClubTrail
     let rect: CGRect
     let upTo: Double
 
-    static let colour = Color(red: 0.847, green: 0.953, blue: 0.416)
+    static let colour = Color.accentLime
 
     var body: some View {
         Canvas { context, _ in
@@ -445,9 +456,37 @@ struct SwingCoachingOverlay: View {
         }
     }
 
+    /// Where each name tag sits: beside its drawing, moved down a row when
+    /// it would cover a tag already placed, so two checks on one frame
+    /// never print over each other.
+    private func tagCentres(_ results: [CoachingMetricResult], in rect: CGRect) -> [CoachingMetricID: CGPoint] {
+        let rowHeight: CGFloat = 30
+        var placed: [CGRect] = []
+        var centres: [CoachingMetricID: CGPoint] = [:]
+        let anchored = results.compactMap { result in
+            CoachingDrawingLayer.anchor(of: result, in: rect).map { (result, $0) }
+        }.sorted { $0.1.y < $1.1.y }
+        for (result, anchor) in anchored {
+            // A footnote bold character is about 8 pt wide, plus the padding.
+            let width = CGFloat(result.definition.title.count) * 8 + 16
+            var centre = CGPoint(x: min(max(anchor.x + 34, rect.minX + width / 2 + 6), rect.maxX - width / 2 - 6),
+                                 y: min(max(anchor.y - 16, rect.minY + 14), rect.maxY - 14))
+            func frame(_ point: CGPoint) -> CGRect {
+                CGRect(x: point.x - width / 2, y: point.y - rowHeight / 2, width: width, height: rowHeight)
+            }
+            while let hit = placed.first(where: { $0.intersects(frame(centre)) }) {
+                centre.y = hit.maxY + rowHeight / 2 + 2
+            }
+            placed.append(frame(centre))
+            centres[result.id] = centre
+        }
+        return centres
+    }
+
     private func tags(_ results: [CoachingMetricResult], in rect: CGRect) -> some View {
-        ForEach(results, id: \.id) { result in
-            if let anchor = CoachingDrawingLayer.anchor(of: result, in: rect) {
+        let centres = tagCentres(results, in: rect)
+        return ForEach(results, id: \.id) { result in
+            if let centre = centres[result.id] {
                 // A name, not a number: the numbers are in All checks.
                 Text(result.definition.title)
                     .font(.footnote.weight(.bold).monospacedDigit())
@@ -458,8 +497,7 @@ struct SwingCoachingOverlay: View {
                     .background(RoundedRectangle(cornerRadius: 6).fill(report?.exclusion != nil ? Color(white: 0.82) : .coachingLevel(result.level)))
                     .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(.black.opacity(0.5), lineWidth: 1))
                     .fixedSize()
-                    .position(x: min(max(anchor.x + 34, rect.minX + 40), rect.maxX - 40),
-                              y: min(max(anchor.y - 16, rect.minY + 14), rect.maxY - 14))
+                    .position(centre)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("\(CoachingWords.headline(result)), \(CoachingWords.value(result))")
                     .accessibilityIdentifier("coaching-caption-\(result.id.rawValue)")
@@ -567,7 +605,7 @@ struct SwingCoachingPanel: View {
             } label: {
                 Text("Try again")
                     .font(.body.weight(.semibold))
-                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .frame(maxWidth: .infinity, minHeight: Self.buttonHeight)
                     .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.16)))
             }
             .buttonStyle(.plain)
@@ -601,7 +639,7 @@ struct SwingCoachingPanel: View {
         let lead = step.lead.flatMap(report.metric)
         let notJudged: CoachingExclusion? = if case .notJudged(let exclusion) = step.kind { exclusion } else { nil }
         let results = step.metrics.compactMap(report.metric)
-        return VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: Self.rowGap) {
             readingNote(report)
             HStack(alignment: .center) {
                 Text(placeLine(step) + (steps.count > 1 ? ", step \(index + 1) of \(steps.count)" : ""))
@@ -625,7 +663,8 @@ struct SwingCoachingPanel: View {
             }
             buttons(index: index, of: steps)
         }
-        .padding(16)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
         .background(cardBackground)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("coaching-step-card")
@@ -712,7 +751,7 @@ struct SwingCoachingPanel: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.body.weight(.bold))
-                        .frame(width: 48, height: 48)
+                        .frame(width: Self.buttonHeight, height: Self.buttonHeight)
                         .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.16)))
                 }
                 .buttonStyle(.plain)
@@ -729,7 +768,7 @@ struct SwingCoachingPanel: View {
                     Image(systemName: "play.fill")
                 }
                     .font(.body.weight(.semibold))
-                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .frame(maxWidth: .infinity, minHeight: Self.buttonHeight)
                     .background(RoundedRectangle(cornerRadius: 14).fill(isLast ? Color.white : Color.white.opacity(0.16)))
                     .foregroundStyle(isLast ? Color.black : Color.white)
             }
@@ -745,7 +784,7 @@ struct SwingCoachingPanel: View {
                         Image(systemName: "chevron.right")
                     }
                     .font(.body.weight(.bold))
-                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .frame(maxWidth: .infinity, minHeight: Self.buttonHeight)
                     .background(RoundedRectangle(cornerRadius: 14).fill(.white))
                     .foregroundStyle(.black)
                 }
@@ -773,13 +812,13 @@ struct SwingCoachingPanel: View {
             .padding(.vertical, -6)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Every check on this swing")
+        .accessibilityLabel("All checks on this swing")
         .accessibilityIdentifier("coaching-all-checks")
     }
 
     /// A check picked from the list, on its own frame.
     private func checkCard(_ result: CoachingMetricResult, report: SwingCoachingReport, steps: [CoachingStep]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Self.rowGap) {
             Text(CoachingWalkthrough.place(result.position))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.white.opacity(0.82))
@@ -798,15 +837,15 @@ struct SwingCoachingPanel: View {
                 } label: {
                     Text("Back to the coach")
                         .font(.body.weight(.semibold))
-                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .frame(maxWidth: .infinity, minHeight: Self.buttonHeight)
                         .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.16)))
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("coaching-back-to-steps")
                 Button(action: showChecks) {
-                    Text("Every check")
+                    Text("All checks")
                         .font(.body.weight(.bold))
-                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .frame(maxWidth: .infinity, minHeight: Self.buttonHeight)
                         .background(RoundedRectangle(cornerRadius: 14).fill(.white))
                         .foregroundStyle(.black)
                 }
@@ -814,7 +853,8 @@ struct SwingCoachingPanel: View {
                 .accessibilityIdentifier("coaching-all-checks")
             }
         }
-        .padding(16)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
         .background(cardBackground)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("coaching-step-card")
@@ -830,7 +870,7 @@ struct SwingCoachingPanel: View {
         } label: {
             HStack(spacing: 10) {
                 badge(first, lead: lead)
-                Text(first.text)
+                Text(foldedText(first))
                     .font(.body.weight(.semibold))
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
@@ -853,11 +893,25 @@ struct SwingCoachingPanel: View {
         .accessibilityIdentifier("swing-coaching-pill")
     }
 
-    private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: 20)
-            .fill(Color(white: 0.07).opacity(0.9))
-            .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
+    /// "At impact: Head stays up through impact": off the walkthrough the
+    /// line says where in the swing its finding is.
+    private func foldedText(_ step: CoachingStep) -> String {
+        switch step.kind {
+        case .pointer, .finding, .better: "\(CoachingWalkthrough.place(step.position)): \(step.text)"
+        case .good, .notJudged: step.text
+        }
     }
+
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: PlayerChrome.panelRadius)
+            .fill(PlayerChrome.panel)
+            .overlay(RoundedRectangle(cornerRadius: PlayerChrome.panelRadius).strokeBorder(PlayerChrome.panelEdge, lineWidth: 0.5))
+    }
+
+    /// Kept tight so the card covers as little of the swing as it can.
+    private static let rowGap: CGFloat = 6
+    /// The card's buttons: the 44 pt minimum, no taller.
+    private static let buttonHeight: CGFloat = 44
 
     // MARK: Actions
 
@@ -887,15 +941,16 @@ struct SwingCoachingPanel: View {
 /// What the colours on the frame mean, for the parts this drawing has.
 struct CoachingLegend: View {
     let results: [CoachingMetricResult]
+    /// Several swings side by side: every colour their lines are drawn
+    /// in, so the key matches each picture.
+    var subjectColours: [Color]? = nil
 
     var body: some View {
         let roles = Set(results.flatMap { $0.drawings.map(\.role) })
         let level = results.first?.level ?? 0
-        // One row when it fits, a column at large text sizes.
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 14) { items(roles, level) }
-            VStack(alignment: .leading, spacing: 4) { items(roles, level) }
-        }
+        // One row when it fits; at large text sizes it wraps onto as few
+        // lines as it needs, never one item a line.
+        FlowLayout(spacing: 14, lineSpacing: 4) { items(roles, level) }
         .font(.footnote.weight(.medium))
         .foregroundStyle(.white.opacity(0.88))
         .accessibilityElement(children: .ignore)
@@ -920,14 +975,18 @@ struct CoachingLegend: View {
                     context.fill(path, with: .color(Color.coachingLevel(0).opacity(0.45)))
                     context.stroke(path, with: .color(Color.coachingLevel(0)), lineWidth: 1.5)
                 case .reference, .subject:
-                    var line = Path()
-                    line.move(to: CGPoint(x: 1, y: size.height / 2))
-                    line.addLine(to: CGPoint(x: size.width - 1, y: size.height / 2))
-                    context.stroke(line, with: .color(role == .reference ? .white : .coachingLevel(level)),
-                                   style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                    let colours: [Color] = role == .reference ? [.white] : (subjectColours ?? [.coachingLevel(level)])
+                    let step = (size.width - 2) / CGFloat(max(colours.count, 1))
+                    for (index, colour) in colours.enumerated() {
+                        var line = Path()
+                        line.move(to: CGPoint(x: 1 + step * CGFloat(index), y: size.height / 2))
+                        line.addLine(to: CGPoint(x: 1 + step * CGFloat(index + 1), y: size.height / 2))
+                        context.stroke(line, with: .color(colour), style: StrokeStyle(lineWidth: 3.5, lineCap: .butt))
+                    }
                 }
             }
-            .frame(width: 18, height: 10)
+            .frame(width: role == .subject && (subjectColours?.count ?? 1) > 1 ? 9 * CGFloat(subjectColours?.count ?? 1) : 18,
+                   height: 10)
             Text(title).fixedSize()
         }
     }
@@ -1045,9 +1104,7 @@ struct CoachingLayersSheet: View {
                 }
             }
         }
-        // Dark like the player behind it, in the app's lime, not system blue.
-        .preferredColorScheme(.dark)
-        .tint(.swingPositionAccent)
+        .playerSheetStyle()
     }
 
     private func row(_ title: String, _ detail: String) -> some View {
@@ -1127,7 +1184,7 @@ struct SwingCoachingChecks: View {
                     .accessibilityIdentifier("coaching-summary")
                 }
                 ForEach(positions, id: \.self) { position in
-                    Section("\(CoachingWalkthrough.place(position)) (P\(position))") {
+                    Section(SwingPosition.title(position)) {
                         ForEach(report.metrics.filter { $0.position == position }, id: \.id) { result in
                             Button { onSelect(result) } label: { row(result) }
                                 .buttonStyle(.plain)
@@ -1143,7 +1200,7 @@ struct SwingCoachingChecks: View {
                     }
                 }
             }
-            .navigationTitle("Every check")
+            .navigationTitle("All checks")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -1151,8 +1208,7 @@ struct SwingCoachingChecks: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
-        .tint(.swingPositionAccent)
+        .playerSheetStyle()
     }
 
     private var summary: String {

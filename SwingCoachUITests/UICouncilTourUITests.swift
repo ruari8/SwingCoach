@@ -36,7 +36,7 @@ final class UICouncilTourUITests: XCTestCase {
         settle(1.5)
         shot("01-library", look)
 
-        if tap(app.buttons["Experimental settings"]) {
+        if tap(app.buttons["Settings"]) {
             settle(1)
             shot("02-settings", look)
             if !tap(app.navigationBars.buttons["Done"]) { app.swipeDown(velocity: .fast) }

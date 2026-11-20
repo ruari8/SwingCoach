@@ -106,7 +106,7 @@ private enum SwingPositionGlyphData {
 struct SwingPositionGlyph: View {
     let number: Int
     var figure: Color = .white
-    var club: Color = .swingPositionAccent
+    var club: Color = .accentLime
 
     var body: some View {
         Canvas { context, size in
@@ -142,11 +142,6 @@ struct SwingPositionGlyph: View {
     }
 }
 
-extension Color {
-    /// Lime used for swing positions: the pose strip's clubs and the positions toggle.
-    static let swingPositionAccent = Color(red: 0.847, green: 0.953, blue: 0.416)
-}
-
 // MARK: - Pose strip
 
 /// A mark on a pose chip: what was found at that position. The shape says
@@ -161,7 +156,7 @@ struct SwingPositionMark: Equatable {
 
     var shape: Shape
     var colour: Color
-    /// The walkthrough starts here: drawn with a ring.
+    /// The walkthrough starts here: said to VoiceOver, not drawn.
     var isStart = false
     /// Read out after the position's name.
     var accessibilityText: String
@@ -241,7 +236,7 @@ struct SwingPositionStrip: View {
             SwingPositionGlyph(
                 number: position.number,
                 figure: selected ? .black : .white,
-                club: selected ? Color(red: 0.36, green: 0.49, blue: 0) : .swingPositionAccent
+                club: selected ? .accentInk : .accentLime
             )
             .frame(width: 30, height: 30)
 
@@ -268,8 +263,8 @@ struct SwingPositionStrip: View {
 }
 
 extension SwingPositionStrip {
-    /// A level number in a filled circle, a tick for in zone; a white ring
-    /// round the walkthrough's first stop.
+    /// A level number in a filled circle, a tick for in zone. No ring: the
+    /// only ring on the strip is the current position's chip.
     fileprivate func markBadge(_ mark: SwingPositionMark) -> some View {
         ZStack {
             Circle().fill(mark.colour)
@@ -286,10 +281,6 @@ extension SwingPositionStrip {
         }
         .frame(width: mark.shape == .tick ? 13 : 16, height: mark.shape == .tick ? 13 : 16)
         .overlay(Circle().strokeBorder(Color.black.opacity(0.55), lineWidth: 1))
-        .padding(mark.isStart ? 2 : 0)
-        .overlay {
-            if mark.isStart { Circle().strokeBorder(Color.white, lineWidth: 1.5) }
-        }
         .allowsHitTesting(false)
     }
 }
@@ -455,7 +446,7 @@ struct PlayerToolRail: View {
             .font(.system(size: 15, weight: .bold))
             .foregroundColor(.white)
             .frame(width: Self.buttonSize, height: Self.buttonSize)
-            .background(Circle().fill(Color.black.opacity(0.45)))
+            .playerChromeBackground(Circle())
             .scaleEffect(isDragging ? 1.12 : 1)
             .shadow(color: .black.opacity(isDragging ? 0.45 : 0), radius: 8, y: 3)
             .contentShape(Circle())
@@ -492,9 +483,9 @@ struct PlayerToolRail: View {
 
     private func dockOutline(highlighted: Bool) -> some View {
         Circle()
-            .strokeBorder(highlighted ? Color.swingPositionAccent : Color.white.opacity(0.7),
+            .strokeBorder(highlighted ? Color.accentLime : Color.white.opacity(0.7),
                           style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
-            .background(Circle().fill(highlighted ? Color.swingPositionAccent.opacity(0.2) : .clear))
+            .background(Circle().fill(highlighted ? Color.accentLime.opacity(0.2) : .clear))
             .frame(width: Self.buttonSize, height: Self.buttonSize)
             .allowsHitTesting(false)
     }
@@ -569,11 +560,25 @@ private struct RailToolRow: View {
             .accessibilityHidden(true)
     }
 
+    /// Filled in the accent only while the tool is active: a choice that
+    /// differs from the default. Everything else wears the player chrome.
+    @ViewBuilder
+    private var buttonFace: some View {
+        if tool.isOn {
+            icon
+                .foregroundColor(.black)
+                .frame(width: PlayerToolRail.buttonSize, height: PlayerToolRail.buttonSize)
+                .background(Circle().fill(Color.accentLime))
+        } else {
+            icon
+                .foregroundColor(.white)
+                .frame(width: PlayerToolRail.buttonSize, height: PlayerToolRail.buttonSize)
+                .playerChromeBackground(Circle())
+        }
+    }
+
     private var button: some View {
-        icon
-            .foregroundColor(tool.isOn ? .black : .white)
-            .frame(width: PlayerToolRail.buttonSize, height: PlayerToolRail.buttonSize)
-            .background(Circle().fill(tool.isOn ? Color.swingPositionAccent : Color.black.opacity(0.45)))
+        buttonFace
             .opacity(isPressed && !didPeek ? 0.6 : 1)
             .contentShape(Circle())
             .gesture(

@@ -98,7 +98,7 @@ final class SavePhotosUITests: XCTestCase {
 
     private func openSettings(_ app: XCUIApplication) {
         app.tabBars.buttons["Library"].tap()
-        app.buttons["Experimental settings"].tap()
+        app.buttons["Settings"].tap()
         XCTAssertTrue(app.switches["save-to-photos"].waitForExistence(timeout: 5))
     }
 

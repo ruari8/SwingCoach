@@ -80,6 +80,7 @@ SwingCoach/
 | Tab shell (Library, Capture, DEBUG Debug) | `SwingCoach/AppRootView.swift` |
 | Library tab, import, batch actions, export | `SwingCoach/LibraryView.swift` |
 | Settings (gear icon in Library; there is no `SettingsView`) | `SwingCoach/ExperimentalSettingsView.swift` |
+| Shared look: accent colour, player chrome, player sheet style, wrapping layout | `SwingCoach/Theme.swift` |
 | Swing detail | `SwingCoach/SwingDetailView.swift` |
 | Lines drawn by hand on a swing | `SwingCoach/SwingLineAnnotations.swift`, `ManualAnnotationCanvas.swift` |
 | Coaching in the player (Library and Auto): step card, drawings, club path, strip marks, Drawings tool, every check | `SwingCoach/CoachingPlayerViews.swift` |
