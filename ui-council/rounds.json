@@ -1,0 +1,52 @@
+{
+ "0": {
+  "changes": [
+   "Baseline: the coaching walkthrough pass from coaching-player-ux (0ebe504), plus the tour's fixture flag."
+  ],
+  "notes": "Gemini's round 0 scores were still running when round 1 started; they are added when they arrive."
+ },
+ "1": {
+  "changes": [
+   "Drawing name tags stack instead of printing over each other (all three members).",
+   "Top row (Done, counter, star) pinned to the safe area with a lighter fill and edge, so it shows over the black band and video (Opus, Fable).",
+   "Step card compacted (12 pt padding, 6 pt gaps, legend wraps); the impact lift counts the club head so feet, ball and club head clear the card (all three).",
+   "One accent token, Color.appAccent: the lime on dark, a darker lime ink (5.6:1) on light; app tint, toggles, tabs, Select, Done, timeline, Lock (Opus, Fable).",
+   "One sheet style over the player: dark, 97% opaque, Done, bottom inset; Swing Info header 'Details', labelled Time and Confidence columns (all three).",
+   "Same words everywhere: 'All checks' sheet, 'Not judged', 'Halfway back (P3)' position names, 'Settings' title (Opus, Fable, Sol).",
+   "Auto armed state: title3 semibold label, 14 pt lime indicator on a dark capsule; red kept for recording only (all three).",
+   "Recap legend keys drawn by the same view as the bars; this swing's colour matches across card, thumbnail and comparison (all three).",
+   "Session review: a level badge per swing in a 44 pt target; 'Not judged' row shortened; darker 'Start here'; 13 pt caveats (all three).",
+   "One level badge (the player's circle) everywhere; P tags are neutral capsules (Fable).",
+   "Library: card surfaces in both modes; labelled 'Review' button; section Select as secondary text (Sol, Opus, Fable).",
+   "Folded finding says where: 'At impact: \u2026'; only the current P chip has a ring (Sol).",
+   "Session review nav bar gets a background on scroll (Opus).",
+   "Rail fill only for an active tool (Fable)."
+  ],
+  "declined": [
+   "Move rail tools into one menu (Opus): hides tools and is a layout rewrite.",
+   "Remove the section-level Select (Opus, Fable): removes a feature; restyled as secondary instead.",
+   "Refit the whole video above the step card (Fable): layout rewrite; the lift plus a compact card covers the case."
+  ]
+ },
+ "2": {
+  "changes": [
+   "One name tag per walkthrough stop, placed beside the drawing; supporting drawings thinner, half opacity, untagged (Sol).",
+   "New CoachingZoneTrack: the good-players zone as a green band, the swing as a marker in its level colour, aligned tabular You / Good players / Above-Below-In zone (Sol, Fable).",
+   "Auto armed state on a solid dark capsule, title2 semibold, 20 pt indicator, apart from the saved count (Sol).",
+   "Recap slots carry the level badge and 'Swing N' under each bar (Sol).",
+   "Current P position always selected (opening step fixed); 56 pt chip cells, 11 pt semibold labels (Sol, Fable).",
+   "Not-judged comparison tile: rounded neutral tile with the dash badge (Sol).",
+   "Guides and unjudged checks drawn neutral grey everywhere (Sol).",
+   "Session review: one-line symbol key under the marks, compact counts that name their denominators (Sol).",
+   "Rail glyphs: Draw pencil.line, Drawings square.3.layers.3d, Positions figure.golf (Sol, Fable).",
+   "Low-confidence positions get a 'Low' tag (Sol).",
+   "Library thumbnails at card size \u00d7 screen scale, cropped to keep the golfer's head (Sol).",
+   "Step card level badge carries a word: '4 steps out', 'In zone' (Opus)."
+  ],
+  "declined": [
+   "Horizontally scrolling P strip (Sol): hides positions.",
+   "Rename the Auto review counter to 'Session swing 2 of 12' (Sol): the counter already reads in the session's context."
+  ],
+  "notes": "Side effect logged: stored thumbnails are now card-shaped, so the Auto saved-count button and the player's loading poster show that crop."
+ }
+}
