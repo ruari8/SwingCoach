@@ -119,6 +119,34 @@
   "declined": [
    "Horizontally scrolling P strip with 44 pt-wide cells (Sol, fourth time): left for Ruari."
   ],
-  "notes": "Decision: Sol's lowest metric held at 6.8, 6.7, 6.8 over rounds 3\u20135, so round 6 is scored by the full council for a fresh read rather than waiting for Sol to clear 9.5 alone."
+  "notes": "Decision: Sol's lowest metric held at 6.8, 6.7, 6.8 over rounds 3\u20135, so round 6 is scored by the full council for a fresh read rather than waiting for Sol to clear 9.5 alone. Gemini's round 6 scores were still running when round 7 started."
+ },
+ "7": {
+  "changes": [
+   "Head drawing: address one thin dashed light ring with a dark halo, this swing one solid ring; legend swatches match the drawn shape (all three).",
+   "One key ('Number = steps out', one 16 pt badge) and one camera caveat ('Depends on camera position') everywhere (Opus, Fable).",
+   "Session key says a swing's number is its top finding; theme captions name their check (Opus).",
+   "Folded finding bar: 10 pt padding, one-line title, chevron only (Opus, Fable).",
+   "Step card: even ~8 pt text gaps, legend in caption type (Fable).",
+   "Sheets start ~14 pt under the title (Opus, Fable).",
+   "'Low' tag in the not-judged grey; regular-weight row (Opus, Fable).",
+   "Dark amber ink for light-mode pill text (Opus).",
+   "Recap card: finding, pill, caveat, 'Shows it most' picture and Compare; per-swing slots moved to the comparison; recap, verdict and Auto panel share one surface (Sol, Opus).",
+   "Library session header: meta on its own line, one capsule height, 'Select all 12' (Opus, Fable, Sol).",
+   "Zone edges get a dark halo and ~0.75 pt more weight (Opus).",
+   "Lock captioned; time reads '7.8 s' (Opus, Fable).",
+   "'Not judged' gives its reason (Fable, Sol).",
+   "Proportional digits on headline numerals (Fable).",
+   "Takeaway zone band runs past the club head so an in-zone reading sits inside it (Sol); coaching report version 8 \u2192 9, redrawn from stored evidence.",
+   "P strip labels 12 pt; low confidence as a dimmed pose in a dashed chip, named by the time when current (Fable, Sol).",
+   "Auto review Delete last in the rail, after a divider, in red (Fable).",
+   "Coach menu 'Recap last 5' (Fable, Sol).",
+   "Empty saved-count box shows a neutral golfer glyph (Opus).",
+   "Tighter session summary; caveat at higher contrast; '11 of 16 judged checks in zone' (Sol)."
+  ],
+  "declined": [
+   "Horizontally scrolling P strip with 44 pt-wide cells (Sol, fifth time): left for Ruari; labels and low-confidence styling improved instead."
+  ],
+  "notes": "The report version bump makes the app re-score the seed's swings at launch, which also re-times P1\u2013P10 to the frames the drawings were measured on (existing behaviour, as on a phone). From round 7 the Swing Info times differ slightly from earlier rounds for that reason."
  }
 }

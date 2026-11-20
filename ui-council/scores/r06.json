@@ -1,0 +1,147 @@
+{
+ "round": 6,
+ "build": "79a8e8b",
+ "members": {
+  "sol": {
+   "swingcoach": {
+    "typography": 7.8,
+    "hierarchy": 7.9,
+    "spacing": 7.3,
+    "color": 8.0,
+    "consistency": 7.8,
+    "clarity": 7.4,
+    "accessibility": 7.0,
+    "subject": 8.0,
+    "overlays": 7.6,
+    "data": 7.4,
+    "state": 7.8,
+    "polish": 8.1,
+    "overall": 7.8
+   },
+   "sportsbox": {
+    "typography": 6.9,
+    "hierarchy": 7.6,
+    "spacing": 7.1,
+    "color": 7.4,
+    "consistency": 7.5,
+    "clarity": 7.1,
+    "accessibility": 6.7,
+    "subject": 7.7,
+    "overlays": 7.5,
+    "data": 8.1,
+    "state": 7.1,
+    "polish": 7.4,
+    "overall": 7.5
+   },
+   "onform": {
+    "typography": 7.6,
+    "hierarchy": 7.8,
+    "spacing": 7.9,
+    "color": 7.5,
+    "consistency": 8.1,
+    "clarity": 7.2,
+    "accessibility": 7.1,
+    "subject": 8.8,
+    "overlays": 8.0,
+    "data": 7.0,
+    "state": 7.4,
+    "polish": 8.2,
+    "overall": 8.0
+   }
+  },
+  "opus": {
+   "swingcoach": {
+    "typography": 7.3,
+    "hierarchy": 7.5,
+    "spacing": 6.9,
+    "color": 7.3,
+    "consistency": 6.8,
+    "clarity": 7.0,
+    "accessibility": 7.0,
+    "subject": 7.1,
+    "overlays": 7.5,
+    "data": 7.0,
+    "state": 7.6,
+    "polish": 7.4,
+    "overall": 7.3
+   },
+   "sportsbox": {
+    "typography": 6.4,
+    "hierarchy": 6.8,
+    "spacing": 6.3,
+    "color": 6.4,
+    "consistency": 6.5,
+    "clarity": 6.2,
+    "accessibility": 5.8,
+    "subject": 7.0,
+    "overlays": 6.8,
+    "data": 7.5,
+    "state": 6.0,
+    "polish": 6.6,
+    "overall": 6.8
+   },
+   "onform": {
+    "typography": 7.4,
+    "hierarchy": 7.0,
+    "spacing": 7.3,
+    "color": 6.9,
+    "consistency": 7.3,
+    "clarity": 6.4,
+    "accessibility": 6.8,
+    "subject": 7.8,
+    "overlays": 7.0,
+    "data": 6.2,
+    "state": 6.6,
+    "polish": 7.6,
+    "overall": 7.2
+   }
+  },
+  "fable": {
+   "swingcoach": {
+    "typography": 7.0,
+    "hierarchy": 7.5,
+    "spacing": 6.8,
+    "color": 7.5,
+    "consistency": 6.9,
+    "clarity": 7.6,
+    "accessibility": 6.9,
+    "subject": 7.3,
+    "overlays": 7.2,
+    "data": 7.5,
+    "state": 7.3,
+    "polish": 7.0,
+    "overall": 7.3
+   },
+   "sportsbox": {
+    "typography": 6.0,
+    "hierarchy": 6.5,
+    "spacing": 6.0,
+    "color": 6.0,
+    "consistency": 5.5,
+    "clarity": 5.5,
+    "accessibility": 6.0,
+    "subject": 6.5,
+    "overlays": 6.0,
+    "data": 7.0,
+    "state": 6.0,
+    "polish": 6.0,
+    "overall": 6.2
+   },
+   "onform": {
+    "typography": 7.5,
+    "hierarchy": 7.3,
+    "spacing": 7.5,
+    "color": 7.5,
+    "consistency": 7.8,
+    "clarity": 6.3,
+    "accessibility": 6.8,
+    "subject": 8.5,
+    "overlays": 7.5,
+    "data": 6.5,
+    "state": 7.0,
+    "polish": 8.0,
+    "overall": 7.6
+   }
+  }
+ }
+}

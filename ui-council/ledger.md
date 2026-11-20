@@ -24,6 +24,9 @@ Scores are 1–10 per metric (see [rubric.md](rubric.md)). Columns: typo = typog
 | 3 | `62b48ae` | sol | 6.8 | 7.7 | 7.5 | 8.0 |
 | 4 | `eb33378` | sol | 6.7 | 7.6 | 7.5 | 7.9 |
 | 5 | `e887fc4` | sol | 6.8 | 7.7 | 7.5 | 7.7 |
+| 6 | `79a8e8b` | sol | 7.0 | 7.8 | 7.5 | 8.0 |
+| 6 | `79a8e8b` | opus | 6.8 | 7.3 | 6.8 | 7.2 |
+| 6 | `79a8e8b` | fable | 6.8 | 7.3 | 6.2 | 7.6 |
 
 ## Round 0
 
@@ -226,3 +229,51 @@ Declined:
 | SwingCoach | 7.6 | 7.8 | 7.1 | 7.8 | 7.4 | 7.3 | 6.8 | 8.1 | 8.2 | 7.1 | 7.5 | 7.9 | 7.7 | 6.8 |
 | Sportsbox | 7.1 | 7.5 | 6.8 | 7.5 | 7.3 | 6.9 | 6.4 | 7.8 | 7.6 | 8.3 | 6.8 | 7.5 | 7.5 | 6.4 |
 | Onform | 7.0 | 7.6 | 7.4 | 7.6 | 7.8 | 7.0 | 6.5 | 8.8 | 8.1 | 6.9 | 7.0 | 7.8 | 7.7 | 6.5 |
+
+## Round 6
+
+Build: `79a8e8b`
+
+Changes this round:
+
+- Head reading: small hollow marker with dark outline; head tags sit in the sky above the hat (Sol).
+- Every zone edge gets the measured line's dark outline at a lighter weight, in the shared drawing code (Sol).
+- Auto state is a solid dark status panel with no button-like outline; 'Switch to Manual to stop' near-white (Sol).
+- Recap bars removed; badges carry status, outlined for 'other way'; same in recap caption and Compare tiles (Sol).
+- Zone track captions larger, brighter, tabular, each with a swatch of its mark (Sol).
+- 'N steps out' is the only severity wording; key defines a step as a set distance per check, matching COACHING.md (Sol). The implementer declined the brief's 'one zone-width' wording because each check has its own step size.
+- Low-confidence position named 'Address · Low confidence'; folded card 'Swing's top finding · at impact' (Sol).
+- Rail fold toggle captioned 'Hide' / 'Show' (Sol).
+- 'Layers' sheet and tool; first toggle 'Coaching overlays' (Sol).
+- Toolbar 'Select swings' (Sol).
+- Settings footers: short first line, details after, none over three lines (Sol).
+
+Declined:
+
+- Horizontally scrolling P strip with 44 pt-wide cells (Sol, fourth time): left for Ruari.
+
+**sol**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.8 | 7.9 | 7.3 | 8.0 | 7.8 | 7.4 | 7.0 | 8.0 | 7.6 | 7.4 | 7.8 | 8.1 | 7.8 | 7.0 |
+| Sportsbox | 6.9 | 7.6 | 7.1 | 7.4 | 7.5 | 7.1 | 6.7 | 7.7 | 7.5 | 8.1 | 7.1 | 7.4 | 7.5 | 6.7 |
+| Onform | 7.6 | 7.8 | 7.9 | 7.5 | 8.1 | 7.2 | 7.1 | 8.8 | 8.0 | 7.0 | 7.4 | 8.2 | 8.0 | 7.0 |
+
+**opus**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.3 | 7.5 | 6.9 | 7.3 | 6.8 | 7.0 | 7.0 | 7.1 | 7.5 | 7.0 | 7.6 | 7.4 | 7.3 | 6.8 |
+| Sportsbox | 6.4 | 6.8 | 6.3 | 6.4 | 6.5 | 6.2 | 5.8 | 7.0 | 6.8 | 7.5 | 6.0 | 6.6 | 6.8 | 5.8 |
+| Onform | 7.4 | 7.0 | 7.3 | 6.9 | 7.3 | 6.4 | 6.8 | 7.8 | 7.0 | 6.2 | 6.6 | 7.6 | 7.2 | 6.2 |
+
+**fable**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.0 | 7.5 | 6.8 | 7.5 | 6.9 | 7.6 | 6.9 | 7.3 | 7.2 | 7.5 | 7.3 | 7.0 | 7.3 | 6.8 |
+| Sportsbox | 6.0 | 6.5 | 6.0 | 6.0 | 5.5 | 5.5 | 6.0 | 6.5 | 6.0 | 7.0 | 6.0 | 6.0 | 6.2 | 5.5 |
+| Onform | 7.5 | 7.3 | 7.5 | 7.5 | 7.8 | 6.3 | 6.8 | 8.5 | 7.5 | 6.5 | 7.0 | 8.0 | 7.6 | 6.3 |
+
+Decision: Sol's lowest metric held at 6.8, 6.7, 6.8 over rounds 3–5, so round 6 is scored by the full council for a fresh read rather than waiting for Sol to clear 9.5 alone. Gemini's round 6 scores were still running when round 7 started.
