@@ -21,7 +21,7 @@ screens = """| File prefix | Screen |
 | 14-auto-camera | Capture, Auto: the camera screen with the coach chip |
 | 15-auto-coach-menu | The coach chip's menu |
 | 16-capture-manual | Capture, Manual mode |"""
-extra_txt = "".join(f"\n- **{label}**: `{d}` (same file names). Score it as a fourth column `{label}`.\n" for label, d in extras)
+extra_txt = "".join(f"\n- **{label}**: `{d}` (same file names). Score it as a fourth column `{label}`, with the same 13 keys. This is an earlier build of SwingCoach; a few screens are missing because that build lacked those controls. Score what is there, and list issues only for `swingcoach`.\n" for label, d in extras)
 text = f"""# UI council, round {rnd}: score the app and two reference apps
 
 You are a senior product designer on a review council for SwingCoach, an iPhone golf coaching app that films swings at the range, keeps them in a library and coaches down-the-line swings on the phone. You are strictly read-only: do not edit, create, move, commit or push any file. Score honestly from what you see; there is no expected result. Your final message is your whole answer.

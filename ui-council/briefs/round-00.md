@@ -24,7 +24,7 @@ You are a senior product designer on a review council for SwingCoach, an iPhone 
 | 15-auto-coach-menu | The coach chip's menu |
 | 16-capture-manual | Capture, Manual mode |
 3. Reference apps, App Store screenshots: `/Users/ruari/Documents/Startups/SwingCoach-wt/ui-council/ui-council/references/sportsbox/` (Sportsbox 3D Golf) and `/Users/ruari/Documents/Startups/SwingCoach-wt/ui-council/ui-council/references/onform/` (Onform). Judge only the UI inside the phone frames.
-- **swingcoach_prior**: `/Users/ruari/Documents/Startups/ui-council-media/shots/pre-pr` (same file names). Score it as a fourth column `swingcoach_prior`.
+- **swingcoach_prior**: `/Users/ruari/Documents/Startups/ui-council-media/shots/pre-pr` (same file names). Score it as a fourth column `swingcoach_prior`, with the same 13 keys. This is an earlier build of SwingCoach; a few screens are missing because that build lacked those controls. Score what is there, and list issues only for `swingcoach`.
 
 
 Context that is not a design flaw:
