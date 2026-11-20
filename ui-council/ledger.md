@@ -22,6 +22,7 @@ Scores are 1–10 per metric (see [rubric.md](rubric.md)). Columns: typo = typog
 | 1 | `907787c` | sol | 6.0 | 7.1 | 7.6 | 7.9 |
 | 2 | `6436f63` | sol | 6.3 | 7.3 | 7.8 | 7.9 |
 | 3 | `62b48ae` | sol | 6.8 | 7.7 | 7.5 | 8.0 |
+| 4 | `eb33378` | sol | 6.7 | 7.6 | 7.5 | 7.9 |
 
 ## Round 0
 
@@ -163,3 +164,33 @@ Changes this round:
 | SwingCoach | 7.8 | 7.6 | 7.0 | 7.7 | 7.3 | 7.4 | 6.8 | 8.0 | 8.2 | 7.4 | 7.8 | 7.8 | 7.7 | 6.8 |
 | Sportsbox | 7.0 | 7.5 | 7.1 | 7.4 | 7.3 | 6.8 | 7.1 | 8.1 | 7.5 | 8.2 | 7.0 | 7.4 | 7.5 | 6.8 |
 | Onform | 7.5 | 8.0 | 8.1 | 7.5 | 8.1 | 7.0 | 7.2 | 8.9 | 8.0 | 7.0 | 7.4 | 8.0 | 8.0 | 7.0 |
+
+## Round 4
+
+Build: `eb33378`
+
+Changes this round:
+
+- A walkthrough stop draws only its own finding; supporting drawings only with 'Every check on the frame' (Sol).
+- Finding titles describe what the swing did, past tense: 'Head didn't drop into impact', 'Shaft steepened coming down' (Sol).
+- Auto armed state: full-width solid capsule, 28 pt bold, 24 pt indicator with a matching 2 pt edge; saved count beneath (Sol, Gemini).
+- Step card about 18 pt shorter (3 pt rows, 7 pt padding); All checks capsule drawn at 28 pt with a 44 pt tap (Sol).
+- Comparison tiles share one 4:5 preview cropped to the golfer and club; four swings show on the first view (Sol).
+- 'Finding 1 of 2' for progress, 'N steps out' for severity; 'Show findings' (Sol).
+- Shared Color.sectionHeading (about 9.5:1) for every list section heading (Sol).
+- Recap line: 'On all 4 swings with a halfway-back (P3) reading' (Sol).
+- 'Start here' above the first theme's title in grey secondary style (Sol).
+- Session header button reads 'Select session' (Sol, Gemini).
+- The Layers rail tool opens 'Drawing layers' (Sol).
+
+Declined:
+
+- Horizontally scrolling P strip with 44 pt-wide cells (Sol, second time): ten positions in 402 pt cannot each be 44 pt wide without hiding some; the strip's job is to show all ten. Cells are full-height 56 pt targets.
+
+**sol**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.3 | 7.6 | 7.0 | 7.6 | 7.6 | 7.2 | 6.7 | 8.0 | 7.5 | 7.3 | 7.5 | 7.9 | 7.6 | 6.7 |
+| Sportsbox | 7.0 | 7.3 | 6.8 | 7.2 | 7.4 | 6.8 | 6.2 | 7.9 | 7.2 | 8.2 | 6.8 | 7.3 | 7.5 | 6.2 |
+| Onform | 7.6 | 7.8 | 7.5 | 7.3 | 7.8 | 6.9 | 6.7 | 8.7 | 8.0 | 6.9 | 6.8 | 8.0 | 7.9 | 6.7 |
