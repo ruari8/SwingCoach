@@ -1849,7 +1849,9 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         HStack(spacing: 0) {
             if let number = currentPositionNumber, let position = visiblePositions?.first(where: { $0.number == number }) {
                 // Doubt named in words, not only by the strip's dashed chip.
-                Text(position.isLowConfidence ? "\(position.name) · \(SwingPosition.lowConfidenceWords)" : position.title)
+                Text(position.isLowConfidence
+                     ? "\(position.name) · \(LowConfidenceGlyph.image) \(SwingPosition.lowConfidenceWords)"
+                     : "\(position.title)")
                     .font(FixedType.readout)
                     .foregroundColor(.accentLime)
                 Text(" · ")

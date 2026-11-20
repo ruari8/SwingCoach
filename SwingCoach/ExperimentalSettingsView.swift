@@ -98,8 +98,8 @@ struct ExperimentalSettingsView: View {
             } header: {
                 SectionHeading("Extra swing footage")
             } footer: {
-                HelpFooter("Add 0–30 s before or after the swing; +/− is 0.5 s.",
-                           "Real seconds, before slow-motion export, in Auto and Manual/Trim. Auto waits for the extra footage; stopping early saves what was recorded. New clips only.")
+                HelpFooter("Adds 0–30 s to new clips, in half-second steps.",
+                           "Counted in real seconds, before slow-motion export. Auto waits for the extra footage; stopping early keeps what was recorded.")
             }
 
             Section {

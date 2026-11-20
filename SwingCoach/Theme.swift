@@ -188,9 +188,10 @@ enum PlayerChrome {
     /// size (28 points) in bold, a 24-point indicator, on a rounded panel
     /// with no coloured edge, so it reads as a status, never as a button.
     static let stateFont = Font.title.weight(.bold)
-    /// The line under a state that says what to do ("Switch to Manual to
-    /// stop"): the label size, near-white.
-    static let stateHintFont = Font.appLabel
+    /// The line under a state that says what to do ("Tap Manual to
+    /// stop"): title 3 in semibold, near-white, so it reads from the
+    /// tripod with the state above it.
+    static let stateHintFont = Font.title3.weight(.semibold)
     static let stateHintColour = Color.white.opacity(0.9)
     static let stateIndicatorSize: CGFloat = 24
     static let stateMinHeight: CGFloat = 64
@@ -286,6 +287,18 @@ enum LibraryCard {
     static let thumbnailFocus: CGFloat = 0.38
 }
 
+// MARK: - Capture controls
+
+/// Capture's top row (the Auto / Manual switch): every control is at
+/// least 44 points tall, since it is tapped from a step away while the
+/// phone sits on a tripod.
+enum CaptureControl {
+    static let height: CGFloat = 44
+    /// The Auto / Manual switch's width: two segments wide enough for
+    /// "Manual" at the larger size.
+    static let modeWidth: CGFloat = 184
+}
+
 // MARK: - Coaching previews
 
 enum CoachingPreview {
@@ -293,6 +306,9 @@ enum CoachingPreview {
     /// clip, which the tile cuts toward the golfer and club, so its sky
     /// and foreground don't push the other swings off screen.
     static let compareAspect: CGFloat = 4.0 / 5.0
+    /// The recap card's picture over the camera: short, cut toward the
+    /// golfer and club, so the card stays low in the viewfinder.
+    static let recapThumbnail = CGSize(width: 64, height: 88)
 }
 
 // MARK: - Capsule buttons
@@ -361,13 +377,27 @@ struct PositionTag: View {
 
 // MARK: - Low confidence
 
-/// A position the model was unsure of, beside its confidence: "Low" in
-/// the neutral grey of "not judged" on a grey capsule with an edge, so a
-/// 50% row never looks like the 80% rows, without adding a colour that
-/// means nothing else. The word carries it without the colour.
+/// The one mark for a position the model was unsure of: a dashed circle
+/// with a question mark, echoing the strip's dashed chip. It sits on the
+/// dashed chip, beside "low confidence" by the time and in Swing Info's
+/// Low tag, so the dashes mean the same thing wherever they appear.
+enum LowConfidenceGlyph {
+    static let symbol = "questionmark.circle.dashed"
+    /// The glyph inline in text, at the text's size.
+    static var image: Image { Image(systemName: symbol) }
+    /// On a strip chip: a fixed size, so it never grows past its cell.
+    static let chipSize: CGFloat = 10
+    static let chipDisc: CGFloat = 14
+}
+
+/// A position the model was unsure of, beside its confidence: the
+/// low-confidence glyph and "Low" in the neutral grey of "not judged" on
+/// a grey capsule with an edge, so a 50% row never looks like the 80%
+/// rows, without adding a colour that means nothing else. The word
+/// carries it without the colour.
 struct LowConfidenceTag: View {
     var body: some View {
-        Text("Low")
+        Text("\(LowConfidenceGlyph.image) Low")
             .font(.appCaptionLabel)
             .foregroundStyle(Color.helpText)
             .padding(.horizontal, 6)

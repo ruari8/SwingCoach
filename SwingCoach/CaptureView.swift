@@ -1979,12 +1979,15 @@ struct CaptureView: View {
                             }
                         }
                         .pickerStyle(.segmented)
-                        .frame(width: 172)
+                        // Tapped from a step away to stop Auto: the shared
+                        // Capture control height, 44 points.
+                        .controlSize(.large)
+                        .frame(width: CaptureControl.modeWidth, height: CaptureControl.height)
                         .accessibilityIdentifier("capture-mode")
                     }
                 }
             }
-            .frame(height: 44)
+            .frame(height: CaptureControl.height)
             .padding(.top, 8)
             .animation(.easeInOut(duration: 0.2), value: isRecording)
 
@@ -2111,7 +2114,7 @@ struct CaptureView: View {
     private var autoStopHint: String? {
         guard camera.autoCaptureStatus.isActive, camera.autoCaptureStatus.lastErrorMessage == nil,
               camera.liveSwingDetection.status != .unavailable else { return nil }
-        return "Switch to Manual to stop"
+        return "Tap Manual to stop"
     }
 
     private var autoStatusDetail: String {

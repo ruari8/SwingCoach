@@ -239,24 +239,28 @@ struct SessionCoachingView: View {
         .padding(.horizontal, -9)
     }
 
-    /// What the marks mean, straight under them: the shared key, which
-    /// number a swing's mark is (its top finding, which a theme's level
-    /// need not match), and what a step is.
+    /// What the marks mean, straight under them: what each mark covers
+    /// (one swing's top finding, where a theme below is typical across
+    /// swings, so the two numbers needn't match), the shared key, and
+    /// what a step is.
     private func symbolKey(hasDash: Bool) -> some View {
         VStack(alignment: .leading, spacing: 4) {
+            Text(Self.markScope)
+                .font(.appCaptionLabel)
+                .foregroundStyle(Color.sectionHeading)
             CoachingMarkKey(tick: "Good", dash: hasDash)
-            Text(Self.markScope + " " + CoachingWords.stepDefinition)
+            Text(CoachingWords.stepDefinition)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .font(.appCaption)
         .foregroundStyle(Color.helpText)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Marks: a tick is a good swing, a number is steps out\(hasDash ? ", a dash is not judged" : ""). \(Self.markScope) \(CoachingWords.stepDefinition) Tap one to open the swing.")
+        .accessibilityLabel("\(Self.markScope). Marks: a tick is a good swing, a number is steps out\(hasDash ? ", a dash is not judged" : ""). \(CoachingWords.stepDefinition) Tap one to open the swing.")
         .accessibilityIdentifier("session-coaching-key")
     }
 
-    /// Which reading a swing's mark is.
-    static let markScope = "A swing's number is its top finding."
+    /// What a swing's mark covers.
+    static let markScope = "Top finding per swing"
 
     private func badge(_ verdict: CoachingVerdict) -> CoachingLevelBadge {
         switch verdict {
@@ -280,7 +284,7 @@ struct SessionCoachingView: View {
                 Text(theme.text).font(.appLabel)
                 // The typical level, with its word, so the number never
                 // reads as a count of swings.
-                CoachingLevelPill(level: theme.medianLevel, note: "typical")
+                CoachingLevelPill(level: theme.medianLevel, lead: "Typically")
                 Text(CoachingWords.themeShare(theme))
                     .font(.appCaption)
                     .foregroundStyle(Color.helpText)

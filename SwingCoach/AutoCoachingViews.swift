@@ -235,21 +235,26 @@ struct CoachingRecapCard: View {
                 .accessibilityIdentifier("coach-recap-close")
             }
             if let theme = recap.theme {
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(theme.text)
-                            .font(.appTitle)
-                            .fixedSize(horizontal: false, vertical: true)
-                        // The typical level, labelled, so the number never
-                        // reads as a count of swings.
-                        CoachingLevelPill(level: theme.medianLevel, note: "typical")
-                        if CoachingMetricDefinition.definition(theme.metric).dependsOnCamera {
-                            CoachingCameraCaveat(onPlayer: true)
+                VStack(alignment: .trailing, spacing: 6) {
+                    HStack(alignment: .top, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(theme.text)
+                                .font(.appTitle)
+                                .fixedSize(horizontal: false, vertical: true)
+                            // The typical level, labelled, so the number never
+                            // reads as a count of swings.
+                            CoachingLevelPill(level: theme.medianLevel, lead: "Typically")
+                            if CoachingMetricDefinition.definition(theme.metric).dependsOnCamera {
+                                CoachingCameraCaveat(onPlayer: true)
+                            }
+                        }
+                        Spacer(minLength: 0)
+                        if let example {
+                            examplePicture(example)
                         }
                     }
-                    Spacer(minLength: 0)
                     if let example {
-                        examplePicture(example)
+                        exampleCaption(example)
                     }
                 }
             } else {
@@ -280,36 +285,31 @@ struct CoachingRecapCard: View {
         .accessibilityIdentifier("coach-recap")
     }
 
-    /// The swing that shows it most: its picture, then two lines under it
-    /// as the session review labels its pictures: "Shows it most", the
-    /// swing, and its level with the same badge as in the comparison.
+    /// The swing that shows it most: a short picture, cut toward the
+    /// golfer and club, so the card stays low in the viewfinder.
     private func examplePicture(_ example: Example) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            CoachingFrameView(swing: example.swing, report: example.report, metric: example.metric)
-                .frame(width: 62, height: 110)
-                .clipShape(.rect(cornerRadius: 8))
-                .padding(.bottom, 3)
-            Text("Shows it most")
-                .font(.appCaptionLabel)
-                .fixedSize()
-            Text("Swing \(example.number)")
+        CoachingFrameView(swing: example.swing, report: example.report, metric: example.metric, cropsToGolfer: true)
+            .frame(width: CoachingPreview.recapThumbnail.width, height: CoachingPreview.recapThumbnail.height)
+            .clipShape(.rect(cornerRadius: 8))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Picture of swing \(example.number)"
+                + (example.showing.map { ", \($0.label)" } ?? "") + ", which shows it most")
+            .accessibilityIdentifier("coach-recap-picture")
+    }
+
+    /// The picture's caption on one line under it, ending at its edge:
+    /// the swing's badge, as its tile in the comparison carries it, then
+    /// "Shows it most · Swing 5".
+    private func exampleCaption(_ example: Example) -> some View {
+        HStack(spacing: 5) {
+            example.showing?.badge(size: CoachingMarkKey.badgeSize)
+            Text("\(Text("Shows it most").font(.appCaptionLabel)) · Swing \(example.number)")
                 .font(.appCaption.monospacedDigit())
                 .foregroundStyle(PlayerChrome.secondaryText)
-                .fixedSize()
-            if let showing = example.showing {
-                HStack(spacing: 4) {
-                    showing.badge(size: CoachingMarkKey.badgeSize)
-                    Text(showing.label)
-                        .font(.appCaption.monospacedDigit())
-                        .foregroundStyle(PlayerChrome.secondaryText)
-                        .fixedSize()
-                }
-            }
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Picture of swing \(example.number)"
-            + (example.showing.map { ", \($0.label)" } ?? "") + ", which shows it most")
-        .accessibilityIdentifier("coach-recap-picture")
+        .accessibilityHidden(true)
     }
 }
 
@@ -434,7 +434,7 @@ struct CoachingCompareView: View {
                         Text(CoachingWords.recapShare(theme, judged: judgedCount))
                             .font(.appBody)
                             .accessibilityIdentifier("coach-compare-share")
-                        Text("\(SwingPosition.title(theme.position)) on each swing. Tap one to walk through it.")
+                        Text("\(SwingPosition.title(theme.position)) on each swing. Tap a judged swing to walk through it.")
                             .font(.appCaption)
                             .foregroundStyle(Color.helpText)
                         CoachingLegend(results: Array(swings.lazy.compactMap { store.report(for: $0.swing)?.metric(theme.metric) }.prefix(1)),
@@ -470,13 +470,6 @@ struct CoachingCompareView: View {
     /// The swings that were judged: the recap's denominator.
     private var judgedCount: Int {
         swings.filter { store.report(for: $0.swing).map { $0.exclusion == nil } ?? false }.count
-    }
-
-    /// A tile's caption: its level spelled out, and why when not judged
-    /// ("Not judged · short swing").
-    private func caption(_ showing: CoachingThemeShowing, _ report: SwingCoachingReport?) -> String {
-        guard showing == .notJudged else { return showing.label }
-        return CoachingWords.notJudged(CoachingWords.reason(notJudged: report))
     }
 
     /// The colours the tiles draw their swing in, so the legend's "This
@@ -534,28 +527,20 @@ struct CoachingCompareView: View {
                 // and club, so more swings fit on the first view.
                 .aspectRatio(CoachingPreview.compareAspect, contentMode: .fit)
                 .clipShape(.rect(cornerRadius: 12))
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        // The same badge as the swing's picture on the recap.
-                        showing.badge(size: 20)
-                        Text("Swing \(number)").font(.appLabel)
-                            .fixedSize()
-                        Spacer(minLength: 0)
-                        if showing != .notJudged {
-                            Text(showing.label)
-                                .font(.appCaption)
-                                .foregroundStyle(Color.helpText)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.85)
-                        }
-                    }
-                    // "Not judged · short swing" is too long to share the
-                    // name's line: it gets its own, never a wrapped dot.
-                    if showing == .notJudged {
-                        Text(caption(showing, report))
+                HStack(spacing: 6) {
+                    // The same badge as the swing's picture on the recap.
+                    showing.badge(size: 20)
+                    Text("Swing \(number)").font(.appLabel)
+                        .fixedSize()
+                    Spacer(minLength: 0)
+                    // A swing that isn't judged says why inside its tile;
+                    // its footer is just the swing, never a repeat.
+                    if showing != .notJudged {
+                        Text(showing.label)
                             .font(.appCaption)
                             .foregroundStyle(Color.helpText)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
                     }
                 }
             }

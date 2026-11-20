@@ -271,6 +271,19 @@ struct SwingPositionStrip: View {
                     .padding(selected ? 2 : 0)
             }
         }
+        // The shared low-confidence glyph on the dashed chip's other
+        // corner, the same mark as by the time and in Swing Info.
+        .overlay(alignment: .topLeading) {
+            if unsure {
+                Image(systemName: LowConfidenceGlyph.symbol)
+                    .font(.system(size: LowConfidenceGlyph.chipSize, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: LowConfidenceGlyph.chipDisc, height: LowConfidenceGlyph.chipDisc)
+                    .background(Circle().fill(Color(white: 0.12)))
+                    .offset(x: -1, y: -4)
+                    .accessibilityHidden(true)
+            }
+        }
         // The level badge belongs to its pose: pinned to the chip's
         // top-trailing corner, inside the strip, so it never pairs with a
         // neighbour or sits among the scrubber's dots.

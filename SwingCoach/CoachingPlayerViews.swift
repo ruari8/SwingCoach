@@ -61,6 +61,13 @@ enum CoachingWords {
         "\(definition.unit.formatEdge(definition.zone.lowerBound)) to \(definition.unit.formatEdge(definition.zone.upperBound))"
     }
 
+    /// The name of the range a reading is drawn against: good players'
+    /// zone on a judged check, a plain reference range on a guide, so a
+    /// guide's reading inside it never reads as in zone.
+    static func zoneName(_ definition: CoachingMetricDefinition) -> String {
+        definition.scored ? "Good players" : "Reference range"
+    }
+
     /// "You: +4%. Good players: −3.5% to +3%."
     static func numbers(_ result: CoachingMetricResult) -> String {
         let definition = result.definition
@@ -313,6 +320,12 @@ struct CoachingDrawingLayer: View {
                     layer.opacity *= Self.referenceOpacity
                 }
                 let ringed = Self.isRinged(result)
+                // A head check's zone sits behind both rings: cut away
+                // under each ring and its halo, with a gap, so the rings
+                // and the zone never meet over the face.
+                if role == .zone, ringed {
+                    layer.clip(to: ringKnockout(result), options: .inverse)
+                }
                 for shape in result.drawings where shape.role == role {
                     draw(shape, of: result, weight: lineWeight, ringed: ringed, context: &layer)
                 }
@@ -322,6 +335,30 @@ struct CoachingDrawingLayer: View {
 
     private var weight: CGFloat { still ? max(1.5, min(3, rect.height / 110)) : 4 }
 
+    /// A ring's stroke: the address ring thin, this swing's ring solid.
+    /// `weight` is the canvas's, already thinned for address.
+    private static func ringWidth(address: Bool, weight: CGFloat) -> CGFloat {
+        max(address ? referenceRingMinimum : 2, weight * (address ? referenceRingWeight : ringWeight))
+    }
+
+    /// The rings' outlines with their halos and a gap, which the zone
+    /// is cut away under.
+    private func ringKnockout(_ result: CoachingMetricResult) -> Path {
+        var knockout = Path()
+        for shape in result.drawings where shape.kind == .circle && shape.role != .zone {
+            // While the drawing builds up, only the rings already shown.
+            guard let centre = shape.points.first, shape.role == .reference || revealed >= 3 else { continue }
+            let address = shape.role == .reference
+            let size = CGFloat(shape.size ?? 0) * rect.height
+            let x = rect.minX + centre.x * rect.width, y = rect.minY + centre.y * rect.height
+            let ring = Path(ellipseIn: CGRect(x: x - size, y: y - size, width: size * 2, height: size * 2))
+            let width = Self.ringWidth(address: address, weight: address ? weight * Self.referenceWeight : weight)
+                + (address ? Self.referenceHaloExtra : Self.haloExtra) + 2 * Self.ringKnockoutGap
+            knockout.addPath(ring.strokedPath(StrokeStyle(lineWidth: width)))
+        }
+        return knockout
+    }
+
     /// The swing's line on a swing that isn't judged, and on a guide.
     static let neutralColour = Color(white: 0.82)
     /// The address reference against the swing's own line.
@@ -330,9 +367,13 @@ struct CoachingDrawingLayer: View {
     /// The swing's ring (the head now) against the drawing's weight: one
     /// solid outline, the strongest mark on the head.
     static let ringWeight: CGFloat = 0.6
-    /// The address ring: thin and dashed, so it reads as where the head
-    /// was, never as a second reading.
-    static let referenceRingWeight: CGFloat = 0.38
+    /// The address ring: thin and dashed with a narrow halo, so it reads
+    /// as where the head was, never as a second reading.
+    static let referenceRingWeight: CGFloat = 0.3
+    static let referenceRingMinimum: CGFloat = 1
+    static let referenceHaloExtra: CGFloat = 1.5
+    /// The clear space between a ring's halo and the zone behind it.
+    static let ringKnockoutGap: CGFloat = 1.5
     /// The reading's dot, against the drawing's weight: the largest mark.
     static let dotRadius: CGFloat = 2.2
     /// The dark edge round every line, ring and zone edge, so each holds
@@ -431,10 +472,11 @@ struct CoachingDrawingLayer: View {
                 // solid ring, so the two never stack into one blob with
                 // the zone and the face shows through both.
                 let isAddress = shape.role == .reference
-                let ring = max(isAddress ? 1.25 : 2, weight * (isAddress ? Self.referenceRingWeight : Self.ringWeight))
+                let ring = Self.ringWidth(address: isAddress, weight: weight)
                 let ringDash = isAddress ? Self.ringDash(ring) : []
+                let halo = isAddress ? Self.referenceHaloExtra : Self.haloExtra
                 context.stroke(path, with: .color(edgeColour),
-                               style: StrokeStyle(lineWidth: ring + Self.haloExtra, lineCap: .round, dash: ringDash))
+                               style: StrokeStyle(lineWidth: ring + halo, lineCap: .round, dash: ringDash))
                 context.stroke(path, with: .color(colour),
                                style: StrokeStyle(lineWidth: ring, lineCap: .round, dash: ringDash))
             }
@@ -894,7 +936,9 @@ struct CoachingZoneTrack: View {
                        swatch: AnyView(youSwatch))
                 // Its natural width, so "Good players" never truncates; the
                 // outer columns split the rest evenly, so it stays centred.
-                column("Good players", CoachingWords.zone(result.definition), colour: .primary, alignment: .center,
+                // A guide's range isn't a zone to be in: "Reference range".
+                column(CoachingWords.zoneName(result.definition), CoachingWords.zone(result.definition),
+                       colour: .primary, alignment: .center,
                        swatch: AnyView(zoneSwatch))
                     .fixedSize(horizontal: true, vertical: false)
                 // Not judged says so on the row's first line; no side here.
@@ -1008,27 +1052,37 @@ struct CoachingZoneTrack: View {
 }
 
 /// The badge with a word after it ("4 steps out", "✓ In zone"), where the
-/// bare badge could read as a count: the step card and the session
-/// review's themes ("5 steps out, typical"). Strips and lists of marks keep
-/// the bare badge. The word is the level's text ink, so it reads on the
-/// dark player and on light Library sheets alike.
+/// bare badge could read as a count: the step card and the themes of the
+/// session review and the recap ("Typically 5 steps out"). Strips and
+/// lists of marks keep the bare badge. The words are the level's text
+/// ink, so they read on the dark player and on light Library sheets alike.
 struct CoachingLevelPill: View {
     let level: Int
     var scored = true
     var neutral = false
-    /// Said after the word: "typical" gives "5 steps out, typical".
-    var note: String? = nil
+    /// Said before the badge: "Typically" gives "Typically 5 steps out",
+    /// so a theme's level reads as across swings, never as one swing's.
+    var lead: String? = nil
 
     var body: some View {
         let judged = scored && !neutral
         let colour: Color = judged ? .coachingLevel(level) : .notJudged
-        let word = CoachingWords.badgeWord(level: level, scored: scored, neutral: neutral)
-            + (note.map { ", \($0)" } ?? "")
+        let ink: Color = judged ? .coachingLevelText(level) : .helpText
+        let badgeWord = CoachingWords.badgeWord(level: level, scored: scored, neutral: neutral)
+        // After a lead the word is mid-sentence: "Typically in zone".
+        let word = lead == nil ? badgeWord : badgeWord.prefix(1).lowercased() + badgeWord.dropFirst()
+        let leadWords = lead.map { "\($0) " } ?? ""
         HStack(spacing: 6) {
+            if let lead {
+                Text(lead)
+                    .font(.appLabel)
+                    .foregroundStyle(ink)
+                    .padding(.leading, 7)
+            }
             CoachingLevelBadge(level: level, scored: scored, neutral: neutral, size: 20)
             Text(word)
                 .font(.appLabel)
-                .foregroundStyle(judged ? Color.coachingLevelText(level) : Color.helpText)
+                .foregroundStyle(ink)
         }
         .padding(.leading, 3)
         .padding(.trailing, 10)
@@ -1037,7 +1091,7 @@ struct CoachingLevelPill: View {
         .overlay(Capsule().strokeBorder(colour.opacity(0.55), lineWidth: 1))
         .fixedSize()
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(judged && level != 0 ? "\(abs(level)) \(word)" : word)
+        .accessibilityLabel(leadWords + (judged && level != 0 ? "\(abs(level)) \(word)" : word))
         .accessibilityIdentifier("coaching-level-pill")
     }
 }
@@ -1537,7 +1591,7 @@ struct CoachingLegend: View {
     @ViewBuilder
     private func items(_ roles: Set<CoachingDrawing.Role>) -> some View {
         if roles.contains(.reference) { item(.reference, "Address") }
-        if roles.contains(.zone) { item(.zone, "Good players") }
+        if roles.contains(.zone) { item(.zone, results.first.map { CoachingWords.zoneName($0.definition) } ?? "Good players") }
         if roles.contains(.subject) { item(.subject, "This swing") }
     }
 
@@ -1606,8 +1660,9 @@ struct CoachingLegend: View {
             let circle = CGRect(x: rect.midX - side / 2, y: rect.midY - side / 2, width: side, height: side)
             let width: CGFloat = dashed ? 1.25 : 2
             let dash: [CGFloat] = dashed ? CoachingDrawingLayer.ringDash(width) : []
+            // The address ring's halo is narrower, as on the frame.
             context.stroke(Path(ellipseIn: circle), with: .color(halo),
-                           style: StrokeStyle(lineWidth: width + 1.5, dash: dash))
+                           style: StrokeStyle(lineWidth: width + (dashed ? 1 : 1.5), dash: dash))
             let share = 360 / Double(max(colours.count, 1))
             for (index, colour) in colours.enumerated() {
                 var arc = Path()
@@ -1636,7 +1691,10 @@ struct CoachingLegend: View {
         }
         var parts: [String] = []
         if roles.contains(.reference) { parts.append("\(shape(.reference)) in white is where you were at address") }
-        if roles.contains(.zone) { parts.append("\(shape(.zone)) is where good players are") }
+        if roles.contains(.zone) {
+            parts.append(first?.definition.scored == false ? "\(shape(.zone)) is a reference range"
+                                                            : "\(shape(.zone)) is where good players are")
+        }
         if roles.contains(.subject) { parts.append("\(shape(.subject)) in colour is this swing") }
         return "Drawing: " + parts.joined(separator: ", ")
     }
