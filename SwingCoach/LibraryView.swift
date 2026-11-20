@@ -744,16 +744,22 @@ struct LibraryView: View {
             // Thumbnail
             ZStack {
                 if let thumbnail = swing.thumbnail {
-                    Image(uiImage: thumbnail)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(height: 100)
+                    // The picture fills the card's width without setting
+                    // it: a wide thumbnail must not widen its column.
+                    Color.clear
+                        .frame(maxWidth: .infinity)
+                        .frame(height: LibraryCard.thumbnailHeight)
+                        .overlay {
+                            Image(uiImage: thumbnail)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        }
                         .clipped()
                         .contentShape(Rectangle())
                 } else {
                     Rectangle()
                         .fill(Color.gray.opacity(0.2))
-                        .frame(height: 100)
+                        .frame(height: LibraryCard.thumbnailHeight)
                         .overlay {
                             ProgressView()
                         }
@@ -1133,7 +1139,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     /// Clip times the player stops on for a walkthrough. Paused on one, the
     /// transport row gives way to `bottomPanel`, which carries its own
     /// play and step buttons.
-    let walkthroughStops: [Double]
+    let walkthroughStops: [PlayerWalkthroughStop]
     /// Sits above the timeline: the coaching card in review.
     let bottomPanel: ((PlayerPanelContext) -> AnyView)?
     /// The part of the frame (top to bottom, 0...1) that matters at a
@@ -1204,7 +1210,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         seekRequest: Binding<Double?>? = nil,
         positionMarks: [Int: SwingPositionMark] = [:],
         extraTools: [PlayerTool] = [],
-        walkthroughStops: [Double] = [],
+        walkthroughStops: [PlayerWalkthroughStop] = [],
         bottomPanel: ((PlayerPanelContext) -> AnyView)? = nil,
         stopFocus: ((Double) -> ClosedRange<Double>?)? = nil,
         contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
@@ -1595,6 +1601,13 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     private var currentPositionNumber: Int? {
         guard let positions = visiblePositions else { return nil }
         let now = seconds(currentTime)
+        // On a walkthrough stop its position is current, even where the
+        // coaching timed it a frame or two off the position model.
+        if !isPlaying, !isScrubbing,
+           let stop = walkthroughStops.first(where: { abs($0.clipTime - now) <= 0.02 }),
+           positions.contains(where: { $0.number == stop.position }) {
+            return stop.position
+        }
         let tolerance = max(seconds(frameStep) * 1.5, 0.01)
         return positions
             .filter { abs($0.clipTime - now) <= tolerance }
@@ -1620,7 +1633,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         }
         if let drawing {
             tools.append(PlayerTool(id: "draw", title: "Draw", accessibilityLabel: "Draw straight lines",
-                                    icon: .system("pencil.and.outline")) {
+                                    icon: .system("pencil.line")) {
                 player?.pause()
                 isPlaying = false
                 drawing.wrappedValue = true
@@ -1632,7 +1645,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             // strip is up: the strip itself says it is on.
             tools.append(PlayerTool(id: "positions", title: "Positions",
                                     accessibilityLabel: showsSwingPositions ? "Hide swing positions" : "Show swing positions",
-                                    icon: .positionMarks) {
+                                    icon: .system("figure.golf")) {
                 withAnimation(.easeInOut(duration: 0.2)) { showsSwingPositions.toggle() }
             })
         }
@@ -1649,7 +1662,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     private var isAtWalkthroughStop: Bool {
         guard bottomPanel != nil, !isPlaying, !isScrubbing else { return false }
         let now = seconds(currentTime)
-        return walkthroughStops.contains { abs($0 - now) <= 0.02 }
+        return walkthroughStops.contains { abs($0.clipTime - now) <= 0.02 }
     }
 
     private var panelContext: PlayerPanelContext {
@@ -1813,7 +1826,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     private var scrubTimeBadge: some View {
         HStack(spacing: 0) {
             if let number = currentPositionNumber, let position = visiblePositions?.first(where: { $0.number == number }) {
-                Text(position.confidence < 0.5 ? "\(position.name) (\(position.label)?)" : position.title)
+                Text(position.isLowConfidence ? "\(position.name) (\(position.label)?) · Low" : position.title)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.accentLime)
                 Text(" · ")

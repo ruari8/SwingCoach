@@ -174,6 +174,14 @@ extension EnvironmentValues {
     }
 }
 
+/// A frame the coaching walkthrough stops on, and the position it shows,
+/// so the pose strip can mark that position as current even when the
+/// coaching timed it a frame or two off the position model.
+struct PlayerWalkthroughStop: Equatable {
+    let clipTime: Double
+    let position: Int
+}
+
 /// What a panel above the timeline can see and do in the player.
 struct PlayerPanelContext {
     let currentTime: Double
@@ -194,6 +202,9 @@ struct SwingPositionStrip: View {
     let onSelect: (SwingPosition) -> Void
 
     @State private var draggedIndex: Int?
+
+    /// Every chip's cell is this tall: past the 44 pt minimum target.
+    static let height: CGFloat = 56
 
     var body: some View {
         GeometryReader { geometry in
@@ -219,7 +230,7 @@ struct SwingPositionStrip: View {
                     .onEnded { _ in draggedIndex = nil }
             )
         }
-        .frame(height: 56)
+        .frame(height: Self.height)
         .padding(.horizontal, 2)
         .background(.ultraThinMaterial, in: Capsule())
         .background(Capsule().fill(Color.black.opacity(0.2)))
@@ -231,31 +242,38 @@ struct SwingPositionStrip: View {
 
     private func chip(_ position: SwingPosition) -> some View {
         let selected = position.number == selectedNumber
-        let unsure = position.confidence < 0.5
+        let unsure = position.isLowConfidence
         return VStack(spacing: 0) {
             SwingPositionGlyph(
                 number: position.number,
                 figure: selected ? .black : .white,
                 club: selected ? .accentInk : .accentLime
             )
-            .frame(width: 30, height: 30)
+            .frame(width: 28, height: 28)
 
             // Below 0.5 the model found no clear peak for this position.
             Text(unsure ? "\(position.label)?" : position.label)
-                .font(.system(size: 9, weight: .bold))
-                .foregroundColor(selected ? .black : .white.opacity(0.75))
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(selected ? .black : .white.opacity(0.8))
+                .lineLimit(1)
+                .fixedSize()
         }
         .frame(width: 34, height: 46)
         .background(Capsule().fill(selected ? Color.white : Color.clear))
-        .overlay(alignment: .topTrailing) {
+        // The level badge sits above the chip, clear of the selected
+        // capsule, so being here and how it went never merge.
+        .overlay(alignment: .top) {
             if let mark = marks[position.number] {
                 markBadge(mark)
-                    .offset(x: 6, y: -7)
+                    .offset(x: 11, y: -14)
             }
         }
+        // The whole cell is the target, the strip's full height.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityIdentifier("swing-position-\(position.label)")
-        .accessibilityLabel("\(position.label), \(position.name)\(unsure ? ", unsure" : "")"
+        .accessibilityLabel("\(position.label), \(position.name)\(unsure ? ", \(SwingPosition.lowConfidenceWords)" : "")"
             + (marks[position.number].map { ", \($0.accessibilityText)" } ?? ""))
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
         .accessibilityAction { onSelect(position) }
@@ -285,54 +303,6 @@ extension SwingPositionStrip {
     }
 }
 
-/// Toggle icon for showing positions: a scrubber line with marks under it.
-struct PositionMarksIcon: View {
-    var color: Color = .white
-
-    var body: some View {
-        Canvas { context, size in
-            let unit = min(size.width, size.height) / 24
-            var line = Path()
-            line.move(to: CGPoint(x: 3 * unit, y: 10 * unit))
-            line.addLine(to: CGPoint(x: 21 * unit, y: 10 * unit))
-            context.stroke(line, with: .color(color), style: StrokeStyle(lineWidth: 2.1 * unit, lineCap: .round))
-            for x in [5.5, 10.5, 13.5, 18.5] {
-                let radius = 1.5 * unit
-                context.fill(Path(ellipseIn: CGRect(x: x * unit - radius, y: 16 * unit - radius,
-                                                    width: radius * 2, height: radius * 2)), with: .color(color))
-            }
-        }
-        .frame(width: 20, height: 20)
-        .accessibilityHidden(true)
-    }
-}
-
-/// Icon for the coaching drawings tool: the three parts every drawing has.
-struct DrawingLayersIcon: View {
-    var dark = false
-
-    var body: some View {
-        Canvas { context, size in
-            let unit = min(size.width, size.height) / 24
-            var band = Path()
-            band.addLines([CGPoint(x: 9 * unit, y: 4 * unit), CGPoint(x: 15 * unit, y: 4 * unit),
-                           CGPoint(x: 15 * unit, y: 20 * unit), CGPoint(x: 9 * unit, y: 20 * unit)])
-            band.closeSubpath()
-            context.fill(band, with: .color(Color(red: 0.24, green: 0.86, blue: 0.43).opacity(dark ? 0.9 : 0.75)))
-            var address = Path()
-            address.move(to: CGPoint(x: 12 * unit, y: 3 * unit))
-            address.addLine(to: CGPoint(x: 12 * unit, y: 21 * unit))
-            context.stroke(address, with: .color(dark ? .black : .white), style: StrokeStyle(lineWidth: 2 * unit, lineCap: .round))
-            var swing = Path()
-            swing.move(to: CGPoint(x: 5 * unit, y: 19 * unit))
-            swing.addLine(to: CGPoint(x: 20 * unit, y: 6 * unit))
-            context.stroke(swing, with: .color(Color(red: 1.0, green: 0.75, blue: 0.16)), style: StrokeStyle(lineWidth: 2.4 * unit, lineCap: .round))
-        }
-        .frame(width: 20, height: 20)
-        .accessibilityHidden(true)
-    }
-}
-
 // MARK: - Tool rail
 
 enum PlayerToolSide: String {
@@ -343,9 +313,6 @@ struct PlayerTool: Identifiable {
     enum Icon {
         case system(String)
         case text(String)
-        case positionMarks
-        /// A white line, a green band and a coloured line: the coaching drawings.
-        case drawingLayers
     }
 
     let id: String
@@ -638,10 +605,6 @@ private struct RailToolRow: View {
                 .font(.system(size: 12, weight: .bold))
                 .lineLimit(1)
                 .fixedSize()
-        case .positionMarks:
-            PositionMarksIcon(color: tool.isOn ? .black : .white)
-        case .drawingLayers:
-            DrawingLayersIcon(dark: tool.isOn)
         }
     }
 }

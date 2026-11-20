@@ -69,17 +69,23 @@ struct SessionCoachingView: View {
                         .accessibilityIdentifier("session-coaching-progress")
                     }
                     if !measured.isEmpty {
-                        swingDots(measured, verdicts)
+                        VStack(alignment: .leading, spacing: 6) {
+                            swingDots(measured, verdicts)
+                            symbolKey
+                        }
                     }
-                    LabeledContent("Swings measured", value: "\(reports.count) of \(swings.count)")
-                    LabeledContent("Good swings", value: "\(good) of \(judged.count)")
-                    if judged.count < reports.count {
-                        LabeledContent("Not judged", value: "\(reports.count - judged.count)")
+                    // Each count names what it is out of.
+                    VStack(spacing: 6) {
+                        LabeledContent("Measured", value: "\(reports.count) of \(swings.count) swings")
+                        LabeledContent("Good", value: "\(good) of \(judged.count) judged swings")
+                        if judged.count < reports.count {
+                            let notJudged = reports.count - judged.count
+                            LabeledContent("Not judged", value: "\(notJudged) swing\(notJudged == 1 ? "" : "s")")
+                        }
                     }
-                } footer: {
-                    if !measured.isEmpty {
-                        Text("One mark a swing, in the order hit. A tick needed no pointer, a number had one at that level, a dash wasn't judged: a chip, a moved camera or unclear positions. Tap one to open the swing.")
-                    }
+                    .font(.subheadline)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("session-coaching-totals")
                 }
                 if themes.isEmpty, waiting == 0 {
                     Section {
@@ -122,7 +128,7 @@ struct SessionCoachingView: View {
                     if themes.count > 3 {
                         Section("Also seen, weaker") {
                             ForEach(Array(themes.dropFirst(3))) { theme in
-                                Text("\(theme.text) · \(theme.swings) of \(theme.measured) swings")
+                                Text("\(theme.text) · \(CoachingWords.themeShare(theme))")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }
@@ -173,6 +179,29 @@ struct SessionCoachingView: View {
         .padding(.horizontal, -9)
     }
 
+    /// What the marks mean, in one line straight under them.
+    private var symbolKey: some View {
+        FlowLayout(spacing: 10, lineSpacing: 4) {
+            HStack(spacing: 4) {
+                CoachingLevelBadge(level: 0, size: 16)
+                Text("in zone")
+            }
+            HStack(spacing: 4) {
+                CoachingLevelBadge(level: 4, size: 16)
+                Text("= steps out")
+            }
+            HStack(spacing: 4) {
+                CoachingLevelBadge(level: 0, neutral: true, size: 16)
+                Text("not judged")
+            }
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Marks: a tick is in zone, a number is steps out, a dash is not judged. Tap one to open the swing.")
+        .accessibilityIdentifier("session-coaching-key")
+    }
+
     private func badge(_ verdict: CoachingVerdict) -> CoachingLevelBadge {
         switch verdict {
         case .notJudged: CoachingLevelBadge(level: 0, neutral: true, size: 26)
@@ -186,7 +215,7 @@ struct SessionCoachingView: View {
             CoachingLevelBadge(level: theme.medianLevel, size: 28)
             VStack(alignment: .leading, spacing: 3) {
                 Text(theme.text).font(.subheadline.weight(.semibold))
-                Text("\(theme.swings) of \(theme.measured) swings · \(SwingPosition.title(theme.position))")
+                Text(CoachingWords.themeShare(theme))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 if CoachingMetricDefinition.definition(theme.metric).dependsOnCamera {
@@ -233,7 +262,7 @@ struct SessionCoachingView: View {
                         .aspectRatio(9.0 / 16.0, contentMode: .fit)
                         .clipShape(.rect(cornerRadius: 10))
                     Text(title).font(.caption.weight(.semibold))
-                    Text("Swing \(index + 1) · \(result.level == 0 ? "in zone" : "level \(abs(result.level))") · \(result.definition.unit.format(result.value))")
+                    Text("Swing \(index + 1) · \(CoachingWords.reading(result))")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -252,7 +281,7 @@ struct SessionCoachingView: View {
                     PositionTag(position: theme.position)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(theme.text).font(.subheadline.weight(.semibold))
-                        Text("\(theme.swings) of \(theme.measured) swings")
+                        Text(CoachingWords.themeShare(theme, namingPosition: false))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

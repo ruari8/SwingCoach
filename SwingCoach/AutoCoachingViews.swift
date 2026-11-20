@@ -211,6 +211,16 @@ extension CoachingThemeShowing {
         if case .otherWay = self { return .clear }
         return colour
     }
+
+    /// The shared level badge for this swing on the theme: a tick in zone,
+    /// the level out of it, a dash not judged.
+    func badge(size: CGFloat) -> CoachingLevelBadge {
+        switch self {
+        case .notJudged: CoachingLevelBadge(level: 0, neutral: true, size: size)
+        case .inZone: CoachingLevelBadge(level: 0, size: size)
+        case .shows(let level), .otherWay(let level): CoachingLevelBadge(level: level, size: size)
+        }
+    }
 }
 
 /// What the last few swings had in common, over the camera.
@@ -258,7 +268,7 @@ struct CoachingRecapCard: View {
                                 .font(.title3.weight(.bold))
                                 .fixedSize(horizontal: false, vertical: true)
                         }
-                        Text("\(theme.swings) of \(theme.measured) swings · \(SwingPosition.title(theme.position))")
+                        Text(CoachingWords.themeShare(theme))
                             .font(.footnote)
                             .foregroundStyle(.white.opacity(0.78))
                             .fixedSize(horizontal: false, vertical: true)
@@ -364,17 +374,22 @@ struct CoachingRecapCard: View {
         }
     }
 
-    /// One bar per swing: green where the theme's check was in zone,
-    /// amber or red by how far out it was, an outline where it was out the
-    /// other way, grey where the swing couldn't be judged.
+    /// One slot per swing: a bar, green where the theme's check was in
+    /// zone, amber or red by how far out it was, an outline where it was
+    /// out the other way, grey where the swing couldn't be judged; under it
+    /// the level badge, so the shape and number say it as well as the
+    /// colour, and the swing's number.
     private var levelBars: some View {
         HStack(alignment: .top, spacing: 6) {
             ForEach(Array(zip(numbers, recap.swings).enumerated()), id: \.offset) { _, entry in
                 VStack(spacing: 5) {
                     RecapBar(showing: entry.1)
-                    Text("\(entry.0)")
+                    entry.1.badge(size: 22)
+                    Text("Swing \(entry.0)")
                         .font(.caption2.weight(.semibold).monospacedDigit())
                         .foregroundStyle(.white.opacity(0.7))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Swing \(entry.0): \(entry.1.label)")
@@ -533,8 +548,18 @@ struct CoachingCompareView: View {
                     if let report, let metric {
                         CoachingFrameView(swing: swing, report: report, metric: metric)
                     } else {
-                        Color.black.overlay(Text(showing.label.prefix(1).uppercased() + showing.label.dropFirst())
-                            .font(.caption).foregroundStyle(.secondary))
+                        // The same bounds as a picture, on a neutral fill,
+                        // so it reads as a swing with nothing to show, not
+                        // a picture that failed to load.
+                        Color(white: 0.16).overlay {
+                            VStack(spacing: 8) {
+                                showing.badge(size: 30)
+                                Text(showing.label.prefix(1).uppercased() + showing.label.dropFirst())
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.white.opacity(0.75))
+                            }
+                        }
+                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.white.opacity(0.14), lineWidth: 1))
                     }
                 }
                 .aspectRatio(9.0 / 16.0, contentMode: .fit)

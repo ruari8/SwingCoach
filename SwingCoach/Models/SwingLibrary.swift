@@ -135,7 +135,50 @@ class SwingLibrary: ObservableObject {
     
     private let storageURL: URL
     private let videosDirectory: URL
-    private let thumbnailTargetSize = CGSize(width: 240, height: 140)
+    /// A library card's picture in pixels: the card's displayed size times
+    /// the screen scale, so it is sharp on the card.
+    static var thumbnailTargetSize: CGSize {
+        let displayScale = UITraitCollection.current.displayScale
+        let scale = displayScale > 0 ? max(displayScale, 2) : 3
+        return CGSize(width: LibraryCard.thumbnailWidth * scale, height: LibraryCard.thumbnailHeight * scale)
+    }
+
+    private var thumbnailTargetSize: CGSize { Self.thumbnailTargetSize }
+
+    /// What a frame is read at before it is cropped: big enough that a
+    /// 16:9 frame either way up still covers the card.
+    private var thumbnailSourceSize: CGSize {
+        let side = max(thumbnailTargetSize.width, thumbnailTargetSize.height) * 16 / 9
+        return CGSize(width: side, height: side)
+    }
+
+    /// The card's picture cut from a whole frame: the card's shape at the
+    /// card's pixel size, never scaled up. A portrait clip is cut nearer its
+    /// top than its middle (`LibraryCard.thumbnailFocus`), so the golfer's
+    /// head and body show rather than the feet and the mat.
+    static func cardThumbnail(from image: UIImage) -> UIImage {
+        let target = thumbnailTargetSize
+        let source = CGSize(width: image.size.width * image.scale, height: image.size.height * image.scale)
+        guard source.width > 0, source.height > 0, target.width > 0, target.height > 0 else { return image }
+        let aspect = target.width / target.height
+        var crop = CGRect(origin: .zero, size: source)
+        if source.width / source.height > aspect {
+            crop.size.width = source.height * aspect
+            crop.origin.x = (source.width - crop.width) / 2
+        } else {
+            crop.size.height = source.width / aspect
+            crop.origin.y = (source.height - crop.height) * LibraryCard.thumbnailFocus
+        }
+        let factor = min(1, target.width / crop.width)
+        let output = CGSize(width: (crop.width * factor).rounded(), height: (crop.height * factor).rounded())
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+        return UIGraphicsImageRenderer(size: output, format: format).image { _ in
+            image.draw(in: CGRect(x: -crop.minX * factor, y: -crop.minY * factor,
+                                  width: source.width * factor, height: source.height * factor))
+        }
+    }
 
     static let shared = SwingLibrary()
 
@@ -266,11 +309,15 @@ class SwingLibrary: ObservableObject {
                 sourceTimeScale: sourceTimeScale
             )
             swing.swingWindow = swingWindow
-            swing.thumbnail = initialThumbnail
+            swing.thumbnail = initialThumbnail.map(Self.cardThumbnail)
             // Persist before publishing success or allowing temp-file cleanup.
             let updated = [swing] + swings
             try JSONEncoder().encode(updated).write(to: storageURL, options: .atomic)
             swings = updated
+            // The capture's quick preview is small; read a sharp one from
+            // the saved copy.
+            let saved = swing
+            Task { await loadLocalThumbnail(for: saved) }
             return swing
         } catch {
             try? FileManager.default.removeItem(at: videosDirectory.appendingPathComponent(filename))
@@ -299,7 +346,7 @@ class SwingLibrary: ObservableObject {
             createdAt: Date(),
             notes: notes
         )
-        swing.thumbnail = initialThumbnail
+        swing.thumbnail = initialThumbnail.map(Self.cardThumbnail)
         if let localSourceURL {
             swing.localVideoFilename = storeLocalVideo(from: localSourceURL, swingID: id)
         }
@@ -410,7 +457,7 @@ class SwingLibrary: ObservableObject {
             ) { image, _ in
                 Task { @MainActor in
                     if let index = self.swings.firstIndex(where: { $0.photoAssetID == asset.localIdentifier }) {
-                        self.swings[index].thumbnail = image
+                        self.swings[index].thumbnail = image.map(Self.cardThumbnail)
                     }
                 }
             }
@@ -430,7 +477,7 @@ class SwingLibrary: ObservableObject {
             
             if let image = await requestThumbnailImage(for: asset) {
                 if let index = swings.firstIndex(where: { $0.photoAssetID == photoAssetID }) {
-                    swings[index].thumbnail = image
+                    swings[index].thumbnail = Self.cardThumbnail(from: image)
                 }
                 return
             }
@@ -657,15 +704,20 @@ class SwingLibrary: ObservableObject {
     private func loadLocalThumbnails() async {
         let pending = swings.filter { $0.thumbnail == nil && localVideoURL(for: $0) != nil }
         for swing in pending {
-            guard let url = localVideoURL(for: swing) else { continue }
-            let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
-            generator.appliesPreferredTrackTransform = true
-            generator.maximumSize = thumbnailTargetSize
-            let thumbnailTime = CMTime(seconds: min(1, swing.duration / 2), preferredTimescale: 600)
-            guard let generated = try? await generator.image(at: thumbnailTime) else { continue }
-            if let index = swings.firstIndex(where: { $0.id == swing.id }) {
-                swings[index].thumbnail = UIImage(cgImage: generated.image)
-            }
+            await loadLocalThumbnail(for: swing)
+        }
+    }
+
+    /// The card's picture from the app's own copy of the clip.
+    private func loadLocalThumbnail(for swing: SavedSwing) async {
+        guard let url = localVideoURL(for: swing) else { return }
+        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = thumbnailSourceSize
+        let thumbnailTime = CMTime(seconds: min(1, swing.duration / 2), preferredTimescale: 600)
+        guard let generated = try? await generator.image(at: thumbnailTime) else { return }
+        if let index = swings.firstIndex(where: { $0.id == swing.id }) {
+            swings[index].thumbnail = Self.cardThumbnail(from: UIImage(cgImage: generated.image))
         }
     }
 }

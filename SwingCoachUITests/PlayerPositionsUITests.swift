@@ -14,7 +14,7 @@ final class PlayerPositionsUITests: XCTestCase {
         app.buttons["swing-position-P4"].tap()
         XCTAssertEqual(Double(timeline.value as? String ?? "") ?? 0, 1.6, accuracy: 0.01)
         XCTAssertTrue(app.buttons["swing-position-P4"].isSelected)
-        XCTAssertTrue(app.buttons["swing-position-P8"].label.contains("unsure"))
+        XCTAssertTrue(app.buttons["swing-position-P8"].label.contains("low confidence"))
 
         // Dragging across the strip moves a whole position per chip.
         let p5 = app.buttons["swing-position-P5"], p7 = app.buttons["swing-position-P7"]

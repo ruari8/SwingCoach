@@ -1996,7 +1996,9 @@ struct CaptureView: View {
             }
 
             if workflowMode == .auto {
-                HStack(alignment: .center, spacing: 12) {
+                // Auto's state leads; the saved count is a quieter control
+                // kept apart on the other side.
+                HStack(alignment: .center, spacing: 20) {
                     CaptureStatusLabel(
                         title: autoStatusTitle,
                         detail: autoStatusDetail,
@@ -2007,6 +2009,7 @@ struct CaptureView: View {
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
                     savedSwingsButton
+                        .fixedSize()
                 }
                 .padding(.bottom, 22)
             } else {
@@ -2303,21 +2306,23 @@ private struct CaptureStatusLabel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             if prominent {
-                HStack(spacing: 10) {
+                HStack(spacing: 12) {
                     if let indicator {
-                        Circle().fill(indicator).frame(width: 14, height: 14)
+                        Circle().fill(indicator).frame(width: 20, height: 20)
+                            .overlay(Circle().strokeBorder(.black.opacity(0.35), lineWidth: 1))
                             .accessibilityHidden(true)
                     }
                     Text(title)
-                        .font(.title3.weight(.semibold))
+                        .font(.title2.weight(.semibold))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.75)
+                        .minimumScaleFactor(0.7)
                         .accessibilityIdentifier("capture-status-title")
                 }
-                .padding(.horizontal, 14)
-                .frame(minHeight: 44)
-                .background(Capsule().fill(Color.black.opacity(0.6)))
-                .overlay(Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 0.5))
+                .padding(.leading, 16)
+                .padding(.trailing, 20)
+                .frame(minHeight: 54)
+                .background(Capsule().fill(PlayerChrome.solidPanel))
+                .overlay(Capsule().strokeBorder(PlayerChrome.edge, lineWidth: 1))
             } else {
                 HStack(spacing: 7) {
                     if let indicator {
@@ -2333,7 +2338,7 @@ private struct CaptureStatusLabel: View {
                 .font(prominent ? .footnote : .caption2)
                 .foregroundStyle(.white.opacity(0.75))
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.leading, prominent ? 14 : 0)
+                .padding(.leading, prominent ? 16 : 0)
                 .accessibilityIdentifier("capture-status-detail")
 
             if let snapshot = modelSnapshot,

@@ -24,7 +24,7 @@ Stored per swing in `swing_library.json` under `swingPositions`:
 - the model name
 - for each position: number, time on the clip's own slow-motion timeline, and confidence (the model's score through a sigmoid)
 
-Swing Info and the player mark positions under 50% confidence with a `?` (`P8?`).
+Swing Info and the player mark positions under 50% confidence with a `?` (`P8?`) and the word "Low" (Swing Info, the time badge), "low confidence" to VoiceOver.
 
 Once a swing's clip has been coached, P2, P6 and P7 are re-timed off the club track (shaft level, ball struck) and saved back here, with the model's own times kept in `modelClipTimes`. See [COACHING.md](./COACHING.md#club-timing).
 

@@ -3,7 +3,8 @@
 //  SwingCoach
 //
 //  The shared look: the one accent colour, the player's chrome over video,
-//  the style every sheet over the player uses, and a wrapping layout.
+//  the style every sheet over the player uses, library card sizes, the
+//  position and low-confidence tags, and a wrapping layout.
 //  The red / amber / green level colours are `Color.coachingLevel` and
 //  mean coaching status only.
 //
@@ -63,6 +64,9 @@ enum PlayerChrome {
     static let panel = Color(white: 0.07).opacity(0.9)
     static let panelEdge = Color.white.opacity(0.12)
     static let panelRadius: CGFloat = 20
+    /// An opaque dark surface for a state that must read on any camera
+    /// picture: Auto's on/off capsule on Capture.
+    static let solidPanel = Color(white: 0.1)
     /// Background of every sheet over the player: dark and near opaque, so
     /// the card and strip behind never ghost through.
     static let sheetBackground = Color(white: 0.09).opacity(0.97)
@@ -114,6 +118,14 @@ enum LibraryCard {
     /// A card's surface in light and dark, so captions never float on the
     /// page.
     static let fill = Color(.secondarySystemGroupedBackground)
+    /// The thumbnail's height on the card, and its widest (a two-column
+    /// grid on the largest iPhone). Thumbnails are made at this size times
+    /// the screen scale.
+    static let thumbnailHeight: CGFloat = 100
+    static let thumbnailWidth: CGFloat = 200
+    /// Where a portrait clip's thumbnail is cut, from 0 (its top) to 1 (its
+    /// bottom): above the middle, so a down-the-line golfer's head shows.
+    static let thumbnailFocus: CGFloat = 0.38
 }
 
 // MARK: - Position tags
@@ -130,6 +142,26 @@ struct PositionTag: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .background(Capsule().fill(Color(.tertiarySystemFill)))
+    }
+}
+
+// MARK: - Low confidence
+
+/// A position the model was unsure of, beside its confidence: "Low" in
+/// heavy type on a cyan-tinted capsule, so a 50% row never looks like the
+/// 80% rows. Cyan is neither a coaching level colour (red, amber, green)
+/// nor the lime accent, and the word carries it without the colour.
+struct LowConfidenceTag: View {
+    static let colour = Color.cyan
+
+    var body: some View {
+        Text("Low")
+            .font(.caption2.weight(.heavy))
+            .foregroundStyle(Self.colour)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 1)
+            .background(Capsule().fill(Self.colour.opacity(0.18)))
+            .accessibilityLabel(SwingPosition.lowConfidenceWords)
     }
 }
 

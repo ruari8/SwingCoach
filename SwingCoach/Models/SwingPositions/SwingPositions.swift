@@ -41,6 +41,13 @@ nonisolated struct SwingPosition: Codable, Equatable {
 
     var label: String { "P\(number)" }
     var name: String { Self.names[number - 1] }
+
+    /// Below this the model found no clear peak for the position. The app
+    /// marks such a position with a "?" on its label and the word "Low"
+    /// ("low confidence" to VoiceOver) wherever it shows confidence.
+    static let lowConfidence = 0.5
+    static let lowConfidenceWords = "low confidence"
+    var isLowConfidence: Bool { confidence < Self.lowConfidence }
     /// How the app names a position everywhere: "Halfway back (P3)".
     var title: String { Self.title(number) }
 

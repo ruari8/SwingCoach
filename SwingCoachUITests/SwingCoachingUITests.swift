@@ -149,7 +149,7 @@ final class SwingCoachingUITests: XCTestCase {
         let theme = app.descendants(matching: .any)["session-theme-steepTransition-transition-1"]
         XCTAssertTrue(theme.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Shaft steepens coming down"].firstMatch.exists)
-        XCTAssertTrue(app.staticTexts["4 of 5 swings · Halfway down (P5)"].exists)
+        XCTAssertTrue(app.staticTexts["4 of 5 swings with a halfway down (P5) reading"].exists)
         XCTAssertTrue(app.staticTexts["Start here"].exists)
 
         // A dot a swing, in the order hit. The fifth is the first with four
@@ -205,7 +205,7 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertTrue(recap.waitForExistence(timeout: 3))
         XCTAssertTrue(app.staticTexts["Last 5 swings"].exists)
         XCTAssertTrue(app.staticTexts["Shaft steepens coming down"].exists)
-        XCTAssertTrue(app.staticTexts["4 of 5 swings · Halfway down (P5)"].exists)
+        XCTAssertTrue(app.staticTexts["4 of 5 swings with a halfway down (P5) reading"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["coach-recap-picture"].exists, "The recap pictures the theme")
         attach(app, "capture-recap")
 

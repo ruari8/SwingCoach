@@ -389,7 +389,7 @@ struct SwingInfoView: View {
                     }
                 }
                 .accessibilityIdentifier("swing-positions")
-                Text("Times are on the clip's slow-motion timeline. A ? marks positions the model was unsure of.")
+                Text("Times are on the clip's slow-motion timeline. A ? and Low mark positions the model was unsure of.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             } else if positionProcessor.failed.contains(currentSwing.id) {
@@ -424,20 +424,24 @@ struct SwingInfoView: View {
     private static let confidenceWidth: CGFloat = 84
 
     private func swingPositionRow(_ position: SwingPosition) -> some View {
-        HStack(alignment: .firstTextBaseline) {
+        let low = position.isLowConfidence
+        return HStack(alignment: .firstTextBaseline) {
             // Below 0.5 the model found no clear peak for this position.
-            Text(position.confidence < 0.5 ? "\(position.name) (\(position.label)?)" : position.title)
-                .font(.subheadline)
+            Text(low ? "\(position.name) (\(position.label)?)" : position.title)
+                .font(low ? .subheadline.weight(.semibold) : .subheadline)
             Spacer(minLength: 12)
             Text(String(format: "%.2fs", position.clipTime))
                 .font(.subheadline.weight(.medium).monospacedDigit())
-            Text("\(Int((position.confidence * 100).rounded()))%")
-                .font(.caption.monospacedDigit())
-                .foregroundColor(.secondary)
-                .frame(width: Self.confidenceWidth, alignment: .trailing)
+            HStack(spacing: 4) {
+                if low { LowConfidenceTag() }
+                Text("\(Int((position.confidence * 100).rounded()))%")
+                    .font(.caption.monospacedDigit().weight(low ? .semibold : .regular))
+                    .foregroundColor(low ? LowConfidenceTag.colour : .secondary)
+            }
+            .frame(width: Self.confidenceWidth, alignment: .trailing)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(position.title)\(position.confidence < 0.5 ? ", unsure" : ""): "
+        .accessibilityLabel("\(position.title)\(low ? ", \(SwingPosition.lowConfidenceWords)" : ""): "
             + String(format: "%.2f seconds", position.clipTime)
             + ", confidence \(Int((position.confidence * 100).rounded())) percent")
     }
