@@ -29,6 +29,9 @@ import Foundation
 ///   gives the fixture's full report (or fails) instead of running Vision.
 /// - `-ui-testing-coaching-short`, with the `coaching` seed: the oldest swing
 ///   is a chip, measured but not judged.
+/// - `-ui-testing-auto-library`, with the synthetic camera and no seed: the
+///   Library's own swings are the Auto session, as on the `coaching` seed. The
+///   UI council's screenshot tour seeds a coached range session this way.
 ///
 /// Any `-ui-testing` argument also keeps private bundled reference videos out
 /// of the Library, so results never depend on them.
@@ -77,6 +80,7 @@ nonisolated enum UITestFixture {
     static let exportsAutoClip = arguments.contains("-ui-testing-auto-export")
     static let detectorState = value(after: "-ui-testing-detector")
     static let showsAutoError = arguments.contains("-ui-testing-auto-error")
+    static let autoSessionIsLibrary = arguments.contains("-ui-testing-auto-library")
     static let simulatedClipRead: (seconds: Double, fails: Bool)? = value(after: "-ui-testing-coaching-reads").map { value in
         value == "fail" ? (1, true) : (Double(value) ?? 3, false)
     }

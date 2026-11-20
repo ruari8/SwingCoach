@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+"""Writes a round's scoring brief: brief.py <round> <shots-dir> <out.md> [--extra <label>=<dir>]"""
+import sys, pathlib
+rnd, shots, out = sys.argv[1], sys.argv[2], sys.argv[3]
+extras = [a.split("=", 1) for a in sys.argv[4:] if "=" in a]
+root = pathlib.Path(__file__).resolve().parents[1]
+screens = """| File prefix | Screen |
+|---|---|
+| 01-library | Library tab: the session, its swings |
+| 02-settings | Settings sheet (gear in the Library) |
+| 03-session-review, 04-session-review-scrolled | Session review: the session's themes, best and worst pictures, a dot per swing |
+| 05-player-open | Review player as it opens: paused on the coach's first finding with its drawing and step card |
+| 06-player-next-step | The player after Next: the second finding |
+| 07-all-checks | All checks sheet over the player |
+| 08-drawings-tool | Drawings sheet (which coaching layers show) |
+| 09-swing-info | Swing Info sheet (metadata, P1–P10) |
+| 10-player-address-P1 | Player moved off the walkthrough to P1: folded finding, transport row |
+| 11-auto-recap | Capture, Auto: the recap card that comes up every 5 swings |
+| 12-auto-compare | The recap's comparison of the last 5 swings |
+| 13-auto-review | A swing opened from that comparison |
+| 14-auto-camera | Capture, Auto: the camera screen with the coach chip |
+| 15-auto-coach-menu | The coach chip's menu |
+| 16-capture-manual | Capture, Manual mode |"""
+extra_txt = "".join(f"\n- **{label}**: `{d}` (same file names). Score it as a fourth column `{label}`.\n" for label, d in extras)
+text = f"""# UI council, round {rnd}: score the app and two reference apps
+
+You are a senior product designer on a review council for SwingCoach, an iPhone golf coaching app that films swings at the range, keeps them in a library and coaches down-the-line swings on the phone. You are strictly read-only: do not edit, create, move, commit or push any file. Score honestly from what you see; there is no expected result. Your final message is your whole answer.
+
+## What to read
+
+1. The rubric: `{root}/rubric.md`. 13 metrics, each scored 1–10 with one decimal.
+2. SwingCoach screenshots: `{shots}`. Each screen is captured as `<prefix>-light.png` and `<prefix>-dark.png` on an iPhone 17 Simulator, with real range footage. Open every screen in both appearances.
+{screens}
+3. Reference apps, App Store screenshots: `{root}/references/sportsbox/` (Sportsbox 3D Golf) and `{root}/references/onform/` (Onform). Judge only the UI inside the phone frames.{extra_txt}
+
+Context that is not a design flaw:
+- The **Debug** tab exists only in developer builds; ignore it.
+- On Capture the viewfinder is black because the Simulator has no camera; on a phone it shows the live camera. Judge what sits over it.
+- The player and camera screens are dark by design in both appearances; the Library, Settings and some sheets follow the system appearance.
+- Scope is visual and interaction design of the existing screens. Do not ask for new features.
+
+## What to return
+
+Reply with one fenced `json` block exactly in this shape, then up to 150 words of free comments:
+
+```json
+{{
+  "scores": {{
+    "swingcoach": {{"typography": 0.0, "hierarchy": 0.0, "spacing": 0.0, "color": 0.0, "consistency": 0.0, "clarity": 0.0, "accessibility": 0.0, "subject": 0.0, "overlays": 0.0, "data": 0.0, "state": 0.0, "polish": 0.0, "overall": 0.0}},
+    "sportsbox": {{"...": "same 13 keys"}},
+    "onform": {{"...": "same 13 keys"}}
+  }},
+  "issues": [
+    {{"rank": 1, "screen": "05-player-open-dark", "element": "step card", "metric": "subject", "problem": "what is wrong, specifically", "fix": "the smallest change that fixes it"}}
+  ]
+}}
+```
+
+List SwingCoach's top issues, most important first, at most 15. Name the exact screen file and element. Prefer fixes to shared styles (type scale, weights, spacing, radius, color, icon size, labels) over layout rewrites.
+"""
+pathlib.Path(out).write_text(text)
+print(out)

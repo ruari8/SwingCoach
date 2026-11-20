@@ -65,6 +65,7 @@ SwingCoach/
 │   └── agents/                    # issue tracker, triage, domain conventions
 ├── scripts/                       # verify.sh test runner, diagnostics, profiling, knowledge viewer
 ├── playgrounds/                   # UI playground
+├── ui-council/                    # design review loop: rubric, ledger, screenshot tour (capture.sh), reference apps
 ├── tools/                         # knowledge viewer page; requirements.txt for the scripts' Python environment
 ├── .agents/skills/verify-swingcoach/   # verification skill + testing ladder
 └── .claude/skills/                # links to .agents/skills so Claude Code finds them

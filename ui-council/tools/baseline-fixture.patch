@@ -1,0 +1,13 @@
+diff --git a/SwingCoach/CaptureView.swift b/SwingCoach/CaptureView.swift
+index 434a1b8..b1663dc 100644
+--- a/SwingCoach/CaptureView.swift
++++ b/SwingCoach/CaptureView.swift
+@@ -1593,7 +1593,7 @@ extension CameraSession {
+             // The Library's reference swings stand in for a new Auto
+             // session; on the coaching seed, its coached swings do.
+             let library = SwingLibrary.shared.swings
+-            if UITestFixture.seed == .coaching {
++            if UITestFixture.seed == .coaching || ProcessInfo.processInfo.arguments.contains("-ui-testing-auto-library") {
+                 // After the camera screen is up, as saved swings arrive.
+                 DispatchQueue.main.async {
+                     self.autoSessionSwings = library.sorted { $0.createdAt < $1.createdAt }
