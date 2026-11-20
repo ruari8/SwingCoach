@@ -1204,16 +1204,24 @@ struct SwingCoachingPanel: View {
     private func stepCard(_ step: CoachingStep, index: Int, of steps: [CoachingStep], report: SwingCoachingReport) -> some View {
         let lead = step.lead.flatMap(report.metric)
         let notJudged: CoachingExclusion? = if case .notJudged(let exclusion) = step.kind { exclusion } else { nil }
-        // The legend keys what is drawn: the step's own finding only.
-        let results = lead.map { [$0] } ?? []
         return VStack(alignment: .leading, spacing: Self.rowGap) {
             readingNote(report)
-            HStack(alignment: .center) {
-                // "Finding", not "step": "steps out" is the level's word.
-                Text(placeLine(step) + (steps.count > 1 ? ", finding \(index + 1) of \(steps.count)" : ""))
+            HStack(alignment: .center, spacing: 8) {
+                Text(placeLine(step))
                     .font(.appLabel)
                     .foregroundStyle(.white.opacity(0.82))
-                    .accessibilityIdentifier("coaching-step-count")
+                    .accessibilityIdentifier("coaching-step-place")
+                // "Finding", not "step": "steps out" is the level's word.
+                if steps.count > 1 {
+                    Text("\(index + 1)/\(steps.count)")
+                        .font(.appCaptionLabel.monospacedDigit())
+                        .foregroundStyle(PlayerChrome.secondaryText)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(.white.opacity(0.14)))
+                        .accessibilityLabel("Finding \(index + 1) of \(steps.count)")
+                        .accessibilityIdentifier("coaching-step-count")
+                }
                 Spacer(minLength: 8)
                 allChecksButton
             }
@@ -1221,14 +1229,14 @@ struct SwingCoachingPanel: View {
             // take its overhang out of the gap, so the text-to-text gaps
             // match the card's other rows.
             .padding(.bottom, -Self.rowGap)
-            Text(step.text)
-                .font(.appTitle)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("coaching-step-title")
-            levelRow(pill(step, lead: lead), dependsOnCamera: lead?.definition.dependsOnCamera == true,
-                     legend: results.isEmpty ? nil : CoachingLegend(results: results))
-            if notJudged != nil || step.kind == .good || step.kind == .better {
-                detail(step, lead: lead, notJudged: notJudged, report: report)
+            titleRow(badge(step, lead: lead, size: CoachingLevelBadge.markSize), step.text, level: levelWords(step, lead: lead))
+            // Why a swing isn't judged; a good or better swing's tick and
+            // title say it without a line under them.
+            if let notJudged {
+                Text(CoachingWords.exclusion(notJudged))
+                    .font(.appBody)
+                    .foregroundStyle(PlayerChrome.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             buttons(index: index, of: steps)
         }
@@ -1242,60 +1250,43 @@ struct SwingCoachingPanel: View {
         }
     }
 
+    /// The finding with its level badge before it, read at a glance from
+    /// the tripod: the drawing's own colours say which line is the swing,
+    /// and the key and the camera caveat are in All checks.
+    private func titleRow(_ badge: some View, _ text: String, level: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            badge
+                .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 7 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(level)
+                .accessibilityIdentifier("coaching-step-level")
+            Text(text)
+                .font(.appTitle)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("coaching-step-title")
+        }
+    }
+
+    /// The step's level in words, for VoiceOver: "4 steps out", "In zone".
+    private func levelWords(_ step: CoachingStep, lead: CoachingMetricResult?) -> String {
+        switch step.kind {
+        case .notJudged: "Not judged"
+        case .good, .better: "In zone"
+        case .pointer, .finding: CoachingWords.steps(lead?.level ?? 0)
+        }
+    }
+
     private func placeLine(_ step: CoachingStep) -> String {
         if case .notJudged = step.kind { return "Measured only" }
         return CoachingWalkthrough.place(step.position)
     }
 
-    @ViewBuilder
-    private func badge(_ step: CoachingStep, lead: CoachingMetricResult?) -> some View {
+    private func badge(_ step: CoachingStep, lead: CoachingMetricResult?, size: CGFloat = 24) -> CoachingLevelBadge {
         switch step.kind {
-        case .notJudged: CoachingLevelBadge(level: 0, neutral: true)
-        case .good, .better: CoachingLevelBadge(level: 0)
-        case .pointer, .finding: CoachingLevelBadge(level: lead?.level ?? 0)
+        case .notJudged: CoachingLevelBadge(level: 0, neutral: true, size: size)
+        case .good, .better: CoachingLevelBadge(level: 0, size: size)
+        case .pointer, .finding: CoachingLevelBadge(level: lead?.level ?? 0, size: size)
         }
-    }
-
-    @ViewBuilder
-    private func pill(_ step: CoachingStep, lead: CoachingMetricResult?) -> some View {
-        switch step.kind {
-        case .notJudged: CoachingLevelPill(level: 0, neutral: true)
-        case .good, .better: CoachingLevelPill(level: 0)
-        case .pointer, .finding: CoachingLevelPill(level: lead?.level ?? 0)
-        }
-    }
-
-    /// The level, then for a club reading the one caveat (the detail is in
-    /// All checks), then what the drawing's marks mean, each beside the one
-    /// before while the row has room and on its own line when it is full,
-    /// so the card never grows a row it doesn't need.
-    private func levelRow(_ pill: some View, dependsOnCamera: Bool, legend: CoachingLegend?) -> some View {
-        FlowLayout(spacing: 12, lineSpacing: Self.rowGap) {
-            pill
-            if dependsOnCamera {
-                CoachingCameraCaveat(onPlayer: true)
-            }
-            if let legend { legend }
-        }
-    }
-
-    @ViewBuilder
-    private func detail(_ step: CoachingStep, lead: CoachingMetricResult?, notJudged: CoachingExclusion?,
-                        report: SwingCoachingReport) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if let notJudged {
-                Text(CoachingWords.exclusion(notJudged))
-            } else if step.kind == .good {
-                Text("Nothing worth changing on this one.")
-            } else if step.kind == .better {
-                // Numbers stay in All checks: on the card the drawing says it.
-                Text("Back in zone.")
-            }
-        }
-        .font(.appBody)
-        .foregroundStyle(PlayerChrome.secondaryText)
-        .fixedSize(horizontal: false, vertical: true)
-        .accessibilityElement(children: .combine)
     }
 
     /// The first reading has the body checks only; say what is coming, or
@@ -1409,14 +1400,10 @@ struct SwingCoachingPanel: View {
             Text(CoachingWalkthrough.place(result.position))
                 .font(.appLabel)
                 .foregroundStyle(.white.opacity(0.82))
-            Text(CoachingWords.headline(result))
-                .font(.appTitle)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("coaching-step-title")
-            levelRow(CoachingLevelPill(level: result.level, scored: result.definition.scored,
-                                       neutral: report.exclusion != nil),
-                     dependsOnCamera: result.definition.dependsOnCamera,
-                     legend: CoachingLegend(results: [result], neutral: report.exclusion != nil))
+            titleRow(CoachingLevelBadge(level: result.level, scored: result.definition.scored,
+                                        neutral: report.exclusion != nil, size: CoachingLevelBadge.markSize),
+                     CoachingWords.headline(result),
+                     level: CoachingWords.level(result, neutral: report.exclusion != nil))
             HStack(spacing: 10) {
                 Button {
                     highlighted = nil
@@ -1877,6 +1864,12 @@ struct SwingCoachingChecks: View {
             List {
                 Section {
                     summaryCard
+                    // What the drawing's marks mean, keyed here rather than
+                    // on the step card over the video.
+                    if case .focus(let finding) = verdict, report.exclusion == nil,
+                       let result = report.metric(finding.metric), !result.drawings.isEmpty {
+                        CoachingLegend(results: [result])
+                    }
                 }
                 ForEach(positions, id: \.self) { position in
                     Section {
@@ -1921,13 +1914,13 @@ struct SwingCoachingChecks: View {
         let count = "\(inZone) of \(judged.count) judged checks in zone"
         let label: String? = if case .focus = verdict { "Top finding" } else { nil }
         let keyed = report.exclusion == nil && { if case .focus = verdict { true } else { false } }()
-        let guideNote = guides > 0 ? " Guides are shown, not counted." : ""
+        // One line under the headline; a guide's row says "Not judged · a guide".
         let note: String = if let exclusion = report.exclusion {
             CoachingWords.exclusion(exclusion)
         } else if keyed {
-            CoachingWords.stepDefinition + guideNote
+            CoachingWords.stepDefinition
         } else {
-            "None of the others is far enough out to work on." + guideNote
+            "None of the others is far enough out to work on."
         }
         return VStack(alignment: .leading, spacing: 6) {
             if report.exclusion == nil {
@@ -1984,13 +1977,9 @@ struct SwingCoachingChecks: View {
                             .fixedSize()
                     }
                 }
+                // The badge carries the level; VoiceOver reads it as the value.
                 CoachingZoneTrack(result: result, neutral: neutral)
                     .padding(.vertical, 2)
-                if judged && !result.inZone {
-                    Text(CoachingWords.level(result) + ".")
-                        .font(.appCaption)
-                        .foregroundStyle(Color.helpText)
-                }
                 if result.definition.dependsOnCamera {
                     CoachingCameraCaveat(advice: true)
                 }

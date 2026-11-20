@@ -1973,6 +1973,9 @@ struct CaptureView: View {
                     HStack {
                         frameRateMenu
                         Spacer()
+                        if workflowMode == .auto {
+                            autoIndicator
+                        }
                         Picker("Capture", selection: $workflowMode) {
                             ForEach(CaptureWorkflowMode.allCases) { mode in
                                 Text(mode.displayName).tag(mode)
@@ -1999,26 +2002,25 @@ struct CaptureView: View {
             }
 
             if workflowMode == .auto {
-                // Auto's state leads, full width, readable from the tripod;
-                // the saved count is a quieter control on the line under it.
-                VStack(spacing: 8) {
-                    AutoStatePanel(title: autoStatusTitle, indicator: autoStatusIndicator,
-                                     stopHint: autoStopHint)
-                    HStack(alignment: .center, spacing: 16) {
+                // The camera's picture comes first: the Auto / Manual switch
+                // and its dot carry the mode, so the bottom row is only the
+                // saved count, plus a small status line when there is news
+                // (saving, an error, detection off) or the model stats are on.
+                HStack(alignment: .bottom, spacing: 12) {
+                    if showsAutoStatus {
                         CaptureStatusLabel(
                             title: autoStatusTitle,
                             detail: autoStatusDetail,
-                            showsTitle: false,
+                            indicator: autoStatusIndicator,
                             modelSnapshot: showCaptureModelStats && camera.autoCaptureStatus.isActive
                                 ? camera.liveSwingDetection : nil
                         )
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        savedSwingsButton
-                            .fixedSize()
                     }
-                    .padding(.horizontal, 4)
+                    Spacer(minLength: 0)
+                    savedSwingsButton
+                        .fixedSize()
                 }
-                .padding(.bottom, 14)
+                .padding(.bottom, 12)
             } else {
                 HStack(spacing: 8) {
                     Group {
@@ -2067,34 +2069,38 @@ struct CaptureView: View {
         return Button {
             openAutoReview(AutoSwingReviewPresentation())
         } label: {
-            HStack(spacing: 9) {
+            // One compact capsule, low in the corner: the newest swing's
+            // picture and the count.
+            HStack(spacing: 8) {
                 Group {
                     if let thumbnail = camera.autoSessionSwings.last?.thumbnail {
                         Image(uiImage: thumbnail).resizable().scaledToFill()
                     } else {
                         // No picture yet: a neutral glyph, so the box reads
                         // as the session's swings, not an image that failed.
-                        RoundedRectangle(cornerRadius: 6)
+                        Rectangle()
                             .fill(.white.opacity(0.12))
                             .overlay {
                                 Image(systemName: "figure.golf")
-                                    .font(.system(size: 16, weight: .semibold))
+                                    .font(.system(size: 13, weight: .semibold))
                                     .foregroundStyle(.white.opacity(0.6))
                             }
                     }
                 }
-                .frame(width: 32, height: 42)
-                .clipShape(.rect(cornerRadius: 6))
-                .overlay(RoundedRectangle(cornerRadius: 6)
+                .frame(width: 26, height: 34)
+                .clipShape(.rect(cornerRadius: 5))
+                .overlay(RoundedRectangle(cornerRadius: 5)
                     .strokeBorder(.white.opacity(0.5), lineWidth: 0.5))
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("\(count) saved").font(.appLabel.monospacedDigit())
-                    Text("This session").font(.appCaption).foregroundStyle(.white.opacity(0.7))
-                }
+                Text("\(count) saved").font(.appLabel.monospacedDigit())
                 Image(systemName: "chevron.right").font(.appCaptionLabel)
             }
-            .frame(minHeight: 44)
+            .padding(.leading, 5)
+            .padding(.trailing, 12)
+            .frame(minHeight: CaptureControl.height)
+            .background(Capsule().fill(.black.opacity(0.45)))
+            .overlay(Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 0.5))
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .disabled(count == 0)
@@ -2109,12 +2115,26 @@ struct CaptureView: View {
         return camera.autoCaptureStatus.isActive ? "Auto is on" : "Auto is off"
     }
 
-    /// How to stop Auto, said inside its panel while it is on. The
-    /// panel itself isn't a control: the Manual segment above stops Auto.
-    private var autoStopHint: String? {
-        guard camera.autoCaptureStatus.isActive, camera.autoCaptureStatus.lastErrorMessage == nil,
-              camera.liveSwingDetection.status != .unavailable else { return nil }
-        return "Tap Manual to stop"
+    /// A status line only when there is something to say beyond "armed":
+    /// saving, an error, detection unavailable, paused, or the model stats
+    /// the diagnostics setting asks for. Armed and quiet, the switch's dot
+    /// says it all.
+    private var showsAutoStatus: Bool {
+        let status = camera.autoCaptureStatus
+        return !status.isActive || status.lastErrorMessage != nil || status.pendingSwingCount > 0
+            || camera.liveSwingDetection.status == .unavailable || showCaptureModelStats
+    }
+
+    /// A small dot beside the Auto / Manual switch while Auto is chosen:
+    /// lime when armed, orange when it needs attention, grey when paused.
+    private var autoIndicator: some View {
+        Circle()
+            .fill(autoStatusIndicator)
+            .frame(width: CaptureControl.indicatorSize, height: CaptureControl.indicatorSize)
+            .padding(.trailing, 2)
+            .accessibilityElement()
+            .accessibilityLabel(autoStatusTitle)
+            .accessibilityIdentifier("capture-auto-indicator")
     }
 
     private var autoStatusDetail: String {
@@ -2316,71 +2336,26 @@ struct FocusIndicatorView: View {
     }
 }
 
-/// Auto's on/off, read from the tripod two or three metres away: the
-/// state at title size with a large indicator, on a solid rounded panel
-/// the full width of the controls. It is a status, not a control, so it
-/// has no button-like outline. While Auto is on, a line under the state
-/// says how to stop it.
-private struct AutoStatePanel: View {
-    let title: String
-    let indicator: Color
-    var stopHint: String? = nil
-
-    var body: some View {
-        HStack(spacing: 14) {
-            Circle().fill(indicator)
-                .frame(width: PlayerChrome.stateIndicatorSize, height: PlayerChrome.stateIndicatorSize)
-                .overlay(Circle().strokeBorder(.black.opacity(0.35), lineWidth: 1))
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 0) {
-                Text(title)
-                    .font(PlayerChrome.stateFont)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .accessibilityIdentifier("capture-status-title")
-                if let stopHint {
-                    Text(stopHint)
-                        .font(PlayerChrome.stateHintFont)
-                        .foregroundStyle(PlayerChrome.stateHintColour)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                        .accessibilityIdentifier("capture-stop-hint")
-                }
-            }
-            Spacer(minLength: 0)
-        }
-        .frame(maxWidth: .infinity,
-               minHeight: PlayerChrome.stateMinHeight - PlayerChrome.stateInsets.top - PlayerChrome.stateInsets.bottom)
-        // The same surface, radius and insets as the recap above it.
-        .solidPanelBackground()
-    }
-}
-
 private struct CaptureStatusLabel: View {
     let title: String
     let detail: String
     var indicator: Color? = nil
-    /// False when the title is shown elsewhere (Auto's panel): only the
-    /// detail line and the model stats.
-    var showsTitle = true
     var modelSnapshot: LiveSwingDetectionSnapshot? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            if showsTitle {
-                HStack(spacing: 7) {
-                    if let indicator {
-                        Circle().fill(indicator).frame(width: 6, height: 6)
-                            .accessibilityHidden(true)
-                    }
-                    Text(title)
-                        .font(.appLabel)
-                        .accessibilityIdentifier("capture-status-title")
+            HStack(spacing: 7) {
+                if let indicator {
+                    Circle().fill(indicator).frame(width: 6, height: 6)
+                        .accessibilityHidden(true)
                 }
+                Text(title)
+                    .font(.appLabel)
+                    .accessibilityIdentifier("capture-status-title")
             }
             Text(detail)
                 .font(.appCaption)
-                .foregroundStyle(.white.opacity(showsTitle ? 0.75 : 0.85))
+                .foregroundStyle(.white.opacity(0.8))
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("capture-status-detail")
 
@@ -2395,6 +2370,8 @@ private struct CaptureStatusLabel: View {
                     .accessibilityIdentifier("capture-model-stats")
             }
         }
+        // Plain text over the live picture: a soft shadow keeps it legible on sky.
+        .shadow(color: .black.opacity(0.6), radius: 2)
     }
 }
 

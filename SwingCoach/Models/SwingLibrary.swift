@@ -135,12 +135,12 @@ class SwingLibrary: ObservableObject {
     
     private let storageURL: URL
     private let videosDirectory: URL
-    /// A library card's picture in pixels: the card's displayed size times
-    /// the screen scale, so it is sharp on the card.
+    /// A library tile's picture in pixels: the largest tile (two columns)
+    /// times the screen scale, so it is sharp at every column count.
     static var thumbnailTargetSize: CGSize {
         let displayScale = UITraitCollection.current.displayScale
         let scale = displayScale > 0 ? max(displayScale, 2) : 3
-        return CGSize(width: LibraryCard.thumbnailWidth * scale, height: LibraryCard.thumbnailHeight * scale)
+        return CGSize(width: LibraryGrid.largestTile * scale, height: LibraryGrid.largestTile * scale)
     }
 
     private var thumbnailTargetSize: CGSize { Self.thumbnailTargetSize }
@@ -152,10 +152,10 @@ class SwingLibrary: ObservableObject {
         return CGSize(width: side, height: side)
     }
 
-    /// The card's picture cut from a whole frame: the card's shape at the
-    /// card's pixel size, never scaled up. A portrait clip is cut nearer its
-    /// top than its middle (`LibraryCard.thumbnailFocus`), so the golfer's
-    /// head and body show rather than the feet and the mat.
+    /// The tile's picture cut from a whole frame: a square at the tile's
+    /// largest pixel size, never scaled up. A portrait clip is cut nearer
+    /// its top than its middle (`LibraryGrid.thumbnailFocus`), so the
+    /// golfer's head and body show rather than the feet and the mat.
     static func cardThumbnail(from image: UIImage) -> UIImage {
         let target = thumbnailTargetSize
         let source = CGSize(width: image.size.width * image.scale, height: image.size.height * image.scale)
@@ -167,7 +167,7 @@ class SwingLibrary: ObservableObject {
             crop.origin.x = (source.width - crop.width) / 2
         } else {
             crop.size.height = source.width / aspect
-            crop.origin.y = (source.height - crop.height) * LibraryCard.thumbnailFocus
+            crop.origin.y = (source.height - crop.height) * LibraryGrid.thumbnailFocus
         }
         let factor = min(1, target.width / crop.width)
         let output = CGSize(width: (crop.width * factor).rounded(), height: (crop.height * factor).rounded())

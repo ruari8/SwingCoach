@@ -18,6 +18,11 @@ final class CaptureControlsUITests: XCTestCase {
         XCTAssertLessThan(auto.frame.minX, manual.frame.minX)
         XCTAssertFalse(app.staticTexts["capture-model-stats"].exists)
         XCTAssertTrue(app.buttons["capture-saved-swings"].isEnabled)
+        // Armed and quiet: the switch's dot says Auto is on; no status panel
+        // or line covers the camera.
+        XCTAssertEqual(app.descendants(matching: .any)["capture-auto-indicator"].label, "Auto is on")
+        XCTAssertFalse(app.staticTexts["capture-status-title"].exists)
+        XCTAssertFalse(app.staticTexts["capture-stop-hint"].exists)
         attach(app, "auto-default-clean")
 
         openSettings(app)

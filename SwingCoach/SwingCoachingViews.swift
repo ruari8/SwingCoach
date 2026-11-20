@@ -100,7 +100,7 @@ struct SessionCoachingView: View {
                     Section {
                         Text(judged.count < CoachingFeedback.themeMinimumSwings
                              ? "Not enough measured swings to see a pattern yet."
-                             : "Nothing kept repeating. No single fault showed up on half the swings.")
+                             : "Nothing kept repeating: no fault on half the swings.")
                             .foregroundStyle(Color.helpText)
                     }
                 }
@@ -121,9 +121,6 @@ struct SessionCoachingView: View {
                         }
                     } header: {
                         SectionHeading("What kept happening")
-                    } footer: {
-                        Text("Each count is out of the swings with a reading for that check.")
-                            .foregroundStyle(Color.helpText)
                     }
                     if shown.count > 1 {
                         Section {
@@ -131,7 +128,7 @@ struct SessionCoachingView: View {
                         } header: {
                             SectionHeading("How they sit together")
                         } footer: {
-                            Text("In swing order. An earlier fault often causes a later one, so the earliest is the one to work on first.")
+                            Text("Earliest first: it often causes the later ones.")
                         }
                     }
                     Section {
@@ -200,7 +197,7 @@ struct SessionCoachingView: View {
 
     /// What "good" counts, as the coaching rules define it: no fault far
     /// enough out for a pointer (about 4 steps, or two agreeing checks).
-    static let goodMeaning = "Good: nothing far enough out to point at. Smaller misses still count below."
+    static let goodMeaning = "Good = nothing far enough out to point at."
 
 
     /// Between the summary's headline, marks and counts.
@@ -241,21 +238,19 @@ struct SessionCoachingView: View {
 
     /// What the marks mean, straight under them: what each mark covers
     /// (one swing's top finding, where a theme below is typical across
-    /// swings, so the two numbers needn't match), the shared key, and
-    /// what a step is.
+    /// swings, so the two numbers needn't match) and the shared key. What a
+    /// step is is said in All checks, where the steps are measured.
     private func symbolKey(hasDash: Bool) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(Self.markScope)
                 .font(.appCaptionLabel)
                 .foregroundStyle(Color.sectionHeading)
             CoachingMarkKey(tick: "Good", dash: hasDash)
-            Text(CoachingWords.stepDefinition)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .font(.appCaption)
         .foregroundStyle(Color.helpText)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(Self.markScope). Marks: a tick is a good swing, a number is steps out\(hasDash ? ", a dash is not judged" : ""). \(CoachingWords.stepDefinition) Tap one to open the swing.")
+        .accessibilityLabel("\(Self.markScope). Marks: a tick is a good swing, a number is steps out\(hasDash ? ", a dash is not judged" : ""). Tap one to open the swing.")
         .accessibilityIdentifier("session-coaching-key")
     }
 

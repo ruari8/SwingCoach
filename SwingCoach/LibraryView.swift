@@ -66,10 +66,14 @@ struct LibraryView: View {
         library.swings.filter { $0.isReference }
     }
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
+    /// Columns in the grid, pinched between `LibraryGrid.columnChoices`
+    /// and remembered.
+    @AppStorage(LibraryGrid.columnsKey) private var gridColumns = LibraryGrid.defaultColumns
+
+    private var columns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: LibraryGrid.gutter),
+              count: LibraryGrid.validColumns(gridColumns))
+    }
 
     private var shouldShowPhotoAccessBanner: Bool {
         photoLibraryAccessStatus != .authorized
@@ -440,25 +444,24 @@ struct LibraryView: View {
                 if !referenceSwings.isEmpty && !isSelecting {
                     librarySectionTitle("Reference swings", systemImage: "figure.golf")
 
-                    LazyVGrid(columns: columns, spacing: 12) {
+                    LazyVGrid(columns: columns, spacing: LibraryGrid.gutter) {
                         ForEach(referenceSwings) { swing in
-                            swingCard(swing)
+                            swingCard(swing, showsVantage: Self.mixesVantages(referenceSwings))
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, 18)
+                    .padding(.bottom, LibraryGrid.sectionGap)
                 }
 
                 if !starredSwings.isEmpty && !isSelecting {
                     librarySectionTitle("Starred", systemImage: "star")
 
-                    LazyVGrid(columns: columns, spacing: 12) {
+                    LazyVGrid(columns: columns, spacing: LibraryGrid.gutter) {
                         ForEach(starredSwings) { swing in
-                            swingCard(swing, reviewSwings: starredSwings)
+                            swingCard(swing, reviewSwings: starredSwings,
+                                      showsVantage: Self.mixesVantages(starredSwings))
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, 18)
+                    .padding(.bottom, LibraryGrid.sectionGap)
                 }
 
                 let swings = filteredSwings
@@ -466,9 +469,10 @@ struct LibraryView: View {
                     ForEach(SwingSession.group(swings)) { session in
                         sessionHeader(session)
 
-                        LazyVGrid(columns: columns, spacing: 12) {
+                        LazyVGrid(columns: columns, spacing: LibraryGrid.gutter) {
                             ForEach(session.swings) { swing in
-                                swingCard(swing, reviewSwings: swings)
+                                swingCard(swing, reviewSwings: swings,
+                                          showsVantage: Self.mixesVantages(session.swings))
                                     .accessibilityIdentifier("swing-card")
                                     .onGeometryChange(for: CGRect.self) { proxy in
                                         proxy.frame(in: .global)
@@ -480,12 +484,18 @@ struct LibraryView: View {
                                     }
                             }
                         }
-                        .padding(.horizontal)
-                        .padding(.bottom, 20)
+                        .padding(.bottom, LibraryGrid.sectionGap)
                     }
                 }
                 .padding(.bottom, isSelecting ? 60 : 0) // Space for selection bar
             }
+            // Pinch out for bigger tiles, in for more, as in Photos.
+            .simultaneousGesture(
+                MagnifyGesture(minimumScaleDelta: 0.05)
+                    .onEnded { value in pinched(value.magnification) }
+            )
+            .accessibilityAction(named: "Bigger thumbnails") { pinched(2) }
+            .accessibilityAction(named: "Smaller thumbnails") { pinched(0.5) }
             .gesture(
                 LibraryDragSelectGesture(
                     isEnabled: isSelecting,
@@ -521,54 +531,56 @@ struct LibraryView: View {
         let title = sessionTitle(session)
         let count = session.swings.count
 
-        // The title and the session's actions on one row, the time and
-        // count on a full-width line under it, so it never wraps.
-        return VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .center, spacing: 8) {
+        // One compact row: the day over its time and count, then the
+        // session's actions.
+        return HStack(alignment: .center, spacing: 8) {
+            VStack(alignment: .leading, spacing: 0) {
                 Text(title)
                     .font(.appTitle)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
-
-                Spacer(minLength: 4)
-
-                Button {
-                    withAnimation {
-                        if isWholeSessionSelected {
-                            selectedSwings.subtract(ids)
-                        } else {
-                            selectedSwings.formUnion(ids)
-                            isSelecting = true
-                        }
-                    }
-                } label: {
-                    // A secondary action beside Review, the primary one,
-                    // saying what it covers.
-                    Text(isWholeSessionSelected ? "Deselect all \(count)" : "Select all \(count)")
-                }
-                .buttonStyle(SecondaryCapsuleButtonStyle())
-                .accessibilityLabel("\(isWholeSessionSelected ? "Deselect" : "Select") \(title) session")
-
-                if session.swings.contains(where: SwingCoachingStore.canCoach) {
-                    Button {
-                        coachingSession = session
-                    } label: {
-                        Label("Review", systemImage: "figure.golf")
-                    }
-                    // The session's primary action: filled in the accent, the
-                    // same height as Select beside it.
-                    .buttonStyle(PrimaryCapsuleButtonStyle())
-                    .accessibilityLabel("Review coaching for \(title) session")
-                    .accessibilityIdentifier("session-coaching-button")
-                }
+                Text("\(sessionTimeRange(session)) · \(count) swing\(count == 1 ? "" : "s")")
+                    .font(.appCaption.monospacedDigit())
+                    .foregroundStyle(Color.helpText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
-            Text("\(sessionTimeRange(session)) · \(count) swing\(count == 1 ? "" : "s")")
-                .font(.appCaption.monospacedDigit())
-                .foregroundStyle(Color.helpText)
-                .lineLimit(1)
+            .layoutPriority(1)
+
+            Spacer(minLength: 4)
+
+            Button {
+                withAnimation {
+                    if isWholeSessionSelected {
+                        selectedSwings.subtract(ids)
+                    } else {
+                        selectedSwings.formUnion(ids)
+                        isSelecting = true
+                    }
+                }
+            } label: {
+                // A secondary action beside Review, the primary one; the
+                // count it covers is on the line beside it.
+                Text(isWholeSessionSelected ? "Deselect" : "Select")
+            }
+            .buttonStyle(SecondaryCapsuleButtonStyle())
+            .accessibilityLabel("\(isWholeSessionSelected ? "Deselect" : "Select") \(title) session")
+
+            if session.swings.contains(where: SwingCoachingStore.canCoach) {
+                Button {
+                    coachingSession = session
+                } label: {
+                    Label("Review", systemImage: "figure.golf")
+                }
+                // The session's primary action: filled in the accent, the
+                // same height as Select beside it.
+                .buttonStyle(PrimaryCapsuleButtonStyle())
+                .accessibilityLabel("Review coaching for \(title) session")
+                .accessibilityIdentifier("session-coaching-button")
+            }
         }
         .padding(.horizontal)
-        .padding(.bottom, 8)
+        .padding(.bottom, 4)
     }
 
     private func sessionTitle(_ session: SwingSession) -> String {
@@ -694,7 +706,29 @@ struct LibraryView: View {
         }
     }
 
-    private func swingCard(_ swing: SavedSwing, reviewSwings: [SavedSwing]? = nil) -> some View {
+    /// Whether a group's swings were filmed from more than one side, so
+    /// each tile needs its vantage tag.
+    private static func mixesVantages(_ swings: [SavedSwing]) -> Bool {
+        Set(swings.map(\.vantage)).count > 1
+    }
+
+    /// Steps the grid one size per pinch: apart for bigger tiles, together
+    /// for more of them.
+    private func pinched(_ magnification: CGFloat) {
+        let current = LibraryGrid.validColumns(gridColumns)
+        let next: Int
+        if magnification > 1.15 {
+            next = LibraryGrid.fewerColumns(than: current)
+        } else if magnification < 0.87 {
+            next = LibraryGrid.moreColumns(than: current)
+        } else {
+            return
+        }
+        guard next != current else { return }
+        withAnimation(.spring(duration: 0.35)) { gridColumns = next }
+    }
+
+    private func swingCard(_ swing: SavedSwing, reviewSwings: [SavedSwing]? = nil, showsVantage: Bool = false) -> some View {
         let isSelected = selectedSwings.contains(swing.id)
 
         return Group {
@@ -702,7 +736,7 @@ struct LibraryView: View {
                 Button {
                     toggleSelection(swing)
                 } label: {
-                    swingCardContent(swing, isSelected: isSelected)
+                    swingCardContent(swing, isSelected: isSelected, showsVantage: showsVantage)
                 }
                 .buttonStyle(.plain)
             } else {
@@ -712,11 +746,13 @@ struct LibraryView: View {
                         reviewSwings: reviewSwings ?? referenceSwings
                     )
                 } label: {
-                    swingCardContent(swing, isSelected: isSelected)
+                    swingCardContent(swing, isSelected: isSelected, showsVantage: showsVantage)
                 }
                 .buttonStyle(.plain)
             }
         }
+        .accessibilityLabel(tileLabel(swing))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .contextMenu {
             if !isSelecting {
                 Button {
@@ -739,104 +775,96 @@ struct LibraryView: View {
         }
     }
 
-    private func swingCardContent(_ swing: SavedSwing, isSelected: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Thumbnail
-            ZStack {
-                if let thumbnail = swing.thumbnail {
-                    // The picture fills the card's width without setting
-                    // it: a wide thumbnail must not widen its column.
-                    Color.clear
-                        .frame(maxWidth: .infinity)
-                        .frame(height: LibraryCard.thumbnailHeight)
-                        .overlay {
-                            Image(uiImage: thumbnail)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                        }
-                        .clipped()
-                        .contentShape(Rectangle())
-                } else {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: LibraryCard.thumbnailHeight)
-                        .overlay {
-                            ProgressView()
-                        }
-                }
-
-                // Selection checkmark (show in selection mode)
-                if isSelecting {
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Spacer()
-                            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 24))
-                                .foregroundColor(isSelected ? .appAccent : .white)
-                                .shadow(radius: 2)
-                        }
-                    }
-                    .padding(8)
-                }
-
-                // Vantage badge
-                VStack {
-                    HStack {
-                        Text(swing.vantage.shortName)
-                            .font(.appCaptionLabel)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.black.opacity(0.6))
-                            .cornerRadius(4)
-                        Spacer()
-                        HStack(spacing: 5) {
-                            if swing.isFavorite {
-                                Image(systemName: "star.fill")
-                                    .foregroundColor(.yellow)
-                            }
-                        }
-                        .font(.system(size: 18, weight: .semibold))
-                        .shadow(radius: 2)
-                    }
-                    Spacer()
-                }
-                .padding(6)
-            }
-            .clipShape(.rect(cornerRadius: LibraryCard.thumbnailRadius))
-            .overlay(
-                RoundedRectangle(cornerRadius: LibraryCard.thumbnailRadius)
-                    .stroke(isSelected ? Color.appAccent : Color.clear, lineWidth: 3)
-            )
-
-            // Info
-            if let title = swing.title {
-                Text(title)
-                    .font(.appCaptionLabel)
-                    .lineLimit(1)
-            }
-
-            HStack {
-                Text(formatDuration(swing.duration))
-                    .font(.appCaptionLabel.monospacedDigit())
-
-                Spacer()
-
-                if swing.isReference {
-                    Text("DTL reference")
-                        .font(.appCaption)
-                        .foregroundStyle(Color.helpText)
-                } else {
-                    Text(swing.createdAt.formatted(date: .omitted, time: .shortened))
-                        .font(.appCaption.monospacedDigit())
-                        .foregroundStyle(Color.helpText)
-                }
-            }
+    /// What VoiceOver (and the UI tests) read for a tile, since the tile
+    /// shows only the picture, the duration and the star.
+    private func tileLabel(_ swing: SavedSwing) -> String {
+        var parts: [String] = []
+        if let title = swing.title { parts.append(title) }
+        parts.append(swing.isReference ? "\(swing.vantage.shortName) reference" : swing.vantage.shortName)
+        if !swing.isReference {
+            parts.append(swing.createdAt.formatted(date: .omitted, time: .shortened))
         }
-        .padding(8)
-        .background(LibraryCard.fill, in: .rect(cornerRadius: LibraryCard.radius))
-        .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+        parts.append(formatDuration(swing.duration))
+        if swing.isFavorite { parts.append("Starred") }
+        return parts.joined(separator: ", ")
+    }
+
+    /// A square tile, as in Photos: the picture edge to edge, the duration
+    /// small in its bottom corner, the star for a starred swing, and the
+    /// vantage only where a group mixes them. A reference swing keeps its
+    /// name, since nothing else tells the references apart.
+    private func swingCardContent(_ swing: SavedSwing, isSelected: Bool, showsVantage: Bool) -> some View {
+        let compact = LibraryGrid.validColumns(gridColumns) >= LibraryGrid.columnChoices.last!
+        return Color(.secondarySystemFill)
+            .aspectRatio(1, contentMode: .fit)
+            .overlay {
+                if let thumbnail = swing.thumbnail {
+                    Image(uiImage: thumbnail)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    ProgressView()
+                }
+            }
+            .clipped()
+            .overlay(alignment: .bottom) {
+                HStack(alignment: .lastTextBaseline, spacing: 4) {
+                    if swing.isReference, let title = swing.title, !compact {
+                        Text(title)
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                    if !isSelecting {
+                        Text(formatDuration(swing.duration))
+                            .monospacedDigit()
+                    }
+                }
+                .font(FixedType.cellLabel)
+                .foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.5), radius: 1)
+                .padding(.horizontal, 5)
+                .padding(.bottom, 4)
+                .padding(.top, 12)
+                .background(LinearGradient(colors: [.clear, .black.opacity(0.45)], startPoint: .top, endPoint: .bottom))
+            }
+            .overlay(alignment: .topLeading) {
+                if showsVantage {
+                    Text(swing.vantage.shortName)
+                        .font(FixedType.cellLabel)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .background(.black.opacity(0.6), in: .rect(cornerRadius: 3))
+                        .padding(4)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if swing.isFavorite {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: compact ? 11 : 14, weight: .semibold))
+                        .foregroundStyle(.yellow)
+                        .shadow(color: .black.opacity(0.5), radius: 1.5)
+                        .padding(compact ? 3 : 5)
+                }
+            }
+            .overlay {
+                if isSelected {
+                    Rectangle()
+                        .fill(.white.opacity(0.2))
+                        .overlay(Rectangle().strokeBorder(Color.appAccent, lineWidth: 3))
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                if isSelecting {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: compact ? 16 : 22))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(isSelected ? Color.onAccent : .white, isSelected ? Color.appAccent : .clear)
+                        .shadow(color: .black.opacity(0.4), radius: 2)
+                        .padding(compact ? 3 : 5)
+                }
+            }
+            .contentShape(Rectangle())
     }
 
     // MARK: - Toolbar Items

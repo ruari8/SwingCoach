@@ -13,6 +13,7 @@ final class SwingCoachingUITests: XCTestCase {
         let timeline = try XCTUnwrap(app.otherElements.matching(identifier: "playback-timeline")
             .allElementsBoundByIndex.first { $0.isHittable })
         let title = app.staticTexts["coaching-step-title"]
+        let place = app.staticTexts["coaching-step-place"]
         let count = app.staticTexts["coaching-step-count"]
         let transitionCaption = app.descendants(matching: .any)["coaching-caption-transition"]
         let hipsCaption = app.descendants(matching: .any)["coaching-caption-hipDepthImpact"]
@@ -20,12 +21,15 @@ final class SwingCoachingUITests: XCTestCase {
         // No tap: paused on the pointer's frame with its drawing up.
         XCTAssertTrue(title.waitForExistence(timeout: 5))
         XCTAssertEqual(title.label, "Shaft steepened coming down")
-        XCTAssertEqual(count.label, "Halfway down, finding 1 of 2")
+        XCTAssertEqual(place.label, "Halfway down")
+        XCTAssertEqual(count.label, "Finding 1 of 2")
         XCTAssertEqual(Double(timeline.value as? String ?? "") ?? 0, 1.85, accuracy: 0.01)
         XCTAssertTrue(app.buttons["swing-position-P5"].isSelected)
         XCTAssertTrue(app.buttons["swing-position-P5"].label.contains("out of zone, up to 5 steps out, the coach starts here"))
         XCTAssertTrue(transitionCaption.waitForExistence(timeout: 2), "The drawing carries its number")
-        XCTAssertTrue(app.descendants(matching: .any)["coaching-legend"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["coaching-step-level"].label.hasSuffix("steps out"))
+        let legend = app.descendants(matching: .any)["coaching-legend"]
+        XCTAssertFalse(legend.exists, "The drawing's key is in All checks, not on the card")
         XCTAssertFalse(app.buttons["Play"].exists, "On a step the card carries Play")
         attach(app, "coaching-step-1")
 
@@ -33,7 +37,8 @@ final class SwingCoachingUITests: XCTestCase {
         app.buttons["coaching-next"].tap()
         XCTAssertTrue(hipsCaption.waitForExistence(timeout: 3))
         XCTAssertEqual(title.label, "Hips moved toward the ball")
-        XCTAssertEqual(count.label, "At impact, finding 2 of 2")
+        XCTAssertEqual(place.label, "At impact")
+        XCTAssertEqual(count.label, "Finding 2 of 2")
         XCTAssertEqual(Double(timeline.value as? String ?? "") ?? 0, 1.95, accuracy: 0.01)
         XCTAssertFalse(transitionCaption.exists, "A drawing shows only on its own frame")
         XCTAssertFalse(app.buttons["coaching-next"].exists, "The last step offers Play instead")
@@ -57,6 +62,7 @@ final class SwingCoachingUITests: XCTestCase {
         let summary = app.descendants(matching: .any)["coaching-summary"]
         XCTAssertTrue(summary.waitForExistence(timeout: 3))
         XCTAssertTrue(summary.label.contains("1 of 3 judged checks in zone."), summary.label)
+        XCTAssertTrue(legend.exists, "All checks keys the top finding's drawing")
         let head = app.buttons["coaching-metric-headHeightTop"]
         XCTAssertTrue(head.exists)
         XCTAssertTrue(head.label.contains("Good players: −6% to 0%"), head.label)
@@ -204,8 +210,12 @@ final class SwingCoachingUITests: XCTestCase {
         chip.tap()
         app.buttons["Recap last 5"].tap()
         XCTAssertTrue(recap.waitForExistence(timeout: 3))
-        XCTAssertTrue(app.staticTexts["Last 5 swings"].exists)
+        // The card is a glance: the finding and its typical level as a
+        // badge; the count is in the comparison below.
         XCTAssertTrue(app.staticTexts["Shaft steepened coming down"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["coach-recap-level"].label.hasPrefix("Typically "),
+                      app.descendants(matching: .any)["coach-recap-level"].label)
+        XCTAssertFalse(app.descendants(matching: .any)["coaching-camera-caveat"].exists, "The caveat is in the comparison")
         XCTAssertTrue(app.descendants(matching: .any)["coach-recap-picture"].exists, "The recap pictures the theme")
         attach(app, "capture-recap")
 

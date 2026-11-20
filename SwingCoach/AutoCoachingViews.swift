@@ -190,11 +190,11 @@ extension CoachingThemeShowing {
     }
 }
 
-/// What the last few swings had in common, over the camera: the finding,
-/// its typical level, the caveat for a club reading, a picture of the
-/// swing that shows it most, and Compare them. Each swing's level and the
-/// count are in the comparison, so the card covers as little of the
-/// viewfinder as it can.
+/// What the last few swings had in common, over the camera, read at a
+/// glance from the tripod: a picture of the swing that shows it most, the
+/// finding with its typical level as a badge, and Compare. The count, each
+/// swing's level, the key and the camera caveat are in the comparison, so
+/// the card covers as little of the viewfinder as it can.
 struct CoachingRecapCard: View {
     struct Example {
         let swing: SavedSwing
@@ -214,75 +214,82 @@ struct CoachingRecapCard: View {
     let onClose: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(numbers.count == 1 ? "Last swing" : "Last \(numbers.count) swings")
-                    .font(.appCaptionLabel)
-                    .foregroundStyle(PlayerChrome.secondaryText)
-                Spacer()
-                Button(action: onClose) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .bold))
-                        .frame(width: 28, height: 28)
-                        .background(Circle().fill(.white.opacity(0.14)))
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
+        HStack(alignment: .top, spacing: 12) {
+            if recap.theme != nil, let example {
+                examplePicture(example)
+            }
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 10) {
+                    levelBadge
+                        .padding(.top, 1)
+                    Text(title)
+                        .font(.appTitle)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    closeButton
+                }
+                Button(action: onOpen) {
+                    HStack(spacing: 6) {
+                        Text(recap.theme == nil ? "Look at them" : "Compare")
+                            .font(.appLabel)
+                        Image(systemName: "chevron.right").font(.appCaptionLabel)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(.white.opacity(0.14)))
                 }
                 .buttonStyle(.plain)
-                .padding(.vertical, -8)
-                .padding(.trailing, -8)
-                .accessibilityLabel("Close recap")
-                .accessibilityIdentifier("coach-recap-close")
+                .accessibilityLabel(recap.theme == nil ? "Look at them" : "Compare the last \(numbers.count) swings")
+                .accessibilityIdentifier("coach-recap-open")
             }
-            if let theme = recap.theme {
-                VStack(alignment: .trailing, spacing: 6) {
-                    HStack(alignment: .top, spacing: 12) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(theme.text)
-                                .font(.appTitle)
-                                .fixedSize(horizontal: false, vertical: true)
-                            // The typical level, labelled, so the number never
-                            // reads as a count of swings.
-                            CoachingLevelPill(level: theme.medianLevel, lead: "Typically")
-                            if CoachingMetricDefinition.definition(theme.metric).dependsOnCamera {
-                                CoachingCameraCaveat(onPlayer: true)
-                            }
-                        }
-                        Spacer(minLength: 0)
-                        if let example {
-                            examplePicture(example)
-                        }
-                    }
-                    if let example {
-                        exampleCaption(example)
-                    }
-                }
-            } else {
-                Text(recap.judged == 0 ? "None of these could be judged" : "Nothing kept repeating")
-                    .font(.appTitle)
-                Text(recap.judged == 0
-                     ? "Chips, a moved camera or unclear positions are measured but not judged."
-                     : "\(recap.good) of \(recap.judged) needed no pointer. Carry on.")
-                    .font(.appCaption)
-                    .foregroundStyle(PlayerChrome.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Button(action: onOpen) {
-                HStack(spacing: 6) {
-                    Text(recap.theme == nil ? "Look at them" : "Compare them")
-                        .font(.appLabel)
-                    Image(systemName: "chevron.right").font(.appCaptionLabel)
-                }
-                .frame(maxWidth: .infinity, minHeight: 44)
-                .background(RoundedRectangle(cornerRadius: 12).fill(.white.opacity(0.14)))
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("coach-recap-open")
         }
         .foregroundStyle(.white)
         .solidPanelBackground()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("coach-recap")
+    }
+
+    private var title: String {
+        if let theme = recap.theme { return theme.text }
+        return recap.judged == 0 ? "None of these could be judged" : "Nothing kept repeating"
+    }
+
+    /// The theme's typical level as the bare badge, in its level's colour:
+    /// a number out of zone, a tick when nothing repeated, a dash when
+    /// nothing could be judged. VoiceOver says the words.
+    private var levelBadge: some View {
+        let badge: CoachingLevelBadge
+        let words: String
+        if let theme = recap.theme {
+            badge = CoachingLevelBadge(level: theme.medianLevel, size: CoachingLevelBadge.markSize)
+            words = "Typically \(CoachingWords.steps(theme.medianLevel).lowercased())"
+        } else if recap.judged == 0 {
+            badge = CoachingLevelBadge(level: 0, neutral: true, size: CoachingLevelBadge.markSize)
+            words = "Not judged"
+        } else {
+            badge = CoachingLevelBadge(level: 0, size: CoachingLevelBadge.markSize)
+            words = "\(recap.good) of \(recap.judged) needed no pointer"
+        }
+        return badge
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(words)
+            .accessibilityIdentifier("coach-recap-level")
+    }
+
+    private var closeButton: some View {
+        Button(action: onClose) {
+            Image(systemName: "xmark")
+                .font(.system(size: 11, weight: .bold))
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(.white.opacity(0.14)))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        // 44 points to tap without making the title row taller.
+        .padding(.vertical, -8)
+        .padding(.trailing, -8)
+        .accessibilityLabel("Close recap")
+        .accessibilityIdentifier("coach-recap-close")
     }
 
     /// The swing that shows it most: a short picture, cut toward the
@@ -295,21 +302,6 @@ struct CoachingRecapCard: View {
             .accessibilityLabel("Picture of swing \(example.number)"
                 + (example.showing.map { ", \($0.label)" } ?? "") + ", which shows it most")
             .accessibilityIdentifier("coach-recap-picture")
-    }
-
-    /// The picture's caption on one line under it, ending at its edge:
-    /// the swing's badge, as its tile in the comparison carries it, then
-    /// "Shows it most · Swing 5".
-    private func exampleCaption(_ example: Example) -> some View {
-        HStack(spacing: 5) {
-            example.showing?.badge(size: CoachingMarkKey.badgeSize)
-            Text("\(Text("Shows it most").font(.appCaptionLabel)) · Swing \(example.number)")
-                .font(.appCaption.monospacedDigit())
-                .foregroundStyle(PlayerChrome.secondaryText)
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-        }
-        .accessibilityHidden(true)
     }
 }
 
@@ -440,6 +432,10 @@ struct CoachingCompareView: View {
                         CoachingLegend(results: Array(swings.lazy.compactMap { store.report(for: $0.swing)?.metric(theme.metric) }.prefix(1)),
                                        subjectColours: subjectColours)
                             .padding(.top, 4)
+                        // Kept off the recap card over the camera; said here.
+                        if CoachingMetricDefinition.definition(theme.metric).dependsOnCamera {
+                            CoachingCameraCaveat()
+                        }
                     }
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 14) {
                         ForEach(swings, id: \.swing.id) { entry in

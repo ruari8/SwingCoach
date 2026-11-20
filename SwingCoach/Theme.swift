@@ -3,7 +3,7 @@
 //  SwingCoach
 //
 //  The shared look: the one accent colour, the player's chrome over video,
-//  the style every sheet over the player uses, library card sizes, the
+//  the style every sheet over the player uses, the Library grid, the
 //  capsule buttons, the position and low-confidence tags, and a wrapping
 //  layout.
 //  The red / amber / green level colours are `Color.coachingLevel` and
@@ -181,24 +181,13 @@ enum PlayerChrome {
     static let panel = Color(white: 0.07).opacity(0.9)
     static let panelEdge = Color.white.opacity(0.12)
     static let panelRadius: CGFloat = 20
-    /// An opaque dark surface for a state that must read on any camera
-    /// picture: Auto's on/off panel on Capture.
+    /// An opaque dark surface for a card that must read on any camera
+    /// picture: the recap and the last swing's verdict on Capture.
     static let solidPanel = Color(white: 0.1)
-    /// A state on `solidPanel` read from a tripod a few metres away: title
-    /// size (28 points) in bold, a 24-point indicator, on a rounded panel
-    /// with no coloured edge, so it reads as a status, never as a button.
-    static let stateFont = Font.title.weight(.bold)
-    /// The line under a state that says what to do ("Tap Manual to
-    /// stop"): title 3 in semibold, near-white, so it reads from the
-    /// tripod with the state above it.
-    static let stateHintFont = Font.title3.weight(.semibold)
-    static let stateHintColour = Color.white.opacity(0.9)
-    static let stateIndicatorSize: CGFloat = 24
-    static let stateMinHeight: CGFloat = 64
     static let stateRadius: CGFloat = 16
-    /// Inside every solid panel over the camera (Auto's state, the recap,
-    /// the last swing's verdict): one inset, so they read as one family.
-    static let stateInsets = EdgeInsets(top: 12, leading: 18, bottom: 12, trailing: 18)
+    /// Inside every solid panel over the camera (the recap, the last
+    /// swing's verdict): one inset, so they read as one family.
+    static let stateInsets = EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14)
     /// Secondary text on the player's dark panels (captions, caveats):
     /// near-white, 11:1 or more on `panel`, so a caveat beside a level's
     /// colour still reads.
@@ -268,32 +257,54 @@ extension View {
     }
 }
 
-// MARK: - Library cards
+// MARK: - Library grid
 
-enum LibraryCard {
-    /// The swing card and its thumbnail.
-    static let radius: CGFloat = 12
-    static let thumbnailRadius: CGFloat = 8
-    /// A card's surface in light and dark, so captions never float on the
-    /// page.
-    static let fill = Color(.secondarySystemGroupedBackground)
-    /// The thumbnail's height on the card, and its widest (a two-column
-    /// grid on the largest iPhone). Thumbnails are made at this size times
-    /// the screen scale.
-    static let thumbnailHeight: CGFloat = 100
-    static let thumbnailWidth: CGFloat = 200
-    /// Where a portrait clip's thumbnail is cut, from 0 (its top) to 1 (its
-    /// bottom): above the middle, so a down-the-line golfer's head shows.
+/// The Library's grid, as in Photos: square tiles with hairline gutters,
+/// pinched between a few column counts.
+enum LibraryGrid {
+    /// Between tiles, across and down.
+    static let gutter: CGFloat = 2
+    /// Under each group's tiles, before the next group's header.
+    static let sectionGap: CGFloat = 14
+    /// The column counts a pinch steps between, fewest first.
+    static let columnChoices = [2, 3, 5]
+    static let defaultColumns = 3
+    /// The remembered column count, in user defaults.
+    static let columnsKey = "library.gridColumns"
+    /// The biggest a tile gets: two columns on the widest iPhone (440
+    /// points). Thumbnails are made at this size times the screen scale,
+    /// so they stay sharp at every column count.
+    static let largestTile: CGFloat = 220
+    /// Where a portrait clip's square thumbnail is cut, from 0 (its top)
+    /// to 1 (its bottom): above the middle, so a down-the-line golfer's
+    /// head and body show rather than the feet and the mat.
     static let thumbnailFocus: CGFloat = 0.38
+
+    static func validColumns(_ columns: Int) -> Int {
+        columnChoices.contains(columns) ? columns : defaultColumns
+    }
+
+    /// One step bigger (fewer columns), or the same at the biggest.
+    static func fewerColumns(than columns: Int) -> Int {
+        columnChoices.last { $0 < columns } ?? columnChoices.first!
+    }
+
+    /// One step smaller (more columns), or the same at the smallest.
+    static func moreColumns(than columns: Int) -> Int {
+        columnChoices.first { $0 > columns } ?? columnChoices.last!
+    }
 }
 
 // MARK: - Capture controls
 
-/// Capture's top row (the Auto / Manual switch): every control is at
-/// least 44 points tall, since it is tapped from a step away while the
-/// phone sits on a tripod.
+/// Capture's controls (the Auto / Manual switch, the saved count): every
+/// control is at least 44 points tall, since it is tapped from a step
+/// away while the phone sits on a tripod.
 enum CaptureControl {
     static let height: CGFloat = 44
+    /// The dot beside the switch while Auto is chosen: small and quiet,
+    /// the switch itself carries the mode.
+    static let indicatorSize: CGFloat = 8
     /// The Auto / Manual switch's width: two segments wide enough for
     /// "Manual" at the larger size.
     static let modeWidth: CGFloat = 184
