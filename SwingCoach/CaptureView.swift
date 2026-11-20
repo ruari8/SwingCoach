@@ -1825,7 +1825,7 @@ struct CaptureView: View {
                 VStack(spacing: 16) {
                     ProgressView().scaleEffect(1.5).tint(.white)
                     Text("Finalizing recording...")
-                        .font(.body.weight(.medium))
+                        .font(.appLabel)
                         .foregroundStyle(.white)
                 }
             } else if currentRecordingURL == nil {
@@ -1846,14 +1846,14 @@ struct CaptureView: View {
             if let status = camera.footageStatus {
                 HStack(spacing: 8) {
                     Text(status.summary)
-                        .font(.caption2.monospacedDigit())
+                        .font(.appCaption.monospacedDigit())
                         .foregroundStyle(.yellow)
                         .accessibilityIdentifier("footage-camera-status")
                     if status.isFinished, status.error == nil {
                         Button("Replay", systemImage: "arrow.counterclockwise") {
                             camera.replayFootage()
                         }
-                        .font(.caption.weight(.semibold))
+                        .font(.appCaptionLabel)
                         .foregroundStyle(.yellow)
                         .accessibilityIdentifier("footage-camera-replay")
                     }
@@ -1964,7 +1964,7 @@ struct CaptureView: View {
                     HStack(spacing: 7) {
                         Circle().fill(.red).frame(width: 7, height: 7)
                         Text(formatDuration(recordingDuration))
-                            .font(.subheadline.weight(.semibold))
+                            .font(.appLabel)
                             .monospacedDigit()
                             .accessibilityIdentifier("capture-recording-timer")
                     }
@@ -1999,7 +1999,8 @@ struct CaptureView: View {
                 // Auto's state leads, full width, readable from the tripod;
                 // the saved count is a quieter control on the line under it.
                 VStack(spacing: 8) {
-                    AutoStateCapsule(title: autoStatusTitle, indicator: autoStatusIndicator)
+                    AutoStateCapsule(title: autoStatusTitle, indicator: autoStatusIndicator,
+                                     stopHint: autoStopHint)
                     HStack(alignment: .center, spacing: 16) {
                         CaptureStatusLabel(
                             title: autoStatusTitle,
@@ -2048,9 +2049,9 @@ struct CaptureView: View {
         } label: {
             HStack(spacing: 5) {
                 Text("\(camera.captureMode.shortName) fps")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.appLabel)
                 Image(systemName: "chevron.down")
-                    .font(.caption2.weight(.semibold))
+                    .font(.appCaptionLabel)
             }
             .frame(minHeight: 44)
         }
@@ -2078,10 +2079,10 @@ struct CaptureView: View {
                     .strokeBorder(.white.opacity(0.5), lineWidth: 0.5))
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("\(count) saved").font(.subheadline.weight(.medium))
-                    Text("This session").font(.caption2).foregroundStyle(.white.opacity(0.7))
+                    Text("\(count) saved").font(.appLabel.monospacedDigit())
+                    Text("This session").font(.appCaption).foregroundStyle(.white.opacity(0.7))
                 }
-                Image(systemName: "chevron.right").font(.caption2.weight(.semibold))
+                Image(systemName: "chevron.right").font(.appCaptionLabel)
             }
             .frame(minHeight: 44)
         }
@@ -2096,6 +2097,14 @@ struct CaptureView: View {
         if camera.autoCaptureStatus.lastErrorMessage != nil { return "Auto needs attention" }
         if camera.liveSwingDetection.status == .unavailable { return "Detection unavailable" }
         return camera.autoCaptureStatus.isActive ? "Auto is on" : "Auto is off"
+    }
+
+    /// How to stop Auto, said inside its capsule while it is on. The
+    /// capsule itself isn't a control: the Manual segment above stops Auto.
+    private var autoStopHint: String? {
+        guard camera.autoCaptureStatus.isActive, camera.autoCaptureStatus.lastErrorMessage == nil,
+              camera.liveSwingDetection.status != .unavailable else { return nil }
+        return "Switch to Manual to stop"
     }
 
     private var autoStatusDetail: String {
@@ -2299,10 +2308,12 @@ struct FocusIndicatorView: View {
 
 /// Auto's on/off, read from the tripod two or three metres away: the
 /// state at title size with a large indicator, on a solid capsule the full
-/// width of the controls, edged in the indicator's colour.
+/// width of the controls, edged in the indicator's colour. While Auto is
+/// on, a line under the state says how to stop it.
 private struct AutoStateCapsule: View {
     let title: String
     let indicator: Color
+    var stopHint: String? = nil
 
     var body: some View {
         HStack(spacing: 14) {
@@ -2310,11 +2321,21 @@ private struct AutoStateCapsule: View {
                 .frame(width: PlayerChrome.stateIndicatorSize, height: PlayerChrome.stateIndicatorSize)
                 .overlay(Circle().strokeBorder(.black.opacity(0.35), lineWidth: 1))
                 .accessibilityHidden(true)
-            Text(title)
-                .font(PlayerChrome.stateFont)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .accessibilityIdentifier("capture-status-title")
+            VStack(alignment: .leading, spacing: 0) {
+                Text(title)
+                    .font(PlayerChrome.stateFont)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .accessibilityIdentifier("capture-status-title")
+                if let stopHint {
+                    Text(stopHint)
+                        .font(.appCaptionLabel)
+                        .foregroundStyle(.white.opacity(0.78))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .accessibilityIdentifier("capture-stop-hint")
+                }
+            }
         }
         .frame(maxWidth: .infinity, minHeight: PlayerChrome.stateMinHeight)
         .padding(.horizontal, 20)
@@ -2341,12 +2362,12 @@ private struct CaptureStatusLabel: View {
                             .accessibilityHidden(true)
                     }
                     Text(title)
-                        .font(.subheadline.weight(.medium))
+                        .font(.appLabel)
                         .accessibilityIdentifier("capture-status-title")
                 }
             }
             Text(detail)
-                .font(showsTitle ? .caption2 : .footnote)
+                .font(.appCaption)
                 .foregroundStyle(.white.opacity(showsTitle ? 0.75 : 0.85))
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("capture-status-detail")
@@ -2356,7 +2377,7 @@ private struct CaptureStatusLabel: View {
                 Text(snapshot.processedFrameCount > 0
                      ? String(format: "%.1f fps / %.0f ms", snapshot.effectiveSampleFPS, snapshot.averageProcessingTimeMS)
                      : "Waiting for model…")
-                    .font(.caption2)
+                    .font(.appCaption)
                     .monospacedDigit()
                     .foregroundStyle(.white.opacity(0.65))
                     .accessibilityIdentifier("capture-model-stats")

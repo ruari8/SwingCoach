@@ -250,7 +250,7 @@ struct SwingDetailView: View {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(.yellow)
                         Text(playbackError)
-                            .font(.caption)
+                            .font(.appCaption)
                             .foregroundColor(.white.opacity(0.8))
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
@@ -260,7 +260,7 @@ struct SwingDetailView: View {
                         ProgressView()
                             .tint(.white)
                         Text(loadingSwingIDs.contains(swing.id) ? "Loading swing..." : "Preparing playback...")
-                            .font(.caption)
+                            .font(.appCaption)
                             .foregroundColor(.white.opacity(0.75))
                     }
                 }
@@ -362,7 +362,7 @@ struct SwingInfoView: View {
     private var metadataContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Details")
-                .font(.subheadline.weight(.semibold))
+                .font(.appLabel)
 
             VStack(spacing: 10) {
                 metadataRow("View", currentSwing.vantage.displayName)
@@ -378,7 +378,7 @@ struct SwingInfoView: View {
     private var swingPositionsSection: some View {
         if SwingPositionProcessor.canFindPositions(for: currentSwing) {
             Text("Swing positions")
-                .font(.subheadline.weight(.semibold))
+                .font(.appLabel)
                 .padding(.top, 8)
 
             if let positions = currentSwing.swingPositions?.positions {
@@ -390,17 +390,17 @@ struct SwingInfoView: View {
                 }
                 .accessibilityIdentifier("swing-positions")
                 Text("Times are on the clip's slow-motion timeline. A ? and Low mark positions the model was unsure of.")
-                    .font(.caption)
+                    .font(.appCaption)
                     .foregroundStyle(Color.helpText)
             } else if positionProcessor.failed.contains(currentSwing.id) {
                 Text("Swing positions could not be found for this clip.")
-                    .font(.caption)
+                    .font(.appCaption)
                     .foregroundStyle(Color.helpText)
             } else {
                 HStack(spacing: 8) {
                     ProgressView()
                     Text("Finding swing positions…")
-                        .font(.caption)
+                        .font(.appCaption)
                         .foregroundStyle(Color.helpText)
                 }
             }
@@ -416,27 +416,29 @@ struct SwingInfoView: View {
             Text("Confidence")
                 .frame(width: Self.confidenceWidth, alignment: .trailing)
         }
-        .font(.caption.weight(.semibold))
+        .font(.appCaptionLabel)
         .foregroundStyle(Color.helpText)
         .accessibilityHidden(true)
     }
 
-    private static let confidenceWidth: CGFloat = 84
+    private static let confidenceWidth: CGFloat = 96
+    /// Time and confidence: the body size in tabular figures.
+    private static let numberFont = Font.appBody.monospacedDigit()
 
     private func swingPositionRow(_ position: SwingPosition) -> some View {
         let low = position.isLowConfidence
         return HStack(alignment: .firstTextBaseline) {
             // Below 0.5 the model found no clear peak for this position.
             Text(low ? "\(position.name) (\(position.label)?)" : position.title)
-                .font(low ? .subheadline.weight(.semibold) : .subheadline)
+                .font(low ? .appLabel : .appBody)
             Spacer(minLength: 12)
             Text(String(format: "%.2fs", position.clipTime))
-                .font(.subheadline.weight(.medium).monospacedDigit())
+                .font(Self.numberFont)
+            // The same numbers as Time; the Low tag is the emphasis.
             HStack(spacing: 4) {
                 if low { LowConfidenceTag() }
                 Text("\(Int((position.confidence * 100).rounded()))%")
-                    .font(.caption.monospacedDigit().weight(low ? .semibold : .regular))
-                    .foregroundStyle(low ? LowConfidenceTag.colour : Color.helpText)
+                    .font(Self.numberFont)
             }
             .frame(width: Self.confidenceWidth, alignment: .trailing)
         }
@@ -449,13 +451,13 @@ struct SwingInfoView: View {
     private func metadataRow(_ title: String, _ value: String) -> some View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
-                .font(.subheadline)
+                .font(.appBody)
                 .foregroundStyle(Color.helpText)
 
             Spacer(minLength: 12)
 
             Text(value)
-                .font(.subheadline.weight(.medium))
+                .font(.appBody.monospacedDigit())
                 .multilineTextAlignment(.trailing)
         }
     }

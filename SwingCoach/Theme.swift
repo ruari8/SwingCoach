@@ -32,6 +32,47 @@ extension Color {
     })
 }
 
+// MARK: - Type ramp
+
+/// The app's one type ramp: four sizes, each a Dynamic Type text style so
+/// large text keeps working. A screen uses these and nothing else, apart
+/// from the fixed sizes in `FixedType`. Bold is for headings (display and
+/// title), semibold for labels (a row's name, a button, a caption that
+/// names something); numbers in rows and badges add `.monospacedDigit()`.
+extension Font {
+    /// The one big number or headline on a screen ("7 of 11"): large
+    /// title, bold.
+    static let appDisplay = Font.largeTitle.weight(.bold)
+    /// A card's or a group's title, a finding: title 3, bold.
+    static let appTitle = Font.title3.weight(.bold)
+    /// Sentences, rows and values: subheadline.
+    static let appBody = Font.subheadline
+    /// A row's name, a button's label: subheadline, semibold.
+    static let appLabel = Font.subheadline.weight(.semibold)
+    /// Help, footnotes, keys and captions: caption.
+    static let appCaption = Font.caption
+    /// A caption that names something (a column head, "Start here", a
+    /// tag): caption, semibold.
+    static let appCaptionLabel = Font.caption.weight(.semibold)
+}
+
+/// Fixed point sizes for chrome inside fixed-size cells, which must not
+/// grow with Dynamic Type: the tool rail, the position strip, readouts
+/// over the video, Trim's timeline and labels drawn on a frame. Level
+/// badges size their glyphs to the badge. Everything else uses the ramp.
+enum FixedType {
+    /// The tool rail's captions and the timeline's ticks.
+    static let railCaption = Font.system(size: 10, weight: .semibold)
+    /// A label inside a fixed cell: the strip's "P3", "¼ speed", Trim's
+    /// detector line.
+    static let cellLabel = Font.system(size: 11, weight: .semibold)
+    /// A tag or readout over the video: the scrub badge, the time beside
+    /// the transport, Trim's timecodes, a label drawn on a frame.
+    static let readout = Font.system(size: 12, weight: .semibold)
+    /// The rail's names shown beside it, and the drawing tool's buttons.
+    static let railLabel = Font.system(size: 14, weight: .semibold)
+}
+
 // MARK: - Help text
 
 extension Color {
@@ -187,6 +228,27 @@ enum CoachingPreview {
     static let compareAspect: CGFloat = 4.0 / 5.0
 }
 
+// MARK: - Secondary buttons
+
+/// A secondary action beside a primary one ("Select session" beside
+/// Review): a neutral filled capsule with a hairline edge, so it reads as
+/// a button, never as grey metadata, without competing with the primary
+/// `.borderedProminent` one. 44 points to tap.
+struct SecondaryCapsuleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.appLabel)
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 12)
+            .frame(minHeight: 30)
+            .background(Capsule().fill(Color(.tertiarySystemFill)))
+            .overlay(Capsule().strokeBorder(Color(.separator), lineWidth: 0.5))
+            .opacity(configuration.isPressed ? 0.55 : 1)
+            .padding(.vertical, 7)
+            .contentShape(Rectangle())
+    }
+}
+
 // MARK: - Position tags
 
 /// A swing position named in a list or a heading, e.g. "P5": a neutral
@@ -196,7 +258,7 @@ struct PositionTag: View {
 
     var body: some View {
         Text("P\(position)")
-            .font(.caption.weight(.bold).monospacedDigit())
+            .font(.appCaptionLabel.monospacedDigit())
             .foregroundStyle(Color.helpText)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
@@ -215,7 +277,7 @@ struct LowConfidenceTag: View {
 
     var body: some View {
         Text("Low")
-            .font(.caption2.weight(.heavy))
+            .font(.appCaption.weight(.heavy))
             .foregroundStyle(Self.colour)
             .padding(.horizontal, 6)
             .padding(.vertical, 1)

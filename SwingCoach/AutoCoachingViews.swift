@@ -93,9 +93,9 @@ struct AutoCoachingPanel: View {
         } label: {
             HStack(spacing: 6) {
                 Text("Coach: \(cadence.title.lowercased())")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.appLabel)
                 Image(systemName: "chevron.down")
-                    .font(.caption2.weight(.semibold))
+                    .font(.appCaptionLabel)
             }
             .padding(.horizontal, 14)
             .frame(minHeight: 36)
@@ -117,16 +117,16 @@ struct AutoCoachingPanel: View {
                 CoachingLevelBadge(level: verdictLevel(verdict), neutral: isNotJudged(verdict), size: 30)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Swing \(number)")
-                        .font(.subheadline.weight(.semibold))
+                        .font(.appLabel)
                         .foregroundStyle(.white.opacity(0.82))
                     Text(verdict.headline)
-                        .font(.title3.weight(.bold))
+                        .font(.appTitle)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
                 Text("Look")
-                    .font(.body.weight(.bold))
+                    .font(.appLabel)
                     .foregroundStyle(.black)
                     .padding(.horizontal, 16)
                     .frame(minHeight: 44)
@@ -225,7 +225,7 @@ struct CoachingRecapCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text(numbers.count == 1 ? "Last swing" : "Last \(numbers.count) swings")
-                    .font(.footnote.weight(.semibold))
+                    .font(.appCaptionLabel)
                     .foregroundStyle(.white.opacity(0.7))
                 Spacer()
                 Button(action: onClose) {
@@ -241,19 +241,19 @@ struct CoachingRecapCard: View {
             if let theme = recap.theme {
                 HStack(alignment: .top, spacing: 12) {
                     VStack(alignment: .leading, spacing: 6) {
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            CoachingLevelBadge(level: theme.medianLevel, size: 22)
-                            Text(theme.text)
-                                .font(.title3.weight(.bold))
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
+                        Text(theme.text)
+                            .font(.appTitle)
+                            .fixedSize(horizontal: false, vertical: true)
+                        // The typical level, labelled, so the number never
+                        // reads as a count of swings.
+                        CoachingLevelPill(level: theme.medianLevel, note: "typical")
                         Text(CoachingWords.themeShare(theme))
-                            .font(.footnote)
+                            .font(.appCaption)
                             .foregroundStyle(.white.opacity(0.78))
                             .fixedSize(horizontal: false, vertical: true)
                         if CoachingMetricDefinition.definition(theme.metric).dependsOnCamera {
                             Text("A club reading: it depends on where the camera stands.")
-                                .font(.caption)
+                                .font(.appCaption)
                                 .foregroundStyle(.white.opacity(0.75))
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -269,13 +269,22 @@ struct CoachingRecapCard: View {
                                 if let showing = example.showing {
                                     RecapBar(showing: showing).frame(width: 12)
                                 }
-                                Text("Swing \(example.number)")
-                                    .font(.caption2.weight(.semibold))
+                                Text("Swing \(example.number)" + (example.showing == nil ? "" : " ·"))
+                                    .font(.appCaptionLabel.monospacedDigit())
                                     .foregroundStyle(.white.opacity(0.78))
+                            }
+                            // How far out it is, as its slot says, on a
+                            // second line so the picture stays narrow.
+                            if let showing = example.showing {
+                                Text(showing.label)
+                                    .font(.appCaption.monospacedDigit())
+                                    .foregroundStyle(.white.opacity(0.78))
+                                    .fixedSize()
                             }
                         }
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("Picture of swing \(example.number), which shows it most")
+                        .accessibilityLabel("Picture of swing \(example.number)"
+                            + (example.showing.map { ", \($0.label)" } ?? "") + ", which shows it most")
                         .accessibilityIdentifier("coach-recap-picture")
                     }
                 }
@@ -283,19 +292,19 @@ struct CoachingRecapCard: View {
                 barLegend
             } else {
                 Text(recap.judged == 0 ? "None of these could be judged" : "Nothing kept repeating")
-                    .font(.title3.weight(.bold))
+                    .font(.appTitle)
                 Text(recap.judged == 0
                      ? "Chips, a moved camera or unclear positions are measured but not judged."
                      : "\(recap.good) of \(recap.judged) needed no pointer. Carry on.")
-                    .font(.footnote)
+                    .font(.appCaption)
                     .foregroundStyle(.white.opacity(0.7))
                     .fixedSize(horizontal: false, vertical: true)
             }
             Button(action: onOpen) {
                 HStack(spacing: 6) {
                     Text(recap.theme == nil ? "Look at them" : "Compare them")
-                        .font(.subheadline.weight(.semibold))
-                    Image(systemName: "chevron.right").font(.caption.weight(.semibold))
+                        .font(.appLabel)
+                    Image(systemName: "chevron.right").font(.appCaptionLabel)
                 }
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .background(RoundedRectangle(cornerRadius: 12).fill(.white.opacity(0.14)))
@@ -352,7 +361,7 @@ struct CoachingRecapCard: View {
                 }
             }
         }
-        .font(.caption.weight(.medium))
+        .font(.appCaptionLabel)
         .foregroundStyle(.white.opacity(0.78))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Key: " + spoken.joined(separator: ", "))
@@ -371,7 +380,7 @@ struct CoachingRecapCard: View {
                     RecapBar(showing: entry.1)
                     entry.1.badge(size: CoachingLevelBadge.markSize)
                     Text("Swing \(entry.0)")
-                        .font(.caption2.weight(.semibold).monospacedDigit())
+                        .font(.appCaptionLabel.monospacedDigit())
                         .foregroundStyle(.white.opacity(0.7))
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
@@ -515,9 +524,9 @@ struct CoachingCompareView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(theme.text).font(.title3.weight(.bold))
+                        Text(theme.text).font(.appTitle)
                         Text("\(SwingPosition.title(theme.position)) on each swing. Tap one to walk through it.")
-                            .font(.footnote)
+                            .font(.appCaption)
                             .foregroundStyle(Color.helpText)
                         CoachingLegend(results: Array(swings.lazy.compactMap { store.report(for: $0.swing)?.metric(theme.metric) }.prefix(1)),
                                        subjectColours: subjectColours)
@@ -579,7 +588,7 @@ struct CoachingCompareView: View {
                             VStack(spacing: 8) {
                                 showing.badge(size: 30)
                                 Text(showing.label)
-                                    .font(.subheadline.weight(.semibold))
+                                    .font(.appLabel)
                                     .foregroundStyle(.white.opacity(0.75))
                             }
                         }
@@ -593,10 +602,10 @@ struct CoachingCompareView: View {
                 HStack(spacing: 6) {
                     // The same look as the swing's bar on the recap.
                     RecapBar(showing: showing).frame(width: 14)
-                    Text("Swing \(number)").font(.subheadline.weight(.semibold))
+                    Text("Swing \(number)").font(.appLabel)
                     Spacer(minLength: 0)
                     Text(showing.label)
-                        .font(.caption)
+                        .font(.appCaption)
                         .foregroundStyle(Color.helpText)
                 }
             }

@@ -160,7 +160,7 @@ struct ReviewTopBar: View {
         HStack {
             Button(action: onLeading) {
                 Text(leadingTitle)
-                    .font(.body.weight(.semibold))
+                    .font(.appLabel)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 14)
                     .frame(minWidth: Self.buttonSize, minHeight: Self.buttonSize)
@@ -174,7 +174,7 @@ struct ReviewTopBar: View {
 
             if let counter {
                 Text(counter)
-                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                    .font(.appLabel.monospacedDigit())
                     .foregroundStyle(.white)
                     .shadow(color: .black.opacity(0.8), radius: 3, y: 1)
                     .accessibilityIdentifier("swing-position")

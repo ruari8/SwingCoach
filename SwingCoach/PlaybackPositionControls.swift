@@ -253,7 +253,7 @@ struct SwingPositionStrip: View {
 
             // Below 0.5 the model found no clear peak for this position.
             Text(unsure ? "\(position.label)?" : position.label)
-                .font(.system(size: 11, weight: .semibold))
+                .font(FixedType.cellLabel)
                 .foregroundColor(selected ? .black : .white.opacity(0.8))
                 .lineLimit(1)
                 .fixedSize()
@@ -512,7 +512,7 @@ private struct RailToolRow: View {
 
     private var label: some View {
         Text(tool.title)
-            .font(.system(size: 14, weight: .semibold))
+            .font(FixedType.railLabel)
             .foregroundColor(.white)
             .shadow(color: .black.opacity(0.8), radius: 3, y: 1)
             .lineLimit(1)
@@ -529,7 +529,7 @@ private struct RailToolRow: View {
             icon
                 .frame(height: 20)
             Text(tool.caption ?? tool.title)
-                .font(.system(size: 10, weight: .semibold))
+                .font(FixedType.railCaption)
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
                 .accessibilityHidden(true)
@@ -598,7 +598,7 @@ private struct RailToolRow: View {
                 .font(.system(size: 16, weight: .semibold))
         case .text(let text):
             Text(text)
-                .font(.system(size: 12, weight: .bold))
+                .font(FixedType.readout)
                 .lineLimit(1)
                 .fixedSize()
         }

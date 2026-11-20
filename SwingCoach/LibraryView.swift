@@ -253,7 +253,7 @@ struct LibraryView: View {
                                         .frame(width: 56, height: 56)
                                         .rotationEffect(.degrees(-90))
                                     Text("\(Int(progress * 100))%")
-                                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                                        .font(FixedType.readout.monospacedDigit())
                                         .foregroundColor(.white)
                                 }
                             } else {
@@ -264,14 +264,14 @@ struct LibraryView: View {
 
                             Text(importStatusText)
                                 .foregroundColor(.white)
-                                .font(.subheadline)
+                                .font(.appBody)
                                 .multilineTextAlignment(.center)
 
                             Button {
                                 cancelImport()
                             } label: {
                                 Text("Cancel")
-                                    .font(.subheadline.weight(.medium))
+                                    .font(.appLabel)
                                     .foregroundColor(.white)
                                     .padding(.horizontal, 20)
                                     .padding(.vertical, 8)
@@ -309,11 +309,11 @@ struct LibraryView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(photoAccessBannerTitle)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.appLabel)
                     .foregroundColor(.white)
 
                 Text(photoAccessBannerMessage)
-                    .font(.caption)
+                    .font(.appCaption)
                     .foregroundColor(.white.opacity(0.8))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -323,7 +323,7 @@ struct LibraryView: View {
             Button(photoAccessBannerActionTitle) {
                 handlePhotoAccessBannerAction()
             }
-            .font(.caption.weight(.semibold))
+            .font(.appCaptionLabel)
             .foregroundColor(.black)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -389,10 +389,10 @@ struct LibraryView: View {
                 .foregroundStyle(Color.helpText)
 
             Text("No Swings Yet")
-                .font(.title2.weight(.semibold))
+                .font(.appTitle)
 
             Text("Record a swing or import from Photos")
-                .font(.subheadline)
+                .font(.appBody)
                 .foregroundStyle(Color.helpText)
                 .multilineTextAlignment(.center)
 
@@ -401,7 +401,7 @@ struct LibraryView: View {
                     onNavigateToCapture()
                 } label: {
                     Label("Record", systemImage: "camera.fill")
-                        .font(.headline)
+                        .font(.appLabel)
                         .foregroundColor(.onAccent)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
@@ -413,7 +413,7 @@ struct LibraryView: View {
                     beginImportFlow()
                 } label: {
                     Label("Import", systemImage: "photo.on.rectangle")
-                        .font(.headline)
+                        .font(.appLabel)
                         .foregroundColor(.appAccent)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
@@ -507,7 +507,7 @@ struct LibraryView: View {
         HStack(spacing: 7) {
             Image(systemName: systemImage)
             Text(title)
-                .font(.headline)
+                .font(.appTitle)
             Spacer()
         }
         .foregroundColor(.primary)
@@ -524,9 +524,9 @@ struct LibraryView: View {
         return HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.headline)
+                    .font(.appTitle)
                 Text("\(sessionTimeRange(session)) · \(count) swing\(count == 1 ? "" : "s")")
-                    .font(.caption)
+                    .font(.appCaption.monospacedDigit())
                     .foregroundStyle(Color.helpText)
             }
 
@@ -542,15 +542,10 @@ struct LibraryView: View {
                     }
                 }
             } label: {
-                // Secondary to the toolbar's Select: plain grey text that
-                // says what it selects, so the two never read the same.
+                // A secondary action beside Review, the primary one.
                 Text(isWholeSessionSelected ? "Deselect session" : "Select session")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.helpText)
-                    .frame(minHeight: 44)
-                    .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(SecondaryCapsuleButtonStyle())
             .accessibilityLabel("\(isWholeSessionSelected ? "Deselect" : "Select") \(title) session")
 
             if session.swings.contains(where: SwingCoachingStore.canCoach) {
@@ -558,9 +553,11 @@ struct LibraryView: View {
                     coachingSession = session
                 } label: {
                     Label("Review", systemImage: "figure.golf")
-                        .font(.subheadline.weight(.semibold))
+                        .font(.appLabel)
                 }
-                .buttonStyle(.bordered)
+                // The session's primary action: filled in the accent.
+                .buttonStyle(.borderedProminent)
+                .foregroundStyle(Color.onAccent)
                 .buttonBorderShape(.capsule)
                 .controlSize(.small)
                 .padding(.leading, 6)
@@ -602,13 +599,13 @@ struct LibraryView: View {
                 }
             } label: {
                 Text(selectedSwings.count == filteredSwings.count ? "Deselect All" : "Select All")
-                    .font(.subheadline.weight(.medium))
+                    .font(.appLabel)
             }
 
             Spacer()
 
             Text("\(selectedSwings.count) selected")
-                .font(.subheadline)
+                .font(.appBody)
                 .foregroundStyle(Color.helpText)
 
             Spacer()
@@ -617,7 +614,7 @@ struct LibraryView: View {
                 exitSelectionMode()
             } label: {
                 Text("Done")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.appLabel)
             }
         }
         .padding(.horizontal, 20)
@@ -644,7 +641,7 @@ struct LibraryView: View {
                         .frame(width: 220)
 
                     Text("\(Int(exportProgress * 100))%")
-                        .font(.caption.weight(.semibold))
+                        .font(.appCaptionLabel.monospacedDigit())
                         .foregroundColor(.white.opacity(0.82))
                 } else {
                     ProgressView()
@@ -653,7 +650,7 @@ struct LibraryView: View {
                 }
 
                 Text(exportStatusText.isEmpty ? "Preparing export..." : exportStatusText)
-                    .font(.subheadline.weight(.medium))
+                    .font(.appLabel)
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
             }
@@ -688,9 +685,9 @@ struct LibraryView: View {
     private func statItem(value: String, label: String) -> some View {
         VStack(spacing: 2) {
             Text(value)
-                .font(.title3.weight(.bold))
+                .font(.appTitle.monospacedDigit())
             Text(label)
-                .font(.caption)
+                .font(.appCaption)
                 .foregroundStyle(Color.helpText)
         }
     }
@@ -785,7 +782,7 @@ struct LibraryView: View {
                 VStack {
                     HStack {
                         Text(swing.vantage.shortName)
-                            .font(.caption2.weight(.bold))
+                            .font(.appCaptionLabel)
                             .foregroundColor(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -814,23 +811,23 @@ struct LibraryView: View {
             // Info
             if let title = swing.title {
                 Text(title)
-                    .font(.caption.weight(.semibold))
+                    .font(.appCaptionLabel)
                     .lineLimit(1)
             }
 
             HStack {
                 Text(formatDuration(swing.duration))
-                    .font(.caption.weight(.medium))
+                    .font(.appCaptionLabel.monospacedDigit())
 
                 Spacer()
 
                 if swing.isReference {
                     Text("DTL reference")
-                        .font(.caption)
+                        .font(.appCaption)
                         .foregroundStyle(Color.helpText)
                 } else {
                     Text(swing.createdAt.formatted(date: .omitted, time: .shortened))
-                        .font(.caption)
+                        .font(.appCaption.monospacedDigit())
                         .foregroundStyle(Color.helpText)
                 }
             }
@@ -1504,7 +1501,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             // transport buttons stay centered). fixedSize stops it wrapping into
             // a vertical "0/0/./0" column when space gets tight.
             Text(formatTime(currentTime))
-                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                .font(FixedType.readout.monospacedDigit())
                 .foregroundColor(.white.opacity(0.85))
                 .lineLimit(1)
                 .fixedSize()
@@ -1832,16 +1829,16 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         HStack(spacing: 0) {
             if let number = currentPositionNumber, let position = visiblePositions?.first(where: { $0.number == number }) {
                 Text(position.isLowConfidence ? "\(position.name) (\(position.label)?) · Low" : position.title)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(FixedType.readout)
                     .foregroundColor(.accentLime)
                 Text(" · ")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(FixedType.readout)
             }
             Text("\(formatTime(currentTime))/\(formatTime(duration))")
-                .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                .font(FixedType.readout.monospacedDigit())
             if isFineScrubbing {
                 Text("¼ speed")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(FixedType.cellLabel)
                     .foregroundColor(.black)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1)
@@ -2325,7 +2322,7 @@ struct SwingPlaybackView: View {
         HStack {
             if let swing {
                 Text(swing.vantage.displayName)
-                    .font(.headline)
+                    .font(.appLabel)
                     .foregroundColor(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
@@ -2376,7 +2373,7 @@ struct SwingPlaybackView: View {
                     .frame(width: 200)
 
                 Text("Exporting... \(Int(exportProgress * 100))%")
-                    .font(.headline)
+                    .font(.appLabel)
                     .foregroundColor(.white)
             }
             .padding(32)
@@ -2482,10 +2479,10 @@ struct FPSExportSheet: View {
                 // Header info
                 VStack(spacing: 8) {
                     Text("Export Slower Version")
-                        .font(.title2.weight(.semibold))
+                        .font(.appTitle)
 
                     Text("Current: \(formatDuration(currentDuration)) at \(Int(sourceFPS))fps")
-                        .font(.subheadline)
+                        .font(.appBody)
                         .foregroundStyle(Color.helpText)
                 }
                 .padding(.top)
@@ -2502,11 +2499,11 @@ struct FPSExportSheet: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(fps.displayName)
-                                        .font(.headline)
+                                        .font(.appLabel)
                                         .foregroundColor(isSelected ? .onAccent : .primary)
 
                                     Text("Duration: \(formatDuration(duration))")
-                                        .font(.subheadline)
+                                        .font(.appBody)
                                         .foregroundColor(isSelected ? Color.onAccent.opacity(0.8) : Color.helpText)
                                 }
 
@@ -2536,7 +2533,7 @@ struct FPSExportSheet: View {
                     onExport(selectedFPS)
                 } label: {
                     Text("Export at \(selectedFPS.shortName)")
-                        .font(.headline)
+                        .font(.appLabel)
                         .foregroundColor(.onAccent)
                         .frame(maxWidth: .infinity)
                         .padding()

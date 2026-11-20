@@ -93,11 +93,15 @@ enum CoachingWords {
     }
 
     /// The word beside a level badge: "steps out" after a 4, "In zone"
-    /// after a tick, so the badge never reads as a count.
-    static func badgeWord(level: Int, scored: Bool = true, neutral: Bool = false) -> String {
+    /// after a tick, so the badge never reads as a count. Spelled out
+    /// ("steps outside the good zone") on the step card, where there is
+    /// room to say what the steps are out of.
+    static func badgeWord(level: Int, scored: Bool = true, neutral: Bool = false, spelledOut: Bool = false) -> String {
         if neutral || !scored { return "Not judged" }
         let steps = abs(level)
-        return steps == 0 ? "In zone" : (steps == 1 ? "step out" : "steps out")
+        guard steps > 0 else { return "In zone" }
+        let word = steps == 1 ? "step" : "steps"
+        return spelledOut ? "\(word) outside the good zone" : "\(word) out"
     }
 
     /// Which side of good players' zone a reading is on.
@@ -106,11 +110,6 @@ enum CoachingWords {
         if result.value > zone.upperBound { return "Above zone" }
         if result.value < zone.lowerBound { return "Below zone" }
         return "In zone"
-    }
-
-    /// A reading with what it is: "6 steps out, −23%" or "In zone, +5%".
-    static func reading(_ result: CoachingMetricResult) -> String {
-        "\(steps(result.level)), \(value(result))"
     }
 
     /// Which swings showed a theme, said as what happened, with its
@@ -282,6 +281,10 @@ struct CoachingDrawingLayer: View {
     /// The address reference against the swing's own line.
     static let referenceWeight: CGFloat = 0.55
     static let referenceOpacity = 0.7
+    /// A ring's line against the drawing's weight: a thin outline.
+    static let ringWeight: CGFloat = 0.4
+    /// The reading's dot, against the drawing's weight: the largest mark.
+    static let dotRadius: CGFloat = 2.2
 
     /// Drawn in the neutral guide style: a guide, or any check on a swing
     /// that isn't judged.
@@ -354,18 +357,24 @@ struct CoachingDrawingLayer: View {
             if shape.role == .zone {
                 zoneFill(path)
             } else {
-                context.stroke(path, with: .color(edgeColour), style: edge)
-                context.stroke(path, with: .color(colour), style: stroke)
+                // A ring (the head) is only an outline: thin, solid and
+                // with a hairline edge, so the dot that marks the reading
+                // stays the strongest mark and the rings never stack into
+                // one blob with the zone.
+                let ring = max(1.5, weight * Self.ringWeight)
+                context.stroke(path, with: .color(edgeColour), lineWidth: ring + 1.5)
+                context.stroke(path, with: .color(colour), lineWidth: ring)
             }
         case .dot:
+            // The reading itself: the strongest mark on the frame.
             guard let centre = points.first else { return }
-            let radius = weight * 1.8
+            let radius = weight * Self.dotRadius
             let path = Path(ellipseIn: CGRect(x: centre.x - radius, y: centre.y - radius, width: radius * 2, height: radius * 2))
             context.fill(path, with: .color(colour))
-            context.stroke(path, with: .color(.black.opacity(0.7)), lineWidth: 1.5)
+            context.stroke(path, with: .color(.black.opacity(0.75)), lineWidth: 2)
         case .label:
             guard let anchor = points.first, let text = shape.text else { return }
-            context.draw(Text(text).font(.system(size: 12, weight: .semibold)).foregroundColor(colour), at: anchor, anchor: .leading)
+            context.draw(Text(text).font(FixedType.readout).foregroundColor(colour), at: anchor, anchor: .leading)
         }
     }
 
@@ -642,7 +651,7 @@ struct SwingCoachingOverlay: View {
             if let centre = centres[result.id] {
                 // A name, not a number: the numbers are in All checks.
                 Text(result.definition.title)
-                    .font(.footnote.weight(.bold).monospacedDigit())
+                    .font(.appCaptionLabel.monospacedDigit())
                     .dynamicTypeSize(...DynamicTypeSize.xxLarge)
                     .foregroundStyle(.black)
                     .padding(.horizontal, 7)
@@ -724,10 +733,10 @@ struct CoachingZoneTrack: View {
     private func column(_ title: String, _ value: String, colour: Color, alignment: HorizontalAlignment) -> some View {
         VStack(alignment: alignment, spacing: 1) {
             Text(title.isEmpty ? " " : title)
-                .font(.caption2)
+                .font(.appCaption)
                 .foregroundStyle(Color.helpText)
             Text(value)
-                .font(.footnote.weight(.semibold).monospacedDigit())
+                .font(.appCaptionLabel.monospacedDigit())
                 .foregroundStyle(colour)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -788,15 +797,19 @@ struct CoachingLevelPill: View {
     var neutral = false
     /// Said after the word: "typical" gives "5 steps out, typical".
     var note: String? = nil
+    /// "4 steps outside the good zone": the step card says what the steps
+    /// are out of.
+    var spelledOut = false
 
     var body: some View {
         let judged = scored && !neutral
         let colour: Color = judged ? .coachingLevel(level) : Color(white: 0.5)
-        let word = CoachingWords.badgeWord(level: level, scored: scored, neutral: neutral) + (note.map { ", \($0)" } ?? "")
+        let word = CoachingWords.badgeWord(level: level, scored: scored, neutral: neutral, spelledOut: spelledOut)
+            + (note.map { ", \($0)" } ?? "")
         HStack(spacing: 6) {
             CoachingLevelBadge(level: level, scored: scored, neutral: neutral, size: 20)
             Text(word)
-                .font(.subheadline.weight(.semibold))
+                .font(.appLabel)
                 .foregroundStyle(judged ? Color.coachingLevelText(level) : Color.helpText)
         }
         .padding(.leading, 3)
@@ -851,9 +864,9 @@ struct SwingCoachingPanel: View {
             ProgressView().tint(.white).padding(.top, 2)
             VStack(alignment: .leading, spacing: 4) {
                 Text("Reading this swing")
-                    .font(.headline)
+                    .font(.appLabel)
                 Text(readingDetail)
-                    .font(.subheadline)
+                    .font(.appBody)
                     .foregroundStyle(.white.opacity(0.82))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -877,15 +890,15 @@ struct SwingCoachingPanel: View {
     private var failed: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Couldn't read this swing")
-                .font(.headline)
+                .font(.appLabel)
             Text(store.failureReasons[swing.id] ?? "The video couldn't be read.")
-                .font(.subheadline)
+                .font(.appBody)
                 .foregroundStyle(.white.opacity(0.82))
             Button {
                 store.retry(swing)
             } label: {
                 Text("Try again")
-                    .font(.body.weight(.semibold))
+                    .font(.appLabel)
                     .frame(maxWidth: .infinity, minHeight: Self.buttonHeight)
                     .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.16)))
             }
@@ -926,17 +939,17 @@ struct SwingCoachingPanel: View {
             HStack(alignment: .center) {
                 // "Finding", not "step": "steps out" is the level's word.
                 Text(placeLine(step) + (steps.count > 1 ? ", finding \(index + 1) of \(steps.count)" : ""))
-                    .font(.subheadline.weight(.semibold))
+                    .font(.appLabel)
                     .foregroundStyle(.white.opacity(0.82))
                     .accessibilityIdentifier("coaching-step-count")
                 Spacer(minLength: 8)
                 allChecksButton
             }
             Text(step.text)
-                .font(.title3.weight(.bold))
+                .font(.appTitle)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("coaching-step-title")
-            pill(step, lead: lead)
+            levelRow(pill(step, lead: lead), dependsOnCamera: lead?.definition.dependsOnCamera == true)
             detail(step, lead: lead, notJudged: notJudged, report: report)
             if !results.isEmpty {
                 CoachingLegend(results: results)
@@ -972,9 +985,26 @@ struct SwingCoachingPanel: View {
         switch step.kind {
         case .notJudged: CoachingLevelPill(level: 0, neutral: true)
         case .good, .better: CoachingLevelPill(level: 0)
-        case .pointer, .finding: CoachingLevelPill(level: lead?.level ?? 0)
+        case .pointer, .finding: CoachingLevelPill(level: lead?.level ?? 0, spelledOut: true)
         }
     }
+
+    /// The level, and for a club reading the one short caveat line (the
+    /// detail is in All checks): beside the pill when it fits, else under it.
+    private func levelRow(_ pill: some View, dependsOnCamera: Bool) -> some View {
+        FlowLayout(spacing: 10, lineSpacing: 4) {
+            pill
+            if dependsOnCamera {
+                Text(Self.cameraCaveat)
+                    .font(.appCaption)
+                    .foregroundStyle(.white.opacity(0.78))
+                    .accessibilityIdentifier("coaching-camera-caveat")
+            }
+        }
+    }
+
+    /// A club reading's caveat on the card, kept to one short line.
+    static let cameraCaveat = "Depends on camera position"
 
     @ViewBuilder
     private func detail(_ step: CoachingStep, lead: CoachingMetricResult?, notJudged: CoachingExclusion?,
@@ -984,17 +1014,12 @@ struct SwingCoachingPanel: View {
                 Text(CoachingWords.exclusion(notJudged))
             } else if step.kind == .good {
                 Text("Nothing worth changing on this one.")
-            } else if let lead {
+            } else if step.kind == .better {
                 // Numbers stay in All checks: on the card the drawing says it.
-                if step.kind == .better { Text("Back in zone.") }
-                if lead.definition.dependsOnCamera {
-                    Text("A club reading: it depends on where the camera stands.")
-                        .font(.footnote)
-                        .foregroundStyle(.white.opacity(0.78))
-                }
+                Text("Back in zone.")
             }
         }
-        .font(.callout)
+        .font(.appBody)
         .foregroundStyle(.white.opacity(0.88))
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .combine)
@@ -1023,7 +1048,7 @@ struct SwingCoachingPanel: View {
         HStack(spacing: 8) {
             if busy { ProgressView().controlSize(.small).tint(.white) }
             Text(text)
-                .font(.footnote.weight(.medium))
+                .font(.appCaptionLabel)
                 .foregroundStyle(.white.opacity(0.82))
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -1039,7 +1064,7 @@ struct SwingCoachingPanel: View {
                     go(to: steps[index - 1])
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.body.weight(.bold))
+                        .font(.appLabel)
                         .frame(width: Self.buttonHeight, height: Self.buttonHeight)
                         .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.16)))
                 }
@@ -1056,7 +1081,7 @@ struct SwingCoachingPanel: View {
                     Label("Play", systemImage: "play.fill").fixedSize()
                     Image(systemName: "play.fill")
                 }
-                    .font(.body.weight(.semibold))
+                    .font(.appLabel)
                     .frame(maxWidth: .infinity, minHeight: Self.buttonHeight)
                     .background(RoundedRectangle(cornerRadius: 14).fill(isLast ? Color.white : Color.white.opacity(0.16)))
                     .foregroundStyle(isLast ? Color.black : Color.white)
@@ -1072,7 +1097,7 @@ struct SwingCoachingPanel: View {
                         Text("Next")
                         Image(systemName: "chevron.right")
                     }
-                    .font(.body.weight(.bold))
+                    .font(.appLabel)
                     .frame(maxWidth: .infinity, minHeight: Self.buttonHeight)
                     .background(RoundedRectangle(cornerRadius: 14).fill(.white))
                     .foregroundStyle(.black)
@@ -1089,9 +1114,9 @@ struct SwingCoachingPanel: View {
         Button(action: showChecks) {
             HStack(spacing: 3) {
                 Text("All checks")
-                Image(systemName: "chevron.right").font(.caption.weight(.bold))
+                Image(systemName: "chevron.right").font(.appCaptionLabel)
             }
-            .font(.subheadline.weight(.semibold))
+            .font(.appLabel)
             .padding(.horizontal, 10)
             .frame(minHeight: Self.allChecksHeight)
             .background(Capsule().strokeBorder(.white.opacity(0.35), lineWidth: 1))
@@ -1109,13 +1134,15 @@ struct SwingCoachingPanel: View {
     private func checkCard(_ result: CoachingMetricResult, report: SwingCoachingReport, steps: [CoachingStep]) -> some View {
         VStack(alignment: .leading, spacing: Self.rowGap) {
             Text(CoachingWalkthrough.place(result.position))
-                .font(.subheadline.weight(.semibold))
+                .font(.appLabel)
                 .foregroundStyle(.white.opacity(0.82))
             Text(CoachingWords.headline(result))
-                .font(.title3.weight(.bold))
+                .font(.appTitle)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("coaching-step-title")
-            CoachingLevelPill(level: result.level, scored: result.definition.scored, neutral: report.exclusion != nil)
+            levelRow(CoachingLevelPill(level: result.level, scored: result.definition.scored,
+                                       neutral: report.exclusion != nil, spelledOut: true),
+                     dependsOnCamera: result.definition.dependsOnCamera)
             CoachingLegend(results: [result], neutral: report.exclusion != nil)
             HStack(spacing: 10) {
                 Button {
@@ -1123,7 +1150,7 @@ struct SwingCoachingPanel: View {
                     if let first = steps.first { go(to: first) }
                 } label: {
                     Text("Back to the coach")
-                        .font(.body.weight(.semibold))
+                        .font(.appLabel)
                         .frame(maxWidth: .infinity, minHeight: Self.buttonHeight)
                         .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.16)))
                 }
@@ -1131,7 +1158,7 @@ struct SwingCoachingPanel: View {
                 .accessibilityIdentifier("coaching-back-to-steps")
                 Button(action: showChecks) {
                     Text("All checks")
-                        .font(.body.weight(.bold))
+                        .font(.appLabel)
                         .frame(maxWidth: .infinity, minHeight: Self.buttonHeight)
                         .background(RoundedRectangle(cornerRadius: 14).fill(.white))
                         .foregroundStyle(.black)
@@ -1162,20 +1189,21 @@ struct SwingCoachingPanel: View {
                     // as a verdict on the frame on screen.
                     if let caption = foldedCaption(first) {
                         Text(caption)
-                            .font(.caption.weight(.semibold))
+                            .font(.appCaptionLabel)
                             .foregroundStyle(.white.opacity(0.75))
                     }
                     Text(first.text)
-                        .font(.body.weight(.semibold))
+                        .font(.appLabel)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
-                Text(steps.count > 1 ? "Show findings" : "Show")
-                    .font(.subheadline.weight(.semibold))
+                // Short, so the finding's title gets the width.
+                Text(steps.count > 1 ? "Findings" : "Show")
+                    .font(.appLabel)
                     .foregroundStyle(.white.opacity(0.82))
                 Image(systemName: "chevron.up")
-                    .font(.footnote.weight(.bold))
+                    .font(.appCaptionLabel)
                     .foregroundStyle(.white.opacity(0.82))
             }
             .padding(.horizontal, 14)
@@ -1256,7 +1284,7 @@ struct CoachingLegend: View {
         // One row when it fits; at large text sizes it wraps onto as few
         // lines as it needs, never one item a line.
         FlowLayout(spacing: 14, lineSpacing: 4) { items(roles) }
-        .font(.footnote.weight(.medium))
+        .font(.appCaptionLabel)
         .foregroundStyle(.white.opacity(0.88))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText(roles))
@@ -1421,7 +1449,7 @@ struct CoachingLayersSheet: View {
     private func row(_ title: String, _ detail: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
-            Text(detail).font(.footnote).foregroundStyle(Color.helpText)
+            Text(detail).font(.appCaption).foregroundStyle(Color.helpText)
         }
     }
 }
@@ -1433,10 +1461,10 @@ struct CoachingLayersChangedTag: View {
     var body: some View {
         HStack(spacing: 10) {
             Text("Your drawings")
-                .font(.subheadline.weight(.semibold))
+                .font(.appLabel)
             Button { layers = .coachsChoice } label: {
                 Text("Reset")
-                    .font(.subheadline.weight(.bold))
+                    .font(.appLabel)
                     .foregroundStyle(.black)
                     .padding(.horizontal, 12)
                     .frame(minHeight: 32)
@@ -1486,13 +1514,7 @@ struct SwingCoachingChecks: View {
         NavigationStack {
             List {
                 Section {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(verdict.headline).font(.headline)
-                        Text(summary).font(.subheadline).foregroundStyle(Color.helpText)
-                    }
-                    .padding(.vertical, 2)
-                    .accessibilityElement(children: .combine)
-                    .accessibilityIdentifier("coaching-summary")
+                    summaryCard
                 }
                 ForEach(positions, id: \.self) { position in
                     Section {
@@ -1508,7 +1530,7 @@ struct SwingCoachingChecks: View {
                 if !report.unavailable.isEmpty {
                     Section {
                         Text(report.unavailable.map { CoachingMetricDefinition.definition($0).title }.joined(separator: ", "))
-                            .font(.footnote)
+                            .font(.appCaption)
                             .foregroundStyle(Color.helpText)
                     } header: {
                         SectionHeading("Not measured on this swing")
@@ -1526,16 +1548,41 @@ struct SwingCoachingChecks: View {
         .playerSheetStyle()
     }
 
-    private var summary: String {
-        if let exclusion = report.exclusion { return CoachingWords.exclusion(exclusion) }
+    /// The whole swing first ("11 of 16 checks in zone"), then the coach's
+    /// verdict, labelled "Top finding" when it is one, then what the
+    /// numbers mean. A swing that isn't judged leads with its verdict.
+    private var summaryCard: some View {
         let judged = report.metrics.filter(\.definition.scored)
         let inZone = judged.filter(\.inZone).count
-        switch verdict {
-        case .good, .better:
-            return "\(inZone) of \(judged.count) checks in zone. None of the others is far enough out to work on."
-        default:
-            return "\(inZone) of \(judged.count) checks in zone. A number is how many steps outside good players' zone."
+        let count = "\(inZone) of \(judged.count) checks in zone"
+        let label: String? = if case .focus = verdict { "Top finding" } else { nil }
+        let note: String = if let exclusion = report.exclusion {
+            CoachingWords.exclusion(exclusion)
+        } else if case .focus = verdict {
+            "A number is how many steps outside good players' zone."
+        } else {
+            "None of the others is far enough out to work on."
         }
+        return VStack(alignment: .leading, spacing: 6) {
+            if report.exclusion == nil {
+                Text(count).font(.appTitle.monospacedDigit())
+            }
+            VStack(alignment: .leading, spacing: 1) {
+                if let label {
+                    Text(label)
+                        .font(.appCaptionLabel)
+                        .foregroundStyle(Color.helpText)
+                }
+                Text(verdict.headline).font(.appLabel)
+            }
+            Text(note).font(.appCaption).foregroundStyle(Color.helpText)
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(report.exclusion == nil
+            ? "\(count). \(label.map { "\($0): " } ?? "")\(verdict.headline). \(note)"
+            : "\(verdict.headline). \(note)")
+        .accessibilityIdentifier("coaching-summary")
     }
 
     private func row(_ result: CoachingMetricResult) -> some View {
@@ -1553,11 +1600,11 @@ struct SwingCoachingChecks: View {
                         .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 5 }
                     // Not judged: the check's name alone, never "in zone".
                     Text(judged ? CoachingWords.headline(result) : result.definition.title)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.appLabel)
                         .fixedSize(horizontal: false, vertical: true)
                     if !judged {
                         Text(reason.isEmpty ? "Not judged" : "Not judged · \(reason)")
-                            .font(.footnote.weight(.semibold))
+                            .font(.appCaptionLabel)
                             .foregroundStyle(Color.helpText)
                             .fixedSize()
                     }
@@ -1566,8 +1613,9 @@ struct SwingCoachingChecks: View {
                     .padding(.vertical, 2)
                 if (judged && !result.inZone) || result.definition.dependsOnCamera {
                     Text((judged && !result.inZone ? CoachingWords.level(result) + ". " : "")
-                         + (result.definition.dependsOnCamera ? "Depends on where the camera stands." : ""))
-                        .font(.footnote)
+                         + (result.definition.dependsOnCamera
+                            ? "A club reading: it depends on where the camera stands, so check it with the camera on your hand line." : ""))
+                        .font(.appCaption)
                         .foregroundStyle(Color.helpText)
                 }
             }
