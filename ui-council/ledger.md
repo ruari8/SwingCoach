@@ -23,6 +23,7 @@ Scores are 1–10 per metric (see [rubric.md](rubric.md)). Columns: typo = typog
 | 2 | `6436f63` | sol | 6.3 | 7.3 | 7.8 | 7.9 |
 | 3 | `62b48ae` | sol | 6.8 | 7.7 | 7.5 | 8.0 |
 | 4 | `eb33378` | sol | 6.7 | 7.6 | 7.5 | 7.9 |
+| 5 | `e887fc4` | sol | 6.8 | 7.7 | 7.5 | 7.7 |
 
 ## Round 0
 
@@ -194,3 +195,34 @@ Declined:
 | SwingCoach | 7.3 | 7.6 | 7.0 | 7.6 | 7.6 | 7.2 | 6.7 | 8.0 | 7.5 | 7.3 | 7.5 | 7.9 | 7.6 | 6.7 |
 | Sportsbox | 7.0 | 7.3 | 6.8 | 7.2 | 7.4 | 6.8 | 6.2 | 7.9 | 7.2 | 8.2 | 6.8 | 7.3 | 7.5 | 6.2 |
 | Onform | 7.6 | 7.8 | 7.5 | 7.3 | 7.8 | 6.9 | 6.7 | 8.7 | 8.0 | 6.9 | 6.8 | 8.0 | 7.9 | 6.7 |
+
+## Round 5
+
+Build: `e887fc4`
+
+Changes this round:
+
+- One type ramp in Theme.swift: four Dynamic Type sizes (large title, title 3, subheadline, caption); bold for headings, semibold for labels, tabular digits in rows and badges; fixed sizes named where cells can't grow.
+- Head rings are thin solid outlines; the reading's dot is the strongest mark (Sol).
+- Auto capsule says how to stop: 'Switch to Manual to stop' (Sol). Partly: tapping the capsule doesn't stop Auto, so no stop glyph was added.
+- Club caveat on the step card shortened to 'Depends on camera position', full text in All checks (Sol). Partly: the card is only a few points shorter.
+- Session headline gets a qualifier: what counts as 'good' (Sol).
+- All checks leads with 'N of M checks in zone', then 'Top finding' (Sol).
+- Expanded card: 'N steps outside the good zone' (Sol).
+- Recap headline badge '4 steps out, typical'; example caption 'Swing 5 · 4 steps out' (Sol).
+- Folded card action shortened to 'Findings' (Sol).
+- Session photo captions keep the swing and zone result, no unexplained percentages (Sol).
+- 'Select session' is a bordered secondary capsule (shared SecondaryCapsuleButtonStyle); 'Review' is the filled accent button (Sol).
+- Swing Info confidence numbers in the same tabular style as Time (Sol).
+
+Declined:
+
+- Horizontally scrolling P strip with 44 pt-wide cells (Sol, third time): left for Ruari to decide; the strip keeps all ten positions visible.
+
+**sol**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.6 | 7.8 | 7.1 | 7.8 | 7.4 | 7.3 | 6.8 | 8.1 | 8.2 | 7.1 | 7.5 | 7.9 | 7.7 | 6.8 |
+| Sportsbox | 7.1 | 7.5 | 6.8 | 7.5 | 7.3 | 6.9 | 6.4 | 7.8 | 7.6 | 8.3 | 6.8 | 7.5 | 7.5 | 6.4 |
+| Onform | 7.0 | 7.6 | 7.4 | 7.6 | 7.8 | 7.0 | 6.5 | 8.8 | 8.1 | 6.9 | 7.0 | 7.8 | 7.7 | 6.5 |

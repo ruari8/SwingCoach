@@ -101,5 +101,24 @@
   "declined": [
    "Horizontally scrolling P strip with 44 pt-wide cells (Sol, third time): left for Ruari to decide; the strip keeps all ten positions visible."
   ]
+ },
+ "6": {
+  "changes": [
+   "Head reading: small hollow marker with dark outline; head tags sit in the sky above the hat (Sol).",
+   "Every zone edge gets the measured line's dark outline at a lighter weight, in the shared drawing code (Sol).",
+   "Auto state is a solid dark status panel with no button-like outline; 'Switch to Manual to stop' near-white (Sol).",
+   "Recap bars removed; badges carry status, outlined for 'other way'; same in recap caption and Compare tiles (Sol).",
+   "Zone track captions larger, brighter, tabular, each with a swatch of its mark (Sol).",
+   "'N steps out' is the only severity wording; key defines a step as a set distance per check, matching COACHING.md (Sol). The implementer declined the brief's 'one zone-width' wording because each check has its own step size.",
+   "Low-confidence position named 'Address \u00b7 Low confidence'; folded card 'Swing's top finding \u00b7 at impact' (Sol).",
+   "Rail fold toggle captioned 'Hide' / 'Show' (Sol).",
+   "'Layers' sheet and tool; first toggle 'Coaching overlays' (Sol).",
+   "Toolbar 'Select swings' (Sol).",
+   "Settings footers: short first line, details after, none over three lines (Sol)."
+  ],
+  "declined": [
+   "Horizontally scrolling P strip with 44 pt-wide cells (Sol, fourth time): left for Ruari."
+  ],
+  "notes": "Decision: Sol's lowest metric held at 6.8, 6.7, 6.8 over rounds 3\u20135, so round 6 is scored by the full council for a fresh read rather than waiting for Sol to clear 9.5 alone."
  }
 }
