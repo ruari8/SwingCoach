@@ -268,7 +268,8 @@ nonisolated struct SwingCoachingReport: Codable, Equatable {
     /// Metrics that could not be measured on this swing.
     var unavailable: [CoachingMetricID]
 
-    static let currentVersion = 8
+    /// 9: the takeaway zone runs down past the club head (drawing only).
+    static let currentVersion = 9
 
     /// Feet shifting more than this share of body scale by the top means
     /// the camera moved. A tripod clip's ankle joints wander about 5%, and

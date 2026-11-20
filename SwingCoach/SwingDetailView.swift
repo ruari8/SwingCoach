@@ -345,8 +345,11 @@ struct SwingInfoView: View {
     var metadataSheet: some View {
         NavigationStack {
             ScrollView {
+                // The sheet's shared top inset is above the first row, with
+                // the few points a list's section inset adds.
                 metadataContent
-                    .padding()
+                    .padding([.horizontal, .bottom])
+                    .padding(.top, 6)
             }
             .navigationTitle("Swing Info")
             .navigationBarTitleDisplayMode(.inline)
@@ -428,9 +431,10 @@ struct SwingInfoView: View {
     private func swingPositionRow(_ position: SwingPosition) -> some View {
         let low = position.isLowConfidence
         return HStack(alignment: .firstTextBaseline) {
-            // Below 0.5 the model found no clear peak for this position.
-            Text(low ? "\(position.name) (\(position.label)?)" : position.title)
-                .font(low ? .appLabel : .appBody)
+            // Below 0.5 the model found no clear peak for this position:
+            // the Low tag says so; the row keeps the others' weight.
+            Text(position.title)
+                .font(.appBody)
             Spacer(minLength: 12)
             Text(String(format: "%.2fs", position.clipTime))
                 .font(Self.numberFont)

@@ -221,8 +221,9 @@ private struct AutoSwingReviewPage: View {
         if canCoach {
             tools.append(.coachingDrawings(changed: !layers.isCoachsChoice, action: onShowLayers))
         }
+        // Destructive: the rail puts it last, after a divider, in red.
         tools.append(PlayerTool(id: "delete", title: "Delete", accessibilityLabel: "Delete this swing",
-                                icon: .system("trash")) {
+                                isDestructive: true, icon: .system("trash")) {
             if !deleteDisabled { onDelete() }
         })
         return tools

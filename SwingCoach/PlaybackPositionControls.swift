@@ -205,6 +205,8 @@ struct SwingPositionStrip: View {
 
     /// Every chip's cell is this tall: past the 44 pt minimum target.
     static let height: CGFloat = 56
+    /// A low-confidence position's pose, dimmed inside its dashed outline.
+    static let unsureGlyphOpacity = 0.45
 
     var body: some View {
         GeometryReader { geometry in
@@ -244,22 +246,31 @@ struct SwingPositionStrip: View {
         let selected = position.number == selectedNumber
         let unsure = position.isLowConfidence
         return VStack(spacing: 0) {
+            // Below 0.5 the model found no clear peak for this position:
+            // a dimmed pose in a dashed outline, the label unchanged.
             SwingPositionGlyph(
                 number: position.number,
                 figure: selected ? .black : .white,
                 club: selected ? .accentInk : .accentLime
             )
             .frame(width: 28, height: 28)
+            .opacity(unsure ? Self.unsureGlyphOpacity : 1)
 
-            // Below 0.5 the model found no clear peak for this position.
-            Text(unsure ? "\(position.label)?" : position.label)
-                .font(FixedType.cellLabel)
-                .foregroundColor(selected ? .black : .white.opacity(0.8))
+            Text(position.label)
+                .font(FixedType.stripLabel)
+                .foregroundColor(selected ? .black : .white.opacity(0.85))
                 .lineLimit(1)
                 .fixedSize()
         }
         .frame(width: 34, height: 46)
         .background(Capsule().fill(selected ? Color.white : Color.clear))
+        .overlay {
+            if unsure {
+                Capsule().strokeBorder(selected ? Color.black.opacity(0.55) : Color.white.opacity(0.6),
+                                       style: StrokeStyle(lineWidth: 1, dash: [3, 2.5]))
+                    .padding(selected ? 2 : 0)
+            }
+        }
         // The level badge belongs to its pose: pinned to the chip's
         // top-trailing corner, inside the strip, so it never pairs with a
         // neighbour or sits among the scrubber's dots.
@@ -325,6 +336,8 @@ struct PlayerTool: Identifiable {
     let accessibilityLabel: String
     var accessibilityValue: String?
     var isOn = false
+    /// Deletes something: drawn last in the rail, after a divider, in red.
+    var isDestructive = false
     let icon: Icon
     let action: () -> Void
 }
@@ -402,13 +415,22 @@ struct PlayerToolRail: View {
 
             if isOpen || !isFoldable {
                 VStack(spacing: 0) {
-                    ForEach(tools) { tool in
-                        RailToolRow(
-                            tool: tool,
-                            side: side,
-                            showsLabel: peekedToolID == tool.id && !isDragging,
-                            peekedToolID: $peekedToolID
-                        )
+                    // The everyday tools in their order, then anything that
+                    // deletes, apart after a divider, so it is never
+                    // tapped on the way to a harmless tool.
+                    let destructive = tools.filter(\.isDestructive)
+                    ForEach(tools.filter { !$0.isDestructive }) { tool in
+                        row(tool)
+                    }
+                    if !destructive.isEmpty {
+                        Capsule()
+                            .fill(PlayerChrome.edge)
+                            .frame(width: Self.width - 22, height: 1)
+                            .padding(.vertical, 3)
+                            .accessibilityHidden(true)
+                        ForEach(destructive) { tool in
+                            row(tool)
+                        }
                     }
                 }
                 .padding(.vertical, Self.capsuleInset)
@@ -418,6 +440,15 @@ struct PlayerToolRail: View {
             }
         }
         .frame(width: Self.width)
+    }
+
+    private func row(_ tool: PlayerTool) -> some View {
+        RailToolRow(
+            tool: tool,
+            side: side,
+            showsLabel: peekedToolID == tool.id && !isDragging,
+            peekedToolID: $peekedToolID
+        )
     }
 
     private func foldButton(width: CGFloat) -> some View {
@@ -500,6 +531,11 @@ struct PlayerToolRail: View {
 /// One tool in the rail's capsule: its icon with a caption under it. A tap
 /// runs it; holding shows its full name beside the rail instead.
 private struct RailToolRow: View {
+    /// A destructive tool's red on the dark rail; its trash glyph, its
+    /// word and its place apart at the end say what it is, so it never
+    /// reads as a level.
+    static let destructiveColour = Color(red: 1, green: 0.42, blue: 0.4)
+
     let tool: PlayerTool
     let side: PlayerToolSide
     let showsLabel: Bool
@@ -542,7 +578,7 @@ private struct RailToolRow: View {
                 .minimumScaleFactor(0.85)
                 .accessibilityHidden(true)
         }
-        .foregroundColor(tool.isOn ? .black : .white)
+        .foregroundColor(tool.isOn ? .black : tool.isDestructive ? Self.destructiveColour : .white)
         .frame(width: PlayerToolRail.width - 4, height: PlayerToolRail.cellHeight - 2)
         .background(RoundedRectangle(cornerRadius: 18).fill(tool.isOn ? Color.accentLime : .clear))
         .frame(width: PlayerToolRail.width, height: PlayerToolRail.cellHeight)

@@ -4,7 +4,8 @@
 //
 //  The shared look: the one accent colour, the player's chrome over video,
 //  the style every sheet over the player uses, library card sizes, the
-//  position and low-confidence tags, and a wrapping layout.
+//  capsule buttons, the position and low-confidence tags, and a wrapping
+//  layout.
 //  The red / amber / green level colours are `Color.coachingLevel` and
 //  mean coaching status only.
 //
@@ -71,6 +72,9 @@ enum FixedType {
     static let readout = Font.system(size: 12, weight: .semibold)
     /// The rail's names shown beside it, and the drawing tool's buttons.
     static let railLabel = Font.system(size: 14, weight: .semibold)
+    /// A position's name on the pose strip ("P3"): the readout size, so
+    /// it reads at arm's length under the pose.
+    static let stripLabel = Font.system(size: 12, weight: .semibold)
 }
 
 // MARK: - Help text
@@ -139,6 +143,15 @@ struct SectionHeading: View {
 // MARK: - Level colours as text
 
 extension Color {
+    /// Amber as text on light surfaces: a dark amber, 7:1 on white and
+    /// 6:1 or more on an amber pill's pale fill, where the bright amber is
+    /// about 1.6:1. The disc and the pill's edge keep the bright amber.
+    static let amberInk = Color(red: 0.42, green: 0.27, blue: 0)
+
+    /// The neutral grey of "not judged": a dash badge, a guide, and other
+    /// marks that carry no level, so they never read as a colour's meaning.
+    static let notJudged = Color(white: 0.5)
+
     /// A level's colour for text: the level colour itself in dark
     /// appearance, a darker ink of the same hue in light (4.5:1 or more on
     /// white), since the bright amber and green are unreadable as text on
@@ -146,7 +159,7 @@ extension Color {
     static func coachingLevelText(_ level: Int) -> Color {
         let ink: Color = switch abs(level) {
         case 0: Color(red: 0.084, green: 0.456, blue: 0.198)
-        case 1...3: Color(red: 0.54, green: 0.379, blue: 0)
+        case 1...3: amberInk
         default: Color(red: 0.8, green: 0.066, blue: 0)
         }
         let bright = Color.coachingLevel(level)
@@ -182,9 +195,38 @@ enum PlayerChrome {
     static let stateIndicatorSize: CGFloat = 24
     static let stateMinHeight: CGFloat = 64
     static let stateRadius: CGFloat = 16
+    /// Inside every solid panel over the camera (Auto's state, the recap,
+    /// the last swing's verdict): one inset, so they read as one family.
+    static let stateInsets = EdgeInsets(top: 12, leading: 18, bottom: 12, trailing: 18)
+    /// Secondary text on the player's dark panels (captions, caveats):
+    /// near-white, 11:1 or more on `panel`, so a caveat beside a level's
+    /// colour still reads.
+    static let secondaryText = Color.white.opacity(0.85)
     /// Background of every sheet over the player: dark and near opaque, so
     /// the card and strip behind never ghost through.
     static let sheetBackground = Color(white: 0.09).opacity(0.97)
+}
+
+/// Sheets' lists: the margin above a sheet's first card, instead of the
+/// grouped list's taller default band. With the list's own section inset
+/// the first card starts about 14 points under the title bar.
+enum SheetLayout {
+    static let contentTop: CGFloat = 8
+}
+
+extension View {
+    /// A sheet's list starts `SheetLayout.contentTop` under its title bar.
+    func sheetContentTop() -> some View {
+        contentMargins(.top, SheetLayout.contentTop, for: .scrollContent)
+    }
+
+    /// A solid panel over the camera: `PlayerChrome.solidPanel` at the
+    /// state radius, with the state insets.
+    func solidPanelBackground() -> some View {
+        padding(PlayerChrome.stateInsets)
+            .background(RoundedRectangle(cornerRadius: PlayerChrome.stateRadius).fill(PlayerChrome.solidPanel))
+            .overlay(RoundedRectangle(cornerRadius: PlayerChrome.stateRadius).strokeBorder(PlayerChrome.panelEdge, lineWidth: 0.5))
+    }
 }
 
 extension View {
@@ -201,6 +243,7 @@ extension View {
     func playerSheetStyle() -> some View {
         self
             .scrollContentBackground(.hidden)
+            .sheetContentTop()
             .contentMargins(.bottom, 32, for: .scrollContent)
             .background(PlayerChrome.sheetBackground)
             .presentationBackground(PlayerChrome.sheetBackground)
@@ -252,23 +295,49 @@ enum CoachingPreview {
     static let compareAspect: CGFloat = 4.0 / 5.0
 }
 
-// MARK: - Secondary buttons
+// MARK: - Capsule buttons
 
-/// A secondary action beside a primary one ("Select session" beside
+/// The pair of capsule buttons on a header (Select all beside Review):
+/// one height, so the two read as a pair.
+enum CapsuleButton {
+    static let height: CGFloat = 32
+    /// The capsule plus the space above and below it: 44 points to tap.
+    static let tapPadding: CGFloat = 6
+}
+
+/// A secondary action beside a primary one ("Select all 12" beside
 /// Review): a neutral filled capsule with a hairline edge, so it reads as
 /// a button, never as grey metadata, without competing with the primary
-/// `.borderedProminent` one. 44 points to tap.
+/// one. 44 points to tap.
 struct SecondaryCapsuleButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.appLabel)
             .foregroundStyle(.primary)
+            .lineLimit(1)
             .padding(.horizontal, 12)
-            .frame(minHeight: 30)
+            .frame(height: CapsuleButton.height)
             .background(Capsule().fill(Color(.tertiarySystemFill)))
             .overlay(Capsule().strokeBorder(Color(.separator), lineWidth: 0.5))
             .opacity(configuration.isPressed ? 0.55 : 1)
-            .padding(.vertical, 7)
+            .padding(.vertical, CapsuleButton.tapPadding)
+            .contentShape(Rectangle())
+    }
+}
+
+/// The primary action on a header (Review): the accent fill, the same
+/// height as `SecondaryCapsuleButtonStyle` beside it.
+struct PrimaryCapsuleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.appLabel)
+            .foregroundStyle(Color.onAccent)
+            .lineLimit(1)
+            .padding(.horizontal, 14)
+            .frame(height: CapsuleButton.height)
+            .background(Capsule().fill(Color.appAccent))
+            .opacity(configuration.isPressed ? 0.7 : 1)
+            .padding(.vertical, CapsuleButton.tapPadding)
             .contentShape(Rectangle())
     }
 }
@@ -293,19 +362,18 @@ struct PositionTag: View {
 // MARK: - Low confidence
 
 /// A position the model was unsure of, beside its confidence: "Low" in
-/// heavy type on a cyan-tinted capsule, so a 50% row never looks like the
-/// 80% rows. Cyan is neither a coaching level colour (red, amber, green)
-/// nor the lime accent, and the word carries it without the colour.
+/// the neutral grey of "not judged" on a grey capsule with an edge, so a
+/// 50% row never looks like the 80% rows, without adding a colour that
+/// means nothing else. The word carries it without the colour.
 struct LowConfidenceTag: View {
-    static let colour = Color.cyan
-
     var body: some View {
         Text("Low")
-            .font(.appCaption.weight(.heavy))
-            .foregroundStyle(Self.colour)
+            .font(.appCaptionLabel)
+            .foregroundStyle(Color.helpText)
             .padding(.horizontal, 6)
             .padding(.vertical, 1)
-            .background(Capsule().fill(Self.colour.opacity(0.18)))
+            .background(Capsule().fill(Color.notJudged.opacity(0.2)))
+            .overlay(Capsule().strokeBorder(Color.notJudged.opacity(0.6), lineWidth: 0.5))
             .accessibilityLabel(SwingPosition.lowConfidenceWords)
     }
 }

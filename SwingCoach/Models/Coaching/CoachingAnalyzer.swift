@@ -196,8 +196,11 @@ nonisolated enum CoachingAnalyzer {
         private func takeawayClub(_ definition: CoachingMetricDefinition) -> CoachingMetricResult? {
             guard let shaft = geometry.shaft(at: 2), shaft.headDetected else { return nil }
             let value = percent((shaft.head.x - shaft.grip.x) * facing)
-            let top = shaft.grip.y - 0.1 * scale
-            let bottom = shaft.grip.y + 0.14 * scale
+            // The zone is measured across, from the grip toward the ball:
+            // drawn as a band that runs down past the club head, so a head
+            // in zone sits inside it wherever the club hangs.
+            let top = min(shaft.grip.y - 0.1 * scale, shaft.head.y - 0.06 * scale)
+            let bottom = max(shaft.grip.y + 0.14 * scale, shaft.head.y + 0.06 * scale)
             return result(definition, value: value, confidence: shaft.confidence, drawings: [
                 strip(definition.zone, from: shaft.grip.x, top: top, bottom: bottom),
                 line(.reference, CoachingVector(shaft.grip.x, top), CoachingVector(shaft.grip.x, bottom), dashed: true),

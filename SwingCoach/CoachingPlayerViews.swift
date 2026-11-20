@@ -81,16 +81,47 @@ enum CoachingWords {
         return steps == 0 ? "In zone" : "\(steps) step\(steps == 1 ? "" : "s") out"
     }
 
-    /// Why a check isn't judged, short enough for a row: "a guide", "a
-    /// chip or pitch".
+    /// Why a check isn't judged, short enough for a row: "a guide",
+    /// "short swing".
     static func notJudgedReason(_ result: CoachingMetricResult, exclusion: CoachingExclusion?) -> String {
+        if let exclusion { return reason(exclusion) }
+        return result.definition.scored ? "" : "a guide"
+    }
+
+    /// Why a swing isn't judged, as a caption says it after "Not judged ·".
+    static func reason(_ exclusion: CoachingExclusion) -> String {
         switch exclusion {
-        case .shortSwing: "a chip or pitch"
-        case .cameraMoved: "the camera moved"
+        case .shortSwing: "short swing"
+        case .cameraMoved: "camera moved"
         case .positionsUnclear: "positions unclear"
-        case nil: result.definition.scored ? "" : "a guide"
         }
     }
+
+    /// Why a swing has no level on a theme: its exclusion, or no reading
+    /// of the theme's check on it (or no reading yet).
+    static func reason(notJudged report: SwingCoachingReport?) -> String {
+        guard let exclusion = report?.exclusion else { return "no reading" }
+        return reason(exclusion)
+    }
+
+    /// "Not judged", with its reason when known: "Not judged · camera
+    /// moved". The one caption for a swing or check without a level.
+    static func notJudged(_ reason: String) -> String {
+        reason.isEmpty ? "Not judged" : "Not judged · \(reason)"
+    }
+
+    /// The key's word for a number in a level badge, said one way
+    /// wherever a row of badges is keyed (the session review, a recap,
+    /// All checks).
+    static let numberKey = "Number = steps out"
+
+    /// A club reading's caveat, the one line everywhere it is shown: the
+    /// club checks move with where the camera stands.
+    static let cameraCaveat = "Depends on camera position"
+
+    /// What to do about it, said only where there is room for the detail
+    /// (All checks).
+    static let cameraAdvice = "Check it with the camera on your hand line."
 
     /// The word beside a level badge: "steps out" after a 4, "In zone"
     /// after a tick, so the badge never reads as a count. "N steps out" is
@@ -115,22 +146,33 @@ enum CoachingWords {
         return "In zone"
     }
 
-    /// Which swings showed a theme, said as what happened, with its
-    /// denominator named: "On 4 of 8 swings with a takeaway (P2)
-    /// reading", "On all 4 swings with a halfway-back (P3) reading", or
-    /// "On 4 of 8 swings with a reading" beside a position tag that
-    /// already names it.
+    /// Which swings showed a theme, said as what happened, naming the
+    /// check its level is read on and the denominator: "On 4 of 8 swings
+    /// with a takeaway (P2) reading", "On all 4 swings with a shaft
+    /// halfway back (P3) reading", or "On 4 of 8 swings with a reading"
+    /// beside a position tag that already names it.
     static func themeShare(_ theme: CoachingTheme, namingPosition: Bool = true) -> String {
-        let count = switch theme.measured {
-        case 1: "the 1 swing"
-        case theme.swings where theme.swings > 1: "all \(theme.measured) swings"
-        default: "\(theme.swings) of \(theme.measured) swings"
-        }
+        let count = swingCount(theme.swings, of: theme.measured)
         guard namingPosition else { return "On \(count) with a reading" }
-        let name = SwingPosition.names[min(max(theme.position, 1), SwingPosition.names.count) - 1]
-            .lowercased().replacingOccurrences(of: " ", with: "-")
-        let article = name.first.map { "aeiou".contains($0) } == true ? "an" : "a"
-        return "On \(count) with \(article) \(name) (P\(theme.position)) reading"
+        let check = CoachingMetricDefinition.definition(theme.metric).title.lowercased()
+        let article = check.first.map { "aeiou".contains($0) } == true ? "an" : "a"
+        return "On \(count) with \(article) \(check) (P\(theme.position)) reading"
+    }
+
+    /// A recap's theme counted over the swings that were judged: "On all
+    /// 4 judged swings", "On 3 of 5 judged swings". Where the theme's
+    /// check couldn't be read on every judged swing, the reading count.
+    static func recapShare(_ theme: CoachingTheme, judged: Int) -> String {
+        guard theme.measured == judged else { return themeShare(theme) }
+        return "On \(swingCount(theme.swings, of: judged, noun: "judged swing"))"
+    }
+
+    private static func swingCount(_ swings: Int, of total: Int, noun: String = "swing") -> String {
+        switch total {
+        case 1: "the 1 \(noun)"
+        case swings where swings > 1: "all \(total) \(noun)s"
+        default: "\(swings) of \(total) \(noun)s"
+        }
     }
 
     /// What a check says, in or out of its zone.
@@ -285,19 +327,26 @@ struct CoachingDrawingLayer: View {
     /// The address reference against the swing's own line.
     static let referenceWeight: CGFloat = 0.55
     static let referenceOpacity = 0.7
-    /// A ring's line against the drawing's weight: a thin outline.
-    static let ringWeight: CGFloat = 0.4
+    /// The swing's ring (the head now) against the drawing's weight: one
+    /// solid outline, the strongest mark on the head.
+    static let ringWeight: CGFloat = 0.6
+    /// The address ring: thin and dashed, so it reads as where the head
+    /// was, never as a second reading.
+    static let referenceRingWeight: CGFloat = 0.38
     /// The reading's dot, against the drawing's weight: the largest mark.
     static let dotRadius: CGFloat = 2.2
-    /// The reading inside a ring (the head): a small hollow marker, so it
-    /// never covers the face it measures.
-    static let hollowDotRadius: CGFloat = 1.2
-    /// A zone's edge against the drawing's weight: the measured line's
-    /// treatment (a dark outline round a coloured line) at a lighter
-    /// weight, so the zone holds its shape on grass and mat.
+    /// The dark edge round every line, ring and zone edge, so each holds
+    /// on sky, grass and mat: this much wider than the line it edges.
+    static let haloExtra: CGFloat = 2.5
+    static let haloColour = Color.black.opacity(0.55)
+    /// A zone's edge against the drawing's weight, with the measured
+    /// line's dark halo, so the zone holds its shape on green turf.
     static let zoneEdgeWeight: CGFloat = 0.5
-    static let zoneOutlineExtra: CGFloat = 2
+    static let zoneEdgeExtra: CGFloat = 0.75
+    static let zoneEdgeMinimum: CGFloat = 2
     static let zoneFillOpacity = 0.38
+    /// The dashes of the address ring, against its line width.
+    static func ringDash(_ width: CGFloat) -> [CGFloat] { [width * 2.6, width * 2] }
 
     /// A check drawn round a ring (the head now and at address).
     static func isRinged(_ result: CoachingMetricResult) -> Bool {
@@ -332,16 +381,16 @@ struct CoachingDrawingLayer: View {
         let dash: [CGFloat] = shape.dashed ? [weight * 2.2, weight * 1.6] : []
         let stroke = StrokeStyle(lineWidth: weight, lineCap: .round, lineJoin: .round, dash: dash)
         // A dark edge keeps lines readable on sky and grass.
-        let edge = StrokeStyle(lineWidth: weight + 2.5, lineCap: .round, lineJoin: .round, dash: dash)
-        let edgeColour = Color.black.opacity(0.55)
+        let edge = StrokeStyle(lineWidth: weight + Self.haloExtra, lineCap: .round, lineJoin: .round, dash: dash)
+        let edgeColour = Self.haloColour
 
         func zoneFill(_ path: Path) {
-            // A translucent fill, and the measured line's dark outline at a
-            // lighter weight, so its edges hold on grass and mat.
-            let zoneEdge = max(1.25, weight * Self.zoneEdgeWeight)
+            // A translucent fill, and an edge with the measured line's
+            // dark halo, so it holds its shape on green turf and mat.
+            let zoneEdge = max(Self.zoneEdgeMinimum, weight * Self.zoneEdgeWeight + Self.zoneEdgeExtra)
             context.fill(path, with: .color(colour.opacity(Self.zoneFillOpacity)))
             context.stroke(path, with: .color(edgeColour),
-                           style: StrokeStyle(lineWidth: zoneEdge + Self.zoneOutlineExtra, lineJoin: .round))
+                           style: StrokeStyle(lineWidth: zoneEdge + Self.haloExtra, lineJoin: .round))
             context.stroke(path, with: .color(colour), style: StrokeStyle(lineWidth: zoneEdge, lineJoin: .round))
         }
 
@@ -377,29 +426,26 @@ struct CoachingDrawingLayer: View {
             if shape.role == .zone {
                 zoneFill(path)
             } else {
-                // A ring (the head) is only an outline: thin, solid and
-                // with a hairline edge, so the dot that marks the reading
-                // stays the strongest mark and the rings never stack into
-                // one blob with the zone.
-                let ring = max(1.5, weight * Self.ringWeight)
-                context.stroke(path, with: .color(edgeColour), lineWidth: ring + 1.5)
-                context.stroke(path, with: .color(colour), lineWidth: ring)
+                // A ring (the head) is only an outline with the line's dark
+                // halo: the address ring thin and dashed, this swing's one
+                // solid ring, so the two never stack into one blob with
+                // the zone and the face shows through both.
+                let isAddress = shape.role == .reference
+                let ring = max(isAddress ? 1.25 : 2, weight * (isAddress ? Self.referenceRingWeight : Self.ringWeight))
+                let ringDash = isAddress ? Self.ringDash(ring) : []
+                context.stroke(path, with: .color(edgeColour),
+                               style: StrokeStyle(lineWidth: ring + Self.haloExtra, lineCap: .round, dash: ringDash))
+                context.stroke(path, with: .color(colour),
+                               style: StrokeStyle(lineWidth: ring, lineCap: .round, dash: ringDash))
             }
         case .dot:
-            // The reading itself: the strongest mark on the frame. Inside
-            // a ring (the head) it is a small hollow marker with the dark
-            // outline, so the face shows through.
-            guard let centre = points.first else { return }
-            let radius = weight * (ringed ? Self.hollowDotRadius : Self.dotRadius)
+            // The reading itself: the strongest mark on the frame. A head
+            // check's reading is its ring, so no dot is drawn inside it.
+            guard !ringed, let centre = points.first else { return }
+            let radius = weight * Self.dotRadius
             let path = Path(ellipseIn: CGRect(x: centre.x - radius, y: centre.y - radius, width: radius * 2, height: radius * 2))
-            if ringed {
-                let line = max(1.5, weight * 0.5)
-                context.stroke(path, with: .color(.black.opacity(0.75)), lineWidth: line + 2)
-                context.stroke(path, with: .color(colour), lineWidth: line)
-            } else {
-                context.fill(path, with: .color(colour))
-                context.stroke(path, with: .color(.black.opacity(0.75)), lineWidth: 2)
-            }
+            context.fill(path, with: .color(colour))
+            context.stroke(path, with: .color(.black.opacity(0.75)), lineWidth: 2)
         case .label:
             guard let anchor = points.first, let text = shape.text else { return }
             context.draw(Text(text).font(FixedType.readout).foregroundColor(colour), at: anchor, anchor: .leading)
@@ -724,7 +770,7 @@ struct CoachingLevelBadge: View {
     static let markSize: CGFloat = 26
 
     var body: some View {
-        let colour: Color = neutral || !scored ? Color(white: 0.5) : .coachingLevel(level)
+        let colour: Color = neutral || !scored ? .notJudged : .coachingLevel(level)
         ZStack {
             if outlined {
                 Circle().strokeBorder(colour, lineWidth: max(1.5, size * 0.09))
@@ -742,6 +788,88 @@ struct CoachingLevelBadge: View {
         .foregroundStyle(outlined ? colour : .black)
         .frame(width: size, height: size)
         .accessibilityHidden(true)
+    }
+}
+
+/// What a row of level badges means, said the same way wherever badges
+/// are keyed (the session review, All checks): a tick, a number for steps
+/// out, a dash for not judged, each beside one badge of one size. Only
+/// the marks the row can have are keyed. Font and colour come from the
+/// caller.
+struct CoachingMarkKey: View {
+    /// The tick's word, or nil to leave it out: "Good" for a swing's
+    /// verdict, "In zone" for a check.
+    var tick: String? = nil
+    var number = true
+    var dash = false
+    /// What the dash means here.
+    var dashWord = "Not judged"
+
+    static let badgeSize: CGFloat = 16
+
+    var body: some View {
+        FlowLayout(spacing: 12, lineSpacing: 4) {
+            if let tick {
+                entry(CoachingLevelBadge(level: 0, size: Self.badgeSize), tick)
+            }
+            if number {
+                entry(CoachingLevelBadge(level: 2, size: Self.badgeSize), CoachingWords.numberKey)
+            }
+            if dash {
+                entry(CoachingLevelBadge(level: 0, neutral: true, size: Self.badgeSize), dashWord)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(spoken)
+        .accessibilityIdentifier("coaching-mark-key")
+    }
+
+    private var spoken: String {
+        var parts: [String] = []
+        if let tick { parts.append("a tick is \(tick.lowercased())") }
+        if number { parts.append("a number is steps out") }
+        if dash { parts.append("a dash is \(dashWord.lowercased())") }
+        return "Key: " + parts.joined(separator: ", ")
+    }
+
+    private func entry(_ badge: CoachingLevelBadge, _ word: String) -> some View {
+        HStack(spacing: 4) {
+            badge
+            Text(word).fixedSize()
+        }
+    }
+}
+
+/// A club reading's caveat, the one wording everywhere
+/// (`CoachingWords.cameraCaveat`), with a camera glyph so it reads as a
+/// note on the reading, never as part of its level. On the player it is
+/// near-white on the dark panel; on lists and sheets the help grey.
+struct CoachingCameraCaveat: View {
+    var onPlayer = false
+    /// Adds what to do about it, where there is room (All checks).
+    var advice = false
+
+    var body: some View {
+        Label {
+            Text(CoachingWords.cameraCaveat + (advice ? ". " + CoachingWords.cameraAdvice : ""))
+                .fixedSize(horizontal: false, vertical: true)
+        } icon: {
+            Image(systemName: "camera.viewfinder")
+        }
+        .labelStyle(CaveatLabelStyle())
+        .font(.appCaption)
+        .foregroundStyle(onPlayer ? PlayerChrome.secondaryText : Color.helpText)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("coaching-camera-caveat")
+    }
+
+    private struct CaveatLabelStyle: LabelStyle {
+        func makeBody(configuration: Configuration) -> some View {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                configuration.icon
+                configuration.title
+            }
+        }
     }
 }
 
@@ -893,7 +1021,7 @@ struct CoachingLevelPill: View {
 
     var body: some View {
         let judged = scored && !neutral
-        let colour: Color = judged ? .coachingLevel(level) : Color(white: 0.5)
+        let colour: Color = judged ? .coachingLevel(level) : .notJudged
         let word = CoachingWords.badgeWord(level: level, scored: scored, neutral: neutral)
             + (note.map { ", \($0)" } ?? "")
         HStack(spacing: 6) {
@@ -1035,14 +1163,18 @@ struct SwingCoachingPanel: View {
                 Spacer(minLength: 8)
                 allChecksButton
             }
+            // The All checks capsule stands taller than this row's text:
+            // take its overhang out of the gap, so the text-to-text gaps
+            // match the card's other rows.
+            .padding(.bottom, -Self.rowGap)
             Text(step.text)
                 .font(.appTitle)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("coaching-step-title")
-            levelRow(pill(step, lead: lead), dependsOnCamera: lead?.definition.dependsOnCamera == true)
-            detail(step, lead: lead, notJudged: notJudged, report: report)
-            if !results.isEmpty {
-                CoachingLegend(results: results)
+            levelRow(pill(step, lead: lead), dependsOnCamera: lead?.definition.dependsOnCamera == true,
+                     legend: results.isEmpty ? nil : CoachingLegend(results: results))
+            if notJudged != nil || step.kind == .good || step.kind == .better {
+                detail(step, lead: lead, notJudged: notJudged, report: report)
             }
             buttons(index: index, of: steps)
         }
@@ -1079,22 +1211,19 @@ struct SwingCoachingPanel: View {
         }
     }
 
-    /// The level, and for a club reading the one short caveat line (the
-    /// detail is in All checks): beside the pill when it fits, else under it.
-    private func levelRow(_ pill: some View, dependsOnCamera: Bool) -> some View {
-        FlowLayout(spacing: 10, lineSpacing: 4) {
+    /// The level, then for a club reading the one caveat (the detail is in
+    /// All checks), then what the drawing's marks mean, each beside the one
+    /// before while the row has room and on its own line when it is full,
+    /// so the card never grows a row it doesn't need.
+    private func levelRow(_ pill: some View, dependsOnCamera: Bool, legend: CoachingLegend?) -> some View {
+        FlowLayout(spacing: 12, lineSpacing: Self.rowGap) {
             pill
             if dependsOnCamera {
-                Text(Self.cameraCaveat)
-                    .font(.appCaption)
-                    .foregroundStyle(.white.opacity(0.78))
-                    .accessibilityIdentifier("coaching-camera-caveat")
+                CoachingCameraCaveat(onPlayer: true)
             }
+            if let legend { legend }
         }
     }
-
-    /// A club reading's caveat on the card, kept to one short line.
-    static let cameraCaveat = "Depends on camera position"
 
     @ViewBuilder
     private func detail(_ step: CoachingStep, lead: CoachingMetricResult?, notJudged: CoachingExclusion?,
@@ -1110,7 +1239,7 @@ struct SwingCoachingPanel: View {
             }
         }
         .font(.appBody)
-        .foregroundStyle(.white.opacity(0.88))
+        .foregroundStyle(PlayerChrome.secondaryText)
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .combine)
     }
@@ -1232,8 +1361,8 @@ struct SwingCoachingPanel: View {
                 .accessibilityIdentifier("coaching-step-title")
             levelRow(CoachingLevelPill(level: result.level, scored: result.definition.scored,
                                        neutral: report.exclusion != nil),
-                     dependsOnCamera: result.definition.dependsOnCamera)
-            CoachingLegend(results: [result], neutral: report.exclusion != nil)
+                     dependsOnCamera: result.definition.dependsOnCamera,
+                     legend: CoachingLegend(results: [result], neutral: report.exclusion != nil))
             HStack(spacing: 10) {
                 Button {
                     highlighted = nil
@@ -1280,30 +1409,37 @@ struct SwingCoachingPanel: View {
                     if let caption = foldedCaption(first) {
                         Text(caption)
                             .font(.appCaptionLabel)
-                            .foregroundStyle(.white.opacity(0.75))
+                            .foregroundStyle(PlayerChrome.secondaryText)
+                            .lineLimit(1)
                     }
+                    // One line: shrinks a little, then truncates; the
+                    // whole finding is one tap away.
                     Text(first.text)
                         .font(.appLabel)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                        .truncationMode(.tail)
                 }
                 Spacer(minLength: 8)
-                // Short, so the finding's title gets the width.
-                Text(steps.count > 1 ? "Findings" : "Show")
-                    .font(.appLabel)
-                    .foregroundStyle(.white.opacity(0.82))
+                // A chevron only, so the finding's title gets the width;
+                // "Findings" is its name to VoiceOver and Voice Control.
                 Image(systemName: "chevron.up")
-                    .font(.appCaptionLabel)
-                    .foregroundStyle(.white.opacity(0.82))
+                    .font(.appLabel)
+                    .foregroundStyle(PlayerChrome.secondaryText)
+                    .frame(width: 28, height: 28)
+                    .background(Circle().fill(.white.opacity(0.12)))
             }
             .padding(.horizontal, 14)
+            .padding(.vertical, Self.foldedPadding)
             .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
             .background(cardBackground)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Coaching: \(first.text)")
-        .accessibilityHint("Pauses on the coach's first finding")
+        .accessibilityInputLabels([steps.count > 1 ? "Findings" : "Show", "Coaching"])
+        .accessibilityHint(steps.count > 1 ? "Findings: pauses on the coach's first finding"
+                           : "Pauses on the coach's finding")
         .accessibilityIdentifier("swing-coaching-pill")
     }
 
@@ -1326,10 +1462,16 @@ struct SwingCoachingPanel: View {
             .overlay(RoundedRectangle(cornerRadius: PlayerChrome.panelRadius).strokeBorder(PlayerChrome.panelEdge, lineWidth: 0.5))
     }
 
-    /// Kept tight so the card covers as little of the swing as it can.
-    private static let rowGap: CGFloat = 3
+    /// The gap between the card's rows. With each row's own leading and
+    /// the pill's edge it gives one even 8-point gap between the rows'
+    /// text, and keeps the card as short as it was, so it covers as little
+    /// of the swing as it can.
+    private static let rowGap: CGFloat = 5
     /// The card's top and bottom padding, as tight as its rounded corners allow.
     private static let cardPadding: CGFloat = 7
+    /// The folded line's top and bottom padding: clear of the capsule's
+    /// rounded edge.
+    private static let foldedPadding: CGFloat = 10
     /// The All checks capsule: drawn shorter than its row's text needs
     /// room for, and still 44 points to tap.
     private static let allChecksHeight: CGFloat = 28
@@ -1362,6 +1504,8 @@ struct SwingCoachingPanel: View {
 }
 
 /// What the colours on the frame mean, for the parts this drawing has.
+/// Each swatch is the shape drawn: a line (dashed where the line is), a
+/// ring, a dot or a band, in the drawing's colours.
 struct CoachingLegend: View {
     let results: [CoachingMetricResult]
     /// Several swings side by side: every colour their lines are drawn
@@ -1370,12 +1514,20 @@ struct CoachingLegend: View {
     /// The swing isn't judged: its line is drawn grey.
     var neutral = false
 
+    /// The shape a swatch draws.
+    enum Swatch: Equatable {
+        case line(dashed: Bool)
+        case ring(dashed: Bool)
+        case dot
+        case band
+    }
+
     var body: some View {
         let roles = Set(results.flatMap { $0.drawings.map(\.role) })
         // One row when it fits; at large text sizes it wraps onto as few
         // lines as it needs, never one item a line.
-        FlowLayout(spacing: 14, lineSpacing: 4) { items(roles) }
-        .font(.appCaptionLabel)
+        FlowLayout(spacing: 12, lineSpacing: 4) { items(roles) }
+        .font(.appCaption)
         .foregroundStyle(.white.opacity(0.88))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText(roles))
@@ -1389,43 +1541,103 @@ struct CoachingLegend: View {
         if roles.contains(.subject) { item(.subject, "This swing") }
     }
 
+    /// The shape this role is drawn as on the first result: a head check's
+    /// address and swing are rings, a club check's swing a line, a guide's
+    /// address a line and a dot.
+    static func swatch(for role: CoachingDrawing.Role, in result: CoachingMetricResult?) -> Swatch {
+        guard role != .zone else { return .band }
+        let shapes = result?.drawings.filter { $0.role == role && $0.kind != .label } ?? []
+        if let ring = shapes.first(where: { $0.kind == .circle }) {
+            return .ring(dashed: role == .reference || ring.dashed && role != .subject)
+        }
+        if let line = shapes.first(where: { $0.kind == .line || $0.kind == .band }) {
+            return .line(dashed: line.dashed)
+        }
+        if shapes.contains(where: { $0.kind == .dot }) { return .dot }
+        return .line(dashed: false)
+    }
+
     private func item(_ role: CoachingDrawing.Role, _ title: String) -> some View {
         let first = results.first
         let zone = first.map { CoachingDrawingLayer.zoneColour($0) } ?? .coachingLevel(0)
         let subject = first.map { CoachingDrawingLayer.subjectColour($0, swingNeutral: neutral) } ?? .coachingLevel(0)
+        let colours: [Color] = switch role {
+        case .reference: [.white.opacity(CoachingDrawingLayer.referenceOpacity)]
+        case .zone: [zone]
+        case .subject: subjectColours ?? [subject]
+        }
+        let swatch = Self.swatch(for: role, in: first)
+        let wide = role == .subject && colours.count > 1 && swatch != .dot
         return HStack(spacing: 5) {
             Canvas { context, size in
-                let rect = CGRect(origin: .zero, size: size)
-                switch role {
-                case .zone:
-                    let path = Path(roundedRect: rect.insetBy(dx: 1, dy: 1), cornerRadius: 2)
-                    context.fill(path, with: .color(zone.opacity(0.45)))
-                    context.stroke(path, with: .color(zone), lineWidth: 1.5)
-                case .reference, .subject:
-                    // Address drawn as the video draws it: thinner and dimmer.
-                    let colours: [Color] = role == .reference
-                        ? [.white.opacity(CoachingDrawingLayer.referenceOpacity)] : (subjectColours ?? [subject])
-                    let width: CGFloat = role == .reference ? 3.5 * CoachingDrawingLayer.referenceWeight + 0.5 : 3.5
-                    let step = (size.width - 2) / CGFloat(max(colours.count, 1))
-                    for (index, colour) in colours.enumerated() {
-                        var line = Path()
-                        line.move(to: CGPoint(x: 1 + step * CGFloat(index), y: size.height / 2))
-                        line.addLine(to: CGPoint(x: 1 + step * CGFloat(index + 1), y: size.height / 2))
-                        context.stroke(line, with: .color(colour), style: StrokeStyle(lineWidth: width, lineCap: .butt))
-                    }
-                }
+                Self.draw(swatch, colours: colours, role: role, in: CGRect(origin: .zero, size: size), context: context)
             }
-            .frame(width: role == .subject && (subjectColours?.count ?? 1) > 1 ? 9 * CGFloat(subjectColours?.count ?? 1) : 18,
-                   height: 10)
+            .frame(width: wide ? 9 * CGFloat(colours.count) : (swatch == .dot ? 10 : 18), height: 10)
             Text(title).fixedSize()
         }
     }
 
+    /// One swatch, drawn as the video draws its shape, with the same dark
+    /// halo.
+    private static func draw(_ swatch: Swatch, colours: [Color], role: CoachingDrawing.Role, in rect: CGRect,
+                             context: GraphicsContext) {
+        let halo = CoachingDrawingLayer.haloColour
+        switch swatch {
+        case .band:
+            let path = Path(roundedRect: rect.insetBy(dx: 1.5, dy: 1.5), cornerRadius: 2)
+            let colour = colours.first ?? .coachingLevel(0)
+            context.fill(path, with: .color(colour.opacity(0.45)))
+            context.stroke(path, with: .color(halo), lineWidth: 2.5)
+            context.stroke(path, with: .color(colour), lineWidth: 1.5)
+        case .line(let dashed):
+            let width: CGFloat = role == .reference ? 2 : 3
+            let dash: [CGFloat] = dashed ? [3, 2.5] : []
+            let step = rect.width / CGFloat(max(colours.count, 1))
+            for (index, colour) in colours.enumerated() {
+                var line = Path()
+                line.move(to: CGPoint(x: step * CGFloat(index) + 1, y: rect.midY))
+                line.addLine(to: CGPoint(x: step * CGFloat(index + 1) - 1, y: rect.midY))
+                context.stroke(line, with: .color(halo), style: StrokeStyle(lineWidth: width + 1.5, lineCap: .butt, dash: dash))
+                context.stroke(line, with: .color(colour), style: StrokeStyle(lineWidth: width, lineCap: .butt, dash: dash))
+            }
+        case .ring(let dashed):
+            // One ring; several swings' colours share it as arcs.
+            let side = min(rect.width, rect.height) - 2
+            let circle = CGRect(x: rect.midX - side / 2, y: rect.midY - side / 2, width: side, height: side)
+            let width: CGFloat = dashed ? 1.25 : 2
+            let dash: [CGFloat] = dashed ? CoachingDrawingLayer.ringDash(width) : []
+            context.stroke(Path(ellipseIn: circle), with: .color(halo),
+                           style: StrokeStyle(lineWidth: width + 1.5, dash: dash))
+            let share = 360 / Double(max(colours.count, 1))
+            for (index, colour) in colours.enumerated() {
+                var arc = Path()
+                arc.addArc(center: CGPoint(x: circle.midX, y: circle.midY), radius: side / 2,
+                           startAngle: .degrees(share * Double(index) - 90),
+                           endAngle: .degrees(share * Double(index + 1) - 90), clockwise: false)
+                context.stroke(arc, with: .color(colour), style: StrokeStyle(lineWidth: width, dash: dash))
+            }
+        case .dot:
+            let side = min(rect.width, rect.height) - 2
+            let dot = Path(ellipseIn: CGRect(x: rect.midX - side / 2, y: rect.midY - side / 2, width: side, height: side))
+            context.fill(dot, with: .color(colours.first ?? .white))
+            context.stroke(dot, with: .color(.black.opacity(0.75)), lineWidth: 1)
+        }
+    }
+
     private func accessibilityText(_ roles: Set<CoachingDrawing.Role>) -> String {
+        let first = results.first
+        func shape(_ role: CoachingDrawing.Role) -> String {
+            switch Self.swatch(for: role, in: first) {
+            case .ring(let dashed): dashed ? "the dashed ring" : "the ring"
+            case .line(let dashed): dashed ? "the dashed line" : "the line"
+            case .dot: "the dot"
+            case .band: "the shading"
+            }
+        }
         var parts: [String] = []
-        if roles.contains(.reference) { parts.append("white is where you were at address") }
-        if roles.contains(.zone) { parts.append("the shading is where good players are") }
-        if roles.contains(.subject) { parts.append("the coloured line is this swing") }
+        if roles.contains(.reference) { parts.append("\(shape(.reference)) in white is where you were at address") }
+        if roles.contains(.zone) { parts.append("\(shape(.zone)) is where good players are") }
+        if roles.contains(.subject) { parts.append("\(shape(.subject)) in colour is this swing") }
         return "Drawing: " + parts.joined(separator: ", ")
     }
 }
@@ -1645,19 +1857,25 @@ struct SwingCoachingChecks: View {
     /// numbers mean. A swing that isn't judged leads with its verdict.
     private var summaryCard: some View {
         let judged = report.metrics.filter(\.definition.scored)
+        let guides = report.metrics.count - judged.count
         let inZone = judged.filter(\.inZone).count
-        let count = "\(inZone) of \(judged.count) checks in zone"
+        // Says what it counts: judged checks, not the guides listed too.
+        let count = "\(inZone) of \(judged.count) judged checks in zone"
         let label: String? = if case .focus = verdict { "Top finding" } else { nil }
+        let keyed = report.exclusion == nil && { if case .focus = verdict { true } else { false } }()
+        let guideNote = guides > 0 ? " Guides are shown, not counted." : ""
         let note: String = if let exclusion = report.exclusion {
             CoachingWords.exclusion(exclusion)
-        } else if case .focus = verdict {
-            "A number is steps out. " + CoachingWords.stepDefinition
+        } else if keyed {
+            CoachingWords.stepDefinition + guideNote
         } else {
-            "None of the others is far enough out to work on."
+            "None of the others is far enough out to work on." + guideNote
         }
         return VStack(alignment: .leading, spacing: 6) {
             if report.exclusion == nil {
-                Text(count).font(.appTitle.monospacedDigit())
+                // A headline number: proportional digits, so "11" never
+                // reads as "1 1".
+                Text(count).font(.appTitle)
             }
             VStack(alignment: .leading, spacing: 1) {
                 if let label {
@@ -1667,12 +1885,19 @@ struct SwingCoachingChecks: View {
                 }
                 Text(verdict.headline).font(.appLabel)
             }
-            Text(note).font(.appCaption).foregroundStyle(Color.helpText)
+            VStack(alignment: .leading, spacing: 2) {
+                if keyed {
+                    CoachingMarkKey(dash: guides > 0)
+                }
+                Text(note)
+            }
+            .font(.appCaption)
+            .foregroundStyle(Color.helpText)
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(report.exclusion == nil
-            ? "\(count). \(label.map { "\($0): " } ?? "")\(verdict.headline). \(note)"
+            ? "\(count). \(label.map { "\($0): " } ?? "")\(verdict.headline). \(keyed ? CoachingWords.numberKey + ". " : "")\(note)"
             : "\(verdict.headline). \(note)")
         .accessibilityIdentifier("coaching-summary")
     }
@@ -1695,7 +1920,7 @@ struct SwingCoachingChecks: View {
                         .font(.appLabel)
                         .fixedSize(horizontal: false, vertical: true)
                     if !judged {
-                        Text(reason.isEmpty ? "Not judged" : "Not judged · \(reason)")
+                        Text(CoachingWords.notJudged(reason))
                             .font(.appCaptionLabel)
                             .foregroundStyle(Color.helpText)
                             .fixedSize()
@@ -1703,12 +1928,13 @@ struct SwingCoachingChecks: View {
                 }
                 CoachingZoneTrack(result: result, neutral: neutral)
                     .padding(.vertical, 2)
-                if (judged && !result.inZone) || result.definition.dependsOnCamera {
-                    Text((judged && !result.inZone ? CoachingWords.level(result) + ". " : "")
-                         + (result.definition.dependsOnCamera
-                            ? "A club reading: it depends on where the camera stands, so check it with the camera on your hand line." : ""))
+                if judged && !result.inZone {
+                    Text(CoachingWords.level(result) + ".")
                         .font(.appCaption)
                         .foregroundStyle(Color.helpText)
+                }
+                if result.definition.dependsOnCamera {
+                    CoachingCameraCaveat(advice: true)
                 }
             }
             Spacer(minLength: 0)

@@ -2069,8 +2069,15 @@ struct CaptureView: View {
                     if let thumbnail = camera.autoSessionSwings.last?.thumbnail {
                         Image(uiImage: thumbnail).resizable().scaledToFill()
                     } else {
+                        // No picture yet: a neutral glyph, so the box reads
+                        // as the session's swings, not an image that failed.
                         RoundedRectangle(cornerRadius: 6)
                             .fill(.white.opacity(0.12))
+                            .overlay {
+                                Image(systemName: "figure.golf")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(.white.opacity(0.6))
+                            }
                     }
                 }
                 .frame(width: 32, height: 42)
@@ -2339,10 +2346,10 @@ private struct AutoStatePanel: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, minHeight: PlayerChrome.stateMinHeight)
-        .padding(.horizontal, 20)
-        .background(RoundedRectangle(cornerRadius: PlayerChrome.stateRadius).fill(PlayerChrome.solidPanel))
+        .frame(maxWidth: .infinity,
+               minHeight: PlayerChrome.stateMinHeight - PlayerChrome.stateInsets.top - PlayerChrome.stateInsets.bottom)
+        // The same surface, radius and insets as the recap above it.
+        .solidPanelBackground()
     }
 }
 

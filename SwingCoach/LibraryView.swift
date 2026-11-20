@@ -521,49 +521,51 @@ struct LibraryView: View {
         let title = sessionTitle(session)
         let count = session.swings.count
 
-        return HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 2) {
+        // The title and the session's actions on one row, the time and
+        // count on a full-width line under it, so it never wraps.
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .center, spacing: 8) {
                 Text(title)
                     .font(.appTitle)
-                Text("\(sessionTimeRange(session)) · \(count) swing\(count == 1 ? "" : "s")")
-                    .font(.appCaption.monospacedDigit())
-                    .foregroundStyle(Color.helpText)
-            }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
 
-            Spacer()
+                Spacer(minLength: 4)
 
-            Button {
-                withAnimation {
-                    if isWholeSessionSelected {
-                        selectedSwings.subtract(ids)
-                    } else {
-                        selectedSwings.formUnion(ids)
-                        isSelecting = true
-                    }
-                }
-            } label: {
-                // A secondary action beside Review, the primary one.
-                Text(isWholeSessionSelected ? "Deselect session" : "Select session")
-            }
-            .buttonStyle(SecondaryCapsuleButtonStyle())
-            .accessibilityLabel("\(isWholeSessionSelected ? "Deselect" : "Select") \(title) session")
-
-            if session.swings.contains(where: SwingCoachingStore.canCoach) {
                 Button {
-                    coachingSession = session
+                    withAnimation {
+                        if isWholeSessionSelected {
+                            selectedSwings.subtract(ids)
+                        } else {
+                            selectedSwings.formUnion(ids)
+                            isSelecting = true
+                        }
+                    }
                 } label: {
-                    Label("Review", systemImage: "figure.golf")
-                        .font(.appLabel)
+                    // A secondary action beside Review, the primary one,
+                    // saying what it covers.
+                    Text(isWholeSessionSelected ? "Deselect all \(count)" : "Select all \(count)")
                 }
-                // The session's primary action: filled in the accent.
-                .buttonStyle(.borderedProminent)
-                .foregroundStyle(Color.onAccent)
-                .buttonBorderShape(.capsule)
-                .controlSize(.small)
-                .padding(.leading, 6)
-                .accessibilityLabel("Review coaching for \(title) session")
-                .accessibilityIdentifier("session-coaching-button")
+                .buttonStyle(SecondaryCapsuleButtonStyle())
+                .accessibilityLabel("\(isWholeSessionSelected ? "Deselect" : "Select") \(title) session")
+
+                if session.swings.contains(where: SwingCoachingStore.canCoach) {
+                    Button {
+                        coachingSession = session
+                    } label: {
+                        Label("Review", systemImage: "figure.golf")
+                    }
+                    // The session's primary action: filled in the accent, the
+                    // same height as Select beside it.
+                    .buttonStyle(PrimaryCapsuleButtonStyle())
+                    .accessibilityLabel("Review coaching for \(title) session")
+                    .accessibilityIdentifier("session-coaching-button")
+                }
             }
+            Text("\(sessionTimeRange(session)) · \(count) swing\(count == 1 ? "" : "s")")
+                .font(.appCaption.monospacedDigit())
+                .foregroundStyle(Color.helpText)
+                .lineLimit(1)
         }
         .padding(.horizontal)
         .padding(.bottom, 8)
@@ -1384,7 +1386,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                                 .padding(.bottom, isScrubbing ? 16 : 30)
                         }
 
-                        if isScrubbing || showsPositionBadge {
+                        if isScrubbing || showsPositionBadge || isOnUnsurePosition {
                             scrubTimeBadge
                                 .padding(.bottom, 10)
                         }
@@ -1500,7 +1502,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             // Left: time readout (fixed width balances the right side so the
             // transport buttons stay centered). fixedSize stops it wrapping into
             // a vertical "0/0/./0" column when space gets tight.
-            Text(formatTime(currentTime))
+            Text(formatTime(currentTime) + " s")
                 .font(FixedType.readout.monospacedDigit())
                 .foregroundColor(.white.opacity(0.85))
                 .lineLimit(1)
@@ -1534,11 +1536,21 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 Button {
                     setLocked(!isLocked)
                 } label: {
-                    Image(systemName: isLocked ? "lock.fill" : "lock.open")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(isLocked ? .black : .white)
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(isLocked ? Color.accentLime : PlayerChrome.fill))
+                    // Captioned like the tool rail, so no control on the
+                    // player is a bare glyph.
+                    VStack(spacing: 2) {
+                        Image(systemName: isLocked ? "lock.fill" : "lock.open")
+                            .font(.system(size: 14, weight: .bold))
+                        Text("Lock")
+                            .font(FixedType.railCaption)
+                            .lineLimit(1)
+                            .fixedSize()
+                    }
+                    .foregroundColor(isLocked ? .black : .white)
+                    .frame(width: PlayerToolRail.buttonSize, height: PlayerToolRail.buttonHeight)
+                    .background(Capsule().fill(isLocked ? Color.accentLime : PlayerChrome.fill))
+                    .overlay(Capsule().strokeBorder(isLocked ? Color.clear : PlayerChrome.edge, lineWidth: 1))
+                    .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(isLocked ? "Unlock controls" : "Keep controls on screen")
@@ -1825,17 +1837,25 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             .background(Circle().fill(Color.black.opacity(0.46)))
     }
 
+    /// Paused on a position the model was unsure of: the badge by the time
+    /// says so in words, not only while scrubbing.
+    private var isOnUnsurePosition: Bool {
+        guard !isPlaying, let number = currentPositionNumber,
+              let position = visiblePositions?.first(where: { $0.number == number }) else { return false }
+        return position.isLowConfidence
+    }
+
     private var scrubTimeBadge: some View {
         HStack(spacing: 0) {
             if let number = currentPositionNumber, let position = visiblePositions?.first(where: { $0.number == number }) {
-                // Doubt named in words, not only a "?".
-                Text(position.isLowConfidence ? "\(position.name) · Low confidence" : position.title)
+                // Doubt named in words, not only by the strip's dashed chip.
+                Text(position.isLowConfidence ? "\(position.name) · \(SwingPosition.lowConfidenceWords)" : position.title)
                     .font(FixedType.readout)
                     .foregroundColor(.accentLime)
                 Text(" · ")
                     .font(FixedType.readout)
             }
-            Text("\(formatTime(currentTime))/\(formatTime(duration))")
+            Text("\(formatTime(currentTime)) / \(formatTime(duration)) s")
                 .font(FixedType.readout.monospacedDigit())
             if isFineScrubbing {
                 Text("¼ speed")
@@ -2213,11 +2233,12 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     }
 
     private func formatTime(_ time: CMTime) -> String {
+        // "7.8": seconds and tenths, no leading zero.
         let totalSeconds = CMTimeGetSeconds(time)
-        guard totalSeconds.isFinite else { return "00.0" }
+        guard totalSeconds.isFinite else { return "0.0" }
         let secs = Int(totalSeconds)
         let tenths = Int((totalSeconds * 10).truncatingRemainder(dividingBy: 10))
-        return String(format: "%02d.%d", secs, tenths)
+        return "\(secs).\(tenths)"
     }
 
     private func speedLabel(_ speed: Float) -> String {

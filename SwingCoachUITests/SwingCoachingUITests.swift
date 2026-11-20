@@ -56,7 +56,7 @@ final class SwingCoachingUITests: XCTestCase {
         app.buttons["coaching-all-checks"].firstMatch.tap()
         let summary = app.descendants(matching: .any)["coaching-summary"]
         XCTAssertTrue(summary.waitForExistence(timeout: 3))
-        XCTAssertTrue(summary.label.contains("1 of 3 checks in zone."), summary.label)
+        XCTAssertTrue(summary.label.contains("1 of 3 judged checks in zone."), summary.label)
         let head = app.buttons["coaching-metric-headHeightTop"]
         XCTAssertTrue(head.exists)
         XCTAssertTrue(head.label.contains("Good players: −6% to 0%"), head.label)
@@ -149,7 +149,8 @@ final class SwingCoachingUITests: XCTestCase {
         let theme = app.descendants(matching: .any)["session-theme-steepTransition-transition-1"]
         XCTAssertTrue(theme.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Shaft steepened coming down"].firstMatch.exists)
-        XCTAssertTrue(app.staticTexts["On 4 of 5 swings with a halfway-down (P5) reading"].exists)
+        // The caption names the check the theme's level is read on.
+        XCTAssertTrue(app.staticTexts["On 4 of 5 swings with a transition (P5) reading"].exists)
         XCTAssertTrue(app.staticTexts["Start here"].exists)
 
         // A dot a swing, in the order hit. The fifth is the first with four
@@ -201,17 +202,19 @@ final class SwingCoachingUITests: XCTestCase {
         app.buttons["coach-recap-close"].tap()
         XCTAssertFalse(recap.waitForExistence(timeout: 1))
         chip.tap()
-        app.buttons["Recap the last swings"].tap()
+        app.buttons["Recap last 5"].tap()
         XCTAssertTrue(recap.waitForExistence(timeout: 3))
         XCTAssertTrue(app.staticTexts["Last 5 swings"].exists)
         XCTAssertTrue(app.staticTexts["Shaft steepened coming down"].exists)
-        XCTAssertTrue(app.staticTexts["On 4 of 5 swings with a halfway-down (P5) reading"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["coach-recap-picture"].exists, "The recap pictures the theme")
         attach(app, "capture-recap")
 
+        // The count of swings that showed it is in the comparison, out of
+        // the judged swings.
         app.buttons["coach-recap-open"].tap()
         let third = app.buttons["coach-compare-swing-3"]
         XCTAssertTrue(third.waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["coach-compare-share"].label, "On 4 of 5 judged swings")
         XCTAssertTrue(app.buttons["coach-compare-swing-1"].exists)
         XCTAssertTrue(app.staticTexts["In zone"].exists, "The clean swing is in zone on the theme")
         attach(app, "capture-recap-compare")
@@ -240,7 +243,7 @@ final class SwingCoachingUITests: XCTestCase {
 
         // Closing the recap brings the verdict back.
         app.buttons["coach-cadence"].tap()
-        app.buttons["Recap the last swings"].tap()
+        app.buttons["Recap last 5"].tap()
         XCTAssertTrue(app.buttons["coach-recap-close"].waitForExistence(timeout: 3))
         XCTAssertFalse(verdict.exists)
         app.buttons["coach-recap-close"].tap()

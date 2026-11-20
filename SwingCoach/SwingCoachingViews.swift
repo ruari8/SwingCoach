@@ -68,26 +68,33 @@ struct SessionCoachingView: View {
                         }
                         .accessibilityIdentifier("session-coaching-progress")
                     }
-                    if !judged.isEmpty {
-                        headline(good: good, judged: judged.count)
-                    }
-                    if !measured.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            swingDots(measured, verdicts)
-                            symbolKey
+                    // One card with its own dividers, so the headline, the
+                    // marks and the counts sit closer than list rows do and
+                    // the first theme starts higher.
+                    VStack(alignment: .leading, spacing: Self.summaryGap) {
+                        if !judged.isEmpty {
+                            headline(good: good, judged: judged.count)
+                            Divider()
                         }
-                    }
-                    // Each count names what it is out of.
-                    VStack(spacing: 6) {
-                        LabeledContent("Measured", value: "\(reports.count) of \(swings.count) swings")
-                        if judged.count < reports.count {
-                            let notJudged = reports.count - judged.count
-                            LabeledContent("Not judged", value: "\(notJudged) swing\(notJudged == 1 ? "" : "s")")
+                        if !measured.isEmpty {
+                            VStack(alignment: .leading, spacing: 4) {
+                                swingDots(measured, verdicts)
+                                symbolKey(hasDash: judged.count < reports.count)
+                            }
+                            Divider()
                         }
+                        // Each count names what it is out of.
+                        VStack(spacing: 4) {
+                            LabeledContent("Measured", value: "\(reports.count) of \(swings.count) swings")
+                            if judged.count < reports.count {
+                                LabeledContent("Not judged", value: notJudgedTotal(reports))
+                            }
+                        }
+                        .font(.appBody.monospacedDigit())
+                        .accessibilityElement(children: .contain)
+                        .accessibilityIdentifier("session-coaching-totals")
                     }
-                    .font(.appBody.monospacedDigit())
-                    .accessibilityElement(children: .contain)
-                    .accessibilityIdentifier("session-coaching-totals")
+                    .padding(.vertical, 2)
                 }
                 if themes.isEmpty, waiting == 0 {
                     Section {
@@ -147,6 +154,7 @@ struct SessionCoachingView: View {
                     }
                 }
             }
+            .sheetContentTop()
             .navigationTitle("Session coaching")
             .navigationBarTitleDisplayMode(.inline)
             // A bar of its own once the list scrolls, so the title and
@@ -174,7 +182,9 @@ struct SessionCoachingView: View {
     /// good", the swings the coach had nothing to say about, and under it
     /// what good means, so a theme seen on every swing doesn't contradict it.
     private func headline(good: Int, judged: Int) -> some View {
-        let count = Text("\(good) of \(judged)").font(.appDisplay).monospacedDigit()
+        // Proportional digits: a headline number, never a column, so "11"
+        // never reads as "1 1".
+        let count = Text("\(good) of \(judged)").font(.appDisplay)
         return VStack(alignment: .leading, spacing: 4) {
             Text("\(count) judged swing\(judged == 1 ? "" : "s") good")
                 .font(.appTitle)
@@ -193,8 +203,24 @@ struct SessionCoachingView: View {
     static let goodMeaning = "Good: nothing far enough out to point at. Smaller misses still count below."
 
 
-    /// A level badge a swing, the same badge as the player's, each in a
-    /// 44 point target, wrapping in the order hit.
+    /// Between the summary's headline, marks and counts.
+    private static let summaryGap: CGFloat = 10
+    /// A swing's mark as laid out: 44 points wide, shorter than that, with
+    /// its target grown to 44 points tall, so rows of marks sit closer.
+    private static let dotWidth: CGFloat = 44
+    private static let dotHeight: CGFloat = 36
+
+    /// "1 swing", and why when every one of them shares the reason: "1
+    /// swing · camera moved".
+    private func notJudgedTotal(_ reports: [SwingCoachingReport]) -> String {
+        let exclusions = reports.compactMap(\.exclusion)
+        let count = "\(exclusions.count) swing\(exclusions.count == 1 ? "" : "s")"
+        guard let reason = exclusions.first, exclusions.allSatisfy({ $0 == reason }) else { return count }
+        return "\(count) · \(CoachingWords.reason(reason))"
+    }
+
+    /// A level badge a swing, the same badge as the player's, each a 44
+    /// point target, wrapping in the order hit.
     private func swingDots(_ measured: [SavedSwing], _ verdicts: [CoachingVerdict]) -> some View {
         FlowLayout(spacing: 0, lineSpacing: 0) {
             ForEach(Array(zip(measured, verdicts).enumerated()), id: \.element.0.id) { index, entry in
@@ -202,8 +228,8 @@ struct SessionCoachingView: View {
                     opened = entry.0.id
                 } label: {
                     badge(entry.1)
-                        .frame(width: 44, height: 44)
-                        .contentShape(.rect)
+                        .frame(width: Self.dotWidth, height: Self.dotHeight)
+                        .contentShape(.rect.inset(by: -(44 - Self.dotHeight) / 2))
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel("Swing \(index + 1): \(entry.1.headline)")
@@ -213,33 +239,24 @@ struct SessionCoachingView: View {
         .padding(.horizontal, -9)
     }
 
-    /// What the marks mean, in one line straight under them, and what a
-    /// step is.
-    private var symbolKey: some View {
+    /// What the marks mean, straight under them: the shared key, which
+    /// number a swing's mark is (its top finding, which a theme's level
+    /// need not match), and what a step is.
+    private func symbolKey(hasDash: Bool) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            FlowLayout(spacing: 10, lineSpacing: 4) {
-                HStack(spacing: 4) {
-                    CoachingLevelBadge(level: 0, size: 16)
-                    Text("good")
-                }
-                HStack(spacing: 4) {
-                    CoachingLevelBadge(level: 4, size: 16)
-                    Text("= steps out")
-                }
-                HStack(spacing: 4) {
-                    CoachingLevelBadge(level: 0, neutral: true, size: 16)
-                    Text("not judged")
-                }
-            }
-            Text(CoachingWords.stepDefinition)
+            CoachingMarkKey(tick: "Good", dash: hasDash)
+            Text(Self.markScope + " " + CoachingWords.stepDefinition)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .font(.appCaption)
         .foregroundStyle(Color.helpText)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Marks: a tick is a good swing, a number is steps out, a dash is not judged. \(CoachingWords.stepDefinition) Tap one to open the swing.")
+        .accessibilityLabel("Marks: a tick is a good swing, a number is steps out\(hasDash ? ", a dash is not judged" : ""). \(Self.markScope) \(CoachingWords.stepDefinition) Tap one to open the swing.")
         .accessibilityIdentifier("session-coaching-key")
     }
+
+    /// Which reading a swing's mark is.
+    static let markScope = "A swing's number is its top finding."
 
     private func badge(_ verdict: CoachingVerdict) -> CoachingLevelBadge {
         switch verdict {
@@ -268,9 +285,7 @@ struct SessionCoachingView: View {
                     .font(.appCaption)
                     .foregroundStyle(Color.helpText)
                 if CoachingMetricDefinition.definition(theme.metric).dependsOnCamera {
-                    Text("A club reading: it shifts with where the camera stands. Check it with the camera on your hand line.")
-                        .font(.appCaption)
-                        .foregroundStyle(Color.helpText)
+                    CoachingCameraCaveat()
                 }
             }
         }
