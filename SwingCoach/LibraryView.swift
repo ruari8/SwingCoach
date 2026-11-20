@@ -897,7 +897,10 @@ struct LibraryView: View {
                 }
             }
         } label: {
-            Image(systemName: filterVantage == nil ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+            // The standard filter lines, without a circle of their own
+            // inside the bar's round glass button, so they never read as a
+            // menu; filled in a disc while a filter is on.
+            Image(systemName: filterVantage == nil ? "line.3.horizontal.decrease" : "line.3.horizontal.decrease.circle.fill")
         }
         .accessibilityLabel("Filter swings")
     }
@@ -1560,32 +1563,37 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     private static var transportReadoutWidth: CGFloat { 84 }
 
     /// The one readout of where the playhead is: the position's name on a
-    /// position (with the low-confidence glyph when the model was unsure),
-    /// else the time; "¼ speed" under it while fine-scrubbing. Neutral
-    /// grey, never the accent, and no total duration (Swing Info has it).
+    /// position, else the time; "¼ speed" under it while fine-scrubbing.
+    /// Neutral grey, never the accent, and no total duration (Swing Info
+    /// has it). When the model was unsure of the position, a second line
+    /// says so in words beside the shared glyph ("Low confidence"), so the
+    /// glyph never reads as help.
     private var transportReadout: some View {
         let position = currentPositionNumber.flatMap { number in visiblePositions?.first { $0.number == number } }
         return VStack(alignment: .leading, spacing: 3) {
             Group {
                 if let position {
-                    Group {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(position.name)
+                            .lineLimit(2)
                         if position.isLowConfidence {
-                            Text("\(LowConfidenceGlyph.image) \(position.name)")
-                        } else {
-                            Text(position.name)
+                            Text("\(LowConfidenceGlyph.image) \(SwingPosition.lowConfidenceTitle)")
+                                .font(FixedType.cellLabel)
+                                .lineLimit(1)
                         }
                     }
-                        .accessibilityLabel(position.isLowConfidence
-                                            ? "\(position.title), \(SwingPosition.lowConfidenceWords)" : position.title)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(position.isLowConfidence
+                                        ? "\(position.title), \(SwingPosition.lowConfidenceWords)" : position.title)
                 } else {
                     Text(formatTime(currentTime) + " s")
                         .monospacedDigit()
+                        .lineLimit(2)
                 }
             }
             .font(FixedType.readout)
             .foregroundColor(PlayerChrome.secondaryText)
-            .lineLimit(2)
-            .minimumScaleFactor(0.85)
+            .minimumScaleFactor(0.75)
             .fixedSize(horizontal: false, vertical: true)
             if isFineScrubbing {
                 Text("¼ speed")
@@ -1651,7 +1659,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
     // MARK: - Tool rail and positions
 
-    static var positionStripHeight: CGFloat { 56 }
+    static var positionStripHeight: CGFloat { SwingPositionStrip.height }
 
     private func positionStripBottomPadding(bottomControlPadding: CGFloat) -> CGFloat {
         max(8, bottomControlPadding - 16)
@@ -1780,7 +1788,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     }
 
     private func toolRail(trailingTop: CGFloat, leadingTop: CGFloat) -> some View {
-        PlayerToolRail(tools: playerTools, trailingTop: trailingTop, leadingTop: leadingTop)
+        PlayerToolRail(tools: playerTools, trailingTop: trailingTop, leadingTop: leadingTop,
+                       onWalkthrough: isAtWalkthroughStop)
     }
 
     private func jump(to position: SwingPosition) {

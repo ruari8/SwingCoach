@@ -173,25 +173,26 @@ struct SessionCoachingView: View {
         }
     }
 
-    /// The session in one line, the count large: "7 of 11 judged swings
-    /// good", the swings the coach had nothing to say about.
+    /// The session in one line at a section heading's size: "7 of 11
+    /// judged swings good", the swings the coach had nothing to say
+    /// about. Not larger, so "Start here" and its pictures come into view.
     private func headline(good: Int, judged: Int) -> some View {
         // Proportional digits: a headline number, never a column, so "11"
         // never reads as "1 1".
-        let count = Text("\(good) of \(judged)").font(.appDisplay)
-        return Text("\(count) judged swing\(judged == 1 ? "" : "s") good")
+        Text("\(good) of \(judged) judged swing\(judged == 1 ? "" : "s") good")
             .font(.appTitle)
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityIdentifier("session-coaching-headline")
     }
 
 
-    /// Between the summary's headline, marks and counts.
-    private static let summaryGap: CGFloat = 10
+    /// Between the summary's headline, marks and counts: tight, so the
+    /// summary stays short and the first theme starts higher.
+    private static let summaryGap: CGFloat = 6
     /// A swing's mark as laid out: 44 points wide, shorter than that, with
     /// its target grown to 44 points tall, so rows of marks sit closer.
     private static let dotWidth: CGFloat = 44
-    private static let dotHeight: CGFloat = 36
+    private static let dotHeight: CGFloat = 32
 
     /// "1 not judged", and why when every one of them shares the reason:
     /// "1 not judged · short swing".

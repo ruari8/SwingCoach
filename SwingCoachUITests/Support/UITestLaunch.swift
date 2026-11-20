@@ -27,6 +27,14 @@ extension XCUIApplication {
         card.tap()
     }
 
+    /// Opens the player's tool rail when it is folded, as it is on the
+    /// coaching walkthrough.
+    func showPlayerTools(file: StaticString = #filePath, line: UInt = #line) {
+        let fold = buttons["player-tools-fold"]
+        XCTAssertTrue(fold.waitForExistence(timeout: 5), file: file, line: line)
+        if fold.label == "Show player tools" { fold.tap() }
+    }
+
     /// Relaunches without reseeding, so the data the test built persists.
     func relaunch(_ arguments: [String]) {
         terminate()

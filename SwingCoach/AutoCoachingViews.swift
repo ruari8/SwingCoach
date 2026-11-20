@@ -100,10 +100,7 @@ struct AutoCoachingPanel: View {
                 Image(systemName: "chevron.down")
                     .font(.appCaptionLabel)
             }
-            .padding(.horizontal, 14)
-            .frame(minHeight: 36)
-            .background(Capsule().fill(.black.opacity(0.45)))
-            .overlay(Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 0.5))
+            .captureChip()
         }
         .accessibilityIdentifier("coach-cadence")
         .accessibilityLabel("Coach speaks: \(cadence.title)")
@@ -161,8 +158,7 @@ struct AutoCoachingPanel: View {
         var example: CoachingRecapCard.Example?
         if let theme = recap.theme, let most = CoachingFeedback.examples(of: theme, in: group.map(\.report)).most,
            let metric = CoachingFeedback.metric(showing: theme, in: group[most].report) {
-            example = .init(swing: group[most].swing, report: group[most].report, metric: metric, number: numbers[most],
-                            showing: recap.swings.indices.contains(most) ? recap.swings[most] : nil)
+            example = .init(swing: group[most].swing, report: group[most].report, metric: metric, number: numbers[most])
         }
         return CoachingRecapCard(recap: recap, numbers: numbers, example: example) {
             if let theme = recap.theme {
@@ -201,8 +197,6 @@ struct CoachingRecapCard: View {
         let report: SwingCoachingReport
         let metric: CoachingMetricID
         let number: Int
-        /// How this swing stands on the theme, as its badge shows it.
-        var showing: CoachingThemeShowing?
     }
 
     let recap: CoachingRecap
@@ -304,33 +298,25 @@ struct CoachingRecapCard: View {
     }
 
     /// The swing that shows it most, as tall as the card, cut toward the
-    /// golfer and club, with that swing's own badge on its corner and its
-    /// number under the badge ("Swing 5"), so the badge reads as that
-    /// swing's, apart from the theme's typical level beside it, and the
-    /// line's colour always matches a badge.
+    /// golfer and club, with its number on its corner ("Swing 5"). The
+    /// card has one verdict, the theme's typical badge beside it; this
+    /// swing's own level is in Compare.
     private func examplePicture(_ example: Example) -> some View {
         CoachingFrameView(swing: example.swing, report: example.report, metric: example.metric, cropsToGolfer: true)
             .frame(width: CoachingPreview.recapPictureWidth)
             .frame(minHeight: CoachingPreview.recapPictureMinHeight, maxHeight: .infinity)
             .clipShape(.rect(cornerRadius: 8))
             .overlay(alignment: .topLeading) {
-                if let showing = example.showing {
-                    VStack(spacing: 3) {
-                        showing.badge(size: 22)
-                            .background(Circle().fill(PlayerChrome.solidPanel).padding(-2))
-                        Text("Swing \(example.number)")
-                            .font(FixedType.cellLabel.monospacedDigit())
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(Capsule().fill(PlayerChrome.solidPanel))
-                    }
+                Text("Swing \(example.number)")
+                    .font(FixedType.cellLabel.monospacedDigit())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(Capsule().fill(PlayerChrome.solidPanel))
                     .padding(5)
-                }
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Picture of swing \(example.number)"
-                + (example.showing.map { ", \($0.label)" } ?? "") + ", which shows it most")
+            .accessibilityLabel("Picture of swing \(example.number), which shows it most")
             .accessibilityIdentifier("coach-recap-picture")
     }
 }

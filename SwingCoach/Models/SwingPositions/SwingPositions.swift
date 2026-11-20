@@ -47,6 +47,8 @@ nonisolated struct SwingPosition: Codable, Equatable {
     /// ("low confidence" to VoiceOver) wherever it shows confidence.
     static let lowConfidence = 0.5
     static let lowConfidenceWords = "low confidence"
+    /// The same words shown under the position's name in the player.
+    static let lowConfidenceTitle = "Low confidence"
     var isLowConfidence: Bool { confidence < Self.lowConfidence }
     /// How the app names a position everywhere: "Halfway back (P3)".
     var title: String { Self.title(number) }

@@ -215,18 +215,23 @@ struct SwingPositionStrip: View {
 
     @State private var draggedIndex: Int?
 
-    /// Every chip's cell is this tall: past the 44 pt minimum target.
-    static let height: CGFloat = 56
+    /// Every chip's cell is this tall: the mark's slot over the chip,
+    /// past the 44 pt minimum target.
+    static let height: CGFloat = 66
     /// A low-confidence position's pose, dimmed inside its dashed outline.
     static let unsureGlyphOpacity = 0.45
-    /// A chip's level badge: 18 points with 12-point digits.
-    static let markSize: CGFloat = 18
-    /// Between a mark and its cell's corner, so it sits fully inside.
-    static let markInset: CGFloat = 1
+    /// A chip's level badge: 16 points with 11-point digits.
+    static let markSize: CGFloat = 16
+    /// The shallow slot at the top of each cell, over the chip, that holds
+    /// its marks (the level badge, the low-confidence glyph), so no mark
+    /// ever sits on a pose.
+    static let markSlot: CGFloat = 16
     /// The chip's outline (the current position's fill, a low-confidence
-    /// dashed edge): the strip's full height less this each side, so the
-    /// cell you see is the cell you tap.
+    /// dashed edge) and its mark slot: the strip's full height less this
+    /// each side, so the cell you see is the cell you tap.
     static let chipInset: CGFloat = 3
+    /// The pose in a chip.
+    static let poseSize: CGFloat = 26
 
     var body: some View {
         GeometryReader { geometry in
@@ -266,39 +271,12 @@ struct SwingPositionStrip: View {
         let selected = position.number == selectedNumber
         let unsure = position.isLowConfidence
         return VStack(spacing: 0) {
-            // Below 0.5 the model found no clear peak for this position:
-            // a dimmed pose in a dashed outline, the label unchanged.
-            SwingPositionGlyph(
-                number: position.number,
-                figure: selected ? .black : .white,
-                club: selected ? .accentInk : .accentLime
-            )
-            .frame(width: 28, height: 28)
-            .opacity(unsure ? Self.unsureGlyphOpacity : 1)
-
-            Text(position.label)
-                .font(FixedType.stripLabel)
-                .foregroundColor(selected ? .black : .white.opacity(0.85))
-                .lineLimit(1)
-                .fixedSize()
-        }
-        .frame(width: 34, height: Self.height - 2 * Self.chipInset)
-        .background(Capsule().fill(selected ? Color.white : Color.clear))
-        .overlay {
-            if unsure {
-                Capsule().strokeBorder(selected ? Color.black.opacity(0.55) : Color.white.opacity(0.6),
-                                       style: StrokeStyle(lineWidth: 1, dash: [3, 2.5]))
-                    .padding(selected ? 2 : 0)
-            }
-        }
-        // The whole cell is the target, the strip's full height.
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // Every mark in the same corner of its own cell, top-trailing,
-        // never perched on the edge, so it never pairs with a neighbour or
-        // sits among the scrubber's dots: the level badge, with the shared
-        // low-confidence glyph (the same mark as by the time and in Swing
-        // Info) before it when the position is unsure.
-        .overlay(alignment: .topTrailing) {
+            // Every mark in its own slot over the chip, centred on the
+            // cell, so it never covers a pose, pairs with a neighbour or
+            // sits among the scrubber's dots: the level badge, with the
+            // shared low-confidence glyph (the same mark as by the
+            // position's name and in Swing Info) before it when the
+            // position is unsure.
             HStack(spacing: 1) {
                 if unsure {
                     Image(systemName: LowConfidenceGlyph.symbol)
@@ -312,8 +290,37 @@ struct SwingPositionStrip: View {
                     markBadge(mark)
                 }
             }
-            .padding(Self.markInset)
+            .frame(height: Self.markSlot)
+
+            VStack(spacing: 0) {
+                // Below 0.5 the model found no clear peak for this position:
+                // a dimmed pose in a dashed outline, the label unchanged.
+                SwingPositionGlyph(
+                    number: position.number,
+                    figure: selected ? .black : .white,
+                    club: selected ? .accentInk : .accentLime
+                )
+                .frame(width: Self.poseSize, height: Self.poseSize)
+                .opacity(unsure ? Self.unsureGlyphOpacity : 1)
+
+                Text(position.label)
+                    .font(FixedType.stripLabel)
+                    .foregroundColor(selected ? .black : .white.opacity(0.85))
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+            .frame(width: 34, height: Self.height - 2 * Self.chipInset - Self.markSlot)
+            .background(Capsule().fill(selected ? Color.white : Color.clear))
+            .overlay {
+                if unsure {
+                    Capsule().strokeBorder(selected ? Color.black.opacity(0.55) : Color.white.opacity(0.6),
+                                           style: StrokeStyle(lineWidth: 1, dash: [3, 2.5]))
+                        .padding(selected ? 2 : 0)
+                }
+            }
         }
+        // The whole cell is the target, the strip's full height.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityIdentifier("swing-position-\(position.label)")
@@ -333,11 +340,11 @@ extension SwingPositionStrip {
             switch mark.shape {
             case .tick:
                 Image(systemName: "checkmark")
-                    .font(.system(size: 10, weight: .black))
+                    .font(.system(size: 9, weight: .black))
                     .foregroundColor(.black)
             case .level(let level):
                 Text("\(level)")
-                    .font(.system(size: 12, weight: .heavy).monospacedDigit())
+                    .font(.system(size: 11, weight: .heavy).monospacedDigit())
                     .foregroundColor(.black)
             }
         }
@@ -381,14 +388,22 @@ struct PlayerTool: Identifiable {
 /// dragging the fold button to the other half docks it on the left. Tapping the
 /// fold button folds the tools away. The tools share one capsule, each with
 /// a short caption under its icon; holding a tool shows its full name.
+/// On the coaching walkthrough the tools start folded, one tap away, so the
+/// finding has the video to itself.
 struct PlayerToolRail: View {
     let tools: [PlayerTool]
     /// Distance from the container top to the fold button on each side.
     let trailingTop: CGFloat
     let leadingTop: CGFloat
+    /// Paused on a walkthrough stop: the tools fold until the golfer opens
+    /// them; off the walkthrough they follow `playerToolRailOpen`.
+    var onWalkthrough = false
 
     @AppStorage("playerToolRailSide") private var side: PlayerToolSide = .trailing
-    @AppStorage("playerToolRailOpen") private var isOpen = true
+    @AppStorage("playerToolRailOpen") private var storedOpen = true
+    /// Opened on this walkthrough; folded again each time it starts.
+    @State private var openOnWalkthrough = false
+    private var isOpen: Bool { onWalkthrough ? openOnWalkthrough : storedOpen }
 
     // Gesture state resets itself if the system cancels the drag; the reset
     // springs, so a docking release animates from where the finger let go.
@@ -396,8 +411,9 @@ struct PlayerToolRail: View {
     private var drag = FoldDrag()
     @State private var peekedToolID: String?
 
-    /// The fold button: a chevron over its caption ("Hide", "Show"), so
-    /// no control on the player is a bare glyph.
+    /// The fold button: a chevron over its caption ("Tools"), so no
+    /// control on the player is a bare glyph; the chevron says which way
+    /// it goes.
     static let buttonSize: CGFloat = 38
     static let buttonHeight: CGFloat = 46
     /// The tools' capsule: wide enough for a caption such as "Positions"
@@ -492,7 +508,7 @@ struct PlayerToolRail: View {
         VStack(spacing: 2) {
             Image(systemName: isOpen ? "chevron.up" : "chevron.down")
                 .font(.system(size: 13, weight: .bold))
-            Text(isOpen ? "Hide" : "Show")
+            Text("Tools")
                 .font(FixedType.railCaption)
                 .lineLimit(1)
                 .fixedSize()
@@ -521,6 +537,9 @@ struct PlayerToolRail: View {
         )
         .onChange(of: drag.started) { _, started in
             if started { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+        }
+        .onChange(of: onWalkthrough) { _, on in
+            if on { openOnWalkthrough = false }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityIdentifier("player-tools-fold")
@@ -560,7 +579,11 @@ struct PlayerToolRail: View {
 
     private func toggleOpen() {
         withAnimation(.snappy(duration: 0.24)) {
-            isOpen.toggle()
+            if onWalkthrough {
+                openOnWalkthrough.toggle()
+            } else {
+                storedOpen.toggle()
+            }
         }
     }
 }

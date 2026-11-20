@@ -79,6 +79,13 @@ final class UICouncilTourUITests: XCTestCase {
             dismissSheet(app)
         }
 
+        // The walkthrough opens with the tools folded (newer builds).
+        let fold = app.buttons["player-tools-fold"]
+        if fold.waitForExistence(timeout: 2), fold.label == "Show player tools" {
+            fold.tap()
+            settle(0.6)
+        }
+
         if tap(app.buttons["player-tool-drawings"]) {
             settle(1.2)
             shot("08-drawings-tool", look)

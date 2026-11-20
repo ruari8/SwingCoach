@@ -35,15 +35,12 @@ extension Color {
 
 // MARK: - Type ramp
 
-/// The app's one type ramp: four sizes, each a Dynamic Type text style so
+/// The app's one type ramp: three sizes, each a Dynamic Type text style so
 /// large text keeps working. A screen uses these and nothing else, apart
-/// from the fixed sizes in `FixedType`. Bold is for headings (display and
-/// title), semibold for labels (a row's name, a button, a caption that
+/// from the fixed sizes in `FixedType`. Bold is for headings (titles, and
+/// a summary's count at the same size), semibold for labels (a row's name, a button, a caption that
 /// names something); numbers in rows and badges add `.monospacedDigit()`.
 extension Font {
-    /// The one big number or headline on a screen ("7 of 11"): large
-    /// title, bold.
-    static let appDisplay = Font.largeTitle.weight(.bold)
     /// A card's or a group's title, a finding: title 3, bold.
     static let appTitle = Font.title3.weight(.bold)
     /// Sentences, rows and values: subheadline.
@@ -322,6 +319,23 @@ enum CaptureControl {
     /// The Auto / Manual switch's width: two segments wide enough for
     /// "Manual" at the larger size.
     static let modeWidth: CGFloat = 184
+    /// A menu chip over the camera (the frame rate, the coach's cadence):
+    /// drawn this tall, 44 to tap.
+    static let chipHeight: CGFloat = 36
+}
+
+extension View {
+    /// A menu's label over the camera (the frame rate, the coach's
+    /// cadence): a dark capsule with a hairline edge, so its white text
+    /// holds up over bright sky like the Auto / Manual switch beside it.
+    /// Drawn `CaptureControl.chipHeight` tall, 44 to tap.
+    func captureChip() -> some View {
+        padding(.horizontal, 14)
+            .frame(minHeight: CaptureControl.chipHeight)
+            .background(Capsule().fill(.black.opacity(0.45)))
+            .overlay(Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 0.5))
+            .minimumHitArea(visible: CGSize(width: HitArea.minimum, height: CaptureControl.chipHeight))
+    }
 }
 
 // MARK: - Coaching previews

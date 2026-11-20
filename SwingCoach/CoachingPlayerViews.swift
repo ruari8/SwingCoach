@@ -379,12 +379,12 @@ struct CoachingDrawingLayer: View {
     /// The swing's ring (the head now) against the drawing's weight: one
     /// solid outline, the strongest mark on the head.
     static let ringWeight: CGFloat = 0.6
-    /// The address ring: 1.25 points, dashed, at 35% opacity, with a
-    /// narrow halo, so it reads as where the head was, never as a second
-    /// reading beside the solid ring.
-    static let referenceRingWidth: CGFloat = 1.25
-    static let referenceRingOpacity = 0.35
-    static let referenceHaloExtra: CGFloat = 1.5
+    /// The address ring: 1 point, dashed, at 25% opacity, with a narrow
+    /// halo, so it reads as where the head was, never as a second reading
+    /// competing with the solid ring and the zone's edge at phone size.
+    static let referenceRingWidth: CGFloat = 1
+    static let referenceRingOpacity = 0.25
+    static let referenceHaloExtra: CGFloat = 1
     /// The clear space between a ring's halo and the zone behind it.
     static let ringKnockoutGap: CGFloat = 1.5
     /// The reading's dot, against the drawing's weight: the largest mark.
@@ -658,7 +658,7 @@ struct SwingCoachingOverlay: View {
         } else if let step = steps.first(where: { abs($0.clipTime - now) <= stopTolerance }) {
             shown.results = layers.coach ? step.metrics.compactMap(report.metric) : []
             shown.stopKey = step.id
-            // "All checks at this position" keeps a tag on every drawing.
+            // "Show all drawings here" keeps a tag on every drawing.
             if !layers.everyCheck { leadOnly(&shown) }
             shown.namedOnCard = panelIsShown && !layers.everyCheck
         } else {
@@ -1778,7 +1778,7 @@ struct CoachingLayersSheet: View {
                     }
                     .accessibilityIdentifier("coaching-layer-club")
                     Toggle(isOn: $layers.everyCheck) {
-                        row("All checks at this position", "Includes checks in zone when paused.")
+                        row("Show all drawings here", "Includes checks in zone when paused.")
                     }
                     .accessibilityIdentifier("coaching-layer-every")
                 } footer: {
@@ -1906,8 +1906,10 @@ struct SwingCoachingChecks: View {
 
     /// The whole swing first ("11 of 16 checks in zone"), then the coach's
     /// verdict, labelled "Top finding" when it is one, then one caption
-    /// line keying the badges and the top finding's drawing, so the first
-    /// check is in view. A swing that isn't judged leads with its verdict.
+    /// line keying the badges (what a number means, and the dash when a
+    /// guide is listed), so the first check is in view. The rows name
+    /// "You" and the zone themselves. A swing that isn't judged leads with
+    /// its verdict.
     private var summaryCard: some View {
         let judged = report.metrics.filter(\.definition.scored)
         let guides = report.metrics.count - judged.count
@@ -1916,9 +1918,6 @@ struct SwingCoachingChecks: View {
         let count = "\(inZone) of \(judged.count) judged checks in zone"
         let label: String? = if case .focus = verdict { "Top finding" } else { nil }
         let keyed = report.exclusion == nil && { if case .focus = verdict { true } else { false } }()
-        // The drawing keyed is the top finding's, as the card shows it.
-        let drawn: [CoachingMetricResult] = if case .focus(let finding) = verdict, keyed,
-            let result = report.metric(finding.metric), !result.drawings.isEmpty { [result] } else { [] }
         // Without a key, one line on why there is nothing to work on.
         let note: String? = if let exclusion = report.exclusion {
             CoachingWords.exclusion(exclusion)
@@ -1954,21 +1953,12 @@ struct SwingCoachingChecks: View {
                 : "\(verdict.headline). \(note ?? "")")
             .accessibilityIdentifier("coaching-summary")
             if keyed {
-                // "You" in every colour the rows' markers take, so the key
-                // matches each row, not only the top finding.
-                CoachingLegend(marks: .init(dash: guides > 0), results: drawn,
-                               subjectColours: Self.markerColours(judged))
+                // The badges only: each row labels "You" and its zone.
+                CoachingLegend(marks: .init(dash: guides > 0))
             }
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .contain)
-    }
-
-    /// The level colours the judged rows' markers are drawn in, in order
-    /// (in zone, a little out, well out), one each.
-    static func markerColours(_ judged: [CoachingMetricResult]) -> [Color] {
-        let buckets = Set(judged.map { abs($0.level) == 0 ? 0 : abs($0.level) >= 4 ? 4 : 1 })
-        return [0, 1, 4].filter(buckets.contains).map { Color.coachingLevel($0) }
     }
 
     private func row(_ result: CoachingMetricResult) -> some View {

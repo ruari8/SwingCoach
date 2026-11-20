@@ -62,7 +62,7 @@ final class SwingCoachingUITests: XCTestCase {
         let summary = app.descendants(matching: .any)["coaching-summary"]
         XCTAssertTrue(summary.waitForExistence(timeout: 3))
         XCTAssertTrue(summary.label.contains("1 of 3 judged checks in zone."), summary.label)
-        XCTAssertTrue(legend.exists, "All checks keys the top finding's drawing")
+        XCTAssertTrue(legend.exists, "All checks keys the level badges")
         let head = app.buttons["coaching-metric-headHeightTop"]
         XCTAssertTrue(head.exists)
         XCTAssertTrue(head.label.contains("Good players: −6% to 0%"), head.label)
@@ -81,6 +81,11 @@ final class SwingCoachingUITests: XCTestCase {
         let caption = app.descendants(matching: .any)["coaching-caption-transition"]
         XCTAssertTrue(caption.waitForExistence(timeout: 5))
 
+        // On the walkthrough the tools start folded, one tap away.
+        let fold = app.buttons["player-tools-fold"]
+        XCTAssertEqual(fold.label, "Show player tools")
+        XCTAssertFalse(app.buttons["player-tool-drawings"].exists)
+        app.showPlayerTools()
         app.buttons["player-tool-drawings"].tap()
         let coach = app.switches["coaching-layer-coach"]
         XCTAssertTrue(coach.waitForExistence(timeout: 3))

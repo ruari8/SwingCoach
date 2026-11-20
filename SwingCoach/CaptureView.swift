@@ -2060,7 +2060,7 @@ struct CaptureView: View {
                 Image(systemName: "chevron.down")
                     .font(.appCaptionLabel)
             }
-            .frame(minHeight: 44)
+            .captureChip()
         }
         .accessibilityIdentifier("capture-frame-rate")
         .accessibilityLabel("Frame rate, \(camera.captureMode.shortName) frames per second")
