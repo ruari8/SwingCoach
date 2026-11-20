@@ -32,6 +32,21 @@ extension Color {
     })
 }
 
+// MARK: - Help text
+
+extension Color {
+    /// Secondary text: footers, help, captions and footnotes on Library,
+    /// Settings, the session review and the sheets. The system's secondary
+    /// label is about 3.3:1 on grouped grey in light appearance; this is
+    /// 5:1 on grouped grey and 5.5:1 on white, and 6.2:1 or more on the
+    /// dark grouped backgrounds (5.1:1 on an elevated sheet's rows).
+    static let helpText = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.612, green: 0.612, blue: 0.635, alpha: 1)
+            : UIColor(red: 0.408, green: 0.408, blue: 0.427, alpha: 1)
+    })
+}
+
 // MARK: - Level colours as text
 
 extension Color {
@@ -138,7 +153,7 @@ struct PositionTag: View {
     var body: some View {
         Text("P\(position)")
             .font(.caption.weight(.bold).monospacedDigit())
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color.helpText)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .background(Capsule().fill(Color(.tertiarySystemFill)))

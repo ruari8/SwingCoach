@@ -169,13 +169,20 @@ nonisolated enum CoachingThemeShowing: Equatable {
     /// levels: a different fault, not the theme and not in zone.
     case otherWay(Int)
 
+    /// Spelled out as the player says a level: "2 steps out", "In zone",
+    /// "Not judged".
     var label: String {
         switch self {
-        case .notJudged: "not judged"
-        case .inZone: "in zone"
-        case .shows(let level): "level \(level)"
-        case .otherWay(let level): "other way, level \(level)"
+        case .notJudged: "Not judged"
+        case .inZone: "In zone"
+        case .shows(let level): Self.stepsOut(level)
+        case .otherWay(let level): "Other way, \(Self.stepsOut(level))"
         }
+    }
+
+    private static func stepsOut(_ level: Int) -> String {
+        let steps = abs(level)
+        return "\(steps) step\(steps == 1 ? "" : "s") out"
     }
 }
 

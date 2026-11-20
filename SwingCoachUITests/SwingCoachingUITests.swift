@@ -23,7 +23,7 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertEqual(count.label, "Halfway down, step 1 of 2")
         XCTAssertEqual(Double(timeline.value as? String ?? "") ?? 0, 1.85, accuracy: 0.01)
         XCTAssertTrue(app.buttons["swing-position-P5"].isSelected)
-        XCTAssertTrue(app.buttons["swing-position-P5"].label.contains("out of zone, up to level 5, the coach starts here"))
+        XCTAssertTrue(app.buttons["swing-position-P5"].label.contains("out of zone, up to 5 steps out, the coach starts here"))
         XCTAssertTrue(transitionCaption.waitForExistence(timeout: 2), "The drawing carries its number")
         XCTAssertTrue(app.descendants(matching: .any)["coaching-legend"].exists)
         XCTAssertFalse(app.buttons["Play"].exists, "On a step the card carries Play")
@@ -213,7 +213,7 @@ final class SwingCoachingUITests: XCTestCase {
         let third = app.buttons["coach-compare-swing-3"]
         XCTAssertTrue(third.waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["coach-compare-swing-1"].exists)
-        XCTAssertTrue(app.staticTexts["in zone"].exists, "The clean swing is in zone on the theme")
+        XCTAssertTrue(app.staticTexts["In zone"].exists, "The clean swing is in zone on the theme")
         attach(app, "capture-recap-compare")
 
         // A swing in the comparison opens on the check it pictured, and

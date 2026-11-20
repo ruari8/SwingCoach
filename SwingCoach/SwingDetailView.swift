@@ -391,17 +391,17 @@ struct SwingInfoView: View {
                 .accessibilityIdentifier("swing-positions")
                 Text("Times are on the clip's slow-motion timeline. A ? and Low mark positions the model was unsure of.")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.helpText)
             } else if positionProcessor.failed.contains(currentSwing.id) {
                 Text("Swing positions could not be found for this clip.")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.helpText)
             } else {
                 HStack(spacing: 8) {
                     ProgressView()
                     Text("Finding swing positions…")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.helpText)
                 }
             }
         }
@@ -417,7 +417,7 @@ struct SwingInfoView: View {
                 .frame(width: Self.confidenceWidth, alignment: .trailing)
         }
         .font(.caption.weight(.semibold))
-        .foregroundColor(.secondary)
+        .foregroundStyle(Color.helpText)
         .accessibilityHidden(true)
     }
 
@@ -436,7 +436,7 @@ struct SwingInfoView: View {
                 if low { LowConfidenceTag() }
                 Text("\(Int((position.confidence * 100).rounded()))%")
                     .font(.caption.monospacedDigit().weight(low ? .semibold : .regular))
-                    .foregroundColor(low ? LowConfidenceTag.colour : .secondary)
+                    .foregroundStyle(low ? LowConfidenceTag.colour : Color.helpText)
             }
             .frame(width: Self.confidenceWidth, alignment: .trailing)
         }
@@ -450,7 +450,7 @@ struct SwingInfoView: View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.helpText)
 
             Spacer(minLength: 12)
 

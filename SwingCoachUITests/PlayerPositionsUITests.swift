@@ -96,12 +96,16 @@ final class PlayerPositionsUITests: XCTestCase {
         attach(app, "auto-review-docked-left")
     }
 
+    /// The fold button first, then the tools: one column, the first tool
+    /// 10 points under the fold button, the tools' targets touching inside
+    /// their shared capsule.
     private func assertToolOrder(_ app: XCUIApplication, _ identifiers: [String],
                                  file: StaticString = #filePath, line: UInt = #line) {
         let frames = identifiers.map { app.buttons[$0].frame }
-        for (upper, lower) in zip(frames, frames.dropFirst()) {
+        for (index, (upper, lower)) in zip(frames, frames.dropFirst()).enumerated() {
             XCTAssertEqual(upper.midX, lower.midX, accuracy: 1, file: file, line: line)
-            XCTAssertEqual(lower.minY - upper.maxY, 10, accuracy: 1, file: file, line: line)
+            XCTAssertEqual(lower.minY - upper.maxY, index == 0 ? 10 : 0, accuracy: 1, file: file, line: line)
+            if index > 0 { XCTAssertGreaterThanOrEqual(lower.height, 44, file: file, line: line) }
         }
     }
 

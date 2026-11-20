@@ -68,6 +68,9 @@ struct SessionCoachingView: View {
                         }
                         .accessibilityIdentifier("session-coaching-progress")
                     }
+                    if !judged.isEmpty {
+                        headline(good: good, judged: judged.count)
+                    }
                     if !measured.isEmpty {
                         VStack(alignment: .leading, spacing: 6) {
                             swingDots(measured, verdicts)
@@ -77,7 +80,6 @@ struct SessionCoachingView: View {
                     // Each count names what it is out of.
                     VStack(spacing: 6) {
                         LabeledContent("Measured", value: "\(reports.count) of \(swings.count) swings")
-                        LabeledContent("Good", value: "\(good) of \(judged.count) judged swings")
                         if judged.count < reports.count {
                             let notJudged = reports.count - judged.count
                             LabeledContent("Not judged", value: "\(notJudged) swing\(notJudged == 1 ? "" : "s")")
@@ -92,7 +94,7 @@ struct SessionCoachingView: View {
                         Text(judged.count < CoachingFeedback.themeMinimumSwings
                              ? "Not enough measured swings to see a pattern yet."
                              : "Nothing kept repeating. No single fault showed up on half the swings.")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.helpText)
                     }
                 }
                 if !themes.isEmpty {
@@ -130,7 +132,7 @@ struct SessionCoachingView: View {
                             ForEach(Array(themes.dropFirst(3))) { theme in
                                 Text("\(theme.text) · \(CoachingWords.themeShare(theme))")
                                     .font(.footnote)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.helpText)
                             }
                         }
                     }
@@ -159,6 +161,16 @@ struct SessionCoachingView: View {
         }
     }
 
+    /// The session in one line, the count large: "7 of 11 judged swings
+    /// good", the swings the coach had nothing to say about.
+    private func headline(good: Int, judged: Int) -> some View {
+        let count = Text("\(good) of \(judged)").font(.largeTitle.weight(.bold)).monospacedDigit()
+        return Text("\(count) judged swing\(judged == 1 ? "" : "s") good")
+            .font(.title3.weight(.semibold))
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("session-coaching-headline")
+    }
+
     /// A level badge a swing, the same badge as the player's, each in a
     /// 44 point target, wrapping in the order hit.
     private func swingDots(_ measured: [SavedSwing], _ verdicts: [CoachingVerdict]) -> some View {
@@ -184,7 +196,7 @@ struct SessionCoachingView: View {
         FlowLayout(spacing: 10, lineSpacing: 4) {
             HStack(spacing: 4) {
                 CoachingLevelBadge(level: 0, size: 16)
-                Text("in zone")
+                Text("good")
             }
             HStack(spacing: 4) {
                 CoachingLevelBadge(level: 4, size: 16)
@@ -196,32 +208,34 @@ struct SessionCoachingView: View {
             }
         }
         .font(.caption)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Color.helpText)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Marks: a tick is in zone, a number is steps out, a dash is not judged. Tap one to open the swing.")
+        .accessibilityLabel("Marks: a tick is a good swing, a number is steps out, a dash is not judged. Tap one to open the swing.")
         .accessibilityIdentifier("session-coaching-key")
     }
 
     private func badge(_ verdict: CoachingVerdict) -> CoachingLevelBadge {
         switch verdict {
-        case .notJudged: CoachingLevelBadge(level: 0, neutral: true, size: 26)
-        case .good, .better: CoachingLevelBadge(level: 0, size: 26)
-        case .focus(let finding): CoachingLevelBadge(level: finding.level, size: 26)
+        case .notJudged: CoachingLevelBadge(level: 0, neutral: true, size: CoachingLevelBadge.markSize)
+        case .good, .better: CoachingLevelBadge(level: 0, size: CoachingLevelBadge.markSize)
+        case .focus(let finding): CoachingLevelBadge(level: finding.level, size: CoachingLevelBadge.markSize)
         }
     }
 
     private func themeRow(_ theme: CoachingTheme, leads: Bool) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            CoachingLevelBadge(level: theme.medianLevel, size: 28)
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(theme.text).font(.subheadline.weight(.semibold))
+                // The typical level, with its word, so the number never
+                // reads as a count of swings.
+                CoachingLevelPill(level: theme.medianLevel, note: "typical")
                 Text(CoachingWords.themeShare(theme))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.helpText)
                 if CoachingMetricDefinition.definition(theme.metric).dependsOnCamera {
                     Text("A club reading: it shifts with where the camera stands. Check it with the camera on your hand line.")
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.helpText)
                 }
                 if leads {
                     Text("Start here")
@@ -264,7 +278,7 @@ struct SessionCoachingView: View {
                     Text(title).font(.caption.weight(.semibold))
                     Text("Swing \(index + 1) · \(CoachingWords.reading(result))")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.helpText)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -283,15 +297,22 @@ struct SessionCoachingView: View {
                         Text(theme.text).font(.subheadline.weight(.semibold))
                         Text(CoachingWords.themeShare(theme, namingPosition: false))
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.helpText)
                     }
                 }
                 if index + 1 < ordered.count {
                     let both = CoachingFeedback.swingsShowingBoth(theme, ordered[index + 1], in: reports)
-                    Label("Both on \(both) swing\(both == 1 ? "" : "s")", systemImage: "arrow.down")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.leading, 4)
+                    // A plain connector, no arrowhead: seen together is
+                    // not one causing the other.
+                    HStack(spacing: 10) {
+                        Capsule()
+                            .fill(Color.helpText.opacity(0.6))
+                            .frame(width: 2, height: 18)
+                            .frame(width: 28)
+                        Text("Seen together on \(both) swing\(both == 1 ? "" : "s")")
+                            .font(.caption)
+                            .foregroundStyle(Color.helpText)
+                    }
                 }
             }
         }
@@ -314,12 +335,12 @@ struct SessionCoachingView: View {
                 Spacer()
                 Text("green band \(definition.unit.format(definition.zone.lowerBound)) to \(definition.unit.format(definition.zone.upperBound))")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.helpText)
             }
             if points.count < 2 {
                 Text("Too few swings to show a trend.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.helpText)
             } else {
                 CoachingTrendChart(points: points, zone: definition.zone)
                     .frame(height: 96)
@@ -329,7 +350,7 @@ struct SessionCoachingView: View {
                     Text("Last swing")
                 }
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.helpText)
             }
         }
         .padding(.vertical, 2)

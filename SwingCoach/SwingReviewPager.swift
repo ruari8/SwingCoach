@@ -154,7 +154,7 @@ struct ReviewTopBar: View {
     /// Where a tool rail under the star starts.
     static let railTop: CGFloat = buttonSize + 10
     /// Side inset that centres the rail's buttons under the star.
-    static let railInset: CGFloat = 14 + (buttonSize - PlayerToolRail.buttonSize) / 2
+    static let railInset: CGFloat = 14 + (buttonSize - PlayerToolRail.width) / 2
 
     var body: some View {
         HStack {

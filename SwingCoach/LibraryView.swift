@@ -386,14 +386,14 @@ struct LibraryView: View {
         VStack(spacing: 20) {
             Image(systemName: "figure.golf")
                 .font(.system(size: 60))
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.helpText)
 
             Text("No Swings Yet")
                 .font(.title2.weight(.semibold))
 
             Text("Record a swing or import from Photos")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.helpText)
                 .multilineTextAlignment(.center)
 
             HStack(spacing: 16) {
@@ -527,7 +527,7 @@ struct LibraryView: View {
                     .font(.headline)
                 Text("\(sessionTimeRange(session)) · \(count) swing\(count == 1 ? "" : "s")")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.helpText)
             }
 
             Spacer()
@@ -545,7 +545,7 @@ struct LibraryView: View {
                 // Secondary to the toolbar's Select: plain grey text.
                 Text(isWholeSessionSelected ? "Deselect" : "Select")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.helpText)
                     .frame(minHeight: 44)
                     .contentShape(Rectangle())
             }
@@ -608,7 +608,7 @@ struct LibraryView: View {
 
             Text("\(selectedSwings.count) selected")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.helpText)
 
             Spacer()
 
@@ -690,7 +690,7 @@ struct LibraryView: View {
                 .font(.title3.weight(.bold))
             Text(label)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.helpText)
         }
     }
 
@@ -826,11 +826,11 @@ struct LibraryView: View {
                 if swing.isReference {
                     Text("DTL reference")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.helpText)
                 } else {
                     Text(swing.createdAt.formatted(date: .omitted, time: .shortened))
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.helpText)
                 }
             }
         }
@@ -1394,10 +1394,12 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                         // Timeline sits ABOVE the buttons (Twitter-style) and well
                         // clear of the home-indicator zone so dragging it never gets
                         // hijacked by the system swipe-up gesture.
+                        // The panel sits just above the scrubber, so the
+                        // mat and the ball stay clear above it.
                         if let bottomPanel, !isDrawing {
                             bottomPanel(panelContext)
                                 .padding(.horizontal, 12)
-                                .padding(.bottom, 10)
+                                .padding(.bottom, 2)
                                 .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { panelTop = $0 }
                                 .onDisappear { panelTop = nil }
                                 .transition(.opacity)
@@ -1407,8 +1409,10 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                             .padding(.horizontal, 16)
                             .padding(.bottom, 6)
 
+                        // A clear gap between the scrubber's dots and the
+                        // pose strip's badges.
                         if isAtWalkthroughStop {
-                            Color.clear.frame(height: visiblePositions == nil ? bottomControlPadding : 4)
+                            Color.clear.frame(height: visiblePositions == nil ? bottomControlPadding : 8)
                         } else {
                             transportControlBar
                                 .padding(.horizontal, 22)
@@ -1650,7 +1654,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             })
         }
         if allowsFullscreen {
-            tools.append(PlayerTool(id: "fullscreen", title: "Full screen", accessibilityLabel: "Open full screen",
+            tools.append(PlayerTool(id: "fullscreen", title: "Full screen", caption: "Expand", accessibilityLabel: "Open full screen",
                                     icon: .system("arrow.up.left.and.arrow.down.right")) {
                 showsFullscreen = true
             })
@@ -2481,7 +2485,7 @@ struct FPSExportSheet: View {
 
                     Text("Current: \(formatDuration(currentDuration)) at \(Int(sourceFPS))fps")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.helpText)
                 }
                 .padding(.top)
 
@@ -2502,7 +2506,7 @@ struct FPSExportSheet: View {
 
                                     Text("Duration: \(formatDuration(duration))")
                                         .font(.subheadline)
-                                        .foregroundColor(isSelected ? Color.onAccent.opacity(0.8) : .secondary)
+                                        .foregroundColor(isSelected ? Color.onAccent.opacity(0.8) : Color.helpText)
                                 }
 
                                 Spacer()

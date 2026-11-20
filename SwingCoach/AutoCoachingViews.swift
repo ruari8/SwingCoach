@@ -176,27 +176,6 @@ struct AutoCoachingPanel: View {
 }
 
 extension CoachingThemeShowing {
-    /// A recap bar's look, and the key that explains it: the colour, and
-    /// solid or outlined. Bars that look the same share a key.
-    struct Look: Hashable {
-        let colourLevel: Int?
-        let outlined: Bool
-    }
-
-    var isShows: Bool {
-        if case .shows = self { return true }
-        return false
-    }
-
-    var look: Look {
-        switch self {
-        case .notJudged: Look(colourLevel: nil, outlined: false)
-        case .inZone: Look(colourLevel: 0, outlined: false)
-        case .shows(let level): Look(colourLevel: abs(level) >= 4 ? 4 : 1, outlined: false)
-        case .otherWay(let level): Look(colourLevel: abs(level) >= 4 ? 4 : 1, outlined: true)
-        }
-    }
-
     var colour: Color {
         switch self {
         case .notJudged: .gray.opacity(0.6)
@@ -332,46 +311,52 @@ struct CoachingRecapCard: View {
         .accessibilityIdentifier("coach-recap")
     }
 
-    /// What the bars mean, said once under them: one key for each look
-    /// the bars have, drawn exactly as that bar is.
+    /// What the slots mean, said once under them: the number is steps out
+    /// of zone, with the tick, the dash and an outlined bar keyed only
+    /// when a slot has one. The bar's colour repeats the level; the badge
+    /// says it by number and shape.
     private var barLegend: some View {
-        let looks = recap.swings.reduce(into: [CoachingThemeShowing]()) { kept, showing in
-            if !kept.contains(where: { $0.look == showing.look }) { kept.append(showing) }
-        }
-        .sorted { Self.legendOrder($0) < Self.legendOrder($1) }
-        // "Shows it" twice only when both amber and red bars show it.
-        let showsBoth = Set(looks.filter(\.isShows).map(\.look)).count > 1
-        let keys = looks.map { (showing: $0, title: legendTitle($0, showsBoth: showsBoth)) }
+        let showings = recap.swings
+        let hasNumber = showings.contains { if case .shows = $0 { true } else if case .otherWay = $0 { true } else { false } }
+        let hasTick = showings.contains(.inZone)
+        let hasDash = showings.contains(.notJudged)
+        let otherWay = showings.first { if case .otherWay = $0 { true } else { false } }
+        var spoken: [String] = []
+        if hasNumber { spoken.append("a number is steps out of zone") }
+        if hasTick { spoken.append("a tick is in zone") }
+        if hasDash { spoken.append("a dash is not judged") }
+        if otherWay != nil { spoken.append("an outlined bar is out the other way") }
         return FlowLayout(spacing: 12, lineSpacing: 4) {
-            ForEach(keys, id: \.title) { key in
+            if hasNumber {
                 HStack(spacing: 4) {
-                    RecapBar(showing: key.showing).frame(width: 16)
-                    Text(key.title)
+                    CoachingLevelBadge(level: 2, size: 16)
+                    Text("Number = steps out of zone")
+                }
+            }
+            if hasTick {
+                HStack(spacing: 4) {
+                    CoachingLevelBadge(level: 0, size: 16)
+                    Text("In zone")
+                }
+            }
+            if hasDash {
+                HStack(spacing: 4) {
+                    CoachingLevelBadge(level: 0, neutral: true, size: 16)
+                    Text("Not judged")
+                }
+            }
+            if let otherWay {
+                HStack(spacing: 4) {
+                    RecapBar(showing: otherWay).frame(width: 16)
+                    Text("Other way")
                 }
             }
         }
-        .font(.caption2.weight(.medium))
+        .font(.caption.weight(.medium))
         .foregroundStyle(.white.opacity(0.78))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Bars: " + keys.map(\.title).joined(separator: ", ").lowercased())
-    }
-
-    private static func legendOrder(_ showing: CoachingThemeShowing) -> Int {
-        switch showing {
-        case .shows(let level): abs(level) >= 4 ? 1 : 0
-        case .inZone: 2
-        case .otherWay: 3
-        case .notJudged: 4
-        }
-    }
-
-    private func legendTitle(_ showing: CoachingThemeShowing, showsBoth: Bool) -> String {
-        switch showing {
-        case .shows(let level): showsBoth ? (abs(level) >= 4 ? "Shows it, far out" : "Shows it, a little") : "Shows it"
-        case .inZone: "In zone"
-        case .otherWay: "Other way"
-        case .notJudged: "Not judged"
-        }
+        .accessibilityLabel("Key: " + spoken.joined(separator: ", "))
+        .accessibilityIdentifier("coach-recap-key")
     }
 
     /// One slot per swing: a bar, green where the theme's check was in
@@ -384,7 +369,7 @@ struct CoachingRecapCard: View {
             ForEach(Array(zip(numbers, recap.swings).enumerated()), id: \.offset) { _, entry in
                 VStack(spacing: 5) {
                     RecapBar(showing: entry.1)
-                    entry.1.badge(size: 22)
+                    entry.1.badge(size: CoachingLevelBadge.markSize)
                     Text("Swing \(entry.0)")
                         .font(.caption2.weight(.semibold).monospacedDigit())
                         .foregroundStyle(.white.opacity(0.7))
@@ -494,7 +479,7 @@ struct CoachingCompareView: View {
                         Text(theme.text).font(.title3.weight(.bold))
                         Text("\(SwingPosition.title(theme.position)) on each swing. Tap one to walk through it.")
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.helpText)
                         CoachingLegend(results: Array(swings.lazy.compactMap { store.report(for: $0.swing)?.metric(theme.metric) }.prefix(1)),
                                        subjectColours: subjectColours)
                             .padding(.top, 4)
@@ -554,7 +539,7 @@ struct CoachingCompareView: View {
                         Color(white: 0.16).overlay {
                             VStack(spacing: 8) {
                                 showing.badge(size: 30)
-                                Text(showing.label.prefix(1).uppercased() + showing.label.dropFirst())
+                                Text(showing.label)
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundStyle(.white.opacity(0.75))
                             }
@@ -571,7 +556,7 @@ struct CoachingCompareView: View {
                     Spacer(minLength: 0)
                     Text(showing.label)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.helpText)
                 }
             }
         }

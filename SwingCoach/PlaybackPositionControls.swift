@@ -260,12 +260,13 @@ struct SwingPositionStrip: View {
         }
         .frame(width: 34, height: 46)
         .background(Capsule().fill(selected ? Color.white : Color.clear))
-        // The level badge sits above the chip, clear of the selected
-        // capsule, so being here and how it went never merge.
-        .overlay(alignment: .top) {
+        // The level badge belongs to its pose: pinned to the chip's
+        // top-trailing corner, inside the strip, so it never pairs with a
+        // neighbour or sits among the scrubber's dots.
+        .overlay(alignment: .topTrailing) {
             if let mark = marks[position.number] {
                 markBadge(mark)
-                    .offset(x: 11, y: -14)
+                    .offset(x: 3, y: -4)
             }
         }
         // The whole cell is the target, the strip's full height.
@@ -316,8 +317,11 @@ struct PlayerTool: Identifiable {
     }
 
     let id: String
-    /// Short name shown beside the button when labels flash or on hold.
+    /// The tool's name: shown beside the button on hold, and as its
+    /// caption when it has no `caption`.
     let title: String
+    /// The caption under the icon when the title is too long for the rail.
+    var caption: String? = nil
     let accessibilityLabel: String
     var accessibilityValue: String?
     var isOn = false
@@ -327,8 +331,8 @@ struct PlayerTool: Identifiable {
 
 /// The player's tool column. It sits under the top-right button by default;
 /// dragging the fold button to the other half docks it on the left. Tapping the
-/// fold button folds the tools away. Names flash when the tools open, and holding
-/// any tool shows its name.
+/// fold button folds the tools away. The tools share one capsule, each with
+/// a short caption under its icon; holding a tool shows its full name.
 struct PlayerToolRail: View {
     let tools: [PlayerTool]
     /// Distance from the container top to the fold button on each side.
@@ -337,17 +341,23 @@ struct PlayerToolRail: View {
 
     @AppStorage("playerToolRailSide") private var side: PlayerToolSide = .trailing
     @AppStorage("playerToolRailOpen") private var isOpen = true
-    @AppStorage("playerToolLabelsIntroduced") private var labelsIntroduced = false
 
     // Gesture state resets itself if the system cancels the drag; the reset
     // springs, so a docking release animates from where the finger let go.
     @GestureState(resetTransaction: Transaction(animation: .spring(response: 0.35, dampingFraction: 0.82)))
     private var drag = FoldDrag()
-    @State private var labelsVisible = false
-    @State private var labelsToken = 0
     @State private var peekedToolID: String?
 
+    /// The fold button.
     static let buttonSize: CGFloat = 38
+    /// The tools' capsule: wide enough for a caption such as "Positions",
+    /// a few points wider than the fold button.
+    static let width: CGFloat = 56
+    /// One tool in the capsule: past the 44 pt minimum target.
+    static let cellHeight: CGFloat = 46
+    /// Space between the capsule's edge and its first and last tool.
+    static let capsuleInset: CGFloat = 3
+    /// From the fold button to the first tool's target.
     static let spacing: CGFloat = 10
 
     /// Once the finger moves 6 points the press stays a drag until release.
@@ -370,7 +380,7 @@ struct PlayerToolRail: View {
                     dockOutline(highlighted: dropSide == .leading)
                         .offset(x: 0, y: leadingTop)
                     dockOutline(highlighted: dropSide == .trailing)
-                        .offset(x: width - Self.buttonSize, y: trailingTop)
+                        .offset(x: width - Self.width, y: trailingTop)
                 }
 
                 column(width: width)
@@ -380,32 +390,32 @@ struct PlayerToolRail: View {
             }
             .frame(width: width, height: geometry.size.height, alignment: .topLeading)
         }
-        .onAppear {
-            guard isOpen || !isFoldable, !labelsIntroduced else { return }
-            labelsIntroduced = true
-            flashLabels(delay: 0.4)
-        }
     }
 
     private func column(width: CGFloat) -> some View {
-        VStack(alignment: side == .leading ? .leading : .trailing, spacing: Self.spacing) {
+        VStack(spacing: Self.spacing - Self.capsuleInset) {
             if isFoldable {
                 foldButton(width: width)
             }
 
             if isOpen || !isFoldable {
-                ForEach(tools) { tool in
-                    RailToolRow(
-                        tool: tool,
-                        side: side,
-                        showsLabel: (labelsVisible || peekedToolID == tool.id) && !isDragging,
-                        peekedToolID: $peekedToolID
-                    )
-                    .opacity(isDragging ? 0.35 : 1)
-                    .transition(.opacity.combined(with: .scale(scale: 0.4, anchor: .top)))
+                VStack(spacing: 0) {
+                    ForEach(tools) { tool in
+                        RailToolRow(
+                            tool: tool,
+                            side: side,
+                            showsLabel: peekedToolID == tool.id && !isDragging,
+                            peekedToolID: $peekedToolID
+                        )
+                    }
                 }
+                .padding(.vertical, Self.capsuleInset)
+                .playerChromeBackground(Capsule())
+                .opacity(isDragging ? 0.35 : 1)
+                .transition(.opacity.combined(with: .scale(scale: 0.4, anchor: .top)))
             }
         }
+        .frame(width: Self.width)
     }
 
     private func foldButton(width: CGFloat) -> some View {
@@ -454,16 +464,17 @@ struct PlayerToolRail: View {
                           style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
             .background(Circle().fill(highlighted ? Color.accentLime.opacity(0.2) : .clear))
             .frame(width: Self.buttonSize, height: Self.buttonSize)
+            .frame(width: Self.width)
             .allowsHitTesting(false)
     }
 
     private func targetSide(width: CGFloat) -> PlayerToolSide {
-        let restingCenter = side == .leading ? Self.buttonSize / 2 : width - Self.buttonSize / 2
+        let restingCenter = side == .leading ? Self.width / 2 : width - Self.width / 2
         return restingCenter + dragOffset.width < width / 2 ? .leading : .trailing
     }
 
     private func dock(width: CGFloat, translation: CGSize) {
-        let restingCenter = side == .leading ? Self.buttonSize / 2 : width - Self.buttonSize / 2
+        let restingCenter = side == .leading ? Self.width / 2 : width - Self.width / 2
         let newSide: PlayerToolSide = restingCenter + translation.width < width / 2 ? .leading : .trailing
         if newSide != side { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
         withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
@@ -475,28 +486,11 @@ struct PlayerToolRail: View {
         withAnimation(.snappy(duration: 0.24)) {
             isOpen.toggle()
         }
-        if isOpen {
-            flashLabels(delay: 0.15)
-        } else {
-            labelsVisible = false
-        }
-    }
-
-    private func flashLabels(delay: Double) {
-        labelsToken += 1
-        let token = labelsToken
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-            guard token == labelsToken else { return }
-            withAnimation(.easeOut(duration: 0.2)) { labelsVisible = true }
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
-            guard token == labelsToken else { return }
-            withAnimation(.easeIn(duration: 0.3)) { labelsVisible = false }
-        }
     }
 }
 
-/// One tool: a tap runs it; holding shows its name instead.
+/// One tool in the rail's capsule: its icon with a caption under it. A tap
+/// runs it; holding shows its full name beside the rail instead.
 private struct RailToolRow: View {
     let tool: PlayerTool
     let side: PlayerToolSide
@@ -508,10 +502,11 @@ private struct RailToolRow: View {
     @State private var holdTask: Task<Void, Never>?
 
     var body: some View {
-        HStack(spacing: 10) {
-            if side == .trailing { label }
-            button
-            if side == .leading { label }
+        // The name hangs outside the capsule, on the side facing the video.
+        button.overlay(alignment: side == .trailing ? .leading : .trailing) {
+            label.alignmentGuide(side == .trailing ? .leading : .trailing) { dimensions in
+                side == .trailing ? dimensions[.trailing] + 10 : dimensions[.leading] - 10
+            }
         }
     }
 
@@ -528,26 +523,27 @@ private struct RailToolRow: View {
     }
 
     /// Filled in the accent only while the tool is active: a choice that
-    /// differs from the default. Everything else wears the player chrome.
-    @ViewBuilder
+    /// differs from the default. Everything else sits on the capsule.
     private var buttonFace: some View {
-        if tool.isOn {
+        VStack(spacing: 2) {
             icon
-                .foregroundColor(.black)
-                .frame(width: PlayerToolRail.buttonSize, height: PlayerToolRail.buttonSize)
-                .background(Circle().fill(Color.accentLime))
-        } else {
-            icon
-                .foregroundColor(.white)
-                .frame(width: PlayerToolRail.buttonSize, height: PlayerToolRail.buttonSize)
-                .playerChromeBackground(Circle())
+                .frame(height: 20)
+            Text(tool.caption ?? tool.title)
+                .font(.system(size: 10, weight: .semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+                .accessibilityHidden(true)
         }
+        .foregroundColor(tool.isOn ? .black : .white)
+        .frame(width: PlayerToolRail.width - 4, height: PlayerToolRail.cellHeight - 2)
+        .background(RoundedRectangle(cornerRadius: 18).fill(tool.isOn ? Color.accentLime : .clear))
+        .frame(width: PlayerToolRail.width, height: PlayerToolRail.cellHeight)
     }
 
     private var button: some View {
         buttonFace
             .opacity(isPressed && !didPeek ? 0.6 : 1)
-            .contentShape(Circle())
+            .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .updating($isPressed) { _, pressed, _ in pressed = true }
