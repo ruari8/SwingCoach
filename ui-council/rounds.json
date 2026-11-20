@@ -240,7 +240,8 @@
   "declined": [
    "A status word beside the Auto toggle (Sol, again): Ruari says the toggle is enough.",
    "Rewording the 'earliest often causes the later ones' footer (Sol): it's the coaching rule in COACHING.md, not a UI claim."
-  ]
+  ],
+  "notes": "Full council (all four). Lowest score across members: 6.3 (Gemini, accessibility). Every member's top accessibility complaint is the P1\u2013P10 strip's cell width."
  },
  "13": {
   "changes": [

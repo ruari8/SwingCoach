@@ -142,6 +142,53 @@
     "polish": 8.3,
     "overall": 7.4
    }
+  },
+  "gemini": {
+   "swingcoach": {
+    "typography": 7.4,
+    "hierarchy": 7.8,
+    "spacing": 7.2,
+    "color": 7.4,
+    "consistency": 6.4,
+    "clarity": 7.0,
+    "accessibility": 6.3,
+    "subject": 7.4,
+    "overlays": 7.6,
+    "data": 6.7,
+    "state": 7.7,
+    "polish": 7.5,
+    "overall": 7.4
+   },
+   "sportsbox": {
+    "typography": 6.8,
+    "hierarchy": 7.2,
+    "spacing": 6.3,
+    "color": 6.6,
+    "consistency": 5.8,
+    "clarity": 6.0,
+    "accessibility": 6.2,
+    "subject": 7.0,
+    "overlays": 6.5,
+    "data": 7.5,
+    "state": 6.6,
+    "polish": 6.2,
+    "overall": 6.6
+   },
+   "onform": {
+    "typography": 8.1,
+    "hierarchy": 8.0,
+    "spacing": 7.8,
+    "color": 8.0,
+    "consistency": 7.9,
+    "clarity": 7.1,
+    "accessibility": 7.4,
+    "subject": 8.4,
+    "overlays": 7.8,
+    "data": 7.3,
+    "state": 7.6,
+    "polish": 8.2,
+    "overall": 8.0
+   }
   }
  }
 }

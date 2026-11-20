@@ -39,6 +39,7 @@ Scores are 1–10 per metric (see [rubric.md](rubric.md)). Columns: typo = typog
 | 12 | `c7ddd21` | sol | 6.6 | 8.0 | 7.6 | 8.1 |
 | 12 | `c7ddd21` | opus | 6.5 | 7.3 | 6.5 | 7.1 |
 | 12 | `c7ddd21` | fable | 6.8 | 7.5 | 6.1 | 7.4 |
+| 12 | `c7ddd21` | gemini | 6.3 | 7.4 | 6.6 | 8.0 |
 
 ## Round 0
 
@@ -524,3 +525,13 @@ Declined:
 | SwingCoach | 7.4 | 7.7 | 7.3 | 7.8 | 7.1 | 7.4 | 6.8 | 7.6 | 7.8 | 6.9 | 7.8 | 7.8 | 7.5 | 6.8 |
 | Sportsbox | 5.8 | 6.0 | 5.8 | 6.0 | 5.5 | 5.5 | 5.2 | 7.0 | 6.5 | 6.8 | 5.8 | 6.0 | 6.1 | 5.2 |
 | Onform | 7.2 | 7.0 | 7.6 | 7.4 | 7.8 | 6.2 | 6.5 | 8.6 | 7.2 | 6.0 | 6.8 | 8.3 | 7.4 | 6.0 |
+
+**gemini**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.4 | 7.8 | 7.2 | 7.4 | 6.4 | 7.0 | 6.3 | 7.4 | 7.6 | 6.7 | 7.7 | 7.5 | 7.4 | 6.3 |
+| Sportsbox | 6.8 | 7.2 | 6.3 | 6.6 | 5.8 | 6.0 | 6.2 | 7.0 | 6.5 | 7.5 | 6.6 | 6.2 | 6.6 | 5.8 |
+| Onform | 8.1 | 8.0 | 7.8 | 8.0 | 7.9 | 7.1 | 7.4 | 8.4 | 7.8 | 7.3 | 7.6 | 8.2 | 8.0 | 7.1 |
+
+Full council (all four). Lowest score across members: 6.3 (Gemini, accessibility). Every member's top accessibility complaint is the P1–P10 strip's cell width.
