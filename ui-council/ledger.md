@@ -33,6 +33,7 @@ Scores are 1–10 per metric (see [rubric.md](rubric.md)). Columns: typo = typog
 | 9 | `3bad0b4` | sol | 6.4 | 7.8 | 7.1 | 7.6 |
 | 9 | `3bad0b4` | opus | 6.5 | 7.2 | 7.0 | 7.4 |
 | 9 | `3bad0b4` | fable | 6.6 | 7.5 | 6.5 | 7.9 |
+| 10 | `32a6525` | sol | 6.6 | 7.7 | 7.5 | 8.0 |
 
 ## Round 0
 
@@ -394,3 +395,44 @@ Declined:
 | Onform | 7.6 | 7.4 | 7.8 | 7.5 | 8.0 | 6.6 | 6.8 | 8.4 | 7.2 | 6.4 | 7.2 | 8.4 | 7.9 | 6.4 |
 
 Thumbnails are now square at 220 pt × screen scale, about 2.4× the memory of round 8's. Scored by Sol, Opus and Fable; Gemini's round 9 scores were still running when round 10 started.
+
+## Round 10
+
+Build: `32a6525`
+
+Changes this round:
+
+- Auto's state inside the toggle: the Auto segment fills lime while listening; a 12 pt mark beside it is filled (listening), hollow (paused) or a warning glyph (problem). No banner (Opus, Fable, Sol, within Ruari's camera-first rule).
+- Off the walkthrough: floating pill removed; position name in the transport row; one 8 pt band gap (Opus, Fable).
+- On-video tag hidden while the step card shows (Opus, Fable).
+- 'Head stayed high at impact' (Sol).
+- One plain severity word for beginners: 'A little out' / 'Well out' / 'Far out'; All checks keeps 'N steps out' (Sol).
+- One shared key with fixed symbols (you dot, good-zone band, address dashed ring) everywhere (Opus, Fable).
+- Recap picture fills the card height with that swing's own badge (Opus, Fable).
+- Head zone wider than the rings; address ring 1.5 pt at 50% (Fable).
+- All zones lighter (22% fill), measured lines keep full stroke (Sol).
+- All checks and comparison headers cut to one caption block (Fable, Sol).
+- Session summary cut; 'Shows it most' / 'Your best here' above the pictures (Fable, Sol).
+- Toolbar select is an icon; session header keeps 'Select' (Opus, Fable, Sol).
+- 44 pt hit areas for capsules and close buttons (Fable).
+- Done/Back as 44 pt capsules (Fable).
+- Rail labels 11 pt in a 66 pt rail; Positions uses the line-drawn pose (Fable).
+- Swing Info in inset cards with a 48 pt bottom inset (Fable).
+- P strip badges 18 pt inside their own cells (Opus, Sol).
+- 'All checks at this position' toggle (Sol).
+
+Declined:
+
+- Delete into a menu (Opus): already last, after a divider, in red.
+- 'My lines' / 'Coach lines' (Opus): Draw and Layers were settled.
+- Shift in-zone green away from the lime accent (Opus): hues differ; status set is fixed.
+- Scrolling P strip (Sol): left for Ruari.
+- 'Session swing N of 12' (Sol, third time): consistency with the Library player.
+
+**sol**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.7 | 7.8 | 8.0 | 8.1 | 7.6 | 7.1 | 6.6 | 8.6 | 6.9 | 7.4 | 7.3 | 8.1 | 7.7 | 6.6 |
+| Sportsbox | 7.2 | 7.6 | 7.1 | 7.4 | 7.5 | 6.9 | 6.7 | 8.0 | 7.5 | 8.4 | 7.0 | 7.5 | 7.5 | 6.7 |
+| Onform | 7.6 | 8.0 | 8.1 | 7.7 | 8.1 | 7.3 | 7.2 | 9.1 | 8.4 | 7.1 | 7.8 | 8.3 | 8.0 | 7.1 |

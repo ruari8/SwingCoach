@@ -206,5 +206,22 @@
    "Scrolling P strip (Sol): left for Ruari.",
    "'Session swing N of 12' (Sol, third time): consistency with the Library player."
   ]
+ },
+ "11": {
+  "changes": [
+   "Head ring sized from the pose's head (0.85 of face-to-neck); dashed address ring 1.25 pt at 35%; report version 9 \u2192 10 (Sol). Partly: it still misses the crown on a bent-over golfer.",
+   "Titles without 'Label:' shorthand: 'Shaft pointed outside the ball' (Sol).",
+   "Recap: 'Swing 5' under the picture's badge (Sol).",
+   "Session review: one-line key under the marks; first finding a heading size larger (Sol).",
+   "All checks: 'You' is a solid dot everywhere, colour carries the level (Sol).",
+   "Rail and player buttons 80% opaque (Sol).",
+   "Swing Info: 'Low \u00b7 50%' as one value (Sol).",
+   "P strip: the cell outline fills the strip height; 14 pt labels; badges in one corner (Sol).",
+   "Settings footer: two short sentences (Sol)."
+  ],
+  "declined": [
+   "'Watching' label for Auto (Sol): Ruari says the toggle is enough; the segment fills while armed.",
+   "Labelling the toolbar select icon (Sol): Opus and Fable asked for icon-only; VoiceOver has the label."
+  ]
  }
 }
