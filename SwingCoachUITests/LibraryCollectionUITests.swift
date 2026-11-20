@@ -27,7 +27,7 @@ final class LibraryCollectionUITests: XCTestCase {
     func testSwipesRespectDTLFilter() {
         let app = launchLibrary()
         app.buttons["Filter swings"].tap()
-        app.buttons["Down the Line"].tap()
+        app.buttons["Down the line"].tap()
         app.openLibraryCard("Review A starred DTL", sessionCard: true)
         assertPosition("1 of 2", title: "Review A starred DTL", in: app)
         swipeNext(in: app)

@@ -88,8 +88,7 @@ struct ExperimentalSettingsView: View {
             } header: {
                 SectionHeading("Video storage")
             } footer: {
-                HelpFooter("Also saves new clips (Auto, Manual, Trim) to Photos.",
-                           "When off, clips stay in SwingCoach's library and review. Existing videos are unchanged.")
+                HelpFooter("Also saves new clips to Photos.")
             }
 
             Section {
@@ -98,8 +97,7 @@ struct ExperimentalSettingsView: View {
             } header: {
                 SectionHeading("Extra swing footage")
             } footer: {
-                HelpFooter("Counted in real seconds, before slow motion.",
-                           "If Auto stops early, the clip keeps what was recorded.")
+                HelpFooter("Counted in real seconds, before slow motion.")
             }
 
             Section {
@@ -108,8 +106,7 @@ struct ExperimentalSettingsView: View {
             } header: {
                 SectionHeading("Sound")
             } footer: {
-                HelpFooter("When on, Manual recordings include microphone sound.",
-                           "Off by default. Auto clips never have sound. Clips play alongside your music either way.")
+                HelpFooter("Manual only: Auto clips never have sound.")
             }
 
             Section {
@@ -117,8 +114,7 @@ struct ExperimentalSettingsView: View {
             } header: {
                 SectionHeading("Auto & Manual Capture")
             } footer: {
-                HelpFooter("Off by default: only real shots are detected.",
-                           "Turn this on to include practice swings in Auto capture and in Manual recording's detected trim ranges. Replay Debug has its own option under Advanced.")
+                HelpFooter("Off: only real shots are detected.")
             }
 
             Section {
@@ -131,9 +127,7 @@ struct ExperimentalSettingsView: View {
             } header: {
                 SectionHeading("Coaching")
             } footer: {
-                HelpFooter("Every down-the-line swing is measured on the phone when Auto pauses or stops, so the coach is quiet while you hit.",
-                           "Measuring while Auto records gives a first reading of each swing as it is saved: body checks only, the clip fills in the rest later.",
-                           "Off by default: it has not been checked on a phone for dropped frames or heat.")
+                HelpFooter("Measuring while Auto records is untested on a phone.")
             }
 
             Section {
@@ -146,8 +140,7 @@ struct ExperimentalSettingsView: View {
                 }
 
             } footer: {
-                HelpFooter("Capture, Trim, and Replay Debug use SwingDetectorV3.",
-                           "The sample rate controls idle/address sampling; V3 raises its rate during an active swing episode.")
+                HelpFooter("The idle sample rate; V3 speeds up during a swing.")
             }
 
             Section {
@@ -156,8 +149,7 @@ struct ExperimentalSettingsView: View {
             } header: {
                 SectionHeading("Capture diagnostics")
             } footer: {
-                HelpFooter("Shows measured detector FPS and average model processing time under the capture status in Auto and Manual.",
-                           "Off by default; this does not change detection or recording.")
+                HelpFooter("Detector FPS and model time under the capture status.")
             }
 
             #if DEBUG
@@ -165,15 +157,14 @@ struct ExperimentalSettingsView: View {
                 Toggle("Keep Auto recordings", isOn: $keepAutoRecordings)
                     .accessibilityIdentifier("keep-auto-recordings")
             } footer: {
-                HelpFooter("Keeps everything Auto records in Documents/KeptRecordings instead of deleting it after 45 s, a new folder each time Auto starts or resumes.",
-                           "About 22 GB an hour at 240 fps. Play a folder back with the -footage-camera launch option. Starts with the next Auto session.")
+                HelpFooter("Keeps Auto's footage in Documents/KeptRecordings.")
             }
             #endif
 
             Section {
                 Toggle("Replay Debug tab", isOn: $showDebugReplayTab)
             } footer: {
-                HelpFooter("Shows the DEBUG-only video replay tool used to test auto swing detection with saved footage.")
+                HelpFooter("Replays saved footage through the swing detector.")
             }
         }
         .navigationTitle("Settings")

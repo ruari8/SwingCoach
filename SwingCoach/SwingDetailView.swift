@@ -81,7 +81,6 @@ struct SwingDetailView: View {
                               interacted: $coachInteracted, highlighted: $highlightedMetric)
         .sheet(isPresented: $showsCoachingLayers) {
             CoachingLayersSheet(layers: $coachingLayers, hasTrail: coachingStore.clubTrail(for: currentSwing) != nil)
-                .presentationDetents([.height(380), .large])
         }
         .sheet(isPresented: $showsCoachingChecks) {
             if let report = coachingStore.report(for: currentSwing) {
@@ -98,6 +97,7 @@ struct SwingDetailView: View {
         .overlayPreferenceValue(ReviewPlaybackCornerControlsKey.self) { cornerControls in
             topNavOverlay(cornerControls: cornerControls)
         }
+        .playerSheetDimming()
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)

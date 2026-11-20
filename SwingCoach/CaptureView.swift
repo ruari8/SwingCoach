@@ -1973,12 +1973,10 @@ struct CaptureView: View {
                     HStack {
                         frameRateMenu
                         Spacer()
-                        if workflowMode == .auto {
-                            autoIndicator
-                        }
                         // Tapped from a step away to stop Auto: the shared
                         // Capture control height, 44 points. While Auto
-                        // listens its segment fills with the accent.
+                        // listens its segment fills with the accent, and
+                        // its state mark sits inside the segment.
                         AccentSegmentedControl(
                             titles: CaptureWorkflowMode.allCases.map(\.displayName),
                             selectedIndex: Binding(
@@ -1989,6 +1987,13 @@ struct CaptureView: View {
                             identifier: "capture-mode"
                         )
                         .frame(width: CaptureControl.modeWidth, height: CaptureControl.height)
+                        .overlay(alignment: .leading) {
+                            if workflowMode == .auto {
+                                autoIndicator
+                                    .offset(x: CaptureControl.autoMarkOffset(title: CaptureWorkflowMode.auto.displayName))
+                                    .allowsHitTesting(false)
+                            }
+                        }
                     }
                 }
             }
@@ -2136,18 +2141,19 @@ struct CaptureView: View {
         return camera.autoCaptureStatus.isActive ? .listening : .paused
     }
 
-    /// The mark beside the Auto / Manual switch while Auto is chosen, a
-    /// shape per state so colour is never the only signal: a filled lime
-    /// dot listening, a hollow grey ring paused, an orange warning glyph
-    /// when it needs attention.
+    /// The mark inside the Auto segment, before its title at cap height,
+    /// a shape per state so colour is never the only signal: a filled dot
+    /// listening (black on the lime segment), a hollow ring paused, an
+    /// orange warning glyph when it needs attention. No footprint of its
+    /// own over the viewfinder.
     private var autoIndicator: some View {
         let size = CaptureControl.indicatorSize
         return Group {
             switch autoIndicatorState {
             case .listening:
-                Circle().fill(autoStatusIndicator)
+                Circle().fill(Color.black)
             case .paused:
-                Circle().strokeBorder(autoStatusIndicator, lineWidth: 2)
+                Circle().strokeBorder(Color.white, lineWidth: 2)
             case .problem:
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: size, weight: .bold))
@@ -2155,7 +2161,6 @@ struct CaptureView: View {
             }
         }
         .frame(width: size, height: size)
-        .padding(.trailing, 2)
         .accessibilityElement()
         .accessibilityLabel(autoStatusTitle)
         .accessibilityIdentifier("capture-auto-indicator")

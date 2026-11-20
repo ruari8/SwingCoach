@@ -2,22 +2,12 @@
 //  SwingCoachingViews.swift
 //  SwingCoach
 //
-//  The coaching colours and the session review. Coaching inside the player
+//  The session review. Coaching inside the player
 //  is in CoachingPlayerViews.swift.
 //
 
 import AVFoundation
 import SwiftUI
-
-extension Color {
-    static func coachingLevel(_ level: Int) -> Color {
-        switch abs(level) {
-        case 0: Color(red: 0.24, green: 0.86, blue: 0.43)
-        case 1...3: Color(red: 1.0, green: 0.75, blue: 0.16)
-        default: Color(red: 1.0, green: 0.33, blue: 0.27)
-        }
-    }
-}
 
 // MARK: - Session review
 
@@ -78,11 +68,10 @@ struct SessionCoachingView: View {
                         }
                         if !measured.isEmpty {
                             VStack(alignment: .leading, spacing: 4) {
+                                // Shapes, no numerals and no key: a tick,
+                                // a "!" in its level's colour, a dash.
+                                // Then the swings without a level, and why.
                                 swingDots(measured, verdicts)
-                                // The key on one line straight under the
-                                // marks, then the swings without a level,
-                                // and why.
-                                symbolKey(hasDash: judged.count < reports.count)
                                 if judged.count < reports.count {
                                     Text(notJudgedTotal(reports))
                                         .font(.appCaption.monospacedDigit())
@@ -203,8 +192,10 @@ struct SessionCoachingView: View {
         return "\(count) · \(CoachingWords.reason(reason))"
     }
 
-    /// A level badge a swing, the same badge as the player's, each a 44
-    /// point target, wrapping in the order hit.
+    /// A mark a swing, each a 44 point target, wrapping in the order hit:
+    /// a tick for a good swing, a "!" in the top finding's level colour
+    /// (amber a little out, red well out), a dash not judged. No numeral,
+    /// so a swing's mark never disagrees with a theme's word below.
     private func swingDots(_ measured: [SavedSwing], _ verdicts: [CoachingVerdict]) -> some View {
         FlowLayout(spacing: 0, lineSpacing: 0) {
             ForEach(Array(zip(measured, verdicts).enumerated()), id: \.element.0.id) { index, entry in
@@ -223,29 +214,11 @@ struct SessionCoachingView: View {
         .padding(.horizontal, -9)
     }
 
-    /// What the marks mean, on one caption line straight under them: what
-    /// each mark covers (one swing, where a theme below is typical across
-    /// swings, so the two numbers needn't match) and the shared key in its
-    /// short words. What a step is is said in All checks, where the steps
-    /// are measured.
-    private func symbolKey(hasDash: Bool) -> some View {
-        VStack(alignment: .leading) {
-            CoachingLegend(marks: .init(tick: "Good", numberWord: CoachingWords.numberKeyShort, dash: hasDash),
-                           title: Self.markScope)
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Each swing's top finding. Marks: a tick is a good swing, a number is steps out\(hasDash ? ", a dash is not judged" : ""). Tap one to open the swing.")
-        .accessibilityIdentifier("session-coaching-key")
-    }
-
-    /// What a swing's mark covers.
-    static let markScope = "Each swing"
-
     private func badge(_ verdict: CoachingVerdict) -> CoachingLevelBadge {
         switch verdict {
         case .notJudged: CoachingLevelBadge(level: 0, neutral: true, size: CoachingLevelBadge.markSize)
         case .good, .better: CoachingLevelBadge(level: 0, size: CoachingLevelBadge.markSize)
-        case .focus(let finding): CoachingLevelBadge(level: finding.level, size: CoachingLevelBadge.markSize)
+        case .focus(let finding): CoachingLevelBadge(level: finding.level, size: CoachingLevelBadge.markSize, mark: .glyph)
         }
     }
 
@@ -263,15 +236,19 @@ struct SessionCoachingView: View {
                 // The lead finding a heading size up, so it, not the
                 // tally's key, is the first thing read after the count.
                 Text(theme.text).font(leads ? .appTitle : .appLabel)
-                // The typical level, with its word, so the number never
-                // reads as a count of swings.
+                // The typical level as its word tier: "Typically well out".
                 CoachingLevelPill(level: theme.medianLevel, lead: "Typically")
-                Text(CoachingWords.themeShare(theme))
-                    .font(.appCaption)
-                    .foregroundStyle(Color.helpText)
-                if CoachingMetricDefinition.definition(theme.metric).dependsOnCamera {
-                    CoachingCameraCaveat()
+                // One caption: how many swings and which check, with the
+                // camera mark alone after it on a club check; its sentence
+                // is in All checks.
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(CoachingWords.themeShare(theme))
+                    if CoachingMetricDefinition.definition(theme.metric).dependsOnCamera {
+                        CoachingCameraMark()
+                    }
                 }
+                .font(.appCaption)
+                .foregroundStyle(Color.helpText)
             }
         }
     }
@@ -307,11 +284,12 @@ struct SessionCoachingView: View {
                     CoachingFrameView(swing: measured[index], report: report, metric: metric)
                         .aspectRatio(9.0 / 16.0, contentMode: .fit)
                         .clipShape(.rect(cornerRadius: 10))
-                    // The swing and where it sits against the zone; the
-                    // signed numbers are in All checks.
-                    Text("Swing \(index + 1) · \(CoachingWords.steps(result.level))")
+                    // The swing only: the picture's own colours carry
+                    // its level, and the numbers are in All checks.
+                    Text("Swing \(index + 1)")
                         .font(.appCaption.monospacedDigit())
                         .foregroundStyle(Color.helpText)
+                        .accessibilityLabel("Swing \(index + 1), \(CoachingSeverity(level: result.level).word.lowercased())")
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

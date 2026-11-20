@@ -160,8 +160,8 @@ final class SwingCoachingUITests: XCTestCase {
         let theme = app.descendants(matching: .any)["session-theme-steepTransition-transition-1"]
         XCTAssertTrue(theme.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Shaft steepened coming down"].firstMatch.exists)
-        // The caption names the check the theme's level is read on.
-        XCTAssertTrue(app.staticTexts["On 4 of 5 swings with a transition (P5) reading"].exists)
+        // One caption: how many swings, and the check the theme's level is read on.
+        XCTAssertTrue(app.staticTexts["4 of 5 swings · transition"].exists)
         XCTAssertTrue(app.staticTexts["Start here"].exists)
 
         // A dot a swing, in the order hit. The fifth is the first with four
@@ -213,13 +213,13 @@ final class SwingCoachingUITests: XCTestCase {
         app.buttons["coach-recap-close"].tap()
         XCTAssertFalse(recap.waitForExistence(timeout: 1))
         chip.tap()
-        app.buttons["Recap last 5"].tap()
+        app.buttons["Show recap now"].tap()
         XCTAssertTrue(recap.waitForExistence(timeout: 3))
-        // The card is a glance: the finding and its typical level as a
-        // badge; the count is in the comparison below.
+        // The card is a glance: the finding and the picture, whose drawing
+        // carries the level; no badge or word to disagree with it. The
+        // count is in the comparison below.
         XCTAssertTrue(app.staticTexts["Shaft steepened coming down"].exists)
-        XCTAssertTrue(app.descendants(matching: .any)["coach-recap-level"].label.hasPrefix("Typically "),
-                      app.descendants(matching: .any)["coach-recap-level"].label)
+        XCTAssertFalse(app.descendants(matching: .any)["coach-recap-level"].exists, "No level badge beside a picture")
         XCTAssertFalse(app.descendants(matching: .any)["coaching-camera-caveat"].exists, "The caveat is in the comparison")
         XCTAssertTrue(app.descendants(matching: .any)["coach-recap-picture"].exists, "The recap pictures the theme")
         attach(app, "capture-recap")
@@ -258,7 +258,7 @@ final class SwingCoachingUITests: XCTestCase {
 
         // Closing the recap brings the verdict back.
         app.buttons["coach-cadence"].tap()
-        app.buttons["Recap last 5"].tap()
+        app.buttons["Show recap now"].tap()
         XCTAssertTrue(app.buttons["coach-recap-close"].waitForExistence(timeout: 3))
         XCTAssertFalse(verdict.exists)
         app.buttons["coach-recap-close"].tap()

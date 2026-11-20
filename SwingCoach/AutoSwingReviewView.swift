@@ -97,7 +97,6 @@ struct AutoSwingReviewView: View {
         .sheet(isPresented: $showsCoachingLayers) {
             CoachingLayersSheet(layers: $coachingLayers,
                                 hasTrail: selectedSwing.map { coachingStore.clubTrail(for: $0) != nil } ?? false)
-                .presentationDetents([.height(380), .large])
         }
         .overlayPreferenceValue(ReviewPlaybackCornerControlsKey.self) { toolRail in
             toolRail
@@ -112,6 +111,7 @@ struct AutoSwingReviewView: View {
                 Spacer(minLength: 0)
             }
         }
+        .playerSheetDimming()
         .onChange(of: swings.map(\.id)) { _, ids in
             if let selectedSwingID, ids.contains(selectedSwingID) { return }
             self.selectedSwingID = ids.first

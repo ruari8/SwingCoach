@@ -39,14 +39,15 @@ final class LibraryPagingUITests: XCTestCase {
             let speedFrame = speed.frame
             let timelineFrame = timeline.frame
             if !autoReview {
-                // The tool rail continues the star's column: same centre, the
-                // same gap to the fold button and to the first tool, and the
-                // tools touching inside their capsule.
+                // The tool rail hangs under the star, about centred: the
+                // fold button and the capsule share one edge, the same gap
+                // to the fold button and to the first tool, and the tools
+                // touching inside their capsule.
                 let star = app.buttons["Remove star"].frame
                 let fold = app.buttons["player-tools-fold"].frame
                 let info = app.buttons["Show swing metadata"].frame
-                XCTAssertEqual(star.midX, fold.midX, accuracy: 1)
-                XCTAssertEqual(fold.midX, info.midX, accuracy: 1)
+                XCTAssertEqual(star.midX, fold.midX, accuracy: 2)
+                XCTAssertEqual(fold.maxX, info.maxX, accuracy: 1)
                 XCTAssertEqual(info.midX, speedFrame.midX, accuracy: 1)
                 XCTAssertEqual(fold.minY - star.maxY, info.minY - fold.maxY, accuracy: 1)
                 XCTAssertEqual(speedFrame.minY - info.maxY, 0, accuracy: 1)

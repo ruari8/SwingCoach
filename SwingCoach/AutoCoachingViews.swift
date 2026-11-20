@@ -87,11 +87,15 @@ struct AutoCoachingPanel: View {
             Picker("Coach speaks", selection: $cadenceName) {
                 ForEach(CoachingCadence.allCases) { Text($0.title).tag($0.rawValue) }
             }
-            // No icon, so it lines up with the options above; the number
-            // is the window the current setting recaps.
-            Button("Recap last \(recapSize)") {
+            // An action, not another cadence: a leading symbol sets it
+            // apart from the options above. It recaps the setting's
+            // window of swings.
+            Button {
                 recapIDs = measured.suffix(recapSize).map(\.swing.id)
+            } label: {
+                Label("Show recap now", systemImage: "rectangle.stack")
             }
+            .accessibilityHint("Recaps the last \(recapSize) swings")
             .disabled(!canRecap)
         } label: {
             HStack(spacing: 6) {
@@ -173,6 +177,24 @@ struct AutoCoachingPanel: View {
 }
 
 extension CoachingThemeShowing {
+    /// The word beside this swing's badge: its severity word ("A little
+    /// out", "Well out", "In zone"), "Other way" for a swing out of the
+    /// zone the other way, "Not judged".
+    var word: String {
+        switch self {
+        case .notJudged: "Not judged"
+        case .inZone, .shows: CoachingSeverity(level: level).word
+        case .otherWay: "Other way"
+        }
+    }
+
+    private var level: Int {
+        switch self {
+        case .notJudged, .inZone: 0
+        case .shows(let level), .otherWay(let level): level
+        }
+    }
+
     /// The shared level badge for this swing on the theme: a tick in zone,
     /// the level out of it, a dash not judged. Out the other way is not the
     /// theme, so its badge is only outlined.
@@ -187,10 +209,13 @@ extension CoachingThemeShowing {
 }
 
 /// What the last few swings had in common, over the camera, read at a
-/// glance from the tripod: a picture of the swing that shows it most, the
-/// finding with its typical level as a badge, and Compare. The count, each
-/// swing's level, the key and the camera caveat are in the comparison, so
-/// the card covers as little of the viewfinder as it can.
+/// glance from the tripod: a picture of the swing that shows it most and
+/// the finding, with Compare. The picture's own drawing carries that
+/// swing's level in its colour, so the card has no badge or level word to
+/// disagree with it. The count, each swing's level, the key and the camera
+/// caveat are in the comparison, so the card covers as little of the
+/// viewfinder as it can. With no theme, a tick (nothing kept repeating) or
+/// a dash (nothing judged) stands where the picture would be.
 struct CoachingRecapCard: View {
     struct Example {
         let swing: SavedSwing
@@ -213,22 +238,16 @@ struct CoachingRecapCard: View {
                 examplePicture(example)
             }
             VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: severityWord == nil ? .top : .center, spacing: 10) {
-                    levelBadge
-                        .padding(.top, severityWord == nil ? 1 : 0)
-                    VStack(alignment: .leading, spacing: 0) {
-                        // How far out it typically is, in one plain word.
-                        if let severityWord, let theme = recap.theme {
-                            Text(severityWord)
-                                .font(.appCaptionLabel)
-                                .foregroundStyle(Color.coachingLevelText(theme.medianLevel))
-                                .accessibilityIdentifier("coach-recap-severity")
-                        }
-                        Text(title)
-                            .font(.appTitle)
-                            .fixedSize(horizontal: false, vertical: true)
+                HStack(alignment: .top, spacing: 10) {
+                    if recap.theme == nil {
+                        levelBadge
+                            .padding(.top, 1)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(title)
+                        .font(.appTitle)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("coach-recap-title")
                     closeButton
                 }
                 Button(action: onOpen) {
@@ -253,36 +272,19 @@ struct CoachingRecapCard: View {
         .accessibilityIdentifier("coach-recap")
     }
 
-    /// "Typically well out": the theme's typical level as the plain word.
-    private var severityWord: String? {
-        guard let theme = recap.theme, let word = CoachingWords.severity(theme.medianLevel) else { return nil }
-        return "Typically " + word.prefix(1).lowercased() + word.dropFirst()
-    }
-
     private var title: String {
         if let theme = recap.theme { return theme.text }
         return recap.judged == 0 ? "None of these could be judged" : "Nothing kept repeating"
     }
 
-    /// The theme's typical level as the bare badge, in its level's colour:
-    /// a number out of zone, a tick when nothing repeated, a dash when
-    /// nothing could be judged. VoiceOver says the words.
+    /// Without a theme, what the swings came to as the bare badge: a tick
+    /// when nothing repeated, a dash when nothing could be judged.
+    /// VoiceOver says the words.
     private var levelBadge: some View {
-        let badge: CoachingLevelBadge
-        let words: String
-        if let theme = recap.theme {
-            badge = CoachingLevelBadge(level: theme.medianLevel, size: CoachingLevelBadge.markSize)
-            words = "Typically \(CoachingWords.steps(theme.medianLevel).lowercased())"
-        } else if recap.judged == 0 {
-            badge = CoachingLevelBadge(level: 0, neutral: true, size: CoachingLevelBadge.markSize)
-            words = "Not judged"
-        } else {
-            badge = CoachingLevelBadge(level: 0, size: CoachingLevelBadge.markSize)
-            words = "\(recap.good) of \(recap.judged) needed no pointer"
-        }
-        return badge
+        let judgedNone = recap.judged == 0
+        return CoachingLevelBadge(level: 0, neutral: judgedNone, size: CoachingLevelBadge.markSize)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(words)
+            .accessibilityLabel(judgedNone ? "Not judged" : "\(recap.good) of \(recap.judged) needed no pointer")
             .accessibilityIdentifier("coach-recap-level")
     }
 
@@ -298,11 +300,12 @@ struct CoachingRecapCard: View {
     }
 
     /// The swing that shows it most, as tall as the card, cut toward the
-    /// golfer and club, with its number on its corner ("Swing 5"). The
-    /// card has one verdict, the theme's typical badge beside it; this
-    /// swing's own level is in Compare.
+    /// golfer and club, with its number on its corner ("Swing 5"). Its
+    /// drawing's colour is the card's one level; every swing's level is in
+    /// Compare.
     private func examplePicture(_ example: Example) -> some View {
-        CoachingFrameView(swing: example.swing, report: example.report, metric: example.metric, cropsToGolfer: true)
+        let level = example.report.metric(example.metric)?.level ?? 0
+        return CoachingFrameView(swing: example.swing, report: example.report, metric: example.metric, cropsToGolfer: true)
             .frame(width: CoachingPreview.recapPictureWidth)
             .frame(minHeight: CoachingPreview.recapPictureMinHeight, maxHeight: .infinity)
             .clipShape(.rect(cornerRadius: 8))
@@ -316,7 +319,7 @@ struct CoachingRecapCard: View {
                     .padding(5)
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Picture of swing \(example.number), which shows it most")
+            .accessibilityLabel("Picture of swing \(example.number), which shows it most: \(CoachingSeverity(level: level).word.lowercased())")
             .accessibilityIdentifier("coach-recap-picture")
     }
 }
@@ -450,9 +453,19 @@ struct CoachingCompareView: View {
                                        cameraCaveat: CoachingMetricDefinition.definition(theme.metric).dependsOnCamera)
                             .padding(.top, 4)
                     }
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 14) {
-                        ForEach(swings, id: \.swing.id) { entry in
-                            tile(entry.number, entry.swing)
+                    // Two columns, each swing in turn going under the
+                    // shorter one, so a half-height tile (a swing not
+                    // judged) leaves no gap and the order still reads
+                    // left to right, top to bottom.
+                    let columns = columns
+                    HStack(alignment: .top, spacing: 10) {
+                        ForEach(0..<2, id: \.self) { column in
+                            VStack(spacing: 14) {
+                                ForEach(columns[column], id: \.swing.id) { entry in
+                                    tile(entry.number, entry.swing)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .top)
                         }
                     }
                 }
@@ -469,6 +482,26 @@ struct CoachingCompareView: View {
         .preferredColorScheme(.dark)
         .tint(.appAccent)
         .accessibilityIdentifier("coach-compare")
+    }
+
+    /// The swings shared between two columns in order, each going under
+    /// the column that ends higher; a swing not judged counts half.
+    private var columns: [[(number: Int, swing: SavedSwing)]] {
+        var columns: [[(number: Int, swing: SavedSwing)]] = [[], []]
+        var heights: [Double] = [0, 0]
+        for entry in swings {
+            let column = heights[1] < heights[0] ? 1 : 0
+            columns[column].append(entry)
+            heights[column] += (isHalfHeight(entry.swing) ? 0.5 : 1) + 0.15
+        }
+        return columns
+    }
+
+    /// A swing with nothing to picture on the theme: not judged, or its
+    /// check not read.
+    private func isHalfHeight(_ swing: SavedSwing) -> Bool {
+        guard let report = store.report(for: swing) else { return true }
+        return CoachingFeedback.metric(showing: theme, in: report) == nil
     }
 
     /// "short swing" as a line of its own: "Short swing".
@@ -509,14 +542,14 @@ struct CoachingCompareView: View {
                     if let report, let metric {
                         CoachingFrameView(swing: swing, report: report, metric: metric, cropsToGolfer: true)
                     } else {
-                        // The same bounds as a picture, on a neutral fill,
-                        // so it reads as a swing with nothing to show, not
-                        // a picture that failed to load.
+                        // Half a picture's height on a neutral fill, so it
+                        // reads as a swing with nothing to show, not a
+                        // picture that failed to load, and the swings with
+                        // pictures move up.
                         Color(white: 0.16).overlay {
                             VStack(spacing: 4) {
-                                showing.badge(size: 30)
-                                    .padding(.bottom, 4)
-                                Text(showing.label)
+                                showing.badge(size: 26)
+                                Text(showing.word)
                                     .font(.appLabel)
                                     .foregroundStyle(PlayerChrome.secondaryText)
                                 // Why, on its own line.
@@ -532,9 +565,10 @@ struct CoachingCompareView: View {
                         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.white.opacity(0.14), lineWidth: 1))
                     }
                 }
-                // One capped height for every tile, cut toward the golfer
-                // and club, so more swings fit on the first view.
-                .aspectRatio(CoachingPreview.compareAspect, contentMode: .fit)
+                // One capped height for every picture, cut toward the
+                // golfer and club, so more swings fit on the first view;
+                // half that with nothing to picture.
+                .aspectRatio(CoachingPreview.compareAspect * (metric == nil ? 2 : 1), contentMode: .fit)
                 .clipShape(.rect(cornerRadius: 12))
                 HStack(spacing: 6) {
                     // The same badge as the swing's picture on the recap.
@@ -545,7 +579,7 @@ struct CoachingCompareView: View {
                     // A swing that isn't judged says why inside its tile;
                     // its footer is just the swing, never a repeat.
                     if showing != .notJudged {
-                        Text(showing.label)
+                        Text(showing.word)
                             .font(.appCaption)
                             .foregroundStyle(Color.helpText)
                             .lineLimit(1)

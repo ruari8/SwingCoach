@@ -416,11 +416,18 @@ struct PlayerToolRail: View {
     /// it goes.
     static let buttonSize: CGFloat = 38
     static let buttonHeight: CGFloat = 46
-    /// The tools' capsule: wide enough for a caption such as "Positions"
-    /// with `captionInset` either side.
-    static let width: CGFloat = 66
-    /// Between a caption and the capsule's edges.
-    static let captionInset: CGFloat = 6
+    /// The tools' capsule: the longest caption ("Positions") with
+    /// `captionInset` either side.
+    static let width: CGFloat = {
+        let font = UIFont.systemFont(ofSize: 11, weight: .semibold)  // FixedType.railCaption
+        let longest = ("Positions" as NSString).size(withAttributes: [.font: font]).width
+        return (longest + 2 * captionInset).rounded(.up)
+    }()
+    /// Between the longest caption and the capsule's edges.
+    static let captionInset: CGFloat = 8
+    /// From the screen's edge to the rail and its fold button, the same
+    /// on both: the fold button and the capsule line up on that edge.
+    static let edgeMargin: CGFloat = 16
     /// One tool in the capsule: past the 44 pt minimum target.
     static let cellHeight: CGFloat = 46
     /// Space between the capsule's edge and its first and last tool.
@@ -445,9 +452,9 @@ struct PlayerToolRail: View {
             let dropSide = targetSide(width: width)
             ZStack(alignment: .topLeading) {
                 if isDragging {
-                    dockOutline(highlighted: dropSide == .leading)
+                    dockOutline(highlighted: dropSide == .leading, side: .leading)
                         .offset(x: 0, y: leadingTop)
-                    dockOutline(highlighted: dropSide == .trailing)
+                    dockOutline(highlighted: dropSide == .trailing, side: .trailing)
                         .offset(x: width - Self.width, y: trailingTop)
                 }
 
@@ -461,7 +468,9 @@ struct PlayerToolRail: View {
     }
 
     private func column(width: CGFloat) -> some View {
-        VStack(spacing: Self.spacing - Self.capsuleInset) {
+        // The fold button sits on the screen's edge side, in line with the
+        // capsule's edge under it.
+        VStack(alignment: side == .leading ? .leading : .trailing, spacing: Self.spacing - Self.capsuleInset) {
             if isFoldable {
                 foldButton(width: width)
             }
@@ -492,7 +501,7 @@ struct PlayerToolRail: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.4, anchor: .top)))
             }
         }
-        .frame(width: Self.width)
+        .frame(width: Self.width, alignment: side == .leading ? .leading : .trailing)
     }
 
     private func row(_ tool: PlayerTool) -> some View {
@@ -553,13 +562,13 @@ struct PlayerToolRail: View {
         }
     }
 
-    private func dockOutline(highlighted: Bool) -> some View {
+    private func dockOutline(highlighted: Bool, side: PlayerToolSide) -> some View {
         Capsule()
             .strokeBorder(highlighted ? Color.accentLime : Color.white.opacity(0.7),
                           style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
             .background(Capsule().fill(highlighted ? Color.accentLime.opacity(0.2) : .clear))
             .frame(width: Self.buttonSize, height: Self.buttonHeight)
-            .frame(width: Self.width)
+            .frame(width: Self.width, alignment: side == .leading ? .leading : .trailing)
             .allowsHitTesting(false)
     }
 
@@ -635,8 +644,7 @@ private struct RailToolRow: View {
             Text(tool.caption ?? tool.title)
                 .font(FixedType.railCaption)
                 .lineLimit(1)
-                .minimumScaleFactor(0.9)
-                .padding(.horizontal, PlayerToolRail.captionInset)
+                .fixedSize()
                 .accessibilityHidden(true)
         }
         .foregroundColor(tool.isOn ? .black : tool.isDestructive ? Self.destructiveColour : .white)

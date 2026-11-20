@@ -10,6 +10,7 @@
 //  mean coaching status only.
 //
 
+import Combine
 import SwiftUI
 import UIKit
 
@@ -59,6 +60,16 @@ extension Font {
 /// over the video, Trim's timeline and labels drawn on a frame. Level
 /// badges size their glyphs to the badge. Everything else uses the ramp.
 enum FixedType {
+    /// The smallest text anywhere: nothing is drawn, or shrinks to fit,
+    /// below 11 points.
+    static let minimumSize: CGFloat = 11
+
+    /// The scale factor that lets text `size` points tall shrink to fit
+    /// down to the floor and no further.
+    static func minimumScale(of size: CGFloat) -> CGFloat {
+        min(1, minimumSize / size)
+    }
+
     /// The tool rail's captions and the timeline's ticks: 11 points, with
     /// `PlayerToolRail.captionInset` either side, so "Positions" never
     /// touches the rail's edges.
@@ -67,8 +78,10 @@ enum FixedType {
     /// detector line.
     static let cellLabel = Font.system(size: 11, weight: .semibold)
     /// A tag or readout over the video: the scrub badge, the time beside
-    /// the transport, Trim's timecodes, a label drawn on a frame.
-    static let readout = Font.system(size: 12, weight: .semibold)
+    /// the transport (and its "Low confidence" line), Trim's timecodes, a
+    /// label drawn on a frame.
+    static let readoutSize: CGFloat = 12
+    static let readout = Font.system(size: readoutSize, weight: .semibold)
     /// The rail's names shown beside it, and the drawing tool's buttons.
     static let railLabel = Font.system(size: 14, weight: .semibold)
     /// A position's name on the pose strip ("P3"): the rail labels' size,
@@ -94,8 +107,8 @@ extension Color {
 // MARK: - Help footers
 
 /// A section's help under a list group, as short paragraphs in
-/// `Color.helpText`: the first says what to do, the next ones the
-/// details. No paragraph runs past three lines on an iPhone.
+/// `Color.helpText`. No paragraph runs past three lines on an iPhone;
+/// Settings' footers are one short line each.
 struct HelpFooter: View {
     let paragraphs: [String]
 
@@ -139,9 +152,61 @@ struct SectionHeading: View {
     }
 }
 
-// MARK: - Level colours as text
+// MARK: - Coaching levels
+
+/// The one severity system: a level's colour, its word and its text ink
+/// come from here and nowhere else, so a badge, a pill and a drawing never
+/// disagree. In zone is green "In zone"; one to three steps out is amber
+/// "A little out"; `wellOutFrom` steps or more is red "Well out". The
+/// numbers ("N steps out") are said only in All checks' rows.
+enum CoachingSeverity: Equatable {
+    case inZone, littleOut, wellOut
+
+    /// Where amber turns red: the one threshold.
+    static let wellOutFrom = 4
+
+    init(level: Int) {
+        let steps = abs(level)
+        self = steps == 0 ? .inZone : steps < Self.wellOutFrom ? .littleOut : .wellOut
+    }
+
+    /// The word beside a badge: "In zone", "A little out", "Well out".
+    var word: String {
+        switch self {
+        case .inZone: "In zone"
+        case .littleOut: "A little out"
+        case .wellOut: "Well out"
+        }
+    }
+
+    /// The word mid-sentence, after "Typically": "typically well out".
+    var lowercasedWord: String { word.prefix(1).lowercased() + word.dropFirst() }
+
+    /// The level's colour: green, amber, red.
+    var colour: Color {
+        switch self {
+        case .inZone: Color(red: 0.24, green: 0.86, blue: 0.43)
+        case .littleOut: Color(red: 1.0, green: 0.75, blue: 0.16)
+        case .wellOut: Color(red: 1.0, green: 0.33, blue: 0.27)
+        }
+    }
+
+    /// A darker ink of the same hue for text on light surfaces.
+    fileprivate var ink: Color {
+        switch self {
+        case .inZone: Color(red: 0.084, green: 0.456, blue: 0.198)
+        case .littleOut: Color.amberInk
+        case .wellOut: Color(red: 0.8, green: 0.066, blue: 0)
+        }
+    }
+}
 
 extension Color {
+    /// A level's colour: its `CoachingSeverity` band's.
+    static func coachingLevel(_ level: Int) -> Color {
+        CoachingSeverity(level: level).colour
+    }
+
     /// Amber as text on light surfaces: a dark amber, 7:1 on white and
     /// 6:1 or more on an amber pill's pale fill, where the bright amber is
     /// about 1.6:1. The disc and the pill's edge keep the bright amber.
@@ -156,12 +221,8 @@ extension Color {
     /// white), since the bright amber and green are unreadable as text on
     /// white.
     static func coachingLevelText(_ level: Int) -> Color {
-        let ink: Color = switch abs(level) {
-        case 0: Color(red: 0.084, green: 0.456, blue: 0.198)
-        case 1...3: amberInk
-        default: Color(red: 0.8, green: 0.066, blue: 0)
-        }
-        let bright = Color.coachingLevel(level)
+        let severity = CoachingSeverity(level: level)
+        let ink = severity.ink, bright = severity.colour
         return Color(uiColor: UIColor { traits in
             traits.userInterfaceStyle == .dark ? UIColor(bright) : UIColor(ink)
         })
@@ -210,6 +271,9 @@ enum SheetLayout {
     /// Under a sheet's last row: more than the sheet's corner radius, so
     /// the corner never cuts a row when the list is scrolled to its end.
     static let contentBottom: CGFloat = 48
+    /// Under the last row of a sheet sized to its content (Layers), over
+    /// the home indicator's band: a little air, since nothing scrolls.
+    static let fittedBottom: CGFloat = 12
 }
 
 extension View {
@@ -234,10 +298,11 @@ extension View {
             .overlay(shape.strokeBorder(PlayerChrome.edge, lineWidth: 1))
     }
 
-    /// The one style for sheets over the player (All checks, Drawings,
+    /// The one style for sheets over the player (All checks, Layers,
     /// Swing Info): dark, near-opaque, the accent, and room under the
     /// last row so the sheet's corner never clips it. Each sheet carries
-    /// its own Done.
+    /// its own Done. While one is up the player behind dims the same in
+    /// light and dark appearance (`PlayerSheetDim`).
     func playerSheetStyle() -> some View {
         self
             .scrollContentBackground(.hidden)
@@ -247,6 +312,39 @@ extension View {
             .presentationBackground(PlayerChrome.sheetBackground)
             .preferredColorScheme(.dark)
             .tint(.appAccent)
+            .onAppear { PlayerSheetDim.shared.presented += 1 }
+            .onDisappear { PlayerSheetDim.shared.presented = max(0, PlayerSheetDim.shared.presented - 1) }
+    }
+
+    /// The player under a sheet: dimmed as in dark appearance whatever the
+    /// system appearance. Put it over a player screen's whole stack.
+    func playerSheetDimming() -> some View {
+        overlay { PlayerSheetDimLayer().ignoresSafeArea() }
+    }
+}
+
+/// How many sheets over the player are up. The system dims what is behind
+/// a sheet less in light appearance than in dark, so the player, dark by
+/// design, adds the difference itself.
+@MainActor
+final class PlayerSheetDim: ObservableObject {
+    static let shared = PlayerSheetDim()
+    @Published var presented = 0
+
+    /// Added under the system's own dimming in light appearance, so the
+    /// two together match dark appearance's (about half the light).
+    static let lightExtra = Color.black.opacity(0.35)
+}
+
+private struct PlayerSheetDimLayer: View {
+    @ObservedObject private var dim = PlayerSheetDim.shared
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        (dim.presented > 0 && colorScheme == .light ? PlayerSheetDim.lightExtra : Color.clear)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .animation(.easeInOut(duration: 0.3), value: dim.presented > 0)
     }
 }
 
@@ -310,15 +408,30 @@ enum LibraryGrid {
 /// away while the phone sits on a tripod.
 enum CaptureControl {
     static let height: CGFloat = 44
-    /// The mark beside the switch while Auto is chosen, with a shape per
-    /// state (a filled dot listening, a hollow ring paused, a warning
-    /// glyph on a problem), so colour is never the only signal. The
-    /// switch itself carries the mode: its Auto segment fills with the
-    /// accent while Auto listens.
-    static let indicatorSize: CGFloat = 12
+    /// The state mark inside the switch's Auto segment while Auto is
+    /// chosen, with a shape per state (a filled dot listening, a hollow
+    /// ring paused, a warning glyph on a problem), so colour is never the
+    /// only signal. The switch itself carries the mode: its Auto segment
+    /// fills with the accent while Auto listens. As tall as the title's
+    /// capitals, so it reads as part of the word.
+    static var indicatorSize: CGFloat {
+        UIFont.preferredFont(forTextStyle: .callout).capHeight.rounded()
+    }
+    /// Between the state mark and the Auto title.
+    static let indicatorGap: CGFloat = 5
     /// The Auto / Manual switch's width: two segments wide enough for
     /// "Manual" at the larger size.
     static let modeWidth: CGFloat = 184
+
+    /// Where the state mark sits from the switch's leading edge: just
+    /// before the first segment's title, which the switch centres in its
+    /// half (`AccentSegmentedControl` sets the chosen title semibold).
+    static func autoMarkOffset(title: String) -> CGFloat {
+        let body = UIFont.preferredFont(forTextStyle: .callout)
+        let font = UIFont.systemFont(ofSize: body.pointSize, weight: .semibold)
+        let titleWidth = (title as NSString).size(withAttributes: [.font: font]).width
+        return max(4, (modeWidth / 2 - titleWidth) / 2 - indicatorGap - indicatorSize)
+    }
     /// A menu chip over the camera (the frame rate, the coach's cadence):
     /// drawn this tall, 44 to tap.
     static let chipHeight: CGFloat = 36

@@ -65,7 +65,10 @@ final class PlayerPositionsUITests: XCTestCase {
         let draw = app.buttons["Draw straight lines"]
         XCTAssertTrue(draw.waitForExistence(timeout: 5))
         let star = app.buttons["Star swing"]
-        XCTAssertEqual(fold.frame.midX, star.frame.midX, accuracy: 1)
+        // Fold button and capsule share one 16-point margin from the
+        // screen's edge, about centred under the star.
+        XCTAssertEqual(app.frame.maxX - fold.frame.maxX, 16, accuracy: 1)
+        XCTAssertEqual(fold.frame.midX, star.frame.midX, accuracy: 2)
         XCTAssertEqual(fold.frame.minY - star.frame.maxY, 10, accuracy: 1)
         // The clip can be coached, so the rail has the coaching Layers tool too.
         assertToolOrder(app, ["player-tools-fold", "Show swing metadata", "Change playback speed",
@@ -96,14 +99,15 @@ final class PlayerPositionsUITests: XCTestCase {
         attach(app, "auto-review-docked-left")
     }
 
-    /// The fold button first, then the tools: one column, the first tool
-    /// 10 points under the fold button, the tools' targets touching inside
-    /// their shared capsule.
+    /// The fold button first, then the tools: one column on the screen's
+    /// edge (their right edges line up), the first tool 10 points under
+    /// the fold button, the tools' targets touching inside their shared
+    /// capsule.
     private func assertToolOrder(_ app: XCUIApplication, _ identifiers: [String],
                                  file: StaticString = #filePath, line: UInt = #line) {
         let frames = identifiers.map { app.buttons[$0].frame }
         for (index, (upper, lower)) in zip(frames, frames.dropFirst()).enumerated() {
-            XCTAssertEqual(upper.midX, lower.midX, accuracy: 1, file: file, line: line)
+            XCTAssertEqual(upper.maxX, lower.maxX, accuracy: 1, file: file, line: line)
             XCTAssertEqual(lower.minY - upper.maxY, index == 0 ? 10 : 0, accuracy: 1, file: file, line: line)
             if index > 0 { XCTAssertGreaterThanOrEqual(lower.height, 44, file: file, line: line) }
         }

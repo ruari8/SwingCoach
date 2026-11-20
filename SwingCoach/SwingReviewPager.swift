@@ -153,8 +153,9 @@ struct ReviewTopBar: View {
     static let topPadding: CGFloat = 8
     /// Where a tool rail under the star starts.
     static let railTop: CGFloat = buttonSize + 10
-    /// Side inset that centres the rail's buttons under the star.
-    static let railInset: CGFloat = 14 + (buttonSize - PlayerToolRail.width) / 2
+    /// Side inset of the tool rail: its fold button and capsule share the
+    /// rail's edge margin, about centred under the star.
+    static let railInset: CGFloat = PlayerToolRail.edgeMargin
 
     var body: some View {
         HStack {

@@ -69,6 +69,16 @@ struct LibraryView: View {
     /// Columns in the grid, pinched between `LibraryGrid.columnChoices`
     /// and remembered.
     @AppStorage(LibraryGrid.columnsKey) private var gridColumns = LibraryGrid.defaultColumns
+    /// A two-finger pinch is under way, or just ended: a tile under a
+    /// lifting finger doesn't open its swing.
+    @State private var isPinching = false
+    /// The swing a tile opened, with the collection it pages through.
+    @State private var openedSwing: OpenedSwing?
+
+    private struct OpenedSwing: Hashable {
+        let swingID: UUID
+        let reviewIDs: [UUID]
+    }
 
     private var columns: [GridItem] {
         Array(repeating: GridItem(.flexible(), spacing: LibraryGrid.gutter),
@@ -93,6 +103,12 @@ struct LibraryView: View {
                 }
             }
             .navigationTitle("My Swings")
+            .navigationDestination(item: $openedSwing) { opened in
+                if let swing = library.swings.first(where: { $0.id == opened.swingID }) {
+                    SwingDetailView(swing: swing,
+                                    reviewSwings: opened.reviewIDs.compactMap { id in library.swings.first { $0.id == id } })
+                }
+            }
             .safeAreaInset(edge: .top) {
                 if shouldShowPhotoAccessBanner {
                     photoAccessBanner
@@ -435,7 +451,7 @@ struct LibraryView: View {
         VStack(spacing: 0) {
             ScrollView {
                 // Stats header (hide in selection mode)
-                if !isSelecting {
+                if !isSelecting, library.totalSwings > 0 {
                     statsHeader
                         .padding(.horizontal)
                         .padding(.top, 8)
@@ -492,7 +508,15 @@ struct LibraryView: View {
             // Pinch out for bigger tiles, in for more, as in Photos.
             .simultaneousGesture(
                 MagnifyGesture(minimumScaleDelta: 0.05)
-                    .onEnded { value in pinched(value.magnification) }
+                    .onChanged { _ in if !isPinching { isPinching = true } }
+                    .onEnded { value in
+                        pinched(value.magnification)
+                        // Past the fingers' lift, so it can't land as a tap.
+                        Task { @MainActor in
+                            try? await Task.sleep(nanoseconds: 300_000_000)
+                            isPinching = false
+                        }
+                    }
             )
             .accessibilityAction(named: "Bigger thumbnails") { pinched(2) }
             .accessibilityAction(named: "Smaller thumbnails") { pinched(0.5) }
@@ -686,24 +710,21 @@ struct LibraryView: View {
         )
     }
 
+    /// The library's counts as one caption line under the title: "12
+    /// swings · 12 down the line", a view with no swings left out.
     private var statsHeader: some View {
-        HStack(spacing: 20) {
-            statItem(value: "\(library.totalSwings)", label: "Swings")
-            statItem(value: "\(library.swings(for: .dtl).count)", label: "DTL")
-            statItem(value: "\(library.swings(for: .faceOn).count)", label: "Face-On")
-            Spacer()
+        let total = library.totalSwings
+        var parts = ["\(total) swing\(total == 1 ? "" : "s")"]
+        for vantage in Vantage.allCases {
+            let count = library.swings(for: vantage).count
+            if count > 0 { parts.append("\(count) \(vantage.displayName.lowercased())") }
         }
-        .padding(.vertical, 8)
-    }
-
-    private func statItem(value: String, label: String) -> some View {
-        VStack(spacing: 2) {
-            Text(value)
-                .font(.appTitle.monospacedDigit())
-            Text(label)
-                .font(.appCaption)
-                .foregroundStyle(Color.helpText)
-        }
+        return Text(parts.joined(separator: " · "))
+            .font(.appCaption.monospacedDigit())
+            .foregroundStyle(Color.helpText)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 2)
+            .accessibilityIdentifier("library-stats")
     }
 
     /// Whether a group's swings were filmed from more than one side, so
@@ -740,11 +761,11 @@ struct LibraryView: View {
                 }
                 .buttonStyle(.plain)
             } else {
-                NavigationLink {
-                    SwingDetailView(
-                        swing: swing,
-                        reviewSwings: reviewSwings ?? referenceSwings
-                    )
+                Button {
+                    // A finger lifting at the end of a pinch is not a tap.
+                    guard !isPinching else { return }
+                    openedSwing = OpenedSwing(swingID: swing.id,
+                                              reviewIDs: (reviewSwings ?? referenceSwings).map(\.id))
                 } label: {
                     swingCardContent(swing, isSelected: isSelected, showsVantage: showsVantage)
                 }
@@ -1366,8 +1387,11 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         }
     }
 
-    /// How far to lift the video so the part that matters at a stop sits
-    /// above the panel, without pushing its top under the top row.
+    /// How far to lift the video so the part that matters at a stop, and
+    /// the feet and ball under it, sit clear above the panel, without
+    /// pushing its top under the top row. The black band above a
+    /// letterboxed clip is free to use whatever the top row allows: only
+    /// sky moves into it.
     private func stopLift(in geometry: GeometryProxy) -> CGFloat {
         guard isAtWalkthroughStop, let stopFocus, let focus = stopFocus(seconds(currentTime)),
               let aspect = videoAspect, aspect > 0, let panelTop else { return 0 }
@@ -1378,12 +1402,18 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                           height: geometry.size.height + insets.top + insets.bottom)
         let height = size.width / max(size.height, 1) > CGFloat(aspect) ? size.height : size.width / CGFloat(aspect)
         let videoTop = geometry.frame(in: .global).minY - insets.top + (size.height - height) / 2
-        let bottom = videoTop + CGFloat(focus.upperBound) * height + 24
+        let bottom = videoTop + CGFloat(focus.upperBound) * height + Self.stopFootClearance
         let top = videoTop + CGFloat(focus.lowerBound) * height - 24
         let wanted = max(0, bottom - panelTop)
         let room = max(0, top - (geometry.frame(in: .global).minY + ReviewTopBar.topPadding + ReviewTopBar.buttonSize + 12))
-        return min(wanted, room, size.height * 0.4).rounded()
+        let blackBand = max(0, videoTop - (geometry.frame(in: .global).minY - insets.top))
+        return min(wanted, max(room, blackBand), size.height * 0.4).rounded()
     }
+
+    /// Under the lowest part that matters at a stop (the ball at the end
+    /// of a shaft line, the club head): room for the feet, which sit a
+    /// little lower in a down-the-line frame, and a gap above the card.
+    private static var stopFootClearance: CGFloat { 44 }
 
     /// Layout is measured where the controls are displayed: the fixed pager
     /// viewport in review, or the local player for standalone playback.
@@ -1464,7 +1494,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     // The rail spans the width so it can dock on either side.
                     if !cornerControlsInNavigation, !isDrawing {
                         toolRail(trailingTop: 0, leadingTop: inlineLeadingToolRailTop)
-                            .padding(.horizontal, 12)
+                            .padding(.horizontal, PlayerToolRail.edgeMargin)
                             .padding(.top, topControlPadding)
                             .transition(.opacity)
                     }
@@ -1557,6 +1587,10 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         }
     }
 
+    /// The transport row's right slot: the Lock button, "Controls" with
+    /// the rail's caption inset either side.
+    private static var lockSlotWidth: CGFloat { 64 }
+
     /// The transport row's left slot: wide enough for a position's name
     /// on two short lines, clear of the step-back button on a 375-point
     /// phone.
@@ -1576,10 +1610,13 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(position.name)
                             .lineLimit(2)
+                        // The readout's own 12-point size, wrapping
+                        // rather than shrinking past the 11-point floor.
                         if position.isLowConfidence {
                             Text("\(LowConfidenceGlyph.image) \(SwingPosition.lowConfidenceTitle)")
-                                .font(FixedType.cellLabel)
-                                .lineLimit(1)
+                                .font(FixedType.readout)
+                                .lineLimit(2)
+                                .minimumScaleFactor(FixedType.minimumScale(of: FixedType.readoutSize))
                         }
                     }
                     .accessibilityElement(children: .ignore)
@@ -1593,7 +1630,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             }
             .font(FixedType.readout)
             .foregroundColor(PlayerChrome.secondaryText)
-            .minimumScaleFactor(0.75)
+            .minimumScaleFactor(FixedType.minimumScale(of: FixedType.readoutSize))
             .fixedSize(horizontal: false, vertical: true)
             if isFineScrubbing {
                 Text("¼ speed")
@@ -1616,26 +1653,29 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     setLocked(!isLocked)
                 } label: {
                     // Captioned like the tool rail, so no control on the
-                    // player is a bare glyph.
+                    // player is a bare glyph: the padlock over what it
+                    // locks, the controls on screen.
                     VStack(spacing: 2) {
                         Image(systemName: isLocked ? "lock.fill" : "lock.open")
                             .font(.system(size: 14, weight: .bold))
-                        Text("Lock")
+                        Text("Controls")
                             .font(FixedType.railCaption)
                             .lineLimit(1)
                             .fixedSize()
                     }
                     .foregroundColor(isLocked ? .black : .white)
-                    .frame(width: PlayerToolRail.buttonSize, height: PlayerToolRail.buttonHeight)
+                    .padding(.horizontal, PlayerToolRail.captionInset)
+                    .frame(minWidth: PlayerToolRail.buttonSize, minHeight: PlayerToolRail.buttonHeight,
+                           maxHeight: PlayerToolRail.buttonHeight)
                     .background(Capsule().fill(isLocked ? Color.accentLime : PlayerChrome.fill))
                     .overlay(Capsule().strokeBorder(isLocked ? Color.clear : PlayerChrome.edge, lineWidth: 1))
                     .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(isLocked ? "Unlock controls" : "Keep controls on screen")
-                .frame(width: 58, alignment: .trailing)
+                .frame(width: Self.lockSlotWidth, alignment: .trailing)
             } else {
-                Color.clear.frame(width: 58, height: 1)
+                Color.clear.frame(width: Self.lockSlotWidth, height: 1)
             }
     }
 
@@ -1719,9 +1759,12 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                                     icon: .system("info.circle"), action: infoAction))
         }
         if showsSpeedControls {
-            tools.append(PlayerTool(id: "speed", title: "Speed", accessibilityLabel: "Change playback speed",
+            // A symbol like every other tool, with the speed itself as
+            // its caption; holding it names it "Speed".
+            tools.append(PlayerTool(id: "speed", title: "Speed", caption: speedLabel(playbackSpeed),
+                                    accessibilityLabel: "Change playback speed",
                                     accessibilityValue: speedLabel(playbackSpeed),
-                                    icon: .text(speedLabel(playbackSpeed)), action: cyclePlaybackSpeed))
+                                    icon: .system("gauge.with.needle"), action: cyclePlaybackSpeed))
         }
         if let drawing {
             tools.append(PlayerTool(id: "draw", title: "Draw", accessibilityLabel: "Draw straight lines",
@@ -1920,7 +1963,9 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 .fill(Color.accentLime)
                 .frame(width: progressWidth(in: width), height: 4)
 
-            if let positions = visiblePositions {
+            // The position dots give way while the step card shows: the
+            // strip below names the stop, and the stack stays calm.
+            if let positions = visiblePositions, !isAtWalkthroughStop {
                 ForEach(positions, id: \.number) { position in
                     let current = position.number == currentPositionNumber
                     Circle()
