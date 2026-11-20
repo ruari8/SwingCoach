@@ -18,6 +18,7 @@ Scores are 1–10 per metric (see [rubric.md](rubric.md)). Columns: typo = typog
 | 0 | `0ebe504` | opus | 5.5 | 6.3 | 7.1 | 7.1 |
 | 0 | `0ebe504` | fable | 5.0 | 6.1 | 6.6 | 7.4 |
 | 1 | `907787c` | sol | 6.0 | 7.1 | 7.6 | 7.9 |
+| 2 | `6436f63` | sol | 6.3 | 7.3 | 7.8 | 7.9 |
 
 ## Round 0
 
@@ -90,3 +91,37 @@ Declined:
 | SwingCoach | 7.0 | 7.0 | 6.8 | 7.3 | 6.6 | 7.4 | 6.0 | 7.6 | 7.1 | 6.3 | 6.6 | 7.3 | 7.1 | 6.0 |
 | Sportsbox | 7.1 | 7.5 | 7.0 | 7.3 | 7.3 | 7.0 | 6.8 | 7.5 | 7.4 | 8.6 | 6.6 | 7.6 | 7.6 | 6.6 |
 | Onform | 7.5 | 7.8 | 7.6 | 7.6 | 8.0 | 7.1 | 6.9 | 8.7 | 8.0 | 6.4 | 7.2 | 8.1 | 7.9 | 6.4 |
+
+## Round 2
+
+Build: `6436f63`
+
+Changes this round:
+
+- One name tag per walkthrough stop, placed beside the drawing; supporting drawings thinner, half opacity, untagged (Sol).
+- New CoachingZoneTrack: the good-players zone as a green band, the swing as a marker in its level colour, aligned tabular You / Good players / Above-Below-In zone (Sol, Fable).
+- Auto armed state on a solid dark capsule, title2 semibold, 20 pt indicator, apart from the saved count (Sol).
+- Recap slots carry the level badge and 'Swing N' under each bar (Sol).
+- Current P position always selected (opening step fixed); 56 pt chip cells, 11 pt semibold labels (Sol, Fable).
+- Not-judged comparison tile: rounded neutral tile with the dash badge (Sol).
+- Guides and unjudged checks drawn neutral grey everywhere (Sol).
+- Session review: one-line symbol key under the marks, compact counts that name their denominators (Sol).
+- Rail glyphs: Draw pencil.line, Drawings square.3.layers.3d, Positions figure.golf (Sol, Fable).
+- Low-confidence positions get a 'Low' tag (Sol).
+- Library thumbnails at card size × screen scale, cropped to keep the golfer's head (Sol).
+- Step card level badge carries a word: '4 steps out', 'In zone' (Opus).
+
+Declined:
+
+- Horizontally scrolling P strip (Sol): hides positions.
+- Rename the Auto review counter to 'Session swing 2 of 12' (Sol): the counter already reads in the session's context.
+
+**sol**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.3 | 7.2 | 6.8 | 7.4 | 6.8 | 7.0 | 6.3 | 7.2 | 8.1 | 6.9 | 6.8 | 7.6 | 7.3 | 6.3 |
+| Sportsbox | 7.2 | 7.6 | 7.1 | 7.4 | 7.5 | 7.1 | 6.7 | 8.1 | 7.4 | 8.6 | 6.9 | 7.7 | 7.8 | 6.7 |
+| Onform | 7.5 | 8.1 | 7.7 | 7.5 | 8.0 | 7.0 | 7.0 | 8.6 | 7.9 | 7.0 | 7.3 | 8.1 | 7.9 | 7.0 |
+
+Side effect logged: stored thumbnails are now card-shaped, so the Auto saved-count button and the player's loading poster show that crop.

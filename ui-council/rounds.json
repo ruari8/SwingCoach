@@ -48,5 +48,21 @@
    "Rename the Auto review counter to 'Session swing 2 of 12' (Sol): the counter already reads in the session's context."
   ],
   "notes": "Side effect logged: stored thumbnails are now card-shaped, so the Auto saved-count button and the player's loading poster show that crop."
+ },
+ "3": {
+  "changes": [
+   "Step card 9 pt padding, 5 pt rows, 2 pt above the scrubber; impact step clears shoes and ball (Sol). Partly: one Auto review frame still has the trail shoe under the card.",
+   "Shared Color.helpText: 5.0:1 on grouped grey, 5.5:1 on white, 6.2:1+ in dark; used for all help and footnote text (Sol).",
+   "Captioned tool rail: one 56 pt capsule, 10 pt semibold captions (Info, Speed, Draw, Layers, Delete, Positions, Expand), 46 pt targets (Sol, Opus, Fable).",
+   "Recap badges at 26 pt with one key, 'Number = steps out of zone' (Sol).",
+   "Unjudged guide rows say 'Not judged \u00b7 a guide' up front and draw a dashed neutral track (Sol).",
+   "Level badges pinned inside their own P chip; 8 pt gap to the scrubber (Sol).",
+   "Address reference drawn thinner and dimmer so head marks don't stack (Sol).",
+   "Session review leads with '7 of 11 judged swings good' in large type; themes say '5 steps out, typical' (Sol).",
+   "Folded finding labelled 'Top finding \u00b7 at impact' (Sol).",
+   "One severity wording: 'N steps out', 'In zone', 'Not judged' everywhere (Sol).",
+   "Session links are neutral connectors: 'Seen together on N swings' (Sol)."
+  ],
+  "declined": []
  }
 }
