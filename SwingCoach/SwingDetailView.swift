@@ -420,7 +420,7 @@ struct SwingInfoView: View {
         .accessibilityHidden(true)
     }
 
-    private static let confidenceWidth: CGFloat = 96
+    private static let confidenceWidth: CGFloat = 112
     private static let rowHeight: CGFloat = 36
     private static let rowInsets = EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16)
     /// Time and confidence: the body size in tabular figures.
@@ -430,17 +430,22 @@ struct SwingInfoView: View {
         let low = position.isLowConfidence
         return HStack(alignment: .firstTextBaseline) {
             // Below 0.5 the model found no clear peak for this position:
-            // the Low tag says so; the row keeps the others' weight.
+            // "Low" says so beside its number; the row keeps the others'
+            // weight.
             Text(position.title)
                 .font(.appBody)
             Spacer(minLength: 12)
             Text(String(format: "%.2fs", position.clipTime))
                 .font(Self.numberFont)
-            // The same numbers as Time; the Low tag is the emphasis.
-            HStack(spacing: 4) {
-                if low { LowConfidenceTag() }
-                Text("\(Int((position.confidence * 100).rounded()))%")
-                    .font(Self.numberFont)
+            // The same numbers as Time; a low one reads as one value,
+            // "Low · 50%", at the same size.
+            let percent = "\(Int((position.confidence * 100).rounded()))%"
+            Group {
+                if low {
+                    LowConfidenceTag(value: percent, font: Self.numberFont)
+                } else {
+                    Text(percent).font(Self.numberFont)
+                }
             }
             .frame(width: Self.confidenceWidth, alignment: .trailing)
         }

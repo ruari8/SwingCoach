@@ -79,16 +79,16 @@ struct SessionCoachingView: View {
                         if !measured.isEmpty {
                             VStack(alignment: .leading, spacing: 4) {
                                 swingDots(measured, verdicts)
-                                // The swings without a level, and why, as
-                                // one caption under their dashes.
+                                // The key on one line straight under the
+                                // marks, then the swings without a level,
+                                // and why.
+                                symbolKey(hasDash: judged.count < reports.count)
                                 if judged.count < reports.count {
                                     Text(notJudgedTotal(reports))
                                         .font(.appCaption.monospacedDigit())
                                         .foregroundStyle(Color.helpText)
                                         .accessibilityIdentifier("session-coaching-not-judged")
                                 }
-                                symbolKey(hasDash: judged.count < reports.count)
-                                    .padding(.top, 2)
                             }
                         }
                     }
@@ -222,26 +222,23 @@ struct SessionCoachingView: View {
         .padding(.horizontal, -9)
     }
 
-    /// What the marks mean, straight under them: what each mark covers
-    /// (one swing's top finding, where a theme below is typical across
-    /// swings, so the two numbers needn't match) and the shared key. What a
-    /// step is is said in All checks, where the steps are measured.
+    /// What the marks mean, on one caption line straight under them: what
+    /// each mark covers (one swing, where a theme below is typical across
+    /// swings, so the two numbers needn't match) and the shared key in its
+    /// short words. What a step is is said in All checks, where the steps
+    /// are measured.
     private func symbolKey(hasDash: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(Self.markScope)
-                .font(.appCaptionLabel)
-                .foregroundStyle(Color.sectionHeading)
-            CoachingLegend(marks: .init(tick: "Good", dash: hasDash))
+        VStack(alignment: .leading) {
+            CoachingLegend(marks: .init(tick: "Good", numberWord: CoachingWords.numberKeyShort, dash: hasDash),
+                           title: Self.markScope)
         }
-        .font(.appCaption)
-        .foregroundStyle(Color.helpText)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(Self.markScope). Marks: a tick is a good swing, a number is steps out\(hasDash ? ", a dash is not judged" : ""). Tap one to open the swing.")
+        .accessibilityLabel("Each swing's top finding. Marks: a tick is a good swing, a number is steps out\(hasDash ? ", a dash is not judged" : ""). Tap one to open the swing.")
         .accessibilityIdentifier("session-coaching-key")
     }
 
     /// What a swing's mark covers.
-    static let markScope = "Top finding per swing"
+    static let markScope = "Each swing"
 
     private func badge(_ verdict: CoachingVerdict) -> CoachingLevelBadge {
         switch verdict {
@@ -262,7 +259,9 @@ struct SessionCoachingView: View {
                         .foregroundStyle(Color.helpText)
                         .accessibilityIdentifier("session-start-here")
                 }
-                Text(theme.text).font(.appLabel)
+                // The lead finding a heading size up, so it, not the
+                // tally's key, is the first thing read after the count.
+                Text(theme.text).font(leads ? .appTitle : .appLabel)
                 // The typical level, with its word, so the number never
                 // reads as a count of swings.
                 CoachingLevelPill(level: theme.medianLevel, lead: "Typically")

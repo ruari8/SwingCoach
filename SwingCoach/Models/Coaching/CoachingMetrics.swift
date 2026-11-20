@@ -128,7 +128,7 @@ nonisolated struct CoachingMetricDefinition {
               measures: "Clubhead against the line from the address clubhead through the trail forearm. A guide, not judged.",
               weight: 0, scored: false, dependsOnCamera: true),
         .init(id: .shaftHalfwayBack, title: "Shaft halfway back", position: 3, unit: .bodyPercent, zone: -29...3, step: 6,
-              below: "Shaft steep: pointed well inside the ball", above: "Shaft flat: pointed outside the ball",
+              below: "Shaft pointed well inside the ball", above: "Shaft pointed outside the ball",
               measures: "Where the butt of the club points on the ground, against the ball, with the lead arm level.",
               weight: 1.0, dependsOnCamera: true),
         .init(id: .leadArmTop, title: "Lead arm at the top", position: 4, unit: .degrees, zone: 8...20, step: 4,
@@ -154,7 +154,7 @@ nonisolated struct CoachingMetricDefinition {
               measures: "Shaft angle with the lead arm level coming down, against the same point going back.",
               weight: 1.2, dependsOnCamera: true),
         .init(id: .shaftHalfwayDown, title: "Shaft halfway down", position: 5, unit: .bodyPercent, zone: -25...26, step: 8,
-              below: "Shaft steep: pointed inside the ball", above: "Shaft flat: pointed well outside the ball",
+              below: "Shaft pointed inside the ball", above: "Shaft pointed well outside the ball",
               measures: "Where the butt of the club points on the ground, against the ball, coming down.", weight: 1.0, dependsOnCamera: true),
         .init(id: .planeDelivery, title: "Address plane coming down", position: 6, unit: .bodyPercent, zone: -45...20, step: 8,
               below: "Club came under the address plane", above: "Club came above the address plane",
@@ -269,7 +269,9 @@ nonisolated struct SwingCoachingReport: Codable, Equatable {
     var unavailable: [CoachingMetricID]
 
     /// 9: the takeaway zone runs down past the club head (drawing only).
-    static let currentVersion = 9
+    /// 10: the head rings are sized from the head, not the face (drawing
+    /// only).
+    static let currentVersion = 10
 
     /// Feet shifting more than this share of body scale by the top means
     /// the camera moved. A tripod clip's ankle joints wander about 5%, and

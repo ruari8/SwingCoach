@@ -304,7 +304,9 @@ struct CoachingRecapCard: View {
     }
 
     /// The swing that shows it most, as tall as the card, cut toward the
-    /// golfer and club, with that swing's own badge on its corner, so the
+    /// golfer and club, with that swing's own badge on its corner and its
+    /// number under the badge ("Swing 5"), so the badge reads as that
+    /// swing's, apart from the theme's typical level beside it, and the
     /// line's colour always matches a badge.
     private func examplePicture(_ example: Example) -> some View {
         CoachingFrameView(swing: example.swing, report: example.report, metric: example.metric, cropsToGolfer: true)
@@ -313,9 +315,17 @@ struct CoachingRecapCard: View {
             .clipShape(.rect(cornerRadius: 8))
             .overlay(alignment: .topLeading) {
                 if let showing = example.showing {
-                    showing.badge(size: 22)
-                        .background(Circle().fill(PlayerChrome.solidPanel).padding(-2))
-                        .padding(5)
+                    VStack(spacing: 3) {
+                        showing.badge(size: 22)
+                            .background(Circle().fill(PlayerChrome.solidPanel).padding(-2))
+                        Text("Swing \(example.number)")
+                            .font(FixedType.cellLabel.monospacedDigit())
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(Capsule().fill(PlayerChrome.solidPanel))
+                    }
+                    .padding(5)
                 }
             }
             .accessibilityElement(children: .ignore)

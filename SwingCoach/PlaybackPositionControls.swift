@@ -223,6 +223,10 @@ struct SwingPositionStrip: View {
     static let markSize: CGFloat = 18
     /// Between a mark and its cell's corner, so it sits fully inside.
     static let markInset: CGFloat = 1
+    /// The chip's outline (the current position's fill, a low-confidence
+    /// dashed edge): the strip's full height less this each side, so the
+    /// cell you see is the cell you tap.
+    static let chipInset: CGFloat = 3
 
     var body: some View {
         GeometryReader { geometry in
@@ -278,7 +282,7 @@ struct SwingPositionStrip: View {
                 .lineLimit(1)
                 .fixedSize()
         }
-        .frame(width: 34, height: 46)
+        .frame(width: 34, height: Self.height - 2 * Self.chipInset)
         .background(Capsule().fill(selected ? Color.white : Color.clear))
         .overlay {
             if unsure {
@@ -289,27 +293,26 @@ struct SwingPositionStrip: View {
         }
         // The whole cell is the target, the strip's full height.
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // The shared low-confidence glyph in the cell's other top corner,
-        // the same mark as by the time and in Swing Info.
-        .overlay(alignment: .topLeading) {
-            if unsure {
-                Image(systemName: LowConfidenceGlyph.symbol)
-                    .font(.system(size: LowConfidenceGlyph.chipSize, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: LowConfidenceGlyph.chipDisc, height: LowConfidenceGlyph.chipDisc)
-                    .background(Circle().fill(Color(white: 0.12)))
-                    .padding(Self.markInset)
-                    .accessibilityHidden(true)
-            }
-        }
-        // The level badge belongs to its pose: inside its own cell's
-        // top-trailing corner, never perched on the edge, so it never
-        // pairs with a neighbour or sits among the scrubber's dots.
+        // Every mark in the same corner of its own cell, top-trailing,
+        // never perched on the edge, so it never pairs with a neighbour or
+        // sits among the scrubber's dots: the level badge, with the shared
+        // low-confidence glyph (the same mark as by the time and in Swing
+        // Info) before it when the position is unsure.
         .overlay(alignment: .topTrailing) {
-            if let mark = marks[position.number] {
-                markBadge(mark)
-                    .padding(Self.markInset)
+            HStack(spacing: 1) {
+                if unsure {
+                    Image(systemName: LowConfidenceGlyph.symbol)
+                        .font(.system(size: LowConfidenceGlyph.chipSize, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: LowConfidenceGlyph.chipDisc, height: LowConfidenceGlyph.chipDisc)
+                        .background(Circle().fill(Color(white: 0.12)))
+                        .accessibilityHidden(true)
+                }
+                if let mark = marks[position.number] {
+                    markBadge(mark)
+                }
             }
+            .padding(Self.markInset)
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)

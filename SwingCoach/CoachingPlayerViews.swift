@@ -121,6 +121,10 @@ enum CoachingWords {
     /// wherever a row of badges is keyed (the session review, All
     /// checks). It also says what a step counts from.
     static let numberKey = "Number = steps out of the good zone"
+    /// The same key in two words, where the key has to fit one line under
+    /// a row of marks (the session review): the badge before it reads as
+    /// "2 steps out". What a step counts from is said in All checks.
+    static let numberKeyShort = "Steps out"
 
     /// How far out a level is, in one plain word for a beginner beside
     /// the badge on a finding (the step card, a picked check, the recap):
@@ -375,11 +379,11 @@ struct CoachingDrawingLayer: View {
     /// The swing's ring (the head now) against the drawing's weight: one
     /// solid outline, the strongest mark on the head.
     static let ringWeight: CGFloat = 0.6
-    /// The address ring: 1.5 points, dashed, at half opacity, with a
+    /// The address ring: 1.25 points, dashed, at 35% opacity, with a
     /// narrow halo, so it reads as where the head was, never as a second
-    /// reading.
-    static let referenceRingWidth: CGFloat = 1.5
-    static let referenceRingOpacity = 0.5
+    /// reading beside the solid ring.
+    static let referenceRingWidth: CGFloat = 1.25
+    static let referenceRingOpacity = 0.35
     static let referenceHaloExtra: CGFloat = 1.5
     /// The clear space between a ring's halo and the zone behind it.
     static let ringKnockoutGap: CGFloat = 1.5
@@ -1010,13 +1014,12 @@ struct CoachingZoneTrack: View {
                 context.stroke(dot, with: .color(.black.opacity(0.6)), lineWidth: 1.5)
             } else {
                 // The neutral guide style: the zone as a dashed outline with
-                // no fill and the swing as a hollow ring, so a reading inside
-                // it never looks like a pass.
+                // no fill, so a reading inside it never looks like a pass,
+                // and the swing as the same solid marker in the grey.
                 context.stroke(zonePath, with: .color(marker.opacity(0.8)),
                                style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
-                let ring = Path(ellipseIn: CGRect(x: centre.x - 5, y: centre.y - 5, width: 10, height: 10))
-                context.fill(ring, with: .color(.black.opacity(0.5)))
-                context.stroke(ring, with: .color(marker), lineWidth: 2.5)
+                context.fill(dot, with: .color(marker))
+                context.stroke(dot, with: .color(.black.opacity(0.6)), lineWidth: 1.5)
             }
         }
     }
@@ -1529,9 +1532,9 @@ struct SwingCoachingPanel: View {
 
 /// One mark of the key, the same shape wherever a reading or drawing is
 /// keyed (the legend, the zone track's columns): you as a solid dot in the
-/// level's colour, the good zone as a green band, address as a dashed
-/// ring. Not judged, you are a hollow ring and the zone a dashed outline,
-/// as the neutral guide style draws them. The glyphs stay fixed whatever
+/// level's colour (grey not judged; one shape, so only the colour changes),
+/// the good zone as a green band, address as a dashed ring. Not judged,
+/// the zone is a dashed outline, as the neutral guide style draws it. The glyphs stay fixed whatever
 /// shape a check draws, so a key never changes from screen to screen.
 struct CoachingKeyGlyph: View {
     enum Role { case you, zone, address }
@@ -1549,9 +1552,10 @@ struct CoachingKeyGlyph: View {
             let side = min(size.width, size.height)
             let circle = CGRect(x: rect.midX - side / 2 + 1, y: rect.midY - side / 2 + 1, width: side - 2, height: side - 2)
             switch role {
-            case .you where judged:
-                let share = 360 / Double(max(colours.count, 1))
-                for (index, colour) in colours.enumerated() {
+            case .you:
+                let fills = judged ? colours : [CoachingDrawingLayer.neutralColour]
+                let share = 360 / Double(max(fills.count, 1))
+                for (index, colour) in fills.enumerated() {
                     var slice = Path()
                     slice.move(to: CGPoint(x: circle.midX, y: circle.midY))
                     slice.addArc(center: CGPoint(x: circle.midX, y: circle.midY), radius: circle.width / 2,
@@ -1561,9 +1565,6 @@ struct CoachingKeyGlyph: View {
                     context.fill(slice, with: .color(colour))
                 }
                 context.stroke(Path(ellipseIn: circle), with: .color(.black.opacity(0.6)), lineWidth: 1)
-            case .you:
-                context.stroke(Path(ellipseIn: circle.insetBy(dx: 0.5, dy: 0.5)),
-                               with: .color(CoachingDrawingLayer.neutralColour), lineWidth: 2)
             case .zone:
                 let band = Path(roundedRect: rect.insetBy(dx: 1, dy: 1), cornerRadius: 2)
                 if judged {
@@ -1597,12 +1598,18 @@ struct CoachingLegend: View {
         /// verdict, "In zone" for a check.
         var tick: String? = nil
         var number = true
+        /// The number's word: the full `numberKey`, or `numberKeyShort`
+        /// where the key must fit one line.
+        var numberWord = CoachingWords.numberKey
         var dash = false
         /// What the dash means here.
         var dashWord = "Not judged"
     }
 
     var marks: Marks? = nil
+    /// What the marks cover, leading the line in the caption label style
+    /// ("Each swing" on the session review).
+    var title: String? = nil
     /// The drawing keyed: its parts come from the first result's shapes.
     var results: [CoachingMetricResult] = []
     /// Several swings side by side: every colour their lines are drawn
@@ -1618,12 +1625,18 @@ struct CoachingLegend: View {
     var body: some View {
         let roles = Set(results.flatMap { $0.drawings.map(\.role) })
         FlowLayout(spacing: 12, lineSpacing: 4) {
+            if let title {
+                Text(title)
+                    .font(.appCaptionLabel)
+                    .foregroundStyle(Color.sectionHeading)
+                    .fixedSize()
+            }
             if let marks {
                 if let tick = marks.tick {
                     entry(CoachingLevelBadge(level: 0, size: Self.badgeSize), tick)
                 }
                 if marks.number {
-                    entry(CoachingLevelBadge(level: 2, size: Self.badgeSize), CoachingWords.numberKey)
+                    entry(CoachingLevelBadge(level: 2, size: Self.badgeSize), marks.numberWord)
                 }
                 if marks.dash {
                     entry(CoachingLevelBadge(level: 0, neutral: true, size: Self.badgeSize), marks.dashWord)
@@ -1941,11 +1954,21 @@ struct SwingCoachingChecks: View {
                 : "\(verdict.headline). \(note ?? "")")
             .accessibilityIdentifier("coaching-summary")
             if keyed {
-                CoachingLegend(marks: .init(dash: guides > 0), results: drawn)
+                // "You" in every colour the rows' markers take, so the key
+                // matches each row, not only the top finding.
+                CoachingLegend(marks: .init(dash: guides > 0), results: drawn,
+                               subjectColours: Self.markerColours(judged))
             }
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .contain)
+    }
+
+    /// The level colours the judged rows' markers are drawn in, in order
+    /// (in zone, a little out, well out), one each.
+    static func markerColours(_ judged: [CoachingMetricResult]) -> [Color] {
+        let buckets = Set(judged.map { abs($0.level) == 0 ? 0 : abs($0.level) >= 4 ? 4 : 1 })
+        return [0, 1, 4].filter(buckets.contains).map { Color.coachingLevel($0) }
     }
 
     private func row(_ result: CoachingMetricResult) -> some View {

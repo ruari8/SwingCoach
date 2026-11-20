@@ -74,9 +74,9 @@ enum FixedType {
     static let readout = Font.system(size: 12, weight: .semibold)
     /// The rail's names shown beside it, and the drawing tool's buttons.
     static let railLabel = Font.system(size: 14, weight: .semibold)
-    /// A position's name on the pose strip ("P3"): the readout size, so
-    /// it reads at arm's length under the pose.
-    static let stripLabel = Font.system(size: 12, weight: .semibold)
+    /// A position's name on the pose strip ("P3"): the rail labels' size,
+    /// a step over the readouts, so it reads from the tripod under the pose.
+    static let stripLabel = Font.system(size: 14, weight: .semibold)
 }
 
 // MARK: - Help text
@@ -177,7 +177,10 @@ extension Color {
 /// on the black around a letterboxed clip, so a button never looks cut
 /// off where the video ends.
 enum PlayerChrome {
-    static let fill = Color(white: 0.16).opacity(0.62)
+    /// The tool rail's and the player buttons' fill: 80% opaque, so the
+    /// white captions keep their contrast over bright cloud, sunlit grass
+    /// and the bay's divider alike, while the picture still shows through.
+    static let fill = Color(white: 0.16).opacity(0.8)
     static let edge = Color.white.opacity(0.2)
     /// The step card, the folded coaching line and other panels over the video.
     static let panel = Color(white: 0.07).opacity(0.9)
@@ -524,21 +527,22 @@ enum LowConfidenceGlyph {
     static let chipDisc: CGFloat = 14
 }
 
-/// A position the model was unsure of, beside its confidence: the
-/// low-confidence glyph and "Low" in the neutral grey of "not judged" on
-/// a grey capsule with an edge, so a 50% row never looks like the 80%
-/// rows, without adding a colour that means nothing else. The word
-/// carries it without the colour.
+/// A position the model was unsure of, as one reading with its
+/// confidence: the low-confidence glyph, "Low" and the number ("Low ·
+/// 50%"), all at the number's size and in the same ink, so the word reads
+/// as part of the value rather than a smaller note beside it. The glyph
+/// and the word carry it, without a colour that means nothing else.
 struct LowConfidenceTag: View {
+    /// The confidence as shown in the other rows ("50%").
+    let value: String
+    var font: Font = .appBody.monospacedDigit()
+
     var body: some View {
-        Text("\(LowConfidenceGlyph.image) Low")
-            .font(.appCaptionLabel)
-            .foregroundStyle(Color.helpText)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 1)
-            .background(Capsule().fill(Color.notJudged.opacity(0.2)))
-            .overlay(Capsule().strokeBorder(Color.notJudged.opacity(0.6), lineWidth: 0.5))
-            .accessibilityLabel(SwingPosition.lowConfidenceWords)
+        Text("\(LowConfidenceGlyph.image) Low · \(value)")
+            .font(font)
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
+            .accessibilityLabel("\(SwingPosition.lowConfidenceWords), \(value)")
     }
 }
 

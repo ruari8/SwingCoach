@@ -363,7 +363,7 @@ nonisolated enum CoachingAnalyzer {
             let atTop = definition.position == 4
             let height = CoachingMetricDefinition.definition(atTop ? .headHeightTop : .headHeightImpact).zone
             let depth = CoachingMetricDefinition.definition(atTop ? .headDepthTop : .headDepthImpact).zone
-            let radius = 0.085 * scale
+            let radius = headRingRadius(head, at: definition.position)
             return result(definition, value: value, confidence: 0.8, drawings: [
                 // Up is positive for the metric and negative on screen.
                 strip(depth, from: head.there.x, top: head.there.y - length(height.upperBound),
@@ -372,6 +372,20 @@ nonisolated enum CoachingAnalyzer {
                 CoachingDrawing(kind: .circle, role: .subject, points: [point(head.here)], size: radius, dashed: true),
                 dot(.subject, head.here),
             ])
+        }
+
+        /// The head rings' radius, in height units: the head's size from the
+        /// pose (face centre to neck, in both frames), so the ring takes in
+        /// the whole head on a golfer bent over the ball, not only the face.
+        /// Without a neck, a fixed share of body scale. The centre, and so the
+        /// reading, is unchanged.
+        private func headRingRadius(_ head: (here: CoachingVector, there: CoachingVector), at position: Int) -> Double {
+            let sizes = [(head.here, position), (head.there, 1)].compactMap { centre, position in
+                geometry.joint(.neck, at: position).map { centre.distance(to: $0) }
+            }
+            guard !sizes.isEmpty else { return 0.13 * scale }
+            let size = 0.85 * sizes.reduce(0, +) / Double(sizes.count)
+            return min(max(size, 0.11 * scale), 0.16 * scale)
         }
 
         private func postureChange(_ definition: CoachingMetricDefinition) -> CoachingMetricResult? {
