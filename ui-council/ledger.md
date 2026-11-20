@@ -28,12 +28,14 @@ Scores are 1–10 per metric (see [rubric.md](rubric.md)). Columns: typo = typog
 | 6 | `79a8e8b` | sol | 7.0 | 7.8 | 7.5 | 8.0 |
 | 6 | `79a8e8b` | opus | 6.8 | 7.3 | 6.8 | 7.2 |
 | 6 | `79a8e8b` | fable | 6.8 | 7.3 | 6.2 | 7.6 |
+| 6 | `79a8e8b` | gemini | 7.1 | 8.0 | 5.8 | 7.5 |
 | 7 | `854493c` | sol | 7.1 | 8.0 | 7.6 | 8.1 |
 | 8 | `f71b351` | sol | 7.0 | 8.0 | 7.4 | 7.9 |
 | 9 | `3bad0b4` | sol | 6.4 | 7.8 | 7.1 | 7.6 |
 | 9 | `3bad0b4` | opus | 6.5 | 7.2 | 7.0 | 7.4 |
 | 9 | `3bad0b4` | fable | 6.6 | 7.5 | 6.5 | 7.9 |
 | 10 | `32a6525` | sol | 6.6 | 7.7 | 7.5 | 8.0 |
+| 11 | `4d540ad` | sol | 6.8 | 8.0 | 7.3 | 7.8 |
 
 ## Round 0
 
@@ -283,7 +285,15 @@ Declined:
 | Sportsbox | 6.0 | 6.5 | 6.0 | 6.0 | 5.5 | 5.5 | 6.0 | 6.5 | 6.0 | 7.0 | 6.0 | 6.0 | 6.2 | 5.5 |
 | Onform | 7.5 | 7.3 | 7.5 | 7.5 | 7.8 | 6.3 | 6.8 | 8.5 | 7.5 | 6.5 | 7.0 | 8.0 | 7.6 | 6.3 |
 
-Decision: Sol's lowest metric held at 6.8, 6.7, 6.8 over rounds 3–5, so round 6 is scored by the full council for a fresh read rather than waiting for Sol to clear 9.5 alone. Gemini's round 6 scores were still running when round 7 started.
+**gemini**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.6 | 8.2 | 7.1 | 8.1 | 7.5 | 8.4 | 7.3 | 7.8 | 8.9 | 8.2 | 8.0 | 7.7 | 8.0 | 7.1 |
+| Sportsbox | 5.8 | 6.4 | 5.7 | 6.0 | 4.9 | 5.4 | 5.8 | 7.0 | 6.2 | 6.8 | 5.6 | 5.3 | 5.8 | 4.9 |
+| Onform | 7.4 | 7.6 | 7.5 | 7.8 | 7.7 | 6.6 | 6.8 | 8.4 | 7.2 | 6.4 | 7.0 | 8.0 | 7.5 | 6.4 |
+
+Decision: Sol's lowest metric held at 6.8, 6.7, 6.8 over rounds 3–5, so round 6 is scored by the full council for a fresh read rather than waiting for Sol to clear 9.5 alone. Gemini's round 6 scores arrived during round 11 and were folded in here.
 
 ## Round 7
 
@@ -436,3 +446,32 @@ Declined:
 | SwingCoach | 7.7 | 7.8 | 8.0 | 8.1 | 7.6 | 7.1 | 6.6 | 8.6 | 6.9 | 7.4 | 7.3 | 8.1 | 7.7 | 6.6 |
 | Sportsbox | 7.2 | 7.6 | 7.1 | 7.4 | 7.5 | 6.9 | 6.7 | 8.0 | 7.5 | 8.4 | 7.0 | 7.5 | 7.5 | 6.7 |
 | Onform | 7.6 | 8.0 | 8.1 | 7.7 | 8.1 | 7.3 | 7.2 | 9.1 | 8.4 | 7.1 | 7.8 | 8.3 | 8.0 | 7.1 |
+
+## Round 11
+
+Build: `4d540ad`
+
+Changes this round:
+
+- Head ring sized from the pose's head (0.85 of face-to-neck); dashed address ring 1.25 pt at 35%; report version 9 → 10 (Sol). Partly: it still misses the crown on a bent-over golfer.
+- Titles without 'Label:' shorthand: 'Shaft pointed outside the ball' (Sol).
+- Recap: 'Swing 5' under the picture's badge (Sol).
+- Session review: one-line key under the marks; first finding a heading size larger (Sol).
+- All checks: 'You' is a solid dot everywhere, colour carries the level (Sol).
+- Rail and player buttons 80% opaque (Sol).
+- Swing Info: 'Low · 50%' as one value (Sol).
+- P strip: the cell outline fills the strip height; 14 pt labels; badges in one corner (Sol).
+- Settings footer: two short sentences (Sol).
+
+Declined:
+
+- 'Watching' label for Auto (Sol): Ruari says the toggle is enough; the segment fills while armed.
+- Labelling the toolbar select icon (Sol): Opus and Fable asked for icon-only; VoiceOver has the label.
+
+**sol**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 8.0 | 7.7 | 7.5 | 8.1 | 7.9 | 7.7 | 6.8 | 8.6 | 8.5 | 7.4 | 7.4 | 8.2 | 8.0 | 6.8 |
+| Sportsbox | 7.0 | 7.3 | 6.9 | 7.2 | 7.1 | 6.5 | 6.3 | 7.5 | 7.4 | 8.1 | 6.8 | 7.3 | 7.3 | 6.3 |
+| Onform | 7.6 | 7.7 | 7.6 | 7.6 | 8.1 | 7.1 | 6.8 | 8.6 | 8.3 | 7.0 | 7.4 | 8.2 | 7.8 | 6.8 |

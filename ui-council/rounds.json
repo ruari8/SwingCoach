@@ -119,7 +119,7 @@
   "declined": [
    "Horizontally scrolling P strip with 44 pt-wide cells (Sol, fourth time): left for Ruari."
   ],
-  "notes": "Decision: Sol's lowest metric held at 6.8, 6.7, 6.8 over rounds 3\u20135, so round 6 is scored by the full council for a fresh read rather than waiting for Sol to clear 9.5 alone. Gemini's round 6 scores were still running when round 7 started."
+  "notes": "Decision: Sol's lowest metric held at 6.8, 6.7, 6.8 over rounds 3\u20135, so round 6 is scored by the full council for a fresh read rather than waiting for Sol to clear 9.5 alone. Gemini's round 6 scores arrived during round 11 and were folded in here."
  },
  "7": {
   "changes": [
@@ -222,6 +222,24 @@
   "declined": [
    "'Watching' label for Auto (Sol): Ruari says the toggle is enough; the segment fills while armed.",
    "Labelling the toolbar select icon (Sol): Opus and Fable asked for icon-only; VoiceOver has the label."
+  ]
+ },
+ "12": {
+  "changes": [
+   "Walkthrough opens with the tool rail folded; its reveal control is captioned 'Tools' (Sol).",
+   "Recap thumbnail has no badge, only 'Swing 5' (Sol).",
+   "Session tally at section-heading size; tighter marks; the large-title size dropped from the ramp (Sol).",
+   "Dashed address ring 1 pt at 25% (Sol).",
+   "P strip: a 16 pt badge slot above each pose; strip 66 pt tall (Sol, Opus).",
+   "'Address' with 'Low confidence' on a second line in the transport row (Sol).",
+   "All checks summary keys only the badge and the not-judged dash (Sol).",
+   "'Show all drawings here' toggle (Sol).",
+   "'240 fps' in the coach chip's capsule; both 44 pt taps (Gemini).",
+   "Plain filter glyph in the Library bar (Gemini)."
+  ],
+  "declined": [
+   "A status word beside the Auto toggle (Sol, again): Ruari says the toggle is enough.",
+   "Rewording the 'earliest often causes the later ones' footer (Sol): it's the coaching rule in COACHING.md, not a UI claim."
   ]
  }
 }
