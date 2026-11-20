@@ -176,6 +176,35 @@
   "declined": [
    "All council asks this round: the round implements only Ruari's direction."
   ],
-  "notes": "Thumbnails are now square at 220 pt \u00d7 screen scale, about 2.4\u00d7 the memory of round 8's."
+  "notes": "Thumbnails are now square at 220 pt \u00d7 screen scale, about 2.4\u00d7 the memory of round 8's. Scored by Sol, Opus and Fable; Gemini's round 9 scores were still running when round 10 started."
+ },
+ "10": {
+  "changes": [
+   "Auto's state inside the toggle: the Auto segment fills lime while listening; a 12 pt mark beside it is filled (listening), hollow (paused) or a warning glyph (problem). No banner (Opus, Fable, Sol, within Ruari's camera-first rule).",
+   "Off the walkthrough: floating pill removed; position name in the transport row; one 8 pt band gap (Opus, Fable).",
+   "On-video tag hidden while the step card shows (Opus, Fable).",
+   "'Head stayed high at impact' (Sol).",
+   "One plain severity word for beginners: 'A little out' / 'Well out' / 'Far out'; All checks keeps 'N steps out' (Sol).",
+   "One shared key with fixed symbols (you dot, good-zone band, address dashed ring) everywhere (Opus, Fable).",
+   "Recap picture fills the card height with that swing's own badge (Opus, Fable).",
+   "Head zone wider than the rings; address ring 1.5 pt at 50% (Fable).",
+   "All zones lighter (22% fill), measured lines keep full stroke (Sol).",
+   "All checks and comparison headers cut to one caption block (Fable, Sol).",
+   "Session summary cut; 'Shows it most' / 'Your best here' above the pictures (Fable, Sol).",
+   "Toolbar select is an icon; session header keeps 'Select' (Opus, Fable, Sol).",
+   "44 pt hit areas for capsules and close buttons (Fable).",
+   "Done/Back as 44 pt capsules (Fable).",
+   "Rail labels 11 pt in a 66 pt rail; Positions uses the line-drawn pose (Fable).",
+   "Swing Info in inset cards with a 48 pt bottom inset (Fable).",
+   "P strip badges 18 pt inside their own cells (Opus, Sol).",
+   "'All checks at this position' toggle (Sol)."
+  ],
+  "declined": [
+   "Delete into a menu (Opus): already last, after a divider, in red.",
+   "'My lines' / 'Coach lines' (Opus): Draw and Layers were settled.",
+   "Shift in-zone green away from the lime accent (Opus): hues differ; status set is fixed.",
+   "Scrolling P strip (Sol): left for Ruari.",
+   "'Session swing N of 12' (Sol, third time): consistency with the Library player."
+  ]
  }
 }

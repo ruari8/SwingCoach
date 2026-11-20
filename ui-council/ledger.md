@@ -29,6 +29,10 @@ Scores are 1–10 per metric (see [rubric.md](rubric.md)). Columns: typo = typog
 | 6 | `79a8e8b` | opus | 6.8 | 7.3 | 6.8 | 7.2 |
 | 6 | `79a8e8b` | fable | 6.8 | 7.3 | 6.2 | 7.6 |
 | 7 | `854493c` | sol | 7.1 | 8.0 | 7.6 | 8.1 |
+| 8 | `f71b351` | sol | 7.0 | 8.0 | 7.4 | 7.9 |
+| 9 | `3bad0b4` | sol | 6.4 | 7.8 | 7.1 | 7.6 |
+| 9 | `3bad0b4` | opus | 6.5 | 7.2 | 7.0 | 7.4 |
+| 9 | `3bad0b4` | fable | 6.6 | 7.5 | 6.5 | 7.9 |
 
 ## Round 0
 
@@ -320,3 +324,73 @@ Declined:
 | Onform | 7.7 | 8.1 | 8.0 | 7.6 | 8.2 | 7.2 | 7.2 | 8.7 | 7.9 | 7.1 | 7.3 | 8.3 | 8.1 | 7.1 |
 
 The report version bump makes the app re-score the seed's swings at launch, which also re-times P1–P10 to the frames the drawings were measured on (existing behaviour, as on a phone). From round 7 the Swing Info times differ slightly from earlier rounds for that reason.
+
+## Round 8
+
+Build: `f71b351`
+
+Changes this round:
+
+- 'Tap Manual to stop' larger; Auto/Manual targets about 48 pt (Sol).
+- Recap example thumbnail shorter, one caption line (Sol).
+- Keys scoped: 'Top finding per swing'; theme pills 'Typically 5 steps out' (Sol).
+- Head rings: zone cut away under each ring; thinner address ring (Sol).
+- Comparison caption 'Tap a judged swing to walk through it' (Sol).
+- Shared low-confidence glyph on dashed chips, in the time label and the 'Low' tag (Sol).
+- Guide rows say 'Reference range' (Sol).
+- Settings footer leads with one line (Sol).
+
+Declined:
+
+- Horizontally scrolling P strip (Sol, sixth time): left for Ruari.
+- 'Session swing 2 of 12' (Sol, second time): would break consistency with the Library player's counter.
+
+**sol**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 8.2 | 7.7 | 7.6 | 8.3 | 8.1 | 7.3 | 7.0 | 8.8 | 8.6 | 7.3 | 8.1 | 8.4 | 8.0 | 7.0 |
+| Sportsbox | 7.2 | 7.4 | 6.9 | 7.4 | 7.4 | 6.4 | 6.8 | 8.1 | 7.2 | 8.5 | 6.6 | 7.6 | 7.4 | 6.4 |
+| Onform | 7.7 | 8.0 | 7.9 | 7.6 | 8.1 | 7.1 | 7.0 | 8.8 | 8.2 | 6.8 | 7.3 | 8.3 | 7.9 | 6.8 |
+
+## Round 9
+
+Build: `3bad0b4`
+
+Changes this round:
+
+- Ruari's direction: the full-width 'Auto is on' panel and stop hint are gone; a small dot by the Auto/Manual switch shows Auto; compact '12 saved' capsule; a status line only when there's news.
+- Recap card cut to the picture, the finding with its number badge, and Compare (~130 pt).
+- Step card: position and '1/4' counter, badge and finding, Back / Play / Next and All checks; legend and camera caveat moved to All checks.
+- Library as a Photos-style grid: square tiles, 2 pt gutters, 3 columns, pinch between 2, 3 and 5 (remembered); duration in the corner; vantage tag only when a session mixes views; 'Select'. New UI test for the pinch.
+- Session review and All checks trimmed to one short line under each headline.
+
+Declined:
+
+- All council asks this round: the round implements only Ruari's direction.
+
+**sol**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 8.2 | 7.5 | 7.7 | 8.0 | 8.1 | 7.0 | 6.4 | 8.8 | 8.0 | 7.1 | 7.2 | 8.3 | 7.8 | 6.4 |
+| Sportsbox | 7.0 | 7.2 | 6.4 | 7.1 | 7.4 | 6.4 | 6.0 | 7.7 | 7.0 | 7.7 | 6.7 | 7.2 | 7.1 | 6.0 |
+| Onform | 7.5 | 7.5 | 7.2 | 7.1 | 8.0 | 6.8 | 6.5 | 8.6 | 7.6 | 6.9 | 7.3 | 7.9 | 7.6 | 6.5 |
+
+**opus**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.4 | 7.3 | 7.0 | 7.1 | 6.5 | 7.0 | 6.7 | 7.2 | 7.3 | 6.6 | 7.4 | 7.6 | 7.2 | 6.5 |
+| Sportsbox | 6.8 | 6.9 | 6.5 | 6.9 | 6.8 | 6.3 | 5.9 | 7.0 | 6.8 | 7.7 | 6.2 | 7.2 | 7.0 | 5.9 |
+| Onform | 7.2 | 7.0 | 7.3 | 7.0 | 7.3 | 6.5 | 6.6 | 8.0 | 7.0 | 6.3 | 6.5 | 7.8 | 7.4 | 6.3 |
+
+**fable**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.3 | 7.5 | 7.0 | 7.6 | 7.2 | 7.5 | 6.6 | 7.3 | 7.9 | 7.2 | 7.8 | 7.6 | 7.5 | 6.6 |
+| Sportsbox | 6.3 | 6.5 | 6.2 | 6.0 | 6.0 | 6.2 | 5.6 | 6.8 | 6.2 | 7.4 | 6.4 | 6.2 | 6.5 | 5.6 |
+| Onform | 7.6 | 7.4 | 7.8 | 7.5 | 8.0 | 6.6 | 6.8 | 8.4 | 7.2 | 6.4 | 7.2 | 8.4 | 7.9 | 6.4 |
+
+Thumbnails are now square at 220 pt × screen scale, about 2.4× the memory of round 8's. Scored by Sol, Opus and Fable; Gemini's round 9 scores were still running when round 10 started.
