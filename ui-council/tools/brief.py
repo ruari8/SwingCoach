@@ -4,6 +4,8 @@ import sys, pathlib
 rnd, shots, out = sys.argv[1], sys.argv[2], sys.argv[3]
 extras = [a.split("=", 1) for a in sys.argv[4:] if "=" in a]
 root = pathlib.Path(__file__).resolve().parents[1]
+# The reference apps' screenshots sit beside the shots folders, outside the repo.
+media = pathlib.Path(shots).expanduser().resolve().parents[1]
 screens = """| File prefix | Screen |
 |---|---|
 | 01-library | Library tab: the session, its swings |
@@ -31,7 +33,7 @@ You are a senior product designer on a review council for SwingCoach, an iPhone 
 1. The rubric: `{root}/rubric.md`. 13 metrics, each scored 1–10 with one decimal.
 2. SwingCoach screenshots: `{shots}`. Each screen is captured as `<prefix>-light.png` and `<prefix>-dark.png` on an iPhone 17 Simulator, with real range footage. Open every screen in both appearances.
 {screens}
-3. Reference apps, App Store screenshots: `{root}/references/sportsbox/` (Sportsbox 3D Golf) and `{root}/references/onform/` (Onform). Judge only the UI inside the phone frames.{extra_txt}
+3. Reference apps, App Store screenshots: `{media}/references/sportsbox/` (Sportsbox 3D Golf) and `{media}/references/onform/` (Onform). Judge only the UI inside the phone frames.{extra_txt}
 
 How the app is used (from its product owner; take it into account when you score and when you propose fixes):
 - The golfer barely looks at the phone. It sits on a tripod recording them; they walk back to it between shots to review. Screens are read at a glance, not studied.

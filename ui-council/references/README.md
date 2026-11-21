@@ -1,6 +1,6 @@
 # Reference apps
 
-App Store screenshots (US store, 20 Nov 2026) of the two apps the council scores SwingCoach against. Resized to 2000 px high.
+The two apps the council scored SwingCoach against, from their App Store screenshots (US store, 20 Nov 2026, resized to 2000 px high). The images are other companies' marketing material, so they are not in this repo: download them from the listings into `<media-root>/references/sportsbox/` and `<media-root>/references/onform/` (default media root `~/Documents/Startups/ui-council-media`).
 
 | App | Why | Store listing |
 | --- | --- | --- |

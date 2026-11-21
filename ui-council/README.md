@@ -8,7 +8,7 @@ An overnight design review loop for the app's UI (20 Nov 2026). Four models scor
 | [ledger.md](ledger.md) | Every round: commit, each member's scores for us and the references, changes, declined asks |
 | [capture.sh](capture.sh) | The deterministic screenshot run: one iPhone 17 Simulator, pinned status bar, the seeded range session, `UICouncilTourUITests` in light and dark |
 | [briefs/](briefs/) | The exact brief each member received |
-| [references/](references/) | App Store screenshots of Sportsbox 3D Golf and Onform |
+| [references/](references/README.md) | Which apps were the references; their screenshots are kept outside the repo |
 | `tools/` | Seed builder, brief writer, contact sheets, report builder |
 
 The screenshots and `report.html` show Ruari's own range footage, so they are not committed (this repository is public). They live in `~/Documents/Startups/ui-council-media/`, and the report is published as a private claude.ai page linked from the PR.

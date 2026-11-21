@@ -208,7 +208,7 @@ def reference_section():
              + "</tr></thead><tbody>" + "".join(rows) + "</tbody></table></div>")
     shots = []
     for app in ("sportsbox", "onform"):
-        for src in sorted((root / "references" / app).glob("*.jpg")):
+        for src in sorted((media / "references" / app).glob("*.jpg")):
             t = thumb(src, f"ref-{src.stem}.jpg", width=240)
             shots.append(f"<img loading=lazy src='{t}' alt='{esc(app)} App Store screenshot'>")
     return (f"<p class=lede>The reference apps, Sportsbox 3D Golf and Onform, were scored from App Store marketing screenshots "
