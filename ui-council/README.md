@@ -1,21 +1,18 @@
-# UI council
+# Screenshot tour
 
-An overnight design review loop for the app's UI (20 Nov 2026). Four models score the app and two reference apps on a frozen rubric, the app is fixed round by round, and every round is recorded in the ledger.
+A repeatable screenshot run of the app's main screens on real range footage, made for a design review of the UI in November 2026 and kept so later UI work can be compared like for like.
 
 | File | What it is |
 | --- | --- |
-| [rubric.md](rubric.md) | The 13 metrics, frozen at round 0 |
-| [ledger.md](ledger.md) | Every round: commit, each member's scores for us and the references, changes, declined asks |
-| [capture.sh](capture.sh) | The deterministic screenshot run: one iPhone 17 Simulator, pinned status bar, the seeded range session, `UICouncilTourUITests` in light and dark |
-| [briefs/](briefs/) | The exact brief each member received |
-| [references/](references/README.md) | Which apps were the references; their screenshots are kept outside the repo |
-| `tools/` | Seed builder, brief writer, contact sheets, report builder |
+| [capture.sh](capture.sh) | One iPhone 17 Simulator, a pinned status bar, the seeded range session, and `UICouncilTourUITests` in light and dark: 16 screens each |
+| [tools/build_seed.py](tools/build_seed.py) | Builds the seed library from a range session and its coaching harness output |
+| [tools/baseline-fixture.patch](tools/baseline-fixture.patch) | Lets `capture.sh --ref` run the tour on a commit older than the tour |
 
-The screenshots and `report.html` show Ruari's own range footage, so they are not committed (this repository is public). They live in `~/Documents/Startups/ui-council-media/`, and the report is published as a private claude.ai page linked from the PR.
-
-Rerun a capture:
+The seed and the screenshots show the owner's own range footage, so they are not in this public repository. Point `UI_COUNCIL_SEED` at a seed built with `build_seed.py` and write screenshots outside the checkout.
 
 ```bash
-ui-council/capture.sh ~/Documents/Startups/ui-council-media/shots/rNN            # this checkout
-ui-council/capture.sh ~/Documents/Startups/ui-council-media/shots/pre-pr --ref d75f001   # an older commit
+ui-council/capture.sh <out-dir>                 # this checkout
+ui-council/capture.sh <out-dir> --ref d75f001   # an older commit
 ```
+
+The tour is in the `OnRequest` test plan and skipped by the default one.

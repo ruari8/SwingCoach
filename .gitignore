@@ -48,6 +48,6 @@ tools/venv
 explainers/
 
 # UI council: screenshots and the report show private range footage
-ui-council/report.html
-ui-council/report-assets/
-ui-council/report-artifact.html
+ui-council/shots/
+ui-council/seed/
+ui-council/work/
