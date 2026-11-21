@@ -153,13 +153,13 @@ struct TrimView: View {
             Spacer()
 
             Text("Trim Swings")
-                .font(.headline)
+                .font(.appLabel)
                 .foregroundColor(.white)
 
             Spacer()
 
             Text("DTL")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.appLabel)
                 .foregroundColor(.yellow)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
@@ -192,7 +192,7 @@ struct TrimView: View {
                     ProgressView()
                         .tint(.white)
                     Text("Opening video...")
-                        .font(.subheadline)
+                        .font(.appBody)
                         .foregroundColor(.white.opacity(0.75))
                 }
             }
@@ -223,7 +223,7 @@ struct TrimView: View {
             // Time display
             Text(TrimTimecode.format(currentTime, scale: displayTimeScale))
                 .accessibilityIdentifier("trim-current-time")
-                .font(.system(size: 18, weight: .semibold, design: .monospaced))
+                .font(.appTitle.monospacedDigit())
                 .foregroundColor(.white)
 
             Spacer()
@@ -290,7 +290,7 @@ struct TrimView: View {
 
             if isLoadingThumbnails {
                 Text(thumbnails.isEmpty ? "Preparing timeline..." : "Loading more frames...")
-                    .font(.caption2)
+                    .font(.appCaption)
                     .foregroundColor(.white.opacity(0.55))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 4)
@@ -313,7 +313,7 @@ struct TrimView: View {
                         editingClipID == nil ? "Add Swing" : "Update Swing",
                         systemImage: editingClipID == nil ? "plus.circle.fill" : "checkmark.circle.fill"
                     )
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.appLabel)
                         .foregroundColor(.black)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
@@ -351,7 +351,7 @@ struct TrimView: View {
             }
 
             Text(autoDetectionStatusText)
-                .font(.caption)
+                .font(.appCaption)
                 .foregroundColor(.white.opacity(0.68))
 
             Spacer(minLength: 0)
@@ -401,7 +401,7 @@ struct TrimView: View {
                 .foregroundColor(detectorSummaryColor(summary))
 
             Text(detectorSummaryText(summary))
-                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .font(FixedType.cellLabel.monospacedDigit())
                 .foregroundColor(.white.opacity(0.72))
                 .lineLimit(2)
                 .minimumScaleFactor(0.75)
@@ -459,7 +459,7 @@ struct TrimView: View {
             if !clips.isEmpty {
                 HStack {
                     Text("\(clipsTitle) (\(clips.count))")
-                        .font(.subheadline.weight(.semibold))
+                        .font(.appLabel)
                     Spacer()
                     Button("Review Full Screen", systemImage: "arrow.up.left.and.arrow.down.right") {
                         commitEditingClipIfNeeded()
@@ -470,14 +470,14 @@ struct TrimView: View {
                             reviewPresentation = TrimReviewPresentation(asset: previewAsset, clips: clips)
                         }
                     }
-                    .font(.caption)
+                    .font(.appCaption)
                     .accessibilityIdentifier("trim-review")
                 }
                 .foregroundColor(.white)
                 .padding(.horizontal)
                 if !autoDetectedClipIDs.isEmpty {
                     Text("Extra footage: \(clipContext.before.formatted())s before, \(clipContext.after.formatted())s after")
-                        .font(.caption2)
+                        .font(.appCaption)
                         .foregroundStyle(.white.opacity(0.6))
                         .padding(.horizontal)
                 }
@@ -559,12 +559,12 @@ struct TrimView: View {
             }
 
             Text(clipDurationText(clip))
-                .font(.caption2)
+                .font(.appCaption)
                 .foregroundColor(.white.opacity(0.7))
 
             if let declarationDelayText = clipDeclarationDelayText(clip) {
                 Text(declarationDelayText)
-                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                    .font(FixedType.cellLabel.monospacedDigit())
                     .foregroundColor(declarationDelayColor(clip))
                     .lineLimit(1)
             }
@@ -641,7 +641,7 @@ struct TrimView: View {
     private var bottomBar: some View {
         VStack(spacing: 8) {
             Text(statusText)
-                .font(.caption)
+                .font(.appCaption)
                 .foregroundStyle(.white.opacity(0.6))
             HStack {
                 Button(primaryExportButtonTitle) { handlePrimaryExportAction() }
@@ -651,7 +651,7 @@ struct TrimView: View {
             .buttonStyle(.borderedProminent)
             .tint(.yellow)
             .foregroundStyle(.black)
-            .font(.subheadline.weight(.semibold))
+            .font(.appLabel)
         }
         .padding()
         .frame(maxWidth: .infinity)
@@ -672,7 +672,7 @@ struct TrimView: View {
 
                 if let progress = exportProgress {
                     Text("Exporting \(progress.current) of \(progress.total)...")
-                        .font(.headline)
+                        .font(.appLabel)
                         .foregroundColor(.white)
                 }
             }

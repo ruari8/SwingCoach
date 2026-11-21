@@ -150,13 +150,13 @@ final class SwingCoachingTests: XCTestCase {
         XCTAssertEqual(head.level, 4)
         // Head depth carries the same picture, so it draws when it leads.
         XCTAssertEqual(report.metric(.headDepthImpact)?.drawings, head.drawings)
-        XCTAssertEqual(head.finding, "Head stays up through impact")
+        XCTAssertEqual(head.finding, "Head stayed high at impact")
 
         let transition = try XCTUnwrap(report.metric(.transition))
         // 13 degrees steeper is 7 outside the zone's 6: three steps of 3.
         XCTAssertEqual(transition.value, 13, accuracy: 0.2)
         XCTAssertEqual(transition.level, 3)
-        XCTAssertEqual(transition.finding, "Shaft steepens coming down")
+        XCTAssertEqual(transition.finding, "Shaft steepened coming down")
         XCTAssertFalse(transition.drawings.isEmpty)
 
         // The 45 degree shaft, carried on from the grip (0.22, 0.40) down to
@@ -364,7 +364,7 @@ final class SwingCoachingTests: XCTestCase {
         XCTAssertEqual(themes[0].swings, 4)
         XCTAssertEqual(themes[0].measured, 6)
         XCTAssertEqual(themes[0].medianLevel, 4)
-        XCTAssertEqual(themes[0].text, "Shaft steepens coming down")
+        XCTAssertEqual(themes[0].text, "Shaft steepened coming down")
     }
 
     func testEarlierFaultLeadsWhenThemesAreClose() {
@@ -415,7 +415,7 @@ final class SwingCoachingTests: XCTestCase {
         XCTAssertTrue(CoachingFeedback.themes(in: Array(repeating: inside, count: 4) + Array(repeating: outside, count: 4)).isEmpty)
 
         let themes = CoachingFeedback.themes(in: [inside, outside, inside, inside, inside])
-        XCTAssertEqual(themes.map(\.text), ["Clubhead inside the hands"])
+        XCTAssertEqual(themes.map(\.text), ["Clubhead went inside the hands"])
         XCTAssertEqual(themes[0].swings, 4)
         XCTAssertEqual(themes[0].measured, 5)
         XCTAssertEqual(themes[0].medianLevel, -4)

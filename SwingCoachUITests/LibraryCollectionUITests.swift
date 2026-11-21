@@ -27,7 +27,7 @@ final class LibraryCollectionUITests: XCTestCase {
     func testSwipesRespectDTLFilter() {
         let app = launchLibrary()
         app.buttons["Filter swings"].tap()
-        app.buttons["Down the Line"].tap()
+        app.buttons["Down the line"].tap()
         app.openLibraryCard("Review A starred DTL", sessionCard: true)
         assertPosition("1 of 2", title: "Review A starred DTL", in: app)
         swipeNext(in: app)
@@ -58,7 +58,7 @@ final class LibraryCollectionUITests: XCTestCase {
     private func assertPosition(_ label: String, title: String, in app: XCUIApplication) {
         let position = app.staticTexts["swing-position"]
         let expected = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "label == %@ AND value == %@", label, title), object: position
+            predicate: NSPredicate(format: "label == %@ AND value == %@", swingCounter(label), title), object: position
         )
         XCTAssertEqual(XCTWaiter.wait(for: [expected], timeout: 3), .completed,
                        "Expected \(label), \(title); actual \(position.label), \(String(describing: position.value))")

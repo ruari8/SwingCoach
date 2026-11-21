@@ -27,6 +27,10 @@ struct SwingDetailView: View {
     @State private var draftLine: ManualAnnotation?
     @State private var coachingSeek: Double?
     @State private var highlightedMetric: CoachingMetricID?
+    @State private var coachInteracted = false
+    @State private var coachingLayers = CoachingLayers.coachsChoice
+    @State private var showsCoachingLayers = false
+    @State private var showsCoachingChecks = false
     @ObservedObject private var coachingStore = SwingCoachingStore.shared
 
     init(swing: SavedSwing, reviewSwings: [SavedSwing]? = nil) {
@@ -48,9 +52,7 @@ struct SwingDetailView: View {
     }
 
     private var swingPositionText: String? {
-        guard navigationSwings.count > 1,
-              let index = navigationSwings.firstIndex(where: { $0.id == currentSwing.id }) else { return nil }
-        return "\(index + 1) of \(navigationSwings.count)"
+        ReviewTopBar.counter(for: currentSwing.id, in: navigationSwings, id: \.id, date: \.createdAt)
     }
 
     var body: some View {
@@ -63,24 +65,37 @@ struct SwingDetailView: View {
                 drawingToolBar
             }
 
-            if !isDrawingLines, SwingCoachingStore.canCoach(currentSwing) {
-                VStack {
-                    SwingCoachingPill(swing: currentSwing, seek: { coachingSeek = $0 }, highlighted: $highlightedMetric)
-                        // Clear of the tool rail, which can dock on either side.
-                        .padding(.horizontal, 14 + PlayerToolRail.buttonSize + PlayerToolRail.spacing)
-                    Spacer(minLength: 0)
+            if !isDrawingLines, !coachingLayers.isCoachsChoice {
+                CoachingLayersChangedTag(layers: $coachingLayers)
+                    .underReviewTopBar()
+            }
+        }
+        .swingCoachingOpening(swing: currentSwing, isActive: true, seek: $coachingSeek,
+                              interacted: $coachInteracted, highlighted: $highlightedMetric)
+        .sheet(isPresented: $showsCoachingLayers) {
+            CoachingLayersSheet(layers: $coachingLayers, hasTrail: coachingStore.clubTrail(for: currentSwing) != nil)
+        }
+        .sheet(isPresented: $showsCoachingChecks) {
+            if let report = coachingStore.report(for: currentSwing) {
+                SwingCoachingChecks(swing: currentSwing, report: report,
+                                    verdict: coachingStore.verdict(for: currentSwing, report: report)) { result in
+                    coachInteracted = true
+                    highlightedMetric = result.id
+                    coachingSeek = result.clipTime
+                    showsCoachingChecks = false
                 }
-                .padding(.top, 64)
+                .presentationDetents([.fraction(0.62), .large])
             }
         }
         .overlayPreferenceValue(ReviewPlaybackCornerControlsKey.self) { cornerControls in
             topNavOverlay(cornerControls: cornerControls)
         }
+        .playerSheetDimming()
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .sheet(isPresented: $showMetadata) {
-            metadataSheet
+            SwingInfoView(swing: currentSwing)
                 .presentationDetents([.medium])
         }
         .onAppear {
@@ -125,60 +140,28 @@ struct SwingDetailView: View {
 
     private func topNavOverlay(cornerControls: AnyView?) -> some View {
         VStack(spacing: 10) {
-            HStack {
-                navCircleButton(systemName: "chevron.left") { dismiss() }
-                    .accessibilityLabel("Back to library")
-
-                Spacer()
-
-                if let swingPositionText {
-                    Text(swingPositionText)
-                        .accessibilityIdentifier("swing-position")
-                        .accessibilityValue(currentSwing.title ?? "")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 10)
-                        .frame(height: 32)
-                        .background(Capsule().fill(Color.black.opacity(0.45)))
-                }
-
-                Spacer()
-
-                Button {
-                    library.toggleFavorite(currentSwing)
-                } label: {
-                    Image(systemName: currentSwing.isFavorite ? "star.fill" : "star")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(currentSwing.isFavorite ? .yellow : .white)
-                        .frame(width: 38, height: 38)
-                        .background(Circle().fill(Color.black.opacity(0.45)))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(currentSwing.isFavorite ? "Remove star" : "Star swing")
-            }
+            ReviewTopBar(
+                leadingTitle: "Done",
+                leadingAccessibilityLabel: "Back to library",
+                onLeading: { dismiss() },
+                counter: swingPositionText,
+                counterValue: currentSwing.title ?? "",
+                isStarred: currentSwing.isFavorite,
+                onStar: { library.toggleFavorite(currentSwing) }
+            )
             .padding(.horizontal, 14)
 
             Spacer(minLength: 0)
         }
-        .padding(.top, 6)
-        // The player's tool rail starts one gap under the star, or under Back
-        // when docked left, without moving the navigation row.
+        .padding(.top, ReviewTopBar.topPadding)
+        // The player's tool rail starts one gap under the star, or under
+        // Done when docked left, without moving the top row.
         .overlay {
+            // Centred under the star, which is wider than a rail button.
             cornerControls
-                .padding(.horizontal, 14)
-                .padding(.top, 6)
+                .padding(.horizontal, ReviewTopBar.railInset)
+                .padding(.top, ReviewTopBar.topPadding)
         }
-    }
-
-    private func navCircleButton(systemName: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
-                .frame(width: 38, height: 38)
-                .background(Circle().fill(Color.black.opacity(0.45)))
-        }
-        .buttonStyle(.plain)
     }
 
     private func originalPlayer(for swing: SavedSwing) -> some View {
@@ -201,15 +184,30 @@ struct SwingDetailView: View {
                 swingPositions: swing.swingPositions,
                 drawing: videoAspectRatios[swing.id] != nil ? $isDrawingLines : nil,
                 seekRequest: swing.id == currentSwingID ? $coachingSeek : nil,
-                contentOverlay: { currentTime, _ in
+                positionMarks: coachingStore.stripMarks(for: swing),
+                extraTools: SwingCoachingStore.canCoach(swing) ? [.coachingDrawings(changed: !coachingLayers.isCoachsChoice) {
+                    showsCoachingLayers = true
+                }] : [],
+                walkthroughStops: coachingStore.walkthroughStops(
+                    for: swing, highlighted: swing.id == currentSwingID ? highlightedMetric : nil),
+                bottomPanel: SwingCoachingStore.canCoach(swing) ? { context in
+                    AnyView(SwingCoachingPanel(
+                        swing: swing, context: context, highlighted: $highlightedMetric,
+                        onShowChecks: { showsCoachingChecks = true },
+                        onInteract: { coachInteracted = true }
+                    ))
+                } : nil,
+                stopFocus: { time in coachingStore.focusRange(for: swing, at: time, highlighted: swing.id == currentSwingID ? highlightedMetric : nil) },
+                contentOverlay: { currentTime in
                     AnyView(
                         ZStack {
                             SwingCoachingOverlay(
                                 report: coachingStore.report(for: swing),
-                                picks: coachingStore.coachPicks(for: swing),
+                                steps: coachingStore.steps(for: swing),
+                                trail: coachingStore.clubTrail(for: swing),
+                                layers: coachingLayers,
                                 aspectRatio: videoAspectRatios[swing.id],
                                 currentTime: currentTime,
-                                timeScale: swing.sourceTimeScale ?? 1,
                                 highlighted: swing.id == currentSwingID ? highlightedMetric : nil
                             )
                             SwingLineOverlay(
@@ -223,8 +221,6 @@ struct SwingDetailView: View {
                     )
                 }
             ) {
-                EmptyView()
-            } overlayAccessory: {
                 EmptyView()
             }
             .environment(\.reviewCornerControlsInNavigation, true)
@@ -245,7 +241,7 @@ struct SwingDetailView: View {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(.yellow)
                         Text(playbackError)
-                            .font(.caption)
+                            .font(.appCaption)
                             .foregroundColor(.white.opacity(0.8))
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
@@ -255,7 +251,7 @@ struct SwingDetailView: View {
                         ProgressView()
                             .tint(.white)
                         Text(loadingSwingIDs.contains(swing.id) ? "Loading swing..." : "Preparing playback...")
-                            .font(.caption)
+                            .font(.appCaption)
                             .foregroundColor(.white.opacity(0.75))
                     }
                 }
@@ -271,95 +267,8 @@ struct SwingDetailView: View {
             isDrawing: $isDrawingLines,
             draft: $draftLine
         )
-        .padding(.top, 60)
+        .padding(.top, ReviewTopBar.topPadding + ReviewTopBar.railTop)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-    }
-
-    private var metadataSheet: some View {
-        NavigationStack {
-            ScrollView {
-                metadataContent
-                    .padding()
-            }
-            .navigationTitle("Swing Info")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-
-    private var metadataContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Metadata")
-                .font(.subheadline.weight(.semibold))
-
-            VStack(spacing: 10) {
-                metadataRow("View", currentSwing.vantage.displayName)
-                metadataRow("Duration", formatDuration(currentSwing.duration))
-                metadataRow("Saved", formatDate(currentSwing.createdAt))
-            }
-
-            swingPositionsSection
-        }
-    }
-
-    @ViewBuilder
-    private var swingPositionsSection: some View {
-        if SwingPositionProcessor.canFindPositions(for: currentSwing) {
-            Text("Swing positions")
-                .font(.subheadline.weight(.semibold))
-                .padding(.top, 8)
-
-            if let positions = currentSwing.swingPositions?.positions {
-                VStack(spacing: 8) {
-                    ForEach(positions, id: \.number) { position in
-                        swingPositionRow(position)
-                    }
-                }
-                .accessibilityIdentifier("swing-positions")
-                Text("Times are on the clip's slow-motion timeline. A ? marks positions the model was unsure of.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            } else if positionProcessor.failed.contains(currentSwing.id) {
-                Text("Swing positions could not be found for this clip.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            } else {
-                HStack(spacing: 8) {
-                    ProgressView()
-                    Text("Finding swing positions…")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-        }
-    }
-
-    private func swingPositionRow(_ position: SwingPosition) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-            // Below 0.5 the model found no clear peak for this position.
-            Text(position.confidence < 0.5 ? "\(position.label)? \(position.name)" : "\(position.label) \(position.name)")
-                .font(.subheadline)
-            Spacer(minLength: 12)
-            Text(String(format: "%.2fs", position.clipTime))
-                .font(.subheadline.weight(.medium).monospacedDigit())
-            Text("\(Int((position.confidence * 100).rounded()))%")
-                .font(.caption.monospacedDigit())
-                .foregroundColor(.secondary)
-                .frame(width: 40, alignment: .trailing)
-        }
-    }
-
-    private func metadataRow(_ title: String, _ value: String) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(title)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-
-            Spacer(minLength: 12)
-
-            Text(value)
-                .font(.subheadline.weight(.medium))
-                .multilineTextAlignment(.trailing)
-        }
     }
 
     private func preparePlaybackWindow() {
@@ -409,7 +318,146 @@ struct SwingDetailView: View {
         draftLine = nil
         showMetadata = false
         highlightedMetric = nil
-        coachingSeek = nil
+    }
+
+}
+
+
+/// Swing Info: the clip's details and its P1–P10, in Library and Auto review.
+struct SwingInfoView: View {
+    let swing: SavedSwing
+    @ObservedObject private var positionProcessor = SwingPositionProcessor.shared
+    @Environment(\.dismiss) private var dismiss
+
+    private var currentSwing: SavedSwing { swing }
+
+    var body: some View { metadataSheet }
+
+    var metadataSheet: some View {
+        // The inset cards of the other sheets over the player (All checks,
+        // Layers), with the shared room under the last row.
+        NavigationStack {
+            List {
+                Section {
+                    metadataRow("View", currentSwing.vantage.displayName)
+                    metadataRow("Duration", formatDuration(currentSwing.duration))
+                    metadataRow("Saved", formatDate(currentSwing.createdAt))
+                } header: {
+                    SectionHeading("Details")
+                }
+                swingPositionsSection
+            }
+            .listStyle(.insetGrouped)
+            // A table, not a settings list: compact rows, so more of
+            // P1–P10 shows at the sheet's height.
+            .environment(\.defaultMinListRowHeight, Self.rowHeight)
+            .navigationTitle("Swing Info")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .playerSheetStyle()
+    }
+
+    @ViewBuilder
+    private var swingPositionsSection: some View {
+        if SwingPositionProcessor.canFindPositions(for: currentSwing) {
+            Section {
+                if let positions = currentSwing.swingPositions?.positions {
+                    positionColumnHeaders
+                        .listRowInsets(Self.rowInsets)
+                    ForEach(positions, id: \.number) { position in
+                        swingPositionRow(position)
+                            .listRowInsets(Self.rowInsets)
+                    }
+                } else if positionProcessor.failed.contains(currentSwing.id) {
+                    Text("Swing positions could not be found for this clip.")
+                        .font(.appCaption)
+                        .foregroundStyle(Color.helpText)
+                } else {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text("Finding swing positions…")
+                            .font(.appCaption)
+                            .foregroundStyle(Color.helpText)
+                    }
+                }
+            } header: {
+                SectionHeading("Swing positions")
+            } footer: {
+                if currentSwing.swingPositions?.positions != nil {
+                    Text("Times are on the clip's slow-motion timeline. A ? and Low mark positions the model was unsure of.")
+                        .foregroundStyle(Color.helpText)
+                }
+            }
+            .accessibilityIdentifier("swing-positions")
+        }
+    }
+
+    /// Names the table's number columns.
+    private var positionColumnHeaders: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("Position")
+            Spacer(minLength: 12)
+            Text("Time")
+            Text("Confidence")
+                .frame(width: Self.confidenceWidth, alignment: .trailing)
+        }
+        .font(.appCaptionLabel)
+        .foregroundStyle(Color.helpText)
+        .accessibilityHidden(true)
+    }
+
+    private static let confidenceWidth: CGFloat = 112
+    private static let rowHeight: CGFloat = 36
+    private static let rowInsets = EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16)
+    /// Time and confidence: the body size in tabular figures.
+    private static let numberFont = Font.appBody.monospacedDigit()
+
+    private func swingPositionRow(_ position: SwingPosition) -> some View {
+        let low = position.isLowConfidence
+        return HStack(alignment: .firstTextBaseline) {
+            // Below 0.5 the model found no clear peak for this position:
+            // "Low" says so beside its number; the row keeps the others'
+            // weight.
+            Text(position.title)
+                .font(.appBody)
+            Spacer(minLength: 12)
+            Text(String(format: "%.2fs", position.clipTime))
+                .font(Self.numberFont)
+            // The same numbers as Time; a low one reads as one value,
+            // "Low · 50%", at the same size.
+            let percent = "\(Int((position.confidence * 100).rounded()))%"
+            Group {
+                if low {
+                    LowConfidenceTag(value: percent, font: Self.numberFont)
+                } else {
+                    Text(percent).font(Self.numberFont)
+                }
+            }
+            .frame(width: Self.confidenceWidth, alignment: .trailing)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(position.title)\(low ? ", \(SwingPosition.lowConfidenceWords)" : ""): "
+            + String(format: "%.2f seconds", position.clipTime)
+            + ", confidence \(Int((position.confidence * 100).rounded())) percent")
+    }
+
+    private func metadataRow(_ title: String, _ value: String) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title)
+                .font(.appBody)
+                .foregroundStyle(Color.helpText)
+
+            Spacer(minLength: 12)
+
+            Text(value)
+                .font(.appBody.monospacedDigit())
+                .multilineTextAlignment(.trailing)
+        }
     }
 
     private func formatDuration(_ seconds: Double) -> String {

@@ -212,7 +212,7 @@ struct ManualAnnotationCanvasOverlay: View {
         case .label:
             guard let point = points.first else { return }
             let text = Text(annotation.text ?? "Note")
-                .font(.caption.weight(.bold))
+                .font(FixedType.readout)
                 .foregroundColor(color)
             context.draw(text, at: point)
 

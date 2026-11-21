@@ -33,8 +33,15 @@ final class SwingCoachingStore: ObservableObject {
     @Published private(set) var revision = 0
     /// Swings queued or running.
     @Published private(set) var pending: Set<UUID> = []
-    /// Swings whose last run failed this session; not retried until relaunch.
+    /// Swings whose last run failed this session; not retried until
+    /// relaunch or `retry`.
     @Published private(set) var failed: Set<UUID> = []
+    /// Why each failed swing failed, in words for the golfer.
+    @Published private(set) var failureReasons: [UUID: String] = [:]
+    /// Swings whose first reading from Auto was just replaced by the
+    /// clip's, with what the first reading said, until the player has
+    /// shown it (`acknowledgeUpdate`).
+    @Published private(set) var replacedFirstReadings: [UUID: String] = [:]
 
     private var queue: [UUID] = []
     /// The clip or live reading in progress, and its task. `id` is the
@@ -67,6 +74,9 @@ final class SwingCoachingStore: ObservableObject {
     private var libraryWatch: AnyCancellable?
     /// Swings whose report file has been looked for, found or not.
     private var checkedDisk: Set<UUID> = []
+    /// Club-head trails worked out from stored evidence, per swing and
+    /// `revision`. Nil inside means the swing has none.
+    private var trails: [UUID: (revision: Int, trail: CoachingClubTrail?)] = [:]
     private let directory: URL
 
     private init() {
@@ -111,10 +121,47 @@ final class SwingCoachingStore: ObservableObject {
         return verdict
     }
 
-    /// The checks the coach draws on this swing by default.
-    func coachPicks(for swing: SavedSwing) -> Set<CoachingMetricID> {
+    /// The walkthrough for the swing's current report, verdict first.
+    func steps(for swing: SavedSwing) -> [CoachingStep] {
         guard let report = report(for: swing) else { return [] }
-        return CoachingFeedback.picks(for: verdict(for: swing, report: report))
+        return CoachingWalkthrough.steps(for: report, verdict: verdict(for: swing, report: report))
+    }
+
+    /// The club head's path from the clip's evidence, or nil when the swing
+    /// only has a first reading or the club couldn't be followed.
+    func clubTrail(for swing: SavedSwing) -> CoachingClubTrail? {
+        if let cached = trails[swing.id], cached.revision == revision { return cached.trail }
+        var trail: CoachingClubTrail?
+        if let report = report(for: swing), !report.fromLiveCopies,
+           let data = try? Data(contentsOf: evidenceURL(swing.id)),
+           let evidence = try? JSONDecoder().decode(SwingCoachingEvidence.self, from: data),
+           evidence.fromLiveCopies != true {
+            trail = CoachingClubTrail.make(from: evidence)
+        }
+        trails[swing.id] = (revision, trail)
+        return trail
+    }
+
+    /// How many swings will be read before this one: 0 while it is being
+    /// read or when it is next, nil when it isn't waiting.
+    func swingsAhead(of swing: SavedSwing) -> Int? {
+        if running?.live == false, running?.id == swing.id { return 0 }
+        guard let index = queue.firstIndex(of: swing.id) else { return nil }
+        return index + (running == nil ? 0 : 1)
+    }
+
+    /// True when Auto is recording, so clips wait.
+    var isWaitingForAuto: Bool { autoCaptureIsRecording }
+
+    func acknowledgeUpdate(_ id: UUID) {
+        if replacedFirstReadings[id] != nil { replacedFirstReadings[id] = nil }
+    }
+
+    /// Reads a failed swing again.
+    func retry(_ swing: SavedSwing) {
+        failed.remove(swing.id)
+        failureReasons[swing.id] = nil
+        coachWithSession(swing)
     }
 
     /// The swings hit before this one in its session, oldest first.
@@ -289,7 +336,7 @@ final class SwingCoachingStore: ObservableObject {
         /// still has to be saved.
         case coached(SwingCoachingReport, SwingCoachingEvidence, freshEvidence: Bool)
         case cancelled
-        case failed
+        case failed(String)
     }
 
     private func runNext() {
@@ -316,10 +363,32 @@ final class SwingCoachingStore: ObservableObject {
         let evidenceURL = evidenceURL(id)
         let extractor = self.extractor
 
+        #if DEBUG
+        if let simulated = UITestFixture.simulatedClipRead {
+            // UI tests: a clip read that takes a set time and gives the
+            // fixture's full report, or fails, without Vision.
+            let task = Task {
+                try? await Task.sleep(nanoseconds: UInt64(simulated.seconds * 1_000_000_000))
+                let outcome: Outcome
+                if Task.isCancelled {
+                    outcome = .cancelled
+                } else if simulated.fails {
+                    outcome = .failed("unreadable")
+                } else {
+                    outcome = .coached(UITestFixture.fixtureCoachingReport(steep: true), UITestFixture.fixtureEvidence(),
+                                       freshEvidence: true)
+                }
+                self.finish(id, positions: positions, outcome: outcome, extractor: extractor)
+            }
+            running = (id, false, task)
+            return
+        }
+        #endif
+
         let task = Task.detached(priority: .utility) {
             let startedAt = ProcessInfo.processInfo.systemUptime
             var worker = extractor
-            var outcome = Outcome.failed
+            var outcome = Outcome.failed("no clip")
             var failure = "no clip"
             do {
                 // Stored evidence of the current kind is re-scored as is.
@@ -358,6 +427,7 @@ final class SwingCoachingStore: ObservableObject {
                 failure = error.localizedDescription
             }
             if case .failed = outcome {
+                outcome = .failed(failure)
                 CaptureCadenceDiagnostics.shared.emit("swing-coaching-failed", id: id.uuidString, state: ["error": failure])
             }
             await self.finish(id, positions: positions, outcome: outcome, extractor: worker)
@@ -406,6 +476,11 @@ final class SwingCoachingStore: ObservableObject {
             if freshEvidence {
                 try? JSONEncoder().encode(evidence).write(to: evidenceURL(id), options: .atomic)
             }
+            // The player says what the clip's reading changed.
+            if let swing = SwingLibrary.shared.swings.first(where: { $0.id == id }),
+               let previous = self.report(for: swing), previous.fromLiveCopies {
+                replacedFirstReadings[id] = verdict(for: swing, report: previous).headline
+            }
             try? JSONEncoder().encode(report).write(to: reportURL(id), options: .atomic)
             reports[id] = report
             checkedDisk.insert(id)
@@ -420,13 +495,23 @@ final class SwingCoachingStore: ObservableObject {
         case .cancelled where stillThere:
             // Stopped for Auto: first in line when coaching may run again.
             queue.insert(id, at: 0)
-        case .failed where stillThere:
+        case .failed(let reason) where stillThere:
             failed.insert(id)
+            failureReasons[id] = Self.plainReason(reason)
             pending.remove(id)
         default:
             pending.remove(id)
         }
         runNext()
+    }
+
+    /// The extractor's failure in words for the golfer.
+    nonisolated static func plainReason(_ failure: String) -> String {
+        switch failure {
+        case "no clip": "The video isn't on this phone."
+        case "no golfer at address": "No golfer was found at address."
+        default: "The video couldn't be read."
+        }
     }
 
     nonisolated static func modelPositions(_ stored: SwingPositions) -> SwingPositions {

@@ -13,5 +13,13 @@ end = source.index("struct SwingPlaybackView:", start)
     "import SwiftUI\nimport AVKit\nimport UIKit\n\n" + source[start:end]
 )
 for name in ["SwingVideoPlayer.swift", "PlaybackTransportGesture.swift", "SwingReviewPager.swift",
-             "PlaybackPositionControls.swift", "Models/SwingPositions/SwingPositions.swift"]:
+             "PlaybackPositionControls.swift", "Models/SwingPositions/SwingPositions.swift", "Theme.swift", "Models/VideoDisplayGeometry.swift"]:
     (out / Path(name).name).write_text((root / name).read_text())
+# The position strip draws the coach's verdict badge, which lives with the
+# coaching views; only the badge is needed here.
+coaching = (root / "CoachingPlayerViews.swift").read_text()
+start = coaching.index("struct CoachingLevelBadge: View {")
+end = coaching.index("\n}\n", start) + 3
+(out / "CoachingLevelBadge.swift").write_text(
+    "// Generated from production by sync-player.py.\nimport SwiftUI\n\n" + coaching[start:end]
+)

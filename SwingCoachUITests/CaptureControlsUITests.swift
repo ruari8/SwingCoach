@@ -18,6 +18,11 @@ final class CaptureControlsUITests: XCTestCase {
         XCTAssertLessThan(auto.frame.minX, manual.frame.minX)
         XCTAssertFalse(app.staticTexts["capture-model-stats"].exists)
         XCTAssertTrue(app.buttons["capture-saved-swings"].isEnabled)
+        // Armed and quiet: one status line in the bottom corner, no panel
+        // over the camera.
+        XCTAssertEqual(app.staticTexts["capture-status-title"].label, "Swings save automatically")
+        XCTAssertFalse(app.staticTexts["capture-status-detail"].exists)
+        XCTAssertFalse(app.staticTexts["capture-stop-hint"].exists)
         attach(app, "auto-default-clean")
 
         openSettings(app)
@@ -117,7 +122,7 @@ final class CaptureControlsUITests: XCTestCase {
         saved.tap()
         let position = app.staticTexts["swing-position"]
         XCTAssertTrue(position.waitForExistence(timeout: 5))
-        XCTAssertEqual(position.label, "3 of 3")
+        XCTAssertEqual(position.label, swingCounter("3 of 3"))
         let close = app.buttons["Close swing review"]
         XCTAssertTrue(close.exists)
         XCTAssertTrue(app.buttons["Delete this swing"].exists)
@@ -133,14 +138,14 @@ final class CaptureControlsUITests: XCTestCase {
         let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.43))
         start.press(forDuration: 0.05, thenDragTo: end)
         let paged = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            position.label == "2 of 3"
+            position.label == swingCounter("2 of 3")
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [paged], timeout: 5), .completed)
         attach(app, "auto-review-shared-player")
         app.buttons["Delete this swing"].tap()
         app.buttons["Delete from SwingCoach"].tap()
         let deleted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            position.label == "2 of 2"
+            position.label == swingCounter("2 of 2")
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [deleted], timeout: 5), .completed)
         close.tap()
@@ -228,8 +233,8 @@ final class CaptureControlsUITests: XCTestCase {
 
     private func openSettings(_ app: XCUIApplication) {
         app.tabBars.buttons["Library"].tap()
-        app.buttons["Experimental settings"].tap()
-        XCTAssertTrue(app.navigationBars["Experiments"].waitForExistence(timeout: 5))
+        app.buttons["Settings"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
         let stats = app.switches["show-capture-model-stats"]
         // Storage and extra-footage settings now precede diagnostics. List
         // creates offscreen rows lazily, so reveal the control before using it.
@@ -244,7 +249,7 @@ final class CaptureControlsUITests: XCTestCase {
     private func returnToCapture(_ app: XCUIApplication) {
         app.buttons["Done"].tap()
         let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            !app.navigationBars["Experiments"].exists
+            !app.navigationBars["Settings"].exists
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 10), .completed)
 
@@ -279,7 +284,7 @@ final class CaptureControlsUITests: XCTestCase {
         let stats = app.staticTexts["capture-model-stats"]
         XCTAssertTrue(stats.waitForExistence(timeout: 5))
         XCTAssertEqual(stats.label, expected)
-        XCTAssertGreaterThan(stats.frame.minY, app.staticTexts["capture-status-detail"].frame.minY)
+        XCTAssertGreaterThan(stats.frame.minY, app.staticTexts["capture-status-title"].frame.minY)
     }
 
     private func attach(_ app: XCUIApplication, _ name: String) {

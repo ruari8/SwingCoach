@@ -24,7 +24,7 @@ Stored per swing in `swing_library.json` under `swingPositions`:
 - the model name
 - for each position: number, time on the clip's own slow-motion timeline, and confidence (the model's score through a sigmoid)
 
-Swing Info and the player mark positions under 50% confidence with a `?` (`P8?`).
+Swing Info and the player mark positions under 50% confidence with the low-confidence glyph (`questionmark.circle.dashed`, `LowConfidenceGlyph`); the label stays "P8". The glyph sits on the strip's dashed chip, beside "Low confidence" under the position's name in the player, and in Swing Info's "Low" tag; VoiceOver says "low confidence".
 
 Once a swing's clip has been coached, P2, P6 and P7 are re-timed off the club track (shaft level, ball struck) and saved back here, with the model's own times kept in `modelClipTimes`. See [COACHING.md](./COACHING.md#club-timing).
 

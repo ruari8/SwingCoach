@@ -36,7 +36,7 @@ The app has two tabs:
 
 DEBUG builds also include:
 
-- `Experiments` (the gear in Library): detector sampling settings, coaching settings and Replay Debug visibility.
+- `Settings` (the gear in Library): detector sampling settings, coaching settings and Replay Debug visibility.
 - `Replay Debug`: feeds saved videos through the same detector core used by live capture, so detector behaviour can be checked without recording fresh sessions.
 
 See [docs/FRONTEND.md](docs/FRONTEND.md) for the feature inventory and [docs/COACHING.md](docs/COACHING.md) for how coaching works and what has been checked.

@@ -4,18 +4,18 @@ import XCTest
 final class LibraryDeletionUITests: XCTestCase {
     func testBulkDeletePersistsAndKeepsReferences() {
         let app = XCUIApplication.launched(seed: "review", ["-ui-testing-library"])
-        XCTAssertTrue(app.buttons["Select"].waitForExistence(timeout: 8))
-        app.buttons["Select"].tap()
+        XCTAssertTrue(app.buttons["Select swings"].waitForExistence(timeout: 8))
+        app.buttons["Select swings"].tap()
         app.buttons["Select All"].tap()
         XCTAssertTrue(app.staticTexts["3 selected"].waitForExistence(timeout: 3))
         app.buttons["Delete selected swings"].tap()
         let confirmation = app.alerts["Delete 3 Swings?"]
         XCTAssertTrue(confirmation.waitForExistence(timeout: 3))
         confirmation.buttons["Delete"].tap()
-        XCTAssertTrue(app.buttons["Select"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["Select swings"].waitForExistence(timeout: 3))
         assertReferencesRemain(in: app)
         app.relaunch(["-ui-testing-library"])
-        XCTAssertTrue(app.buttons["Select"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["Select swings"].waitForExistence(timeout: 8))
         assertReferencesRemain(in: app)
         let proof = XCTAttachment(screenshot: app.screenshot())
         proof.name = "Library after bulk deletion and relaunch"

@@ -14,7 +14,7 @@ final class AutoReviewAnnotationUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Undo last line"].exists)
         drawLine(app)
         XCTAssertTrue(app.buttons["Undo last line"].waitForExistence(timeout: 2))
-        XCTAssertEqual(app.staticTexts["swing-position"].label, "1 of 3", "Drawing must not page")
+        XCTAssertEqual(app.staticTexts["swing-position"].label, swingCounter("1 of 3"), "Drawing must not page")
         app.buttons["Undo last line"].tap()
         XCTAssertFalse(app.buttons["Undo last line"].exists)
         drawLine(app)
@@ -70,7 +70,7 @@ final class AutoReviewAnnotationUITests: XCTestCase {
         app.buttons["Finish drawing lines"].tap()
         app.buttons["Close swing review"].tap()
         XCTAssertTrue(saved.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.segmentedControls.buttons["Auto"].isSelected)
+        XCTAssertTrue(app.autoModeSegment.isSelected)
     }
 
     func testStarToggledInAutoReviewPersists() {
@@ -141,7 +141,7 @@ final class AutoReviewAnnotationUITests: XCTestCase {
 
     private func assertPosition(_ label: String, _ app: XCUIApplication) {
         let expected = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "label == %@", label), object: app.staticTexts["swing-position"]
+            predicate: NSPredicate(format: "label == %@", swingCounter(label)), object: app.staticTexts["swing-position"]
         )
         XCTAssertEqual(XCTWaiter.wait(for: [expected], timeout: 5), .completed)
     }

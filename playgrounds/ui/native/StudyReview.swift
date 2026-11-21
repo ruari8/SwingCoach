@@ -93,17 +93,12 @@ private struct StudyReviewPage: View {
                     startsPlaying: false,
                     allowsFullscreen: false,
                     allowsTransportGestures: true,
-                    edgeToEdge: true
+                    edgeToEdge: true,
+                    // As in Auto review: Delete is the rail's last tool.
+                    extraTools: [PlayerTool(id: "delete", title: "Delete", accessibilityLabel: "Delete this swing",
+                                            isDestructive: true, icon: .system("trash"), action: onDelete)]
                 ) {
                     EmptyView()
-                } overlayAccessory: {
-                    Button(action: onDelete) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 42, height: 42)
-                            .background(Circle().fill(.black.opacity(0.48)))
-                    }.buttonStyle(.plain).accessibilityLabel("Delete this swing")
                 }
             } else { ProgressView().tint(.white) }
         }

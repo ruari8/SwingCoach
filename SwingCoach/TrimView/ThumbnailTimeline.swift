@@ -93,7 +93,7 @@ struct ThumbnailTimeline: View {
             
             HStack {
                 Text(TrimTimecode.format(currentTime, scale: displayTimeScale))
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .font(FixedType.readout.monospacedDigit())
                     .foregroundColor(.yellow)
                 
                 Spacer()
@@ -103,7 +103,7 @@ struct ThumbnailTimeline: View {
                         Image(systemName: "arrow.left.arrow.right")
                             .font(.system(size: 10))
                         Text("Scroll")
-                            .font(.system(size: 11))
+                            .font(FixedType.cellLabel)
                     }
                     .foregroundColor(.white.opacity(0.4))
                 }
@@ -111,7 +111,7 @@ struct ThumbnailTimeline: View {
                 Spacer()
                 
                 Text(TrimTimecode.format(duration, scale: displayTimeScale))
-                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                    .font(FixedType.readout.monospacedDigit())
                     .foregroundColor(.white.opacity(0.5))
             }
             .padding(.horizontal, 4)
@@ -136,7 +136,7 @@ struct ThumbnailTimeline: View {
                 let xPosition = positionFromTime(CMTime(seconds: rawSeconds, preferredTimescale: 600))
                 
                 Text(formatLabelTime(displayedSeconds))
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .font(FixedType.railCaption.monospacedDigit())
                     .foregroundColor(.white.opacity(0.7))
                     .offset(x: xPosition - 15, y: 0)
             }

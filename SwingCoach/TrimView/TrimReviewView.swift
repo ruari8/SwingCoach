@@ -31,7 +31,7 @@ struct TrimReviewView: View {
                         .accessibilityLabel("Close trim review")
                     Spacer()
                     Text("\(selectedIndex + 1) of \(clips.count)")
-                        .font(.subheadline.weight(.medium))
+                        .font(.appLabel)
                         .padding(8)
                         .background(Capsule().fill(.black.opacity(0.48)))
                         .accessibilityIdentifier("swing-position")
@@ -64,8 +64,6 @@ private struct TrimReviewPage: View {
                 PlaybackChromeView(playerItem: playerItem, initialPlaybackRate: playbackRate,
                                    playbackEnabled: isSelected, startsPlaying: false,
                                    allowsFullscreen: false, edgeToEdge: true) {
-                    EmptyView()
-                } overlayAccessory: {
                     EmptyView()
                 }
             } else if let loadError {

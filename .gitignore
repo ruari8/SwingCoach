@@ -46,3 +46,8 @@ tools/venv
 
 # Explainer videos (audio, renders)
 explainers/
+
+# UI council: screenshots and the report show private range footage
+ui-council/shots/
+ui-council/seed/
+ui-council/work/

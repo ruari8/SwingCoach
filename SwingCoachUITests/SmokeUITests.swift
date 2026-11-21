@@ -23,8 +23,8 @@ final class SmokeUITests: XCTestCase {
         app.buttons["Back to library"].tap()
         XCTAssertTrue(card.waitForExistence(timeout: 5))
         app.tabBars.buttons["Capture"].tap()
-        XCTAssertTrue(app.segmentedControls.buttons["Auto"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.segmentedControls.buttons["Auto"].isSelected)
+        XCTAssertTrue(app.autoModeSegment.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.autoModeSegment.isSelected)
         attach(app, "capture")
     }
 

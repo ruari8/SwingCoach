@@ -65,6 +65,7 @@ SwingCoach/
 │   └── agents/                    # issue tracker, triage, domain conventions
 ├── scripts/                       # verify.sh test runner, diagnostics, profiling, knowledge viewer
 ├── playgrounds/                   # UI playground
+├── ui-council/                    # repeatable screenshot tour of the main screens (capture.sh)
 ├── tools/                         # knowledge viewer page; requirements.txt for the scripts' Python environment
 ├── .agents/skills/verify-swingcoach/   # verification skill + testing ladder
 └── .claude/skills/                # links to .agents/skills so Claude Code finds them
@@ -79,9 +80,11 @@ SwingCoach/
 | Tab shell (Library, Capture, DEBUG Debug) | `SwingCoach/AppRootView.swift` |
 | Library tab, import, batch actions, export | `SwingCoach/LibraryView.swift` |
 | Settings (gear icon in Library; there is no `SettingsView`) | `SwingCoach/ExperimentalSettingsView.swift` |
+| Shared look: accent colour, player chrome, player sheet style, library card sizes, position and low-confidence tags, wrapping layout | `SwingCoach/Theme.swift` |
 | Swing detail | `SwingCoach/SwingDetailView.swift` |
 | Lines drawn by hand on a swing | `SwingCoach/SwingLineAnnotations.swift`, `ManualAnnotationCanvas.swift` |
-| On-device coaching: drawings, verdict pill, measurement list, session review | `SwingCoach/SwingCoachingViews.swift` |
+| Coaching in the player (Library and Auto): step card, drawings, club path, strip marks, Layers tool, every check | `SwingCoach/CoachingPlayerViews.swift` |
+| Coaching colours and the session review | `SwingCoach/SwingCoachingViews.swift` |
 | Coaching on the Auto camera screen: coach chip, recap, comparison | `SwingCoach/AutoCoachingViews.swift` |
 | Left/right swing paging | `SwingCoach/SwingReviewPager.swift` |
 | Capture tab, manual + Auto | `SwingCoach/CaptureView.swift` |
@@ -90,6 +93,7 @@ SwingCoach/
 | Trim | `SwingCoach/TrimView/TrimView.swift`, `TrimReviewView.swift` |
 | Debug tab, replay through the detector | `SwingCoach/DebugReplayView.swift` |
 | Saved library (`Documents/swing_library.json`) | `SwingCoach/Models/SwingLibrary.swift` |
+| Swing pictures: each swing's small placeholder, the Library tiles' picture cache | `SwingCoach/Models/SwingPoster.swift` |
 
 ### Swing detection
 
@@ -97,7 +101,7 @@ The live detector is `SwingCoach/Models/SwingDetectorV3/` (used by `CaptureView`
 
 ### Coaching (on-device)
 
-`SwingCoach/Models/Coaching/` measures a down-the-line swing on the phone: evidence from Vision pose, person segmentation and the club detector at P1–P10, 21 metrics with zones and levels, a drawing per metric, one pointer per swing, recaps every few swings and session themes. Chips, moved cameras and unclear positions are measured but not judged. Every Auto swing is queued and its clip read when Auto pauses or stops; a setting (off by default) adds a first reading of the body checks while Auto records, from the live copies of the frames. UI is `SwingCoach/SwingCoachingViews.swift` and `SwingCoach/AutoCoachingViews.swift`. No backend. Zones come from 96 pro swings; nothing has run on a phone yet. Design, metric table and the Mac review harness: [COACHING.md](./docs/COACHING.md).
+`SwingCoach/Models/Coaching/` measures a down-the-line swing on the phone: evidence from Vision pose, person segmentation and the club detector at P1–P10, 21 metrics with zones and levels, a drawing per metric, one pointer per swing, recaps every few swings and session themes. Chips, moved cameras and unclear positions are measured but not judged. Every Auto swing is queued and its clip read when Auto pauses or stops; a setting (off by default) adds a first reading of the body checks while Auto records, from the live copies of the frames. A swing opens paused on the coach's first step with its drawing up, and a card walks the other faults in swing order (`CoachingWalkthrough.swift`). UI is `SwingCoach/CoachingPlayerViews.swift`, `SwingCoach/SwingCoachingViews.swift` and `SwingCoach/AutoCoachingViews.swift`. No backend. Zones come from 96 pro swings; nothing has run on a phone yet. Design, metric table and the Mac review harness: [COACHING.md](./docs/COACHING.md).
 
 ### Swing positions
 

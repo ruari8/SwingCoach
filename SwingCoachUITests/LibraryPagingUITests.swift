@@ -39,15 +39,18 @@ final class LibraryPagingUITests: XCTestCase {
             let speedFrame = speed.frame
             let timelineFrame = timeline.frame
             if !autoReview {
-                // The tool rail continues the star's column: same centre, same gaps.
+                // The tool rail hangs under the star, about centred: the
+                // fold button and the capsule share one edge, the same gap
+                // to the fold button and to the first tool, and the tools
+                // touching inside their capsule.
                 let star = app.buttons["Remove star"].frame
                 let fold = app.buttons["player-tools-fold"].frame
                 let info = app.buttons["Show swing metadata"].frame
-                XCTAssertEqual(star.midX, fold.midX, accuracy: 1)
-                XCTAssertEqual(fold.midX, info.midX, accuracy: 1)
+                XCTAssertEqual(star.midX, fold.midX, accuracy: 2)
+                XCTAssertEqual(fold.maxX, info.maxX, accuracy: 1)
                 XCTAssertEqual(info.midX, speedFrame.midX, accuracy: 1)
                 XCTAssertEqual(fold.minY - star.maxY, info.minY - fold.maxY, accuracy: 1)
-                XCTAssertEqual(info.minY - fold.maxY, speedFrame.minY - info.maxY, accuracy: 1)
+                XCTAssertEqual(speedFrame.minY - info.maxY, 0, accuracy: 1)
                 XCTAssertGreaterThan(fold.minY - star.maxY, 0)
             }
 
@@ -106,7 +109,7 @@ final class LibraryPagingUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["swing-position"].waitForExistence(timeout: 5))
         let speedButton = app.buttons.matching(NSPredicate(format: "label == %@", "Change playback speed")).firstMatch
         XCTAssertTrue(speedButton.waitForExistence(timeout: 5))
-        XCTAssertGreaterThanOrEqual(speedButton.frame.minY, app.buttons["Close swing review"].frame.minY - 8)
+        XCTAssertGreaterThanOrEqual(speedButton.frame.minY, app.buttons["Close swing review"].frame.maxY)
         assertSettledPage(app, position: "3 of 3")
         drag(app, from: 0.18, to: 0.82, velocity: .fast)
         assertSettledPage(app, position: "2 of 3")
@@ -195,8 +198,9 @@ final class LibraryPagingUITests: XCTestCase {
 
     private func assertSettledPage(_ app: XCUIApplication, position: String, reference: Int? = nil, file: StaticString = #filePath, line: UInt = #line) {
         let label = app.staticTexts["swing-position"]
-        let settled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", position), object: label)
-        XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 3), .completed, "Expected \(position), got \(label.label)", file: file, line: line)
+        let counter = swingCounter(position)
+        let settled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", counter), object: label)
+        XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 3), .completed, "Expected \(counter), got \(label.label)", file: file, line: line)
         let viewport = app.frame
         let visiblePages = app.otherElements.matching(identifier: "swing-review-page").allElementsBoundByIndex.filter {
             $0.frame.intersection(viewport).width > 2
