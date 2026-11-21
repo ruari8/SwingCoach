@@ -400,6 +400,10 @@ nonisolated enum LibraryGrid {
     /// points). A tile's picture is made at the tile's own size times
     /// the screen scale, and never above this (`LibraryTilePictures`).
     static let largestTile: CGFloat = 220
+    /// After a pinch last moves or ends, how long tiles ignore taps: a
+    /// finger lifting from the pinch must not open or select the tile
+    /// under it.
+    static let pinchTapCooldown: TimeInterval = 0.3
     /// Where a portrait clip's square thumbnail is cut, from 0 (its top)
     /// to 1 (its bottom): above the middle, so a down-the-line golfer's
     /// head and body show rather than the feet and the mat.
@@ -539,6 +543,23 @@ enum HitArea {
 }
 
 extension View {
+    /// In a UI test, an element the test can find by `identifier` to read
+    /// this view's frame on screen. Nothing outside UI tests: VoiceOver
+    /// gets no extra stop.
+    @ViewBuilder
+    func uiTestFrameProbe(_ identifier: String) -> some View {
+        #if DEBUG
+        if UITestFixture.isActive {
+            accessibilityElement(children: .ignore)
+                .accessibilityIdentifier(identifier)
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+
     /// Grows the tappable area to `HitArea.minimum` around a control drawn
     /// `visible` big, without changing the layout around it.
     func minimumHitArea(visible: CGSize) -> some View {

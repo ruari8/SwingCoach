@@ -75,6 +75,51 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertEqual(title.label, "Shaft steepened coming down")
     }
 
+    /// The drawing sits on the video: paused on the first step, the mark
+    /// at the end of the swing's own shaft line (0.33 across, 0.15 down the
+    /// fixture's 360 x 640 clip) is where that point of the picture is on
+    /// screen, wherever the video layer has been anchored or lifted to.
+    func testDrawingSitsOnTheVideo() throws {
+        let app = XCUIApplication.launched(seed: "coaching", ["-ui-testing-library"])
+        app.openLibraryCard("Coaching DTL", sessionCard: true)
+        XCTAssertTrue(app.staticTexts["coaching-step-title"].waitForExistence(timeout: 5))
+        let screen = app.windows.firstMatch.frame
+        func onScreen(_ identifier: String) -> XCUIElement? {
+            app.descendants(matching: .any).matching(identifier: identifier).allElementsBoundByIndex
+                .first { screen.contains(CGPoint(x: $0.frame.midX, y: $0.frame.midY)) && $0.frame.minX > -1 }
+        }
+        XCTAssertTrue(app.descendants(matching: .any)["coaching-caption-transition"].firstMatch.waitForExistence(timeout: 3))
+
+        // The video and the card settle after the swing opens: wait for the
+        // drawing to stop moving.
+        var mark = CGRect.null, layer = CGRect.null
+        let settled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let caption = onScreen("coaching-caption-transition"), let video = onScreen("player-video-layer")
+            else { return false }
+            let still = caption.frame == mark && video.frame == layer
+            (mark, layer) = (caption.frame, video.frame)
+            return still
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 8), .completed, "The player never settled")
+
+        // The video layer is the size of the whole screen, behind the
+        // status bar, moved up by its anchor and lift. The probe's frame
+        // comes back trimmed by that move at both ends, so its centre is
+        // the layer's; the clip is aspect-fit about that centre.
+        XCTAssertEqual(layer.width, screen.width, accuracy: 1, "\(layer)")
+        XCTAssertLessThan(layer.midY, screen.midY, "A portrait clip sits above the screen's middle: \(layer)")
+        let aspect: CGFloat = 360.0 / 640.0
+        let videoHeight = min(screen.height, screen.width / aspect), videoWidth = videoHeight * aspect
+        let video = CGRect(x: layer.midX - videoWidth / 2, y: layer.midY - videoHeight / 2,
+                           width: videoWidth, height: videoHeight)
+        XCTAssertEqual(mark.midX, video.minX + 0.33 * video.width, accuracy: 3, "\(mark) on \(video)")
+        XCTAssertEqual(mark.midY, video.minY + 0.15 * video.height, accuracy: 3, "\(mark) on \(video)")
+        // A portrait clip's top is at or above the safe area's top, never
+        // centred lower with black above it.
+        XCTAssertLessThanOrEqual(video.minY, app.buttons["review-leading"].frame.minY)
+        attach(app, "coaching-drawing-on-video")
+    }
+
     func testDrawingsToolTurnsTheCoachsDrawingOffAndBack() {
         let app = XCUIApplication.launched(seed: "coaching", ["-ui-testing-library"])
         app.openLibraryCard("Coaching DTL", sessionCard: true)

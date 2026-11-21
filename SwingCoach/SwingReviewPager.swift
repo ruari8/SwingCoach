@@ -151,6 +151,8 @@ struct ReviewTopBar: View {
     static let buttonSize: CGFloat = 44
     /// Gap between the safe area's top and the row, in every player.
     static let topPadding: CGFloat = 8
+    /// The row's bottom edge, measured from the safe area's top.
+    static let bottom: CGFloat = topPadding + buttonSize
     /// Where a tool rail under the star starts.
     static let railTop: CGFloat = buttonSize + 10
     /// Side inset of the tool rail: its fold button and capsule share the

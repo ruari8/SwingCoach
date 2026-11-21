@@ -170,6 +170,10 @@ private struct PlayerPanelIsShownKey: EnvironmentKey {
     static let defaultValue = false
 }
 
+private struct PlayerTopRowBottomKey: EnvironmentKey {
+    static let defaultValue = ReviewTopBar.bottom
+}
+
 extension EnvironmentValues {
     /// True while the player's video plays; set for its content overlay.
     var playerIsPlaying: Bool {
@@ -183,6 +187,15 @@ extension EnvironmentValues {
     var playerPanelIsShown: Bool {
         get { self[PlayerPanelIsShownKey.self] }
         set { self[PlayerPanelIsShownKey.self] = newValue }
+    }
+
+    /// The bottom edge of the row over the video (Done, the counter, the
+    /// star), in the content overlay's own coordinates; set for the
+    /// overlay, whose frame starts above that row edge to edge and moves
+    /// up with a lifted video. Anything the overlay labels stays below it.
+    var playerTopRowBottom: CGFloat {
+        get { self[PlayerTopRowBottomKey.self] }
+        set { self[PlayerTopRowBottomKey.self] = newValue }
     }
 }
 

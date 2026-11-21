@@ -616,6 +616,7 @@ struct SwingCoachingOverlay: View {
 
     @Environment(\.playerIsPlaying) private var isPlaying
     @Environment(\.playerPanelIsShown) private var panelIsShown
+    @Environment(\.playerTopRowBottom) private var topRowBottom
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var revealed = 3
     @State private var revealKey: String?
@@ -754,7 +755,7 @@ struct SwingCoachingOverlay: View {
         for (result, anchor) in anchored {
             let width = Self.tagWidth(result)
             var centre = CGPoint(x: min(max(anchor.x + 34, rect.minX + width / 2 + 6), rect.maxX - width / 2 - 6),
-                                 y: min(max(anchor.y - 16, rect.minY + 14), rect.maxY - 14))
+                                 y: min(max(anchor.y - 16, max(rect.minY, topRowBottom) + 14), rect.maxY - 14))
             func frame(_ point: CGPoint) -> CGRect {
                 CGRect(x: point.x - width / 2, y: point.y - rowHeight / 2, width: width, height: rowHeight)
             }
@@ -770,7 +771,8 @@ struct SwingCoachingOverlay: View {
     /// One tag on the frame: beside everything drawn there, at the height
     /// of its own line, so it sits next to the golfer rather than on the
     /// head. Right of the drawing, else left, else above, else below; clear
-    /// of the tool rail on either side and the header over the video. A
+    /// of the tool rail on either side and under the row over the video
+    /// (`playerTopRowBottom`), wherever the video's own top is. A
     /// head check's tag goes above first, a further ring's height up, so
     /// it sits in clear space over the hat, never touching it.
     private func besideCentre(of result: CoachingMetricResult, among results: [CoachingMetricResult],
@@ -792,8 +794,15 @@ struct SwingCoachingOverlay: View {
             ? result.drawings.filter { $0.kind == .circle && $0.role != .zone }
                 .map { CGFloat($0.size ?? 0) * rect.height }.max() ?? 0
             : 0
-        var safe = rect.intersection(bounds).inset(by: UIEdgeInsets(top: 64, left: 56, bottom: 12, right: 56))
-        if safe.isNull || safe.width < width || safe.height < height { safe = rect.intersection(bounds) }
+        let video = rect.intersection(bounds)
+        // Under the top row, or 12 points into the video when its top is
+        // lower than that.
+        let top = max(topRowBottom, video.minY) + 12 - video.minY
+        var safe = video.inset(by: UIEdgeInsets(top: top, left: 56, bottom: 12, right: 56))
+        if safe.isNull || safe.width < width || safe.height < height {
+            safe = video.inset(by: UIEdgeInsets(top: max(0, topRowBottom - video.minY), left: 0, bottom: 0, right: 0))
+        }
+        if safe.isNull || safe.width < width || safe.height < height { safe = video }
         func clampX(_ x: CGFloat) -> CGFloat { min(max(x, safe.minX + width / 2), safe.maxX - width / 2) }
         func clampY(_ y: CGFloat) -> CGFloat { min(max(y, safe.minY + height / 2), safe.maxY - height / 2) }
         let above = CGPoint(x: clampX(drawn.midX), y: drawn.minY - headRing - gap - height / 2)

@@ -71,7 +71,8 @@ struct LibraryView: View {
     @AppStorage(LibraryGrid.columnsKey) private var gridColumns = LibraryGrid.defaultColumns
     /// A two-finger pinch is under way, or just ended: a tile under a
     /// lifting finger doesn't open its swing.
-    @State private var isPinching = false
+    @GestureState private var isPinching = false
+    @State private var pinchClock = LibraryPinchClock()
     /// The swing a tile opened, with the collection it pages through.
     @State private var openedSwing: OpenedSwing?
 
@@ -508,16 +509,20 @@ struct LibraryView: View {
             // Pinch out for bigger tiles, in for more, as in Photos.
             .simultaneousGesture(
                 MagnifyGesture(minimumScaleDelta: 0.05)
-                    .onChanged { _ in if !isPinching { isPinching = true } }
+                    .updating($isPinching) { _, pinching, _ in
+                        pinching = true
+                        pinchClock.lastActivity = Date()
+                    }
                     .onEnded { value in
+                        pinchClock.lastActivity = Date()
                         pinched(value.magnification)
-                        // Past the fingers' lift, so it can't land as a tap.
-                        Task { @MainActor in
-                            try? await Task.sleep(nanoseconds: 300_000_000)
-                            isPinching = false
-                        }
                     }
             )
+            // The gesture state resets when a pinch ends or is cancelled:
+            // either way the lifting fingers get the cooldown.
+            .onChange(of: isPinching) { _, pinching in
+                if !pinching { pinchClock.lastActivity = Date() }
+            }
             .accessibilityAction(named: "Bigger thumbnails") { pinched(2) }
             .accessibilityAction(named: "Smaller thumbnails") { pinched(0.5) }
             .gesture(
@@ -753,12 +758,18 @@ struct LibraryView: View {
         withAnimation(.spring(duration: 0.35)) { gridColumns = next }
     }
 
+    /// A finger lifting during a pinch, or just after one, is not a tap.
+    private var tapBelongsToPinch: Bool {
+        isPinching || Date().timeIntervalSince(pinchClock.lastActivity) < LibraryGrid.pinchTapCooldown
+    }
+
     private func swingCard(_ swing: SavedSwing, reviewSwings: [SavedSwing]? = nil, showsVantage: Bool = false) -> some View {
         let isSelected = selectedSwings.contains(swing.id)
 
         return Group {
             if isSelecting {
                 Button {
+                    guard !tapBelongsToPinch else { return }
                     toggleSelection(swing)
                 } label: {
                     swingCardContent(swing, isSelected: isSelected, showsVantage: showsVantage)
@@ -766,8 +777,7 @@ struct LibraryView: View {
                 .buttonStyle(.plain)
             } else {
                 Button {
-                    // A finger lifting at the end of a pinch is not a tap.
-                    guard !isPinching else { return }
+                    guard !tapBelongsToPinch else { return }
                     openedSwing = OpenedSwing(swingID: swing.id,
                                               reviewIDs: (reviewSwings ?? referenceSwings).map(\.id))
                 } label: {
@@ -1386,10 +1396,10 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
     private var videoArea: some View {
         GeometryReader { geometry in
+            let lift = videoLift(in: geometry)
             ZStack {
                 // Video fills its container; in edge-to-edge mode it extends behind
                 // the notch/home indicator while the chrome below keeps its insets.
-                let lift = videoLift(in: geometry)
                 fillLayer(
                     Group {
                         if let player {
@@ -1402,16 +1412,21 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .uiTestFrameProbe("player-video-layer")
                 )
                 .offset(y: -lift)
 
                 // The drawings share the video's frame exactly: edge to
                 // edge the video ignores the safe area, and a drawing
                 // centred in the safe area instead would sit off the swing.
+                // That frame starts above the top row (and higher still
+                // when lifted), so the overlay is told where the row ends.
                 fillLayer(
                     contentOverlay(currentTime, geometry.size)
                         .environment(\.playerIsPlaying, isPlaying)
                         .environment(\.playerPanelIsShown, controlsVisible && bottomPanel != nil && !isDrawing)
+                        .environment(\.playerTopRowBottom,
+                                     (edgeToEdge ? geometry.safeAreaInsets.top : 0) + ReviewTopBar.bottom + lift)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 )
                     .offset(y: -lift)
@@ -1428,7 +1443,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 }
             }
             .background(Color.black)
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: videoLift(in: geometry))
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: lift)
         }
     }
 
@@ -1437,9 +1452,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     /// on the walkthrough or off it, so it never jumps when the card comes
     /// and goes; only the black band below it grows. At a stop it may lift
     /// further, so the part that matters, and the feet and ball under it,
-    /// sit clear above the panel, without pushing its top under the top
-    /// row; any black band left above a letterboxed clip is free to use
-    /// whatever the top row allows: only sky moves into it.
+    /// sit clear above the panel (`VideoDisplayGeometry.stopLift`): never
+    /// so far that the part's top goes under the top row.
     private func videoLift(in geometry: GeometryProxy) -> CGFloat {
         guard let aspect = videoAspect, aspect > 0 else { return 0 }
         // Edge to edge, the video is centred in the whole screen, not in
@@ -1448,18 +1462,21 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         let size = CGSize(width: geometry.size.width + insets.leading + insets.trailing,
                           height: geometry.size.height + insets.top + insets.bottom)
         let height = size.width / max(size.height, 1) > CGFloat(aspect) ? size.height : size.width / CGFloat(aspect)
-        let screenTop = geometry.frame(in: .global).minY - insets.top
-        let centredTop = screenTop + (size.height - height) / 2
-        let anchor = edgeToEdge && aspect < 1 ? max(0, centredTop - geometry.frame(in: .global).minY) : 0
+        let safeTop = geometry.frame(in: .global).minY
+        let centredTop = safeTop - insets.top + (size.height - height) / 2
+        let anchor = edgeToEdge && aspect < 1 ? max(0, centredTop - safeTop) : 0
         let videoTop = centredTop - anchor
         guard isAtWalkthroughStop, let stopFocus, let focus = stopFocus(seconds(currentTime)),
               let panelTop else { return anchor.rounded() }
-        let bottom = videoTop + CGFloat(focus.upperBound) * height + Self.stopFootClearance
-        let top = videoTop + CGFloat(focus.lowerBound) * height - 24
-        let wanted = max(0, bottom - panelTop)
-        let room = max(0, top - (geometry.frame(in: .global).minY + ReviewTopBar.topPadding + ReviewTopBar.buttonSize + 12))
-        let blackBand = max(0, videoTop - screenTop)
-        return (anchor + min(wanted, max(room, blackBand), size.height * 0.4)).rounded()
+        let focusBottom = videoTop + CGFloat(focus.upperBound) * height + Self.stopFootClearance
+        let stopLift = VideoDisplayGeometry.stopLift(
+            wanted: focusBottom - panelTop,
+            focusTop: videoTop + CGFloat(focus.lowerBound) * height,
+            topRowBottom: safeTop + ReviewTopBar.bottom,
+            blackBand: videoTop - safeTop,
+            most: size.height * 0.4
+        )
+        return (anchor + stopLift).rounded()
     }
 
     /// Under the lowest part that matters at a stop (the ball at the end
@@ -2950,6 +2967,14 @@ private struct ActivityView: UIViewControllerRepresentable {
 /// A plain class so frame updates while scrolling don't re-render the Library.
 /// Nonisolated so its deinit doesn't hop to the main actor: that isolated
 /// deinit aborted in swift_task_deinitOnExecutorImpl on iOS 26.3.
+/// When the grid's pinch last moved, ended or was cancelled. Noted as
+/// the fingers move, so a tap from a lifting finger is refused whichever
+/// of the tap and the pinch's end is delivered first; a reference, so
+/// noting it never redraws the grid.
+private nonisolated final class LibraryPinchClock {
+    var lastActivity = Date.distantPast
+}
+
 private nonisolated final class LibraryCardFrames {
     var frames: [UUID: CGRect] = [:]
 

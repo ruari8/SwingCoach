@@ -32,7 +32,19 @@ extension XCUIApplication {
     func showPlayerTools(file: StaticString = #filePath, line: UInt = #line) {
         let fold = buttons["player-tools-fold"]
         XCTAssertTrue(fold.waitForExistence(timeout: 5), file: file, line: line)
-        if fold.label == "Show player tools" { fold.tap() }
+        guard fold.label == "Show player tools" else { return }
+        fold.tap()
+        // The tools slide open: wait until they stop, so the next tap lands
+        // on the tool it was aimed at.
+        let tools = buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'player-tool-'"))
+        var last: [CGRect] = []
+        for _ in 0..<20 {
+            let frames = tools.allElementsBoundByIndex.map(\.frame)
+            if !frames.isEmpty, frames == last { return }
+            last = frames
+            usleep(100_000)
+        }
+        XCTFail("The player's tools never settled", file: file, line: line)
     }
 
     /// Capture's Auto segment.
