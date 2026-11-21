@@ -41,7 +41,7 @@ The Capture tab shows the footage instead of the camera preview, with a yellow s
 
 ## Keeping range footage to replay
 
-Library > gear > Experiments > **Keep Auto recordings** (DEBUG builds). Auto's rolling recordings normally last 45 s. With this on, each finished recording moves to `Documents/KeptRecordings/<start time>-<id>/`, with a new folder each time Auto starts or resumes after review. Files are named by their start on the session timeline, so name order is recording order.
+Library > gear > Settings > **Keep Auto recordings** (DEBUG builds). Auto's rolling recordings normally last 45 s. With this on, each finished recording moves to `Documents/KeptRecordings/<start time>-<id>/`, with a new folder each time Auto starts or resumes after review. Files are named by their start on the session timeline, so name order is recording order.
 
 - **Size:** about 22 GB an hour at 240 fps (50 Mbit/s). The folder is excluded from iCloud backup.
 - **Diagnostics:** each kept file logs `recording-kept`. A failed move logs `keep-recordings-failed` with the file's tmp path and leaves the file there rather than deleting it.

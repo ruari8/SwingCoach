@@ -29,7 +29,8 @@
       "parallelizable" : false,
       "selectedTests" : [
         "FastSwipeStressUITests",
-        "FootageCameraUITests"
+        "FootageCameraUITests",
+        "UICouncilTourUITests"
       ],
       "target" : {
         "containerPath" : "container:SwingCoach.xcodeproj",

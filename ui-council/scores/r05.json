@@ -1,0 +1,53 @@
+{
+ "round": 5,
+ "build": "e887fc4",
+ "members": {
+  "sol": {
+   "swingcoach": {
+    "typography": 7.6,
+    "hierarchy": 7.8,
+    "spacing": 7.1,
+    "color": 7.8,
+    "consistency": 7.4,
+    "clarity": 7.3,
+    "accessibility": 6.8,
+    "subject": 8.1,
+    "overlays": 8.2,
+    "data": 7.1,
+    "state": 7.5,
+    "polish": 7.9,
+    "overall": 7.7
+   },
+   "sportsbox": {
+    "typography": 7.1,
+    "hierarchy": 7.5,
+    "spacing": 6.8,
+    "color": 7.5,
+    "consistency": 7.3,
+    "clarity": 6.9,
+    "accessibility": 6.4,
+    "subject": 7.8,
+    "overlays": 7.6,
+    "data": 8.3,
+    "state": 6.8,
+    "polish": 7.5,
+    "overall": 7.5
+   },
+   "onform": {
+    "typography": 7.0,
+    "hierarchy": 7.6,
+    "spacing": 7.4,
+    "color": 7.6,
+    "consistency": 7.8,
+    "clarity": 7.0,
+    "accessibility": 6.5,
+    "subject": 8.8,
+    "overlays": 8.1,
+    "data": 6.9,
+    "state": 7.0,
+    "polish": 7.8,
+    "overall": 7.7
+   }
+  }
+ }
+}

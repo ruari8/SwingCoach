@@ -106,7 +106,7 @@ private enum SwingPositionGlyphData {
 struct SwingPositionGlyph: View {
     let number: Int
     var figure: Color = .white
-    var club: Color = .swingPositionAccent
+    var club: Color = .accentLime
 
     var body: some View {
         Canvas { context, size in
@@ -142,21 +142,96 @@ struct SwingPositionGlyph: View {
     }
 }
 
-extension Color {
-    /// Lime used for swing positions: the pose strip's clubs and the positions toggle.
-    static let swingPositionAccent = Color(red: 0.847, green: 0.953, blue: 0.416)
+// MARK: - Pose strip
+
+/// A mark on a pose chip: what was found at that position, drawn as the
+/// shared verdict badge. The glyph says it as well as the colour does.
+struct SwingPositionMark: Equatable {
+    enum Shape: Equatable {
+        /// Checked and in zone.
+        case tick
+        /// Out of zone by this many steps: "!" or "!!" by its severity.
+        case level(Int)
+    }
+
+    var shape: Shape
+    var colour: Color
+    /// The walkthrough starts here: said to VoiceOver, not drawn.
+    var isStart = false
+    /// Read out after the position's name.
+    var accessibilityText: String
 }
 
-// MARK: - Pose strip
+private struct PlayerIsPlayingKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+private struct PlayerPanelIsShownKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// True while the player's video plays; set for its content overlay.
+    var playerIsPlaying: Bool {
+        get { self[PlayerIsPlayingKey.self] }
+        set { self[PlayerIsPlayingKey.self] = newValue }
+    }
+
+    /// True while the panel under the video (the coaching card) is on
+    /// screen; set for the content overlay, so a drawing's name tag can
+    /// give way to the card that already names it.
+    var playerPanelIsShown: Bool {
+        get { self[PlayerPanelIsShownKey.self] }
+        set { self[PlayerPanelIsShownKey.self] = newValue }
+    }
+}
+
+/// A frame the coaching walkthrough stops on, and the position it shows,
+/// so the pose strip can mark that position as current even when the
+/// coaching timed it a frame or two off the position model.
+struct PlayerWalkthroughStop: Equatable {
+    let clipTime: Double
+    let position: Int
+}
+
+/// What a panel above the timeline can see and do in the player.
+struct PlayerPanelContext {
+    let currentTime: Double
+    let duration: Double
+    let isPlaying: Bool
+    /// Pauses on a clip time.
+    let seek: (Double) -> Void
+    /// Plays, from a clip time when given.
+    let play: (Double?) -> Void
+}
 
 /// Ten pose chips for jumping straight to a position. Dragging across the
 /// strip moves one whole position per chip, however many frames apart they are.
 struct SwingPositionStrip: View {
     let positions: [SwingPosition]
     let selectedNumber: Int?
+    var marks: [Int: SwingPositionMark] = [:]
     let onSelect: (SwingPosition) -> Void
 
     @State private var draggedIndex: Int?
+
+    /// Every chip's cell is this tall: the mark's slot over the chip,
+    /// past the 44 pt minimum target.
+    static let height: CGFloat = 66
+    /// A low-confidence position's pose, dimmed inside its dashed outline.
+    static let unsureGlyphOpacity = 0.45
+    /// A chip's level badge: 16 points, its glyph sized to it.
+    static let markSize: CGFloat = 16
+    /// The shallow slot at the top of each cell, over the chip, that holds
+    /// its marks (the level badge, the low-confidence glyph), so no mark
+    /// ever sits on a pose.
+    static let markSlot: CGFloat = 16
+    /// The chip's outline (the current position's fill, a low-confidence
+    /// dashed edge) and its mark slot: the strip's full height less this
+    /// each side, so the cell you see is the cell you tap.
+    static let chipInset: CGFloat = 3
+    /// The pose in a chip.
+    static let poseSize: CGFloat = 26
 
     var body: some View {
         GeometryReader { geometry in
@@ -182,7 +257,7 @@ struct SwingPositionStrip: View {
                     .onEnded { _ in draggedIndex = nil }
             )
         }
-        .frame(height: 56)
+        .frame(height: Self.height)
         .padding(.horizontal, 2)
         .background(.ultraThinMaterial, in: Capsule())
         .background(Capsule().fill(Color.black.opacity(0.2)))
@@ -194,49 +269,82 @@ struct SwingPositionStrip: View {
 
     private func chip(_ position: SwingPosition) -> some View {
         let selected = position.number == selectedNumber
-        let unsure = position.confidence < 0.5
+        let unsure = position.isLowConfidence
         return VStack(spacing: 0) {
-            SwingPositionGlyph(
-                number: position.number,
-                figure: selected ? .black : .white,
-                club: selected ? Color(red: 0.36, green: 0.49, blue: 0) : .swingPositionAccent
-            )
-            .frame(width: 30, height: 30)
+            // Every mark in its own slot over the chip, centred on the
+            // cell, so it never covers a pose, pairs with a neighbour or
+            // sits among the scrubber's dots: the level badge, with the
+            // shared low-confidence glyph (the same mark as by the
+            // position's name and in Swing Info) before it when the
+            // position is unsure.
+            HStack(spacing: 1) {
+                if unsure {
+                    Image(systemName: LowConfidenceGlyph.symbol)
+                        .font(.system(size: LowConfidenceGlyph.chipSize, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: LowConfidenceGlyph.chipDisc, height: LowConfidenceGlyph.chipDisc)
+                        .background(Circle().fill(Color(white: 0.12)))
+                        .accessibilityHidden(true)
+                }
+                if let mark = marks[position.number] {
+                    markBadge(mark)
+                }
+            }
+            .frame(height: Self.markSlot)
 
-            // Below 0.5 the model found no clear peak for this position.
-            Text(unsure ? "\(position.label)?" : position.label)
-                .font(.system(size: 9, weight: .bold))
-                .foregroundColor(selected ? .black : .white.opacity(0.75))
+            VStack(spacing: 0) {
+                // Below 0.5 the model found no clear peak for this position:
+                // a dimmed pose in a dashed outline, the label unchanged.
+                SwingPositionGlyph(
+                    number: position.number,
+                    figure: selected ? .black : .white,
+                    club: selected ? .accentInk : .accentLime
+                )
+                .frame(width: Self.poseSize, height: Self.poseSize)
+                .opacity(unsure ? Self.unsureGlyphOpacity : 1)
+
+                Text(position.label)
+                    .font(FixedType.stripLabel)
+                    .foregroundColor(selected ? .black : .white.opacity(0.85))
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+            .frame(width: 34, height: Self.height - 2 * Self.chipInset - Self.markSlot)
+            .background(Capsule().fill(selected ? Color.white : Color.clear))
+            .overlay {
+                if unsure {
+                    Capsule().strokeBorder(selected ? Color.black.opacity(0.55) : Color.white.opacity(0.6),
+                                           style: StrokeStyle(lineWidth: 1, dash: [3, 2.5]))
+                        .padding(selected ? 2 : 0)
+                }
+            }
         }
-        .frame(width: 34, height: 46)
-        .background(Capsule().fill(selected ? Color.white : Color.clear))
+        // The whole cell is the target, the strip's full height.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityIdentifier("swing-position-\(position.label)")
-        .accessibilityLabel("\(position.label), \(position.name)\(unsure ? ", unsure" : "")")
+        .accessibilityLabel("\(position.label), \(position.name)\(unsure ? ", \(SwingPosition.lowConfidenceWords)" : "")"
+            + (marks[position.number].map { ", \($0.accessibilityText)" } ?? ""))
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
         .accessibilityAction { onSelect(position) }
     }
 }
 
-/// Toggle icon for showing positions: a scrubber line with marks under it.
-struct PositionMarksIcon: View {
-    var color: Color = .white
-
-    var body: some View {
-        Canvas { context, size in
-            let unit = min(size.width, size.height) / 24
-            var line = Path()
-            line.move(to: CGPoint(x: 3 * unit, y: 10 * unit))
-            line.addLine(to: CGPoint(x: 21 * unit, y: 10 * unit))
-            context.stroke(line, with: .color(color), style: StrokeStyle(lineWidth: 2.1 * unit, lineCap: .round))
-            for x in [5.5, 10.5, 13.5, 18.5] {
-                let radius = 1.5 * unit
-                context.fill(Path(ellipseIn: CGRect(x: x * unit - radius, y: 16 * unit - radius,
-                                                    width: radius * 2, height: radius * 2)), with: .color(color))
+extension SwingPositionStrip {
+    /// The shared verdict badge (`CoachingLevelBadge`): a tick in zone,
+    /// "!" a little out, "!!" well out, never a number. With a dark edge,
+    /// but no ring: the only ring on the strip is the current position's
+    /// chip.
+    fileprivate func markBadge(_ mark: SwingPositionMark) -> some View {
+        Group {
+            switch mark.shape {
+            case .tick: CoachingLevelBadge(level: 0, size: Self.markSize)
+            case .level(let level): CoachingLevelBadge(level: level, size: Self.markSize)
             }
         }
-        .frame(width: 20, height: 20)
-        .accessibilityHidden(true)
+        .overlay(Circle().strokeBorder(Color.black.opacity(0.55), lineWidth: 1))
+        .allowsHitTesting(false)
     }
 }
 
@@ -250,42 +358,77 @@ struct PlayerTool: Identifiable {
     enum Icon {
         case system(String)
         case text(String)
-        case positionMarks
+        /// A position's stick-figure pose, as on the pose strip: a line
+        /// drawing, the same weight as the rail's outline symbols.
+        case pose(Int)
     }
 
     let id: String
-    /// Short name shown beside the button when labels flash or on hold.
+    /// The tool's name: shown beside the button on hold, and as its
+    /// caption when it has no `caption`.
     let title: String
+    /// The caption under the icon when the title is too long for the rail.
+    var caption: String? = nil
     let accessibilityLabel: String
     var accessibilityValue: String?
     var isOn = false
+    /// Deletes something: drawn last in the rail, after a divider, in red.
+    var isDestructive = false
     let icon: Icon
     let action: () -> Void
 }
 
 /// The player's tool column. It sits under the top-right button by default;
 /// dragging the fold button to the other half docks it on the left. Tapping the
-/// fold button folds the tools away. Names flash when the tools open, and holding
-/// any tool shows its name.
+/// fold button folds the tools away. The tools share one capsule, each with
+/// a short caption under its icon; holding a tool shows its full name.
+/// On the coaching walkthrough the tools start folded, one tap away, so the
+/// finding has the video to itself.
 struct PlayerToolRail: View {
     let tools: [PlayerTool]
     /// Distance from the container top to the fold button on each side.
     let trailingTop: CGFloat
     let leadingTop: CGFloat
+    /// Paused on a walkthrough stop: the tools fold until the golfer opens
+    /// them; off the walkthrough they follow `playerToolRailOpen`.
+    var onWalkthrough = false
 
     @AppStorage("playerToolRailSide") private var side: PlayerToolSide = .trailing
-    @AppStorage("playerToolRailOpen") private var isOpen = true
-    @AppStorage("playerToolLabelsIntroduced") private var labelsIntroduced = false
+    @AppStorage("playerToolRailOpen") private var storedOpen = true
+    /// Opened on this walkthrough; folded again each time it starts.
+    @State private var openOnWalkthrough = false
+    private var isOpen: Bool { onWalkthrough ? openOnWalkthrough : storedOpen }
 
     // Gesture state resets itself if the system cancels the drag; the reset
     // springs, so a docking release animates from where the finger let go.
     @GestureState(resetTransaction: Transaction(animation: .spring(response: 0.35, dampingFraction: 0.82)))
     private var drag = FoldDrag()
-    @State private var labelsVisible = false
-    @State private var labelsToken = 0
     @State private var peekedToolID: String?
 
+    /// The fold button: a chevron over its caption ("Tools"), so no
+    /// control on the player is a bare glyph; the chevron says which way
+    /// it goes.
     static let buttonSize: CGFloat = 38
+    static let buttonHeight: CGFloat = 46
+    /// The tools' capsule: as wide as the longest caption a tool can
+    /// carry, with `captionInset` either side. Captions are kept short
+    /// ("P1–P10", not "Positions") so the rail stays narrow over the video.
+    static let width: CGFloat = {
+        let font = UIFont.systemFont(ofSize: 11, weight: .semibold)  // FixedType.railCaption
+        let longest = ["Layers", "Delete", "Expand", "P1–P10", "Speed"]
+            .map { ($0 as NSString).size(withAttributes: [.font: font]).width }.max() ?? 40
+        return (longest + 2 * captionInset).rounded(.up)
+    }()
+    /// Between the longest caption and the capsule's edges.
+    static let captionInset: CGFloat = 6
+    /// From the screen's edge to the rail and its fold button, the same
+    /// on both: the fold button and the capsule line up on that edge.
+    static let edgeMargin: CGFloat = 16
+    /// One tool in the capsule: past the 44 pt minimum target.
+    static let cellHeight: CGFloat = 46
+    /// Space between the capsule's edge and its first and last tool.
+    static let capsuleInset: CGFloat = 3
+    /// From the fold button to the first tool's target.
     static let spacing: CGFloat = 10
 
     /// Once the finger moves 6 points the press stays a drag until release.
@@ -305,10 +448,10 @@ struct PlayerToolRail: View {
             let dropSide = targetSide(width: width)
             ZStack(alignment: .topLeading) {
                 if isDragging {
-                    dockOutline(highlighted: dropSide == .leading)
+                    dockOutline(highlighted: dropSide == .leading, side: .leading)
                         .offset(x: 0, y: leadingTop)
-                    dockOutline(highlighted: dropSide == .trailing)
-                        .offset(x: width - Self.buttonSize, y: trailingTop)
+                    dockOutline(highlighted: dropSide == .trailing, side: .trailing)
+                        .offset(x: width - Self.width, y: trailingTop)
                 }
 
                 column(width: width)
@@ -318,90 +461,120 @@ struct PlayerToolRail: View {
             }
             .frame(width: width, height: geometry.size.height, alignment: .topLeading)
         }
-        .onAppear {
-            guard isOpen || !isFoldable, !labelsIntroduced else { return }
-            labelsIntroduced = true
-            flashLabels(delay: 0.4)
-        }
     }
 
     private func column(width: CGFloat) -> some View {
-        VStack(alignment: side == .leading ? .leading : .trailing, spacing: Self.spacing) {
+        // The fold button sits on the screen's edge side, in line with the
+        // capsule's edge under it.
+        VStack(alignment: side == .leading ? .leading : .trailing, spacing: Self.spacing - Self.capsuleInset) {
             if isFoldable {
                 foldButton(width: width)
             }
 
             if isOpen || !isFoldable {
-                ForEach(tools) { tool in
-                    RailToolRow(
-                        tool: tool,
-                        side: side,
-                        showsLabel: (labelsVisible || peekedToolID == tool.id) && !isDragging,
-                        peekedToolID: $peekedToolID
-                    )
-                    .opacity(isDragging ? 0.35 : 1)
-                    .transition(.opacity.combined(with: .scale(scale: 0.4, anchor: .top)))
+                VStack(spacing: 0) {
+                    // The everyday tools in their order, then anything that
+                    // deletes, apart after a divider, so it is never
+                    // tapped on the way to a harmless tool.
+                    let destructive = tools.filter(\.isDestructive)
+                    ForEach(tools.filter { !$0.isDestructive }) { tool in
+                        row(tool)
+                    }
+                    if !destructive.isEmpty {
+                        Capsule()
+                            .fill(PlayerChrome.edge)
+                            .frame(width: Self.width - 22, height: 1)
+                            .padding(.vertical, 3)
+                            .accessibilityHidden(true)
+                        ForEach(destructive) { tool in
+                            row(tool)
+                        }
+                    }
                 }
+                .padding(.vertical, Self.capsuleInset)
+                .playerChromeBackground(Capsule())
+                .opacity(isDragging ? 0.35 : 1)
+                .transition(.opacity.combined(with: .scale(scale: 0.4, anchor: .top)))
+            }
+        }
+        .frame(width: Self.width, alignment: side == .leading ? .leading : .trailing)
+    }
+
+    private func row(_ tool: PlayerTool) -> some View {
+        RailToolRow(
+            tool: tool,
+            side: side,
+            showsLabel: peekedToolID == tool.id && !isDragging,
+            peekedToolID: $peekedToolID
+        )
+    }
+
+    private func foldButton(width: CGFloat) -> some View {
+        VStack(spacing: 2) {
+            Image(systemName: isOpen ? "chevron.up" : "chevron.down")
+                .font(.system(size: 13, weight: .bold))
+            Text("Tools")
+                .font(FixedType.railCaption)
+                .lineLimit(1)
+                .fixedSize()
+        }
+        .foregroundColor(.white)
+        .frame(width: Self.buttonSize, height: Self.buttonHeight)
+        .playerChromeBackground(Capsule())
+        .scaleEffect(isDragging ? 1.12 : 1)
+        .shadow(color: .black.opacity(isDragging ? 0.45 : 0), radius: 8, y: 3)
+        .contentShape(Capsule())
+        // Global space: the button moves with the finger, so a local
+        // translation would stay near zero.
+        .gesture(
+            DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                .updating($drag) { value, drag, _ in
+                    drag.translation = value.translation
+                    if hypot(value.translation.width, value.translation.height) > 6 { drag.started = true }
+                }
+                .onEnded { value in
+                    if hypot(value.translation.width, value.translation.height) > 6 {
+                        dock(width: width, translation: value.translation)
+                    } else {
+                        toggleOpen()
+                    }
+                }
+        )
+        .onChange(of: drag.started) { _, started in
+            if started { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+        }
+        .onChange(of: onWalkthrough) { _, on in
+            if on { openOnWalkthrough = false }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityIdentifier("player-tools-fold")
+        .accessibilityLabel(isOpen ? "Hide player tools" : "Show player tools")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { toggleOpen() }
+        .accessibilityAction(named: side == .leading ? "Move tools to the right" : "Move tools to the left") {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                side = side == .leading ? .trailing : .leading
             }
         }
     }
 
-    private func foldButton(width: CGFloat) -> some View {
-        Image(systemName: isOpen ? "chevron.up" : "chevron.down")
-            .font(.system(size: 15, weight: .bold))
-            .foregroundColor(.white)
-            .frame(width: Self.buttonSize, height: Self.buttonSize)
-            .background(Circle().fill(Color.black.opacity(0.45)))
-            .scaleEffect(isDragging ? 1.12 : 1)
-            .shadow(color: .black.opacity(isDragging ? 0.45 : 0), radius: 8, y: 3)
-            .contentShape(Circle())
-            // Global space: the button moves with the finger, so a local
-            // translation would stay near zero.
-            .gesture(
-                DragGesture(minimumDistance: 0, coordinateSpace: .global)
-                    .updating($drag) { value, drag, _ in
-                        drag.translation = value.translation
-                        if hypot(value.translation.width, value.translation.height) > 6 { drag.started = true }
-                    }
-                    .onEnded { value in
-                        if hypot(value.translation.width, value.translation.height) > 6 {
-                            dock(width: width, translation: value.translation)
-                        } else {
-                            toggleOpen()
-                        }
-                    }
-            )
-            .onChange(of: drag.started) { _, started in
-                if started { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
-            }
-            .accessibilityElement(children: .ignore)
-            .accessibilityIdentifier("player-tools-fold")
-            .accessibilityLabel(isOpen ? "Hide player tools" : "Show player tools")
-            .accessibilityAddTraits(.isButton)
-            .accessibilityAction { toggleOpen() }
-            .accessibilityAction(named: side == .leading ? "Move tools to the right" : "Move tools to the left") {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-                    side = side == .leading ? .trailing : .leading
-                }
-            }
-    }
-
-    private func dockOutline(highlighted: Bool) -> some View {
-        Circle()
-            .strokeBorder(highlighted ? Color.swingPositionAccent : Color.white.opacity(0.7),
+    private func dockOutline(highlighted: Bool, side: PlayerToolSide) -> some View {
+        Capsule()
+            .strokeBorder(highlighted ? Color.accentLime : Color.white.opacity(0.7),
                           style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
-            .background(Circle().fill(highlighted ? Color.swingPositionAccent.opacity(0.2) : .clear))
-            .frame(width: Self.buttonSize, height: Self.buttonSize)
+            .background(Capsule().fill(highlighted ? Color.accentLime.opacity(0.2) : .clear))
+            .frame(width: Self.buttonSize, height: Self.buttonHeight)
+            .frame(width: Self.width, alignment: side == .leading ? .leading : .trailing)
             .allowsHitTesting(false)
     }
 
     private func targetSide(width: CGFloat) -> PlayerToolSide {
-        let restingCenter = side == .leading ? Self.buttonSize / 2 : width - Self.buttonSize / 2
+        let restingCenter = side == .leading ? Self.width / 2 : width - Self.width / 2
         return restingCenter + dragOffset.width < width / 2 ? .leading : .trailing
     }
 
     private func dock(width: CGFloat, translation: CGSize) {
-        let restingCenter = side == .leading ? Self.buttonSize / 2 : width - Self.buttonSize / 2
+        let restingCenter = side == .leading ? Self.width / 2 : width - Self.width / 2
         let newSide: PlayerToolSide = restingCenter + translation.width < width / 2 ? .leading : .trailing
         if newSide != side { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
         withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
@@ -411,31 +584,23 @@ struct PlayerToolRail: View {
 
     private func toggleOpen() {
         withAnimation(.snappy(duration: 0.24)) {
-            isOpen.toggle()
-        }
-        if isOpen {
-            flashLabels(delay: 0.15)
-        } else {
-            labelsVisible = false
-        }
-    }
-
-    private func flashLabels(delay: Double) {
-        labelsToken += 1
-        let token = labelsToken
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-            guard token == labelsToken else { return }
-            withAnimation(.easeOut(duration: 0.2)) { labelsVisible = true }
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
-            guard token == labelsToken else { return }
-            withAnimation(.easeIn(duration: 0.3)) { labelsVisible = false }
+            if onWalkthrough {
+                openOnWalkthrough.toggle()
+            } else {
+                storedOpen.toggle()
+            }
         }
     }
 }
 
-/// One tool: a tap runs it; holding shows its name instead.
+/// One tool in the rail's capsule: its icon with a caption under it. A tap
+/// runs it; holding shows its full name beside the rail instead.
 private struct RailToolRow: View {
+    /// A destructive tool's red on the dark rail; its trash glyph, its
+    /// word and its place apart at the end say what it is, so it never
+    /// reads as a level.
+    static let destructiveColour = Color(red: 1, green: 0.42, blue: 0.4)
+
     let tool: PlayerTool
     let side: PlayerToolSide
     let showsLabel: Bool
@@ -446,16 +611,17 @@ private struct RailToolRow: View {
     @State private var holdTask: Task<Void, Never>?
 
     var body: some View {
-        HStack(spacing: 10) {
-            if side == .trailing { label }
-            button
-            if side == .leading { label }
+        // The name hangs outside the capsule, on the side facing the video.
+        button.overlay(alignment: side == .trailing ? .leading : .trailing) {
+            label.alignmentGuide(side == .trailing ? .leading : .trailing) { dimensions in
+                side == .trailing ? dimensions[.trailing] + 10 : dimensions[.leading] - 10
+            }
         }
     }
 
     private var label: some View {
         Text(tool.title)
-            .font(.system(size: 14, weight: .semibold))
+            .font(FixedType.railLabel)
             .foregroundColor(.white)
             .shadow(color: .black.opacity(0.8), radius: 3, y: 1)
             .lineLimit(1)
@@ -465,13 +631,28 @@ private struct RailToolRow: View {
             .accessibilityHidden(true)
     }
 
+    /// Filled in the accent only while the tool is active: a choice that
+    /// differs from the default. Everything else sits on the capsule.
+    private var buttonFace: some View {
+        VStack(spacing: 2) {
+            icon
+                .frame(height: 20)
+            Text(tool.caption ?? tool.title)
+                .font(FixedType.railCaption)
+                .lineLimit(1)
+                .fixedSize()
+                .accessibilityHidden(true)
+        }
+        .foregroundColor(tool.isOn ? .black : tool.isDestructive ? Self.destructiveColour : .white)
+        .frame(width: PlayerToolRail.width - 4, height: PlayerToolRail.cellHeight - 2)
+        .background(RoundedRectangle(cornerRadius: 18).fill(tool.isOn ? Color.accentLime : .clear))
+        .frame(width: PlayerToolRail.width, height: PlayerToolRail.cellHeight)
+    }
+
     private var button: some View {
-        icon
-            .foregroundColor(tool.isOn ? .black : .white)
-            .frame(width: PlayerToolRail.buttonSize, height: PlayerToolRail.buttonSize)
-            .background(Circle().fill(tool.isOn ? Color.swingPositionAccent : Color.black.opacity(0.45)))
+        buttonFace
             .opacity(isPressed && !didPeek ? 0.6 : 1)
-            .contentShape(Circle())
+            .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .updating($isPressed) { _, pressed, _ in pressed = true }
@@ -499,6 +680,7 @@ private struct RailToolRow: View {
                 if !pressed, holdTask != nil { endPress() }
             }
             .accessibilityElement(children: .ignore)
+            .accessibilityIdentifier("player-tool-\(tool.id)")
             .accessibilityLabel(tool.accessibilityLabel)
             .accessibilityValue(tool.accessibilityValue ?? "")
             .accessibilityAddTraits(.isButton)
@@ -525,11 +707,13 @@ private struct RailToolRow: View {
                 .font(.system(size: 16, weight: .semibold))
         case .text(let text):
             Text(text)
-                .font(.system(size: 12, weight: .bold))
+                .font(FixedType.readout)
                 .lineLimit(1)
                 .fixedSize()
-        case .positionMarks:
-            PositionMarksIcon(color: tool.isOn ? .black : .white)
+        case .pose(let number):
+            let colour: Color = tool.isOn ? .black : tool.isDestructive ? Self.destructiveColour : .white
+            SwingPositionGlyph(number: number, figure: colour, club: colour)
+                .frame(width: 20, height: 20)
         }
     }
 }

@@ -16,8 +16,8 @@ enum Vantage: String, Codable, CaseIterable {
     
     var displayName: String {
         switch self {
-        case .dtl: return "Down the Line"
-        case .faceOn: return "Face-On"
+        case .dtl: return "Down the line"
+        case .faceOn: return "Face-on"
         }
     }
     

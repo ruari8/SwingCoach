@@ -95,7 +95,7 @@ nonisolated struct CoachingFinding: Codable, Equatable {
     let metric: CoachingMetricID
     let position: Int
     let level: Int
-    /// The finding in a few words, e.g. "Shaft steepens coming down".
+    /// The finding in a few words, e.g. "Shaft steepened coming down".
     let text: String
     /// Other out-of-zone metrics of the same fault on this swing.
     let supporting: [CoachingMetricID]
@@ -169,13 +169,20 @@ nonisolated enum CoachingThemeShowing: Equatable {
     /// levels: a different fault, not the theme and not in zone.
     case otherWay(Int)
 
+    /// Spelled out as the player says a level: "2 steps out", "In zone",
+    /// "Not judged".
     var label: String {
         switch self {
-        case .notJudged: "not judged"
-        case .inZone: "in zone"
-        case .shows(let level): "level \(level)"
-        case .otherWay(let level): "other way, level \(level)"
+        case .notJudged: "Not judged"
+        case .inZone: "In zone"
+        case .shows(let level): Self.stepsOut(level)
+        case .otherWay(let level): "Other way, \(Self.stepsOut(level))"
         }
+    }
+
+    private static func stepsOut(_ level: Int) -> String {
+        let steps = abs(level)
+        return "\(steps) step\(steps == 1 ? "" : "s") out"
     }
 }
 
@@ -197,6 +204,18 @@ nonisolated enum CoachingCadence: String, CaseIterable, Identifiable {
         case .everyFive: "Every 5 swings"
         case .everyTen: "Every 10 swings"
         case .onRequest: "Only when I ask"
+        }
+    }
+
+    /// The cadence in the camera's compact chip ("Recap: 5"): the swings
+    /// a recap covers, "1" for a verdict after every swing, "ask" when
+    /// only asked for.
+    var shortTitle: String {
+        switch self {
+        case .everySwing: "1"
+        case .everyFive: "5"
+        case .everyTen: "10"
+        case .onRequest: "ask"
         }
     }
 

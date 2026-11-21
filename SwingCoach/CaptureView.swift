@@ -1593,7 +1593,7 @@ extension CameraSession {
             // The Library's reference swings stand in for a new Auto
             // session; on the coaching seed, its coached swings do.
             let library = SwingLibrary.shared.swings
-            if UITestFixture.seed == .coaching {
+            if UITestFixture.seed == .coaching || UITestFixture.autoSessionIsLibrary {
                 // After the camera screen is up, as saved swings arrive.
                 DispatchQueue.main.async {
                     self.autoSessionSwings = library.sorted { $0.createdAt < $1.createdAt }
@@ -1825,7 +1825,7 @@ struct CaptureView: View {
                 VStack(spacing: 16) {
                     ProgressView().scaleEffect(1.5).tint(.white)
                     Text("Finalizing recording...")
-                        .font(.body.weight(.medium))
+                        .font(.appLabel)
                         .foregroundStyle(.white)
                 }
             } else if currentRecordingURL == nil {
@@ -1846,14 +1846,14 @@ struct CaptureView: View {
             if let status = camera.footageStatus {
                 HStack(spacing: 8) {
                     Text(status.summary)
-                        .font(.caption2.monospacedDigit())
+                        .font(.appCaption.monospacedDigit())
                         .foregroundStyle(.yellow)
                         .accessibilityIdentifier("footage-camera-status")
                     if status.isFinished, status.error == nil {
                         Button("Replay", systemImage: "arrow.counterclockwise") {
                             camera.replayFootage()
                         }
-                        .font(.caption.weight(.semibold))
+                        .font(.appCaptionLabel)
                         .foregroundStyle(.yellow)
                         .accessibilityIdentifier("footage-camera-replay")
                     }
@@ -1964,27 +1964,40 @@ struct CaptureView: View {
                     HStack(spacing: 7) {
                         Circle().fill(.red).frame(width: 7, height: 7)
                         Text(formatDuration(recordingDuration))
-                            .font(.subheadline.weight(.semibold))
+                            .font(.appLabel)
                             .monospacedDigit()
                             .accessibilityIdentifier("capture-recording-timer")
                     }
-                    .frame(maxWidth: .infinity)
+                    // Level with the chips it replaces: centred in the
+                    // switch's height, the row now being top-aligned.
+                    .frame(maxWidth: .infinity, minHeight: CaptureControl.height)
                 } else {
-                    HStack {
-                        frameRateMenu
-                        Spacer()
-                        Picker("Capture", selection: $workflowMode) {
-                            ForEach(CaptureWorkflowMode.allCases) { mode in
-                                Text(mode.displayName).tag(mode)
+                    // The chips beside the switch: the frame rate, and in
+                    // Auto the coach's recap ("Recap: 5"), so nothing sits
+                    // over the viewfinder's centre. When large text leaves
+                    // no room, the recap chip drops under the frame rate,
+                    // still at the edge.
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 0) {
+                            frameRateMenu
+                            if workflowMode == .auto {
+                                recapChip.padding(.leading, CaptureControl.chipGap)
                             }
+                            Spacer(minLength: CaptureControl.chipGap)
+                            modeSwitch
                         }
-                        .pickerStyle(.segmented)
-                        .frame(width: 172)
-                        .accessibilityIdentifier("capture-mode")
+                        HStack(alignment: .top, spacing: CaptureControl.chipGap) {
+                            VStack(alignment: .leading, spacing: CaptureControl.chipGap) {
+                                frameRateMenu
+                                if workflowMode == .auto { recapChip }
+                            }
+                            Spacer(minLength: 0)
+                            modeSwitch
+                        }
                     }
                 }
             }
-            .frame(height: 44)
+            .frame(minHeight: CaptureControl.height, alignment: .top)
             .padding(.top, 8)
             .animation(.easeInOut(duration: 0.2), value: isRecording)
 
@@ -1996,6 +2009,10 @@ struct CaptureView: View {
             }
 
             if workflowMode == .auto {
+                // The camera's picture comes first: the switch stays a plain
+                // Auto / Manual toggle, and Auto's state is one small line in
+                // the bottom corner beside the saved count, a red dot while
+                // it is saving swings, as a recording light would be.
                 HStack(alignment: .center, spacing: 12) {
                     CaptureStatusLabel(
                         title: autoStatusTitle,
@@ -2004,10 +2021,11 @@ struct CaptureView: View {
                         modelSnapshot: showCaptureModelStats && camera.autoCaptureStatus.isActive
                             ? camera.liveSwingDetection : nil
                     )
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Spacer(minLength: 0)
                     savedSwingsButton
+                        .fixedSize()
                 }
-                .padding(.bottom, 22)
+                .padding(.bottom, 12)
             } else {
                 HStack(spacing: 8) {
                     Group {
@@ -2028,8 +2046,30 @@ struct CaptureView: View {
                 .padding(.bottom, 20)
             }
         }
-        .padding(.horizontal, 22)
+        .padding(.horizontal, CaptureControl.edgeMargin)
         .foregroundStyle(.white)
+    }
+
+    /// Tapped from a step away to stop Auto: the shared Capture control
+    /// height, 44 points. A plain two-way switch; Auto's state is the
+    /// status line in the bottom corner.
+    private var modeSwitch: some View {
+        AccentSegmentedControl(
+            titles: CaptureWorkflowMode.allCases.map(\.displayName),
+            selectedIndex: Binding(
+                get: { CaptureWorkflowMode.allCases.firstIndex(of: workflowMode) ?? 0 },
+                set: { workflowMode = CaptureWorkflowMode.allCases[$0] }
+            ),
+            accentsSelection: false,
+            identifier: "capture-mode",
+            font: CaptureControl.modeFont
+        )
+        .frame(width: CaptureControl.modeWidth, height: CaptureControl.height)
+    }
+
+    /// How often the coach recaps, beside the frame rate in Auto.
+    private var recapChip: some View {
+        CoachingCadenceChip(swings: camera.autoSessionSwings, recapIDs: $recapSwingIDs)
     }
 
     private var frameRateMenu: some View {
@@ -2039,13 +2079,11 @@ struct CaptureView: View {
             Button("120fps HD") { camera.switchMode(to: .standard) }
             Button("240fps HD") { camera.switchMode(to: .ultra) }
         } label: {
-            HStack(spacing: 5) {
-                Text("\(camera.captureMode.shortName) fps")
-                    .font(.subheadline.weight(.semibold))
-                Image(systemName: "chevron.down")
-                    .font(.caption2.weight(.semibold))
-            }
-            .frame(minHeight: 44)
+            Text("\(camera.captureMode.shortName) fps")
+                .font(.appLabel)
+                .lineLimit(1)
+                .fixedSize()
+                .captureChip()
         }
         .accessibilityIdentifier("capture-frame-rate")
         .accessibilityLabel("Frame rate, \(camera.captureMode.shortName) frames per second")
@@ -2056,27 +2094,38 @@ struct CaptureView: View {
         return Button {
             openAutoReview(AutoSwingReviewPresentation())
         } label: {
-            HStack(spacing: 9) {
+            // One compact capsule, low in the corner: the newest swing's
+            // picture and the count.
+            HStack(spacing: 8) {
                 Group {
                     if let thumbnail = camera.autoSessionSwings.last?.thumbnail {
                         Image(uiImage: thumbnail).resizable().scaledToFill()
                     } else {
-                        RoundedRectangle(cornerRadius: 6)
+                        // No picture yet: a neutral glyph, so the box reads
+                        // as the session's swings, not an image that failed.
+                        Rectangle()
                             .fill(.white.opacity(0.12))
+                            .overlay {
+                                Image(systemName: "figure.golf")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(.white.opacity(0.6))
+                            }
                     }
                 }
-                .frame(width: 32, height: 42)
-                .clipShape(.rect(cornerRadius: 6))
-                .overlay(RoundedRectangle(cornerRadius: 6)
+                .frame(width: 26, height: 34)
+                .clipShape(.rect(cornerRadius: 5))
+                .overlay(RoundedRectangle(cornerRadius: 5)
                     .strokeBorder(.white.opacity(0.5), lineWidth: 0.5))
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("\(count) saved").font(.subheadline.weight(.medium))
-                    Text("This session").font(.caption2).foregroundStyle(.white.opacity(0.7))
-                }
-                Image(systemName: "chevron.right").font(.caption2.weight(.semibold))
+                Text("\(count) saved").font(.appLabel.monospacedDigit())
+                Image(systemName: "chevron.right").font(.appCaptionLabel)
             }
-            .frame(minHeight: 44)
+            .padding(.leading, 5)
+            .padding(.trailing, 12)
+            .frame(minHeight: CaptureControl.height)
+            .background(Capsule().fill(.black.opacity(0.45)))
+            .overlay(Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 0.5))
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .disabled(count == 0)
@@ -2085,22 +2134,25 @@ struct CaptureView: View {
         .accessibilityIdentifier("capture-saved-swings")
     }
 
+    /// One line while Auto is armed and quiet: what it does, not that it
+    /// is on (the switch says that).
     private var autoStatusTitle: String {
         if camera.autoCaptureStatus.lastErrorMessage != nil { return "Auto needs attention" }
         if camera.liveSwingDetection.status == .unavailable { return "Detection unavailable" }
-        return camera.autoCaptureStatus.isActive ? "Auto is on" : "Auto is off"
+        return camera.autoCaptureStatus.isActive ? "Swings save automatically" : "Auto is paused"
     }
 
-    private var autoStatusDetail: String {
+    /// A second line only when there is news: an error, or swings saving.
+    private var autoStatusDetail: String? {
         if let error = camera.autoCaptureStatus.lastErrorMessage { return error }
         if camera.liveSwingDetection.status == .unavailable {
             return camera.liveSwingDetection.primaryMessage
         }
         let pending = camera.autoCaptureStatus.pendingSwingCount
-        if pending > 0 { return "Saving \(pending) swing\(pending == 1 ? "" : "s")…" }
-        return camera.autoCaptureStatus.isActive ? "Swings save automatically" : "Capture is paused"
+        return pending > 0 ? "Saving \(pending) swing\(pending == 1 ? "" : "s")…" : nil
     }
 
+    /// Red while Auto is saving swings, the usual recording light.
     private var autoStatusIndicator: Color {
         if camera.autoCaptureStatus.lastErrorMessage != nil || camera.liveSwingDetection.status == .unavailable {
             return .orange
@@ -2290,7 +2342,7 @@ struct FocusIndicatorView: View {
 
 private struct CaptureStatusLabel: View {
     let title: String
-    let detail: String
+    let detail: String?
     var indicator: Color? = nil
     var modelSnapshot: LiveSwingDetectionSnapshot? = nil
 
@@ -2302,26 +2354,30 @@ private struct CaptureStatusLabel: View {
                         .accessibilityHidden(true)
                 }
                 Text(title)
-                    .font(.subheadline.weight(.medium))
+                    .font(.appLabel)
                     .accessibilityIdentifier("capture-status-title")
             }
-            Text(detail)
-                .font(.caption2)
-                .foregroundStyle(.white.opacity(0.75))
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("capture-status-detail")
+            if let detail {
+                Text(detail)
+                    .font(.appCaption)
+                    .foregroundStyle(.white.opacity(0.8))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("capture-status-detail")
+            }
 
             if let snapshot = modelSnapshot,
                snapshot.status != .disabled, snapshot.status != .unavailable {
                 Text(snapshot.processedFrameCount > 0
                      ? String(format: "%.1f fps / %.0f ms", snapshot.effectiveSampleFPS, snapshot.averageProcessingTimeMS)
                      : "Waiting for model…")
-                    .font(.caption2)
+                    .font(.appCaption)
                     .monospacedDigit()
                     .foregroundStyle(.white.opacity(0.65))
                     .accessibilityIdentifier("capture-model-stats")
             }
         }
+        // Plain text over the live picture: a soft shadow keeps it legible on sky.
+        .shadow(color: .black.opacity(0.6), radius: 2)
     }
 }
 

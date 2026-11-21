@@ -26,8 +26,8 @@ final class ReviewLockUITests: XCTestCase {
         // Test paging independently of which clip Auto selects on entry.
         let position = app.staticTexts["swing-position"]
         XCTAssertTrue(position.waitForExistence(timeout: 10))
-        if position.label == "3 of 3" { page(app, number: 2) }
-        if position.label == "2 of 3" { page(app, number: 1) }
+        if position.label == swingCounter("3 of 3") { page(app, number: 2) }
+        if position.label == swingCounter("2 of 3") { page(app, number: 1) }
         exerciseLockAcrossPages(app)
         let delete = app.buttons["Delete this swing"]
         XCTAssertTrue(delete.isHittable)
@@ -89,7 +89,7 @@ final class ReviewLockUITests: XCTestCase {
     }
 
     private func page(_ app: XCUIApplication, number: Int) {
-        let previous = Int(app.staticTexts["swing-position"].label.prefix(1))!
+        let previous = pageIndex(fromCounter: app.staticTexts["swing-position"].label, total: 3)
         let forward = number > previous
         let start = app.coordinate(withNormalizedOffset: CGVector(dx: forward ? 0.82 : 0.18, dy: 0.45))
         let end = app.coordinate(withNormalizedOffset: CGVector(dx: forward ? 0.18 : 0.82, dy: 0.45))
@@ -100,7 +100,7 @@ final class ReviewLockUITests: XCTestCase {
     private func assertPage(_ app: XCUIApplication, number: Int) {
         let position = app.staticTexts["swing-position"]
         XCTAssertTrue(position.waitForExistence(timeout: 10))
-        let settled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "\(number) of 3"), object: position)
+        let settled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", swingCounter("\(number) of 3")), object: position)
         XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 5), .completed)
     }
 

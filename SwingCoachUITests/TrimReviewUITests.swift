@@ -106,7 +106,7 @@ final class TrimReviewUITests: XCTestCase {
         let arguments = fixture(frameRate: 240, context: true)
         let app = XCUIApplication.launched(seed: "empty", arguments)
         app.tabBars.buttons["Library"].tap()
-        app.buttons["Experimental settings"].tap()
+        app.buttons["Settings"].tap()
         let before = app.textFields["swing-context-before"]
         let after = app.textFields["swing-context-after"]
         XCTAssertTrue(before.waitForExistence(timeout: 5))
@@ -122,7 +122,7 @@ final class TrimReviewUITests: XCTestCase {
         attach("independent-extra-footage-settings")
         app.relaunch(arguments)
         app.tabBars.buttons["Library"].tap()
-        app.buttons["Experimental settings"].tap()
+        app.buttons["Settings"].tap()
         XCTAssertTrue(before.waitForExistence(timeout: 5))
         XCTAssertEqual(before.value as? String, "0.5")
         XCTAssertEqual(after.value as? String, "2.25")

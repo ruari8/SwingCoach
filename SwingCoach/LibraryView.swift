@@ -66,10 +66,24 @@ struct LibraryView: View {
         library.swings.filter { $0.isReference }
     }
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
+    /// Columns in the grid, pinched between `LibraryGrid.columnChoices`
+    /// and remembered.
+    @AppStorage(LibraryGrid.columnsKey) private var gridColumns = LibraryGrid.defaultColumns
+    /// A two-finger pinch is under way, or just ended: a tile under a
+    /// lifting finger doesn't open its swing.
+    @State private var isPinching = false
+    /// The swing a tile opened, with the collection it pages through.
+    @State private var openedSwing: OpenedSwing?
+
+    private struct OpenedSwing: Hashable {
+        let swingID: UUID
+        let reviewIDs: [UUID]
+    }
+
+    private var columns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: LibraryGrid.gutter),
+              count: LibraryGrid.validColumns(gridColumns))
+    }
 
     private var shouldShowPhotoAccessBanner: Bool {
         photoLibraryAccessStatus != .authorized
@@ -89,6 +103,12 @@ struct LibraryView: View {
                 }
             }
             .navigationTitle("My Swings")
+            .navigationDestination(item: $openedSwing) { opened in
+                if let swing = library.swings.first(where: { $0.id == opened.swingID }) {
+                    SwingDetailView(swing: swing,
+                                    reviewSwings: opened.reviewIDs.compactMap { id in library.swings.first { $0.id == id } })
+                }
+            }
             .safeAreaInset(edge: .top) {
                 if shouldShowPhotoAccessBanner {
                     photoAccessBanner
@@ -113,7 +133,6 @@ struct LibraryView: View {
                                 exportSelectedSwings()
                             } label: {
                                 Image(systemName: "square.and.arrow.up")
-                                    .foregroundColor(.blue)
                             }
                             .disabled(isExportingSelectedSwings)
 
@@ -132,7 +151,7 @@ struct LibraryView: View {
                         } label: {
                             Image(systemName: "gearshape")
                         }
-                        .accessibilityLabel("Experimental settings")
+                        .accessibilityLabel("Settings")
                         selectButton
                         importButton
                     }
@@ -254,7 +273,7 @@ struct LibraryView: View {
                                         .frame(width: 56, height: 56)
                                         .rotationEffect(.degrees(-90))
                                     Text("\(Int(progress * 100))%")
-                                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                                        .font(FixedType.readout.monospacedDigit())
                                         .foregroundColor(.white)
                                 }
                             } else {
@@ -265,14 +284,14 @@ struct LibraryView: View {
 
                             Text(importStatusText)
                                 .foregroundColor(.white)
-                                .font(.subheadline)
+                                .font(.appBody)
                                 .multilineTextAlignment(.center)
 
                             Button {
                                 cancelImport()
                             } label: {
                                 Text("Cancel")
-                                    .font(.subheadline.weight(.medium))
+                                    .font(.appLabel)
                                     .foregroundColor(.white)
                                     .padding(.horizontal, 20)
                                     .padding(.vertical, 8)
@@ -310,11 +329,11 @@ struct LibraryView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(photoAccessBannerTitle)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.appLabel)
                     .foregroundColor(.white)
 
                 Text(photoAccessBannerMessage)
-                    .font(.caption)
+                    .font(.appCaption)
                     .foregroundColor(.white.opacity(0.8))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -324,7 +343,7 @@ struct LibraryView: View {
             Button(photoAccessBannerActionTitle) {
                 handlePhotoAccessBannerAction()
             }
-            .font(.caption.weight(.semibold))
+            .font(.appCaptionLabel)
             .foregroundColor(.black)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -387,14 +406,14 @@ struct LibraryView: View {
         VStack(spacing: 20) {
             Image(systemName: "figure.golf")
                 .font(.system(size: 60))
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.helpText)
 
-            Text("No Swings Yet")
-                .font(.title2.weight(.semibold))
+            Text("No swings yet")
+                .font(.appTitle)
 
             Text("Record a swing or import from Photos")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(.appBody)
+                .foregroundStyle(Color.helpText)
                 .multilineTextAlignment(.center)
 
             HStack(spacing: 16) {
@@ -402,11 +421,11 @@ struct LibraryView: View {
                     onNavigateToCapture()
                 } label: {
                     Label("Record", systemImage: "camera.fill")
-                        .font(.headline)
-                        .foregroundColor(.white)
+                        .font(.appLabel)
+                        .foregroundColor(.onAccent)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
-                        .background(Color.blue)
+                        .background(Color.appAccent)
                         .cornerRadius(10)
                 }
 
@@ -414,11 +433,11 @@ struct LibraryView: View {
                     beginImportFlow()
                 } label: {
                     Label("Import", systemImage: "photo.on.rectangle")
-                        .font(.headline)
-                        .foregroundColor(.blue)
+                        .font(.appLabel)
+                        .foregroundColor(.appAccent)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
-                        .background(Color.blue.opacity(0.1))
+                        .background(Color.appAccent.opacity(0.12))
                         .cornerRadius(10)
                 }
             }
@@ -432,7 +451,7 @@ struct LibraryView: View {
         VStack(spacing: 0) {
             ScrollView {
                 // Stats header (hide in selection mode)
-                if !isSelecting {
+                if !isSelecting, library.totalSwings > 0 {
                     statsHeader
                         .padding(.horizontal)
                         .padding(.top, 8)
@@ -441,25 +460,24 @@ struct LibraryView: View {
                 if !referenceSwings.isEmpty && !isSelecting {
                     librarySectionTitle("Reference swings", systemImage: "figure.golf")
 
-                    LazyVGrid(columns: columns, spacing: 12) {
+                    LazyVGrid(columns: columns, spacing: LibraryGrid.gutter) {
                         ForEach(referenceSwings) { swing in
-                            swingCard(swing)
+                            swingCard(swing, showsVantage: Self.mixesVantages(referenceSwings))
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, 18)
+                    .padding(.bottom, LibraryGrid.sectionGap)
                 }
 
                 if !starredSwings.isEmpty && !isSelecting {
                     librarySectionTitle("Starred", systemImage: "star")
 
-                    LazyVGrid(columns: columns, spacing: 12) {
+                    LazyVGrid(columns: columns, spacing: LibraryGrid.gutter) {
                         ForEach(starredSwings) { swing in
-                            swingCard(swing, reviewSwings: starredSwings)
+                            swingCard(swing, reviewSwings: starredSwings,
+                                      showsVantage: Self.mixesVantages(starredSwings))
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, 18)
+                    .padding(.bottom, LibraryGrid.sectionGap)
                 }
 
                 let swings = filteredSwings
@@ -467,9 +485,10 @@ struct LibraryView: View {
                     ForEach(SwingSession.group(swings)) { session in
                         sessionHeader(session)
 
-                        LazyVGrid(columns: columns, spacing: 12) {
+                        LazyVGrid(columns: columns, spacing: LibraryGrid.gutter) {
                             ForEach(session.swings) { swing in
-                                swingCard(swing, reviewSwings: swings)
+                                swingCard(swing, reviewSwings: swings,
+                                          showsVantage: Self.mixesVantages(session.swings))
                                     .accessibilityIdentifier("swing-card")
                                     .onGeometryChange(for: CGRect.self) { proxy in
                                         proxy.frame(in: .global)
@@ -481,12 +500,26 @@ struct LibraryView: View {
                                     }
                             }
                         }
-                        .padding(.horizontal)
-                        .padding(.bottom, 20)
+                        .padding(.bottom, LibraryGrid.sectionGap)
                     }
                 }
                 .padding(.bottom, isSelecting ? 60 : 0) // Space for selection bar
             }
+            // Pinch out for bigger tiles, in for more, as in Photos.
+            .simultaneousGesture(
+                MagnifyGesture(minimumScaleDelta: 0.05)
+                    .onChanged { _ in if !isPinching { isPinching = true } }
+                    .onEnded { value in
+                        pinched(value.magnification)
+                        // Past the fingers' lift, so it can't land as a tap.
+                        Task { @MainActor in
+                            try? await Task.sleep(nanoseconds: 300_000_000)
+                            isPinching = false
+                        }
+                    }
+            )
+            .accessibilityAction(named: "Bigger thumbnails") { pinched(2) }
+            .accessibilityAction(named: "Smaller thumbnails") { pinched(0.5) }
             .gesture(
                 LibraryDragSelectGesture(
                     isEnabled: isSelecting,
@@ -508,7 +541,7 @@ struct LibraryView: View {
         HStack(spacing: 7) {
             Image(systemName: systemImage)
             Text(title)
-                .font(.headline)
+                .font(.appTitle)
             Spacer()
         }
         .foregroundColor(.primary)
@@ -522,16 +555,26 @@ struct LibraryView: View {
         let title = sessionTitle(session)
         let count = session.swings.count
 
-        return HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 2) {
+        // One compact row: the day over its time (and its count when
+        // there is more than one session), then the session's actions.
+        return HStack(alignment: .center, spacing: 8) {
+            VStack(alignment: .leading, spacing: 0) {
                 Text(title)
-                    .font(.headline)
-                Text("\(sessionTimeRange(session)) · \(count) swing\(count == 1 ? "" : "s")")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.appTitle)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                // The count only where the header line doesn't already
+                // say it: with one session, the library's count is it.
+                Text(count == library.totalSwings ? sessionTimeRange(session)
+                     : "\(sessionTimeRange(session)) · \(count) swing\(count == 1 ? "" : "s")")
+                    .font(.appCaption.monospacedDigit())
+                    .foregroundStyle(Color.helpText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
+            .layoutPriority(1)
 
-            Spacer()
+            Spacer(minLength: 4)
 
             Button {
                 withAnimation {
@@ -543,25 +586,29 @@ struct LibraryView: View {
                     }
                 }
             } label: {
+                // A secondary action beside Review, the primary one; the
+                // count it covers is on the line beside it, or the
+                // header's when the session is the whole library.
                 Text(isWholeSessionSelected ? "Deselect" : "Select")
-                    .font(.subheadline.weight(.medium))
             }
+            .buttonStyle(SecondaryCapsuleButtonStyle())
             .accessibilityLabel("\(isWholeSessionSelected ? "Deselect" : "Select") \(title) session")
 
             if session.swings.contains(where: SwingCoachingStore.canCoach) {
                 Button {
                     coachingSession = session
                 } label: {
-                    Image(systemName: "figure.golf")
-                        .font(.subheadline.weight(.medium))
+                    Label("Review", systemImage: "figure.golf")
                 }
-                .padding(.leading, 10)
-                .accessibilityLabel("Coaching for \(title) session")
+                // The session's primary action: filled in the accent, the
+                // same height as Select beside it.
+                .buttonStyle(PrimaryCapsuleButtonStyle())
+                .accessibilityLabel("Review coaching for \(title) session")
                 .accessibilityIdentifier("session-coaching-button")
             }
         }
         .padding(.horizontal)
-        .padding(.bottom, 8)
+        .padding(.bottom, 4)
     }
 
     private func sessionTitle(_ session: SwingSession) -> String {
@@ -594,14 +641,14 @@ struct LibraryView: View {
                 }
             } label: {
                 Text(selectedSwings.count == filteredSwings.count ? "Deselect All" : "Select All")
-                    .font(.subheadline.weight(.medium))
+                    .font(.appLabel)
             }
 
             Spacer()
 
             Text("\(selectedSwings.count) selected")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(.appBody)
+                .foregroundStyle(Color.helpText)
 
             Spacer()
 
@@ -609,7 +656,7 @@ struct LibraryView: View {
                 exitSelectionMode()
             } label: {
                 Text("Done")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.appLabel)
             }
         }
         .padding(.horizontal, 20)
@@ -636,7 +683,7 @@ struct LibraryView: View {
                         .frame(width: 220)
 
                     Text("\(Int(exportProgress * 100))%")
-                        .font(.caption.weight(.semibold))
+                        .font(.appCaptionLabel.monospacedDigit())
                         .foregroundColor(.white.opacity(0.82))
                 } else {
                     ProgressView()
@@ -645,7 +692,7 @@ struct LibraryView: View {
                 }
 
                 Text(exportStatusText.isEmpty ? "Preparing export..." : exportStatusText)
-                    .font(.subheadline.weight(.medium))
+                    .font(.appLabel)
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
             }
@@ -667,27 +714,46 @@ struct LibraryView: View {
         )
     }
 
+    /// The library's counts as one caption line under the title: "12
+    /// swings · 12 down the line", a view with no swings left out.
     private var statsHeader: some View {
-        HStack(spacing: 20) {
-            statItem(value: "\(library.totalSwings)", label: "Swings")
-            statItem(value: "\(library.swings(for: .dtl).count)", label: "DTL")
-            statItem(value: "\(library.swings(for: .faceOn).count)", label: "Face-On")
-            Spacer()
+        let total = library.totalSwings
+        var parts = ["\(total) swing\(total == 1 ? "" : "s")"]
+        for vantage in Vantage.allCases {
+            let count = library.swings(for: vantage).count
+            if count > 0 { parts.append("\(count) \(vantage.displayName.lowercased())") }
         }
-        .padding(.vertical, 8)
+        return Text(parts.joined(separator: " · "))
+            .font(.appCaption.monospacedDigit())
+            .foregroundStyle(Color.helpText)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 2)
+            .accessibilityIdentifier("library-stats")
     }
 
-    private func statItem(value: String, label: String) -> some View {
-        VStack(spacing: 2) {
-            Text(value)
-                .font(.title3.weight(.bold))
-            Text(label)
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
+    /// Whether a group's swings were filmed from more than one side, so
+    /// each tile needs its vantage tag.
+    private static func mixesVantages(_ swings: [SavedSwing]) -> Bool {
+        Set(swings.map(\.vantage)).count > 1
     }
 
-    private func swingCard(_ swing: SavedSwing, reviewSwings: [SavedSwing]? = nil) -> some View {
+    /// Steps the grid one size per pinch: apart for bigger tiles, together
+    /// for more of them.
+    private func pinched(_ magnification: CGFloat) {
+        let current = LibraryGrid.validColumns(gridColumns)
+        let next: Int
+        if magnification > 1.15 {
+            next = LibraryGrid.fewerColumns(than: current)
+        } else if magnification < 0.87 {
+            next = LibraryGrid.moreColumns(than: current)
+        } else {
+            return
+        }
+        guard next != current else { return }
+        withAnimation(.spring(duration: 0.35)) { gridColumns = next }
+    }
+
+    private func swingCard(_ swing: SavedSwing, reviewSwings: [SavedSwing]? = nil, showsVantage: Bool = false) -> some View {
         let isSelected = selectedSwings.contains(swing.id)
 
         return Group {
@@ -695,21 +761,23 @@ struct LibraryView: View {
                 Button {
                     toggleSelection(swing)
                 } label: {
-                    swingCardContent(swing, isSelected: isSelected)
+                    swingCardContent(swing, isSelected: isSelected, showsVantage: showsVantage)
                 }
                 .buttonStyle(.plain)
             } else {
-                NavigationLink {
-                    SwingDetailView(
-                        swing: swing,
-                        reviewSwings: reviewSwings ?? referenceSwings
-                    )
+                Button {
+                    // A finger lifting at the end of a pinch is not a tap.
+                    guard !isPinching else { return }
+                    openedSwing = OpenedSwing(swingID: swing.id,
+                                              reviewIDs: (reviewSwings ?? referenceSwings).map(\.id))
                 } label: {
-                    swingCardContent(swing, isSelected: isSelected)
+                    swingCardContent(swing, isSelected: isSelected, showsVantage: showsVantage)
                 }
                 .buttonStyle(.plain)
             }
         }
+        .accessibilityLabel(tileLabel(swing))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .contextMenu {
             if !isSelecting {
                 Button {
@@ -732,99 +800,96 @@ struct LibraryView: View {
         }
     }
 
-    private func swingCardContent(_ swing: SavedSwing, isSelected: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Thumbnail
-            ZStack {
+    /// What VoiceOver (and the UI tests) read for a tile, since the tile
+    /// shows only the picture, the duration and the star.
+    private func tileLabel(_ swing: SavedSwing) -> String {
+        var parts: [String] = []
+        if let title = swing.title { parts.append(title) }
+        parts.append(swing.isReference ? "\(swing.vantage.shortName) reference" : swing.vantage.shortName)
+        if !swing.isReference {
+            parts.append(swing.createdAt.formatted(date: .omitted, time: .shortened))
+        }
+        parts.append(formatDuration(swing.duration))
+        if swing.isFavorite { parts.append("Starred") }
+        return parts.joined(separator: ", ")
+    }
+
+    /// A square tile, as in Photos: the picture edge to edge, the duration
+    /// small in its bottom corner, the star for a starred swing, and the
+    /// vantage only where a group mixes them. A reference swing keeps its
+    /// name, since nothing else tells the references apart.
+    private func swingCardContent(_ swing: SavedSwing, isSelected: Bool, showsVantage: Bool) -> some View {
+        let compact = LibraryGrid.validColumns(gridColumns) >= LibraryGrid.columnChoices.last!
+        return Color(.secondarySystemFill)
+            .aspectRatio(1, contentMode: .fit)
+            .overlay {
                 if let thumbnail = swing.thumbnail {
                     Image(uiImage: thumbnail)
                         .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(height: 100)
-                        .clipped()
-                        .contentShape(Rectangle())
+                        .scaledToFill()
                 } else {
+                    ProgressView()
+                }
+            }
+            .clipped()
+            .overlay(alignment: .bottom) {
+                HStack(alignment: .lastTextBaseline, spacing: 4) {
+                    if swing.isReference, let title = swing.title, !compact {
+                        Text(title)
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                    if !isSelecting {
+                        Text(formatDuration(swing.duration))
+                            .monospacedDigit()
+                    }
+                }
+                .font(FixedType.cellLabel)
+                .foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.5), radius: 1)
+                .padding(.horizontal, 5)
+                .padding(.bottom, 4)
+                .padding(.top, 12)
+                .background(LinearGradient(colors: [.clear, .black.opacity(0.45)], startPoint: .top, endPoint: .bottom))
+            }
+            .overlay(alignment: .topLeading) {
+                if showsVantage {
+                    Text(swing.vantage.shortName)
+                        .font(FixedType.cellLabel)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .background(.black.opacity(0.6), in: .rect(cornerRadius: 3))
+                        .padding(4)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if swing.isFavorite {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: compact ? 11 : 14, weight: .semibold))
+                        .foregroundStyle(.yellow)
+                        .shadow(color: .black.opacity(0.5), radius: 1.5)
+                        .padding(compact ? 3 : 5)
+                }
+            }
+            .overlay {
+                if isSelected {
                     Rectangle()
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: 100)
-                        .overlay {
-                            ProgressView()
-                        }
+                        .fill(.white.opacity(0.2))
+                        .overlay(Rectangle().strokeBorder(Color.appAccent, lineWidth: 3))
                 }
-
-                // Selection checkmark (show in selection mode)
+            }
+            .overlay(alignment: .bottomTrailing) {
                 if isSelecting {
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Spacer()
-                            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 24))
-                                .foregroundColor(isSelected ? .blue : .white)
-                                .shadow(radius: 2)
-                        }
-                    }
-                    .padding(8)
-                }
-
-                // Vantage badge
-                VStack {
-                    HStack {
-                        Text(swing.vantage.shortName)
-                            .font(.caption2.weight(.bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.black.opacity(0.6))
-                            .cornerRadius(4)
-                        Spacer()
-                        HStack(spacing: 5) {
-                            if swing.isFavorite {
-                                Image(systemName: "star.fill")
-                                    .foregroundColor(.yellow)
-                            }
-                        }
-                        .font(.system(size: 18, weight: .semibold))
-                        .shadow(radius: 2)
-                    }
-                    Spacer()
-                }
-                .padding(6)
-            }
-            .cornerRadius(8)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 3)
-            )
-
-            // Info
-            if let title = swing.title {
-                Text(title)
-                    .font(.caption.weight(.semibold))
-                    .lineLimit(1)
-            }
-
-            HStack {
-                Text(formatDuration(swing.duration))
-                    .font(.caption.weight(.medium))
-
-                Spacer()
-
-                if swing.isReference {
-                    Text("DTL reference")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                } else {
-                    Text(swing.createdAt.formatted(date: .omitted, time: .shortened))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: compact ? 16 : 22))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(isSelected ? Color.onAccent : .white, isSelected ? Color.appAccent : .clear)
+                        .shadow(color: .black.opacity(0.4), radius: 2)
+                        .padding(compact ? 3 : 5)
                 }
             }
-        }
-        .padding(8)
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+            .contentShape(Rectangle())
     }
 
     // MARK: - Toolbar Items
@@ -835,7 +900,7 @@ struct LibraryView: View {
                 filterVantage = nil
             } label: {
                 HStack {
-                    Text("All Swings")
+                    Text("All swings")
                     if filterVantage == nil {
                         Image(systemName: "checkmark")
                     }
@@ -857,7 +922,10 @@ struct LibraryView: View {
                 }
             }
         } label: {
-            Image(systemName: filterVantage == nil ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+            // The standard filter lines, without a circle of their own
+            // inside the bar's round glass button, so they never read as a
+            // menu; filled in a disc while a filter is on.
+            Image(systemName: filterVantage == nil ? "line.3.horizontal.decrease" : "line.3.horizontal.decrease.circle.fill")
         }
         .accessibilityLabel("Filter swings")
     }
@@ -868,8 +936,11 @@ struct LibraryView: View {
                 isSelecting = true
             }
         } label: {
-            Text("Select")
+            // An icon beside the gear and +, so it never reads like the
+            // session header's "Select".
+            Image(systemName: "checkmark.circle")
         }
+        .accessibilityLabel("Select swings")
         .disabled(library.swings.isEmpty)
     }
 
@@ -1120,6 +1191,20 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     let drawing: Binding<Bool>?
     /// Set to a clip time to pause there; the player clears it once it has.
     let seekRequest: Binding<Double?>?
+    /// Marks on the pose strip's chips, by position number.
+    let positionMarks: [Int: SwingPositionMark]
+    /// More tools for the rail, after Draw.
+    let extraTools: [PlayerTool]
+    /// Clip times the player stops on for a walkthrough. Paused on one, the
+    /// transport row gives way to `bottomPanel`, which carries its own
+    /// play and step buttons.
+    let walkthroughStops: [PlayerWalkthroughStop]
+    /// Sits above the timeline: the coaching card in review.
+    let bottomPanel: ((PlayerPanelContext) -> AnyView)?
+    /// The part of the frame (top to bottom, 0...1) that matters at a
+    /// walkthrough stop. Paused there, the video lifts so that part clears
+    /// the panel.
+    let stopFocus: ((Double) -> ClosedRange<Double>?)?
 
     private let header: Header
     private let overlayAccessory: OverlayAccessory
@@ -1154,8 +1239,11 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     @GestureState private var timelineDragActive = false
     @State private var scrubFraction: Double = 0
     @State private var isFineScrubbing = false
-    @State private var positionBadgeTask: Task<Void, Never>?
-    @State private var showsPositionBadge = false
+    /// Width over height of the displayed video, once loaded.
+    @State private var videoAspect: Double?
+    /// Top of the bottom panel on screen, for lifting the video above it.
+    @State private var panelTop: CGFloat?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var speedOptions: [Float] {
         [0.25, 0.5, 0.75, 1.0] + (realTimeRate.map { [$0] } ?? [])
@@ -1177,6 +1265,11 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         swingPositions: SwingPositions? = nil,
         drawing: Binding<Bool>? = nil,
         seekRequest: Binding<Double?>? = nil,
+        positionMarks: [Int: SwingPositionMark] = [:],
+        extraTools: [PlayerTool] = [],
+        walkthroughStops: [PlayerWalkthroughStop] = [],
+        bottomPanel: ((PlayerPanelContext) -> AnyView)? = nil,
+        stopFocus: ((Double) -> ClosedRange<Double>?)? = nil,
         contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
         @ViewBuilder header: () -> Header,
         @ViewBuilder overlayAccessory: () -> OverlayAccessory
@@ -1196,6 +1289,11 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         self.swingPositions = swingPositions
         self.drawing = drawing
         self.seekRequest = seekRequest
+        self.positionMarks = positionMarks
+        self.extraTools = extraTools
+        self.walkthroughStops = walkthroughStops
+        self.bottomPanel = bottomPanel
+        self.stopFocus = stopFocus
         self.header = header()
         self.overlayAccessory = overlayAccessory()
         self.contentOverlay = contentOverlay
@@ -1225,7 +1323,10 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             cleanup()
         }
         .onChange(of: playbackEnabled) { _, enabled in
-            guard !enabled else { return }
+            guard !enabled else {
+                applyPendingSeek()
+                return
+            }
             player?.pause()
             isPlaying = false
             stopContinuousStep()
@@ -1234,12 +1335,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             // Drawing keeps the controls up; leaving it restarts auto-hide.
             showControls()
         }
-        .onChange(of: seekRequest?.wrappedValue) { _, requested in
-            guard let requested, playbackEnabled else { return }
-            player?.pause()
-            isPlaying = false
-            seek(to: CMTime(seconds: requested, preferredTimescale: 600))
-            seekRequest?.wrappedValue = nil
+        .onChange(of: seekRequest?.wrappedValue) { _, _ in
+            applyPendingSeek()
         }
         .onChange(of: isLocked) { _, _ in
             // Other pages can change the shared preference while this player
@@ -1256,6 +1353,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             ZStack {
                 // Video fills its container; in edge-to-edge mode it extends behind
                 // the notch/home indicator while the chrome below keeps its insets.
+                let lift = videoLift(in: geometry)
                 fillLayer(
                     Group {
                         if let player {
@@ -1269,9 +1367,18 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 )
+                .offset(y: -lift)
 
-                contentOverlay(currentTime, geometry.size)
-                    .frame(width: geometry.size.width, height: geometry.size.height)
+                // The drawings share the video's frame exactly: edge to
+                // edge the video ignores the safe area, and a drawing
+                // centred in the safe area instead would sit off the swing.
+                fillLayer(
+                    contentOverlay(currentTime, geometry.size)
+                        .environment(\.playerIsPlaying, isPlaying)
+                        .environment(\.playerPanelIsShown, controlsVisible && bottomPanel != nil && !isDrawing)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                )
+                    .offset(y: -lift)
                     .allowsHitTesting(contentOverlayAllowsHitTesting)
 
                 // A tap toggles controls; holding either edge fast-scrubs.
@@ -1285,8 +1392,44 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 }
             }
             .background(Color.black)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: videoLift(in: geometry))
         }
     }
+
+    /// How far the video sits above the middle of the screen. Edge to
+    /// edge, a portrait clip is anchored with its top at the safe area's top in every state,
+    /// on the walkthrough or off it, so it never jumps when the card comes
+    /// and goes; only the black band below it grows. At a stop it may lift
+    /// further, so the part that matters, and the feet and ball under it,
+    /// sit clear above the panel, without pushing its top under the top
+    /// row; any black band left above a letterboxed clip is free to use
+    /// whatever the top row allows: only sky moves into it.
+    private func videoLift(in geometry: GeometryProxy) -> CGFloat {
+        guard let aspect = videoAspect, aspect > 0 else { return 0 }
+        // Edge to edge, the video is centred in the whole screen, not in
+        // the safe area this reader measures.
+        let insets = edgeToEdge ? geometry.safeAreaInsets : EdgeInsets()
+        let size = CGSize(width: geometry.size.width + insets.leading + insets.trailing,
+                          height: geometry.size.height + insets.top + insets.bottom)
+        let height = size.width / max(size.height, 1) > CGFloat(aspect) ? size.height : size.width / CGFloat(aspect)
+        let screenTop = geometry.frame(in: .global).minY - insets.top
+        let centredTop = screenTop + (size.height - height) / 2
+        let anchor = edgeToEdge && aspect < 1 ? max(0, centredTop - geometry.frame(in: .global).minY) : 0
+        let videoTop = centredTop - anchor
+        guard isAtWalkthroughStop, let stopFocus, let focus = stopFocus(seconds(currentTime)),
+              let panelTop else { return anchor.rounded() }
+        let bottom = videoTop + CGFloat(focus.upperBound) * height + Self.stopFootClearance
+        let top = videoTop + CGFloat(focus.lowerBound) * height - 24
+        let wanted = max(0, bottom - panelTop)
+        let room = max(0, top - (geometry.frame(in: .global).minY + ReviewTopBar.topPadding + ReviewTopBar.buttonSize + 12))
+        let blackBand = max(0, videoTop - screenTop)
+        return (anchor + min(wanted, max(room, blackBand), size.height * 0.4)).rounded()
+    }
+
+    /// Under the lowest part that matters at a stop (the ball at the end
+    /// of a shaft line, the club head): room for the feet, which sit a
+    /// little lower in a down-the-line frame, and a gap above the card.
+    private static var stopFootClearance: CGFloat { 44 }
 
     /// Layout is measured where the controls are displayed: the fixed pager
     /// viewport in review, or the local player for standalone playback.
@@ -1322,26 +1465,39 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                                 .padding(.bottom, isScrubbing ? 16 : 30)
                         }
 
-                        if isScrubbing || showsPositionBadge {
-                            scrubTimeBadge
-                                .padding(.bottom, 10)
-                        }
-
                         // Timeline sits ABOVE the buttons (Twitter-style) and well
                         // clear of the home-indicator zone so dragging it never gets
                         // hijacked by the system swipe-up gesture.
+                        // The panel sits just above the scrubber, so the
+                        // mat and the ball stay clear above it.
+                        if let bottomPanel, !isDrawing {
+                            bottomPanel(panelContext)
+                                .padding(.horizontal, 12)
+                                .padding(.bottom, PlayerChrome.bandGap)
+                                .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { panelTop = $0 }
+                                .onDisappear { panelTop = nil }
+                                .transition(.opacity)
+                        }
+
+                        // One gap token between the bands: card, scrubber,
+                        // transport row, pose strip.
                         integratedTimeline(width: timelineWidth)
                             .padding(.horizontal, 16)
-                            .padding(.bottom, 6)
+                            .padding(.bottom, PlayerChrome.bandGap)
 
-                        transportControlBar
-                            .padding(.horizontal, 22)
-                            .padding(.bottom, visiblePositions == nil ? bottomControlPadding + 10 : 8)
+                        if isAtWalkthroughStop {
+                            Color.clear.frame(height: visiblePositions == nil ? bottomControlPadding : 0)
+                        } else {
+                            transportControlBar
+                                .padding(.horizontal, 22)
+                                .padding(.bottom, visiblePositions == nil ? bottomControlPadding + 10 : PlayerChrome.bandGap)
+                        }
 
                         if let positions = visiblePositions {
                             SwingPositionStrip(
                                 positions: positions,
                                 selectedNumber: currentPositionNumber,
+                                marks: positionMarks,
                                 onSelect: jump(to:)
                             )
                             .padding(.horizontal, 12)
@@ -1354,7 +1510,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     // The rail spans the width so it can dock on either side.
                     if !cornerControlsInNavigation, !isDrawing {
                         toolRail(trailingTop: 0, leadingTop: inlineLeadingToolRailTop)
-                            .padding(.horizontal, 12)
+                            .padding(.horizontal, PlayerToolRail.edgeMargin)
                             .padding(.top, topControlPadding)
                             .transition(.opacity)
                     }
@@ -1410,26 +1566,27 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .frame(height: visiblePositions == nil ? 160 : 230)
+            .frame(height: (visiblePositions == nil ? 160 : 230) + (bottomPanel == nil ? 0 : 140))
         }
         .allowsHitTesting(false)
     }
 
     private var transportControlBar: some View {
-        HStack(spacing: 0) {
-            // Left: time readout (fixed width balances the right side so the
-            // transport buttons stay centered). fixedSize stops it wrapping into
-            // a vertical "0/0/./0" column when space gets tight.
-            Text(formatTime(currentTime))
-                .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                .foregroundColor(.white.opacity(0.85))
-                .lineLimit(1)
-                .fixedSize()
-                .frame(width: 58, alignment: .leading)
+        ZStack {
+            // Left: where the playhead is, the position's name on a
+            // position, else the time; right: Lock. The transport
+            // buttons stay centred over both.
+            HStack(spacing: 0) {
+                transportReadout
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                // The transport buttons' own width, so the readout takes
+                // all the room up to the step-back button.
+                Color.clear.frame(width: Self.transportClusterWidth + 2 * Self.transportReadoutGap, height: 1)
+                lockSlot
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
 
-            Spacer(minLength: 0)
-
-            HStack(spacing: 26) {
+            HStack(spacing: Self.transportButtonGap) {
                 frameStepButton(systemImage: "backward.frame.fill", direction: -1)
 
                 Button {
@@ -1438,7 +1595,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                         .font(.system(size: 22, weight: .bold))
                         .foregroundColor(.white)
-                        .frame(width: 40, height: 40)
+                        .frame(width: Self.transportButtonSize, height: Self.transportButtonSize)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -1446,34 +1603,120 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
                 frameStepButton(systemImage: "forward.frame.fill", direction: 1)
             }
+        }
+    }
 
-            Spacer(minLength: 0)
+    /// The transport row's right slot: the padlock button.
+    private static var lockSlotWidth: CGFloat { 64 }
 
+    /// The step-back, play and step-forward buttons, centred in the row.
+    private static var transportButtonSize: CGFloat { 40 }
+    private static var transportButtonGap: CGFloat { 26 }
+    private static var transportClusterWidth: CGFloat { transportButtonSize * 3 + transportButtonGap * 2 }
+    /// Between the readout and the step-back button.
+    private static var transportReadoutGap: CGFloat { 6 }
+
+    /// The one readout of where the playhead is: the position's name on a
+    /// position, else the time; "¼ speed" under it while fine-scrubbing.
+    /// Neutral grey, never the accent, and no total duration (Swing Info
+    /// has it). When the model was unsure of the position, a second line
+    /// says so in words beside the shared glyph ("Low confidence"), so the
+    /// glyph never reads as help: two lines at most, the name on one and
+    /// the glyph and words on the other in the tighter readout
+    /// (`FixedType.readoutTight`).
+    private var transportReadout: some View {
+        let position = currentPositionNumber.flatMap { number in visiblePositions?.first { $0.number == number } }
+        return VStack(alignment: .leading, spacing: 3) {
+            Group {
+                if let position {
+                    VStack(alignment: .leading, spacing: 1) {
+                        if position.isLowConfidence {
+                            // Two lines in all: the name on one, then the
+                            // glyph and "Low confidence", condensed (or
+                            // compressed on the narrowest phones) rather
+                            // than wrapping.
+                            ViewThatFits(in: .horizontal) {
+                                Text(position.name).fixedSize()
+                                Text(position.name).font(FixedType.readoutTight).fixedSize()
+                                Text(position.name).font(FixedType.readoutTightest).lineLimit(1)
+                            }
+                            ViewThatFits(in: .horizontal) {
+                                lowConfidenceLine(FixedType.readoutTight).fixedSize()
+                                lowConfidenceLine(FixedType.readoutTightest).fixedSize()
+                                lowConfidenceLine(FixedType.readoutTightest).lineLimit(2)
+                            }
+                        } else {
+                            Text(position.name)
+                                .lineLimit(2)
+                        }
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(position.isLowConfidence
+                                        ? "\(position.title), \(SwingPosition.lowConfidenceWords)" : position.title)
+                } else {
+                    Text(formatTime(currentTime) + " s")
+                        .monospacedDigit()
+                        .lineLimit(2)
+                }
+            }
+            .font(FixedType.readout)
+            .foregroundColor(PlayerChrome.secondaryText)
+            .minimumScaleFactor(FixedType.minimumScale(of: FixedType.readoutSize))
+            .fixedSize(horizontal: false, vertical: true)
+            if isFineScrubbing {
+                Text("¼ speed")
+                    .font(FixedType.cellLabel)
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(Capsule().fill(Color.accentLime))
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("playback-readout")
+    }
+
+    /// The low-confidence glyph and its words, as one line in `font`.
+    private func lowConfidenceLine(_ font: Font) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 2) {
+            LowConfidenceGlyph.image
+            Text(SwingPosition.lowConfidenceTitle)
+        }
+        .font(font)
+    }
+
+    @ViewBuilder
+    private var lockSlot: some View {
             // Right: pin the controls for this review, or explicitly unlock.
             if controlsLocked != nil {
                 Button {
                     setLocked(!isLocked)
                 } label: {
+                    // A bare padlock: the glyph is familiar, and a
+                    // caption under it only added clutter.
                     Image(systemName: isLocked ? "lock.fill" : "lock.open")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 15, weight: .bold))
                         .foregroundColor(isLocked ? .black : .white)
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(isLocked ? Color.yellow : Color.black.opacity(0.45)))
+                        .frame(width: 40, height: 40)
+                        .background(Circle().fill(isLocked ? Color.accentLime : PlayerChrome.fill))
+                        .overlay(Circle().strokeBorder(isLocked ? Color.clear : PlayerChrome.edge, lineWidth: 1))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(isLocked ? "Unlock controls" : "Keep controls on screen")
-                .frame(width: 58, alignment: .trailing)
+                .accessibilityInputLabels(isLocked ? ["Unlock", "Unlock controls"] : ["Lock", "Lock controls"])
+                .frame(width: Self.lockSlotWidth, alignment: .trailing)
             } else {
-                Color.clear.frame(width: 58, height: 1)
+                Color.clear.frame(width: Self.lockSlotWidth, height: 1)
             }
-        }
     }
 
     private func frameStepButton(systemImage: String, direction: Int) -> some View {
         Image(systemName: systemImage)
             .font(.system(size: 17, weight: .semibold))
             .foregroundColor(.white)
-            .frame(width: 40, height: 40)
+            .frame(width: Self.transportButtonSize, height: Self.transportButtonSize)
             .background(
                 Circle()
                     .fill(Color.white.opacity(activeStepDirection == direction ? 0.24 : 0.0))
@@ -1489,7 +1732,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
 
     // MARK: - Tool rail and positions
 
-    static var positionStripHeight: CGFloat { 56 }
+    static var positionStripHeight: CGFloat { SwingPositionStrip.height }
 
     private func positionStripBottomPadding(bottomControlPadding: CGFloat) -> CGFloat {
         max(8, bottomControlPadding - 16)
@@ -1501,8 +1744,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             - (bottomControlPadding + 10)
     }
     /// Hosted by the review screen, the rail starts one gap under its corner
-    /// buttons (Library's star or Back, Auto's Done).
-    private var navigationToolRailTop: CGFloat { PlayerToolRail.buttonSize + PlayerToolRail.spacing }
+    /// buttons (the star, or Done when docked left).
+    private var navigationToolRailTop: CGFloat { ReviewTopBar.railTop }
     /// Inline, the rail takes the empty top-right slot, or docks under the
     /// header's leading button (Done, Back) on the left.
     private var inlineLeadingToolRailTop: CGFloat { PlayerToolRail.buttonSize + PlayerToolRail.spacing }
@@ -1523,6 +1766,13 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     private var currentPositionNumber: Int? {
         guard let positions = visiblePositions else { return nil }
         let now = seconds(currentTime)
+        // On a walkthrough stop its position is current, even where the
+        // coaching timed it a frame or two off the position model.
+        if !isPlaying, !isScrubbing,
+           let stop = walkthroughStops.first(where: { abs($0.clipTime - now) <= 0.02 }),
+           positions.contains(where: { $0.number == stop.position }) {
+            return stop.position
+        }
         let tolerance = max(seconds(frameStep) * 1.5, 0.01)
         return positions
             .filter { abs($0.clipTime - now) <= tolerance }
@@ -1542,27 +1792,33 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                                     icon: .system("info.circle"), action: infoAction))
         }
         if showsSpeedControls {
-            tools.append(PlayerTool(id: "speed", title: "Speed", accessibilityLabel: "Change playback speed",
+            // A symbol like every other tool, with the speed itself as
+            // its caption; holding it names it "Speed".
+            tools.append(PlayerTool(id: "speed", title: "Speed", caption: speedLabel(playbackSpeed),
+                                    accessibilityLabel: "Change playback speed",
                                     accessibilityValue: speedLabel(playbackSpeed),
-                                    icon: .text(speedLabel(playbackSpeed)), action: cyclePlaybackSpeed))
+                                    icon: .system("gauge.with.needle"), action: cyclePlaybackSpeed))
         }
         if let drawing {
             tools.append(PlayerTool(id: "draw", title: "Draw", accessibilityLabel: "Draw straight lines",
-                                    icon: .system("pencil.and.outline")) {
+                                    icon: .system("pencil.line")) {
                 player?.pause()
                 isPlaying = false
                 drawing.wrappedValue = true
             })
         }
+        tools += extraTools
         if swingPositions?.positions.isEmpty == false {
-            tools.append(PlayerTool(id: "positions", title: "Positions",
+            // Shown is the default, so the button is not filled while the
+            // strip is up: the strip itself says it is on.
+            tools.append(PlayerTool(id: "positions", title: "Positions", caption: "P1–P10",
                                     accessibilityLabel: showsSwingPositions ? "Hide swing positions" : "Show swing positions",
-                                    isOn: showsSwingPositions, icon: .positionMarks) {
+                                    icon: .pose(4)) {
                 withAnimation(.easeInOut(duration: 0.2)) { showsSwingPositions.toggle() }
             })
         }
         if allowsFullscreen {
-            tools.append(PlayerTool(id: "fullscreen", title: "Full screen", accessibilityLabel: "Open full screen",
+            tools.append(PlayerTool(id: "fullscreen", title: "Full screen", caption: "Expand", accessibilityLabel: "Open full screen",
                                     icon: .system("arrow.up.left.and.arrow.down.right")) {
                 showsFullscreen = true
             })
@@ -1570,8 +1826,46 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         return tools
     }
 
+    /// Paused on one of the walkthrough's frames.
+    private var isAtWalkthroughStop: Bool {
+        guard bottomPanel != nil, !isPlaying, !isScrubbing else { return false }
+        let now = seconds(currentTime)
+        return walkthroughStops.contains { abs($0.clipTime - now) <= 0.02 }
+    }
+
+    private var panelContext: PlayerPanelContext {
+        PlayerPanelContext(
+            currentTime: seconds(currentTime),
+            duration: seconds(duration),
+            isPlaying: isPlaying,
+            seek: { time in
+                player?.pause()
+                isPlaying = false
+                showControls()
+                seek(to: CMTime(seconds: time, preferredTimescale: 600))
+            },
+            play: { start in
+                guard playbackEnabled, let player else { return }
+                if let start { seek(to: CMTime(seconds: start, preferredTimescale: 600)) }
+                player.rate = playbackSpeed
+                isPlaying = true
+                scheduleAutoHide()
+            }
+        )
+    }
+
+    /// Pauses on a requested clip time once this player can play.
+    private func applyPendingSeek() {
+        guard let requested = seekRequest?.wrappedValue, playbackEnabled, player != nil else { return }
+        player?.pause()
+        isPlaying = false
+        seek(to: CMTime(seconds: requested, preferredTimescale: 600))
+        seekRequest?.wrappedValue = nil
+    }
+
     private func toolRail(trailingTop: CGFloat, leadingTop: CGFloat) -> some View {
-        PlayerToolRail(tools: playerTools, trailingTop: trailingTop, leadingTop: leadingTop)
+        PlayerToolRail(tools: playerTools, trailingTop: trailingTop, leadingTop: leadingTop,
+                       onWalkthrough: isAtWalkthroughStop)
     }
 
     private func jump(to position: SwingPosition) {
@@ -1581,13 +1875,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         }
         showControls()
         seek(to: CMTime(seconds: position.clipTime, preferredTimescale: 600))
-        showsPositionBadge = true
-        positionBadgeTask?.cancel()
-        positionBadgeTask = Task {
-            try? await Task.sleep(nanoseconds: 1_200_000_000)
-            guard !Task.isCancelled else { return }
-            await MainActor.run { showsPositionBadge = false }
-        }
     }
 
     private var fullscreenPlayback: some View {
@@ -1698,39 +1985,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             .background(Circle().fill(Color.black.opacity(0.46)))
     }
 
-    private var scrubTimeBadge: some View {
-        HStack(spacing: 0) {
-            if let number = currentPositionNumber, let position = visiblePositions?.first(where: { $0.number == number }) {
-                Text(position.confidence < 0.5 ? "\(position.label) \(position.name)?" : "\(position.label) \(position.name)")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.swingPositionAccent)
-                Text(" · ")
-                    .font(.system(size: 12, weight: .semibold))
-            }
-            Text("\(formatTime(currentTime))/\(formatTime(duration))")
-                .font(.system(size: 12, weight: .semibold, design: .monospaced))
-            if isFineScrubbing {
-                Text("¼ speed")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.black)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 1)
-                    .background(Capsule().fill(Color.swingPositionAccent))
-                    .padding(.leading, 6)
-            }
-        }
-        .foregroundColor(.white)
-        .lineLimit(1)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 7)
-        .background(
-            Capsule()
-                .fill(Color.black.opacity(0.7))
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("playback-scrub-badge")
-    }
-
     private func integratedTimeline(width: CGFloat) -> some View {
         let mapping = scrubMapping
         return ZStack(alignment: .leading) {
@@ -1739,14 +1993,16 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 .frame(height: 4)
 
             Capsule()
-                .fill(Color.yellow)
+                .fill(Color.accentLime)
                 .frame(width: progressWidth(in: width), height: 4)
 
-            if let positions = visiblePositions {
+            // The position dots give way while the step card shows: the
+            // strip below names the stop, and the stack stays calm.
+            if let positions = visiblePositions, !isAtWalkthroughStop {
                 ForEach(positions, id: \.number) { position in
                     let current = position.number == currentPositionNumber
                     Circle()
-                        .fill(current ? Color.swingPositionAccent : Color.white.opacity(0.75))
+                        .fill(current ? Color.accentLime : Color.white.opacity(0.75))
                         .frame(width: current ? 5 : 4, height: current ? 5 : 4)
                         .offset(x: CGFloat(mapping.fraction(at: position.clipTime)) * width - (current ? 2.5 : 2), y: 8)
                 }
@@ -1827,6 +2083,14 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             // Load the real frame rate so a single step lands exactly one frame
             // on 60/120/240 fps swing clips (otherwise we'd assume 30 fps).
             if let track = try? await playbackItem.asset.loadTracks(withMediaType: .video).first,
+               let size = try? await track.load(.naturalSize),
+               let transform = try? await track.load(.preferredTransform) {
+                let shown = CGRect(origin: .zero, size: size).applying(transform)
+                if abs(shown.height) > 0 {
+                    await MainActor.run { videoAspect = Double(abs(shown.width) / abs(shown.height)) }
+                }
+            }
+            if let track = try? await playbackItem.asset.loadTracks(withMediaType: .video).first,
                let fps = try? await track.load(.nominalFrameRate), fps > 0 {
                 await MainActor.run {
                     frameStep = CMTime(value: 1, timescale: CMTimeScale(max(1, fps.rounded())))
@@ -1843,6 +2107,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             }
         }
 
+        applyPendingSeek()
         guard playbackEnabled, startsPlaying else { return }
         newPlayer.playImmediately(atRate: playbackSpeed)
         isPlaying = true
@@ -1857,7 +2122,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         player = nil
         stopContinuousStep()
         autoHideTask?.cancel()
-        positionBadgeTask?.cancel()
     }
 
     private func togglePlayback() {
@@ -2076,11 +2340,12 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     }
 
     private func formatTime(_ time: CMTime) -> String {
+        // "7.8": seconds and tenths, no leading zero.
         let totalSeconds = CMTimeGetSeconds(time)
-        guard totalSeconds.isFinite else { return "00.0" }
+        guard totalSeconds.isFinite else { return "0.0" }
         let secs = Int(totalSeconds)
         let tenths = Int((totalSeconds * 10).truncatingRemainder(dividingBy: 10))
-        return String(format: "%02d.%d", secs, tenths)
+        return "\(secs).\(tenths)"
     }
 
     private func speedLabel(_ speed: Float) -> String {
@@ -2186,7 +2451,7 @@ struct SwingPlaybackView: View {
         HStack {
             if let swing {
                 Text(swing.vantage.displayName)
-                    .font(.headline)
+                    .font(.appLabel)
                     .foregroundColor(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
@@ -2237,7 +2502,7 @@ struct SwingPlaybackView: View {
                     .frame(width: 200)
 
                 Text("Exporting... \(Int(exportProgress * 100))%")
-                    .font(.headline)
+                    .font(.appLabel)
                     .foregroundColor(.white)
             }
             .padding(32)
@@ -2342,12 +2607,12 @@ struct FPSExportSheet: View {
             VStack(spacing: 24) {
                 // Header info
                 VStack(spacing: 8) {
-                    Text("Export Slower Version")
-                        .font(.title2.weight(.semibold))
+                    Text("Export slower version")
+                        .font(.appTitle)
 
                     Text("Current: \(formatDuration(currentDuration)) at \(Int(sourceFPS))fps")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .font(.appBody)
+                        .foregroundStyle(Color.helpText)
                 }
                 .padding(.top)
 
@@ -2363,12 +2628,12 @@ struct FPSExportSheet: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(fps.displayName)
-                                        .font(.headline)
-                                        .foregroundColor(isSelected ? .white : .primary)
+                                        .font(.appLabel)
+                                        .foregroundColor(isSelected ? .onAccent : .primary)
 
                                     Text("Duration: \(formatDuration(duration))")
-                                        .font(.subheadline)
-                                        .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
+                                        .font(.appBody)
+                                        .foregroundColor(isSelected ? Color.onAccent.opacity(0.8) : Color.helpText)
                                 }
 
                                 Spacer()
@@ -2376,13 +2641,13 @@ struct FPSExportSheet: View {
                                 if isSelected {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(.title2)
-                                        .foregroundColor(.white)
+                                        .foregroundColor(.onAccent)
                                 }
                             }
                             .padding()
                             .background(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .fill(isSelected ? Color.blue : Color(.secondarySystemBackground))
+                                    .fill(isSelected ? Color.appAccent : Color(.secondarySystemBackground))
                             )
                         }
                         .buttonStyle(.plain)
@@ -2397,11 +2662,11 @@ struct FPSExportSheet: View {
                     onExport(selectedFPS)
                 } label: {
                     Text("Export at \(selectedFPS.shortName)")
-                        .font(.headline)
-                        .foregroundColor(.white)
+                        .font(.appLabel)
+                        .foregroundColor(.onAccent)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.blue)
+                        .background(Color.appAccent)
                         .cornerRadius(12)
                 }
                 .padding(.horizontal)

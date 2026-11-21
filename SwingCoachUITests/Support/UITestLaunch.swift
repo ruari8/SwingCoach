@@ -27,12 +27,40 @@ extension XCUIApplication {
         card.tap()
     }
 
+    /// Opens the player's tool rail when it is folded, as it is on the
+    /// coaching walkthrough.
+    func showPlayerTools(file: StaticString = #filePath, line: UInt = #line) {
+        let fold = buttons["player-tools-fold"]
+        XCTAssertTrue(fold.waitForExistence(timeout: 5), file: file, line: line)
+        if fold.label == "Show player tools" { fold.tap() }
+    }
+
+    /// Capture's Auto segment.
+    var autoModeSegment: XCUIElement {
+        segmentedControls.buttons["Auto"]
+    }
+
     /// Relaunches without reseeding, so the data the test built persists.
     func relaunch(_ arguments: [String]) {
         terminate()
         launchArguments = arguments
         launch()
     }
+}
+
+/// The review counter on page `k of n` of a collection ordered newest
+/// first (every Library collection, and the references the Auto fixtures
+/// show): the player numbers swings in the order hit, oldest first.
+func swingCounter(_ page: String) -> String {
+    let parts = page.split(separator: " ")
+    let index = Int(parts[0])!, total = Int(parts[2])!
+    return "Swing \(total + 1 - index) of \(total)"
+}
+
+/// The page index (1 is the newest) behind a counter of `total` swings.
+func pageIndex(fromCounter counter: String, total: Int) -> Int {
+    let number = Int(counter.split(separator: " ")[1])!
+    return total + 1 - number
 }
 
 enum Fixture {

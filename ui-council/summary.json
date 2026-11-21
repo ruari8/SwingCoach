@@ -1,0 +1,57 @@
+{
+ "disagreements": [
+  "Round 10: Sol scored drawing legibility 6.9, saying the head ring sits below the head near the shoulder. The ring is centred on the nose landmark the head-height check measures; with the golfer bent over at impact the nose is below the beanie. The drawing is placed correctly; whether it reads as 'the head' is the open question.",
+  "The P1–P10 strip: all four members asked, over a dozen times, for 44 pt-wide cells in a horizontally scrolling strip. It was kept showing all ten positions, the strip's purpose, so accessibility stayed the lowest metric (6.7–7.3). Left for Ruari.",
+  "Auto's state on Capture: members kept scoring 'readable from the tripod' and pushed a full-width 'Auto is on' panel (rounds 2–8). Ruari called it cramped; from round 9 the state lives in the toggle ('Auto ready'), and further asks for a status word or banner were declined.",
+  "The recap thumbnail's badge: Opus and Fable asked for the swing's own badge on the picture (round 10); Sol asked to remove it (round 12). It ended with no badge and no level word on the recap.",
+  "The not-judged comparison tile: Opus wanted it half height at the end; Sol wanted one tile size so the grid reads in swing order. Round 13 made it half height; round 14 restored one size.",
+  "The Next button: Fable first wanted it dimmer (round 12, declined as the primary action), then asked for the lime accent fill (round 14); it is lime from round 15.",
+  "The toolbar select: Opus and Fable asked for it to be icon-only or removed; Sol asked for a label. It is an icon with a VoiceOver label; removing it would remove library-wide selection.",
+  "'Session swing N of 12' (Sol, four times) and rewording 'the earliest often causes the later ones' (Sol, three times; reworded in round 14 to 'Work on the earliest first')."
+ ],
+ "lede": "Four models (GPT Sol 6.2, Opus 5.5, Fable 5.2, Gemini Neon 4) scored SwingCoach and two reference apps, Sportsbox 3D Golf and Onform, on a frozen 13-metric rubric over 15 rounds of fixes, on real range footage in a deterministic Simulator tour.",
+ "verdict": "Bar not met: no member reached 9.5 on every metric. Our own score rose on every metric for every member. The comparison with the reference apps is weak (see the end of this page).",
+ "stop": "Ruari asked to stop after one more round to save usage. Before that, the plateau rule had triggered: the lowest score across members did not rise for three full rounds (9, 12, 14), and round 15 was the fresh-angle round.",
+ "earlier": "The earlier pass on coaching-player-ux (d75f001 → 0ebe504) turned the coaching pill into a walkthrough: the swing opens paused on its first finding with the drawing up, a step card with Play and Next, level badges on the P1–P10 strip, and numbers moved into an 'Every check' sheet. Round 0 scored it: Sol 6.3 → 7.0 overall, Opus 5.8 → 6.3, Fable 5.4 → 6.1, Gemini 4.9 → 5.8.",
+ "flubs": [
+  "Gemini (round 6) listed the 'tripod-legible Auto banner' among SwingCoach's strengths that 'stand comfortably ahead' of the references. Ruari, seeing the same banner, called it disgusting and cramped; it was removed in round 9.",
+  "Opus (round 12) called it a contradiction that levels 3 and 4 were both 'Well out'. That was the designed tier at the time ('Well out' for 3–4); the council then had round 13 tie words to colours instead.",
+  "Sol (round 10) marked drawing legibility down 1.2 points because the head ring 'sits below the head near the shoulder'. The ring sits on the nose landmark the check measures; the golfer was bent over at impact.",
+  "Sol asked for the same scrolling P1–P10 strip in nine separate rounds, each time ranked first or second."
+ ],
+ "honest": [
+  "All four judges are AI models scoring screenshots. No golfer has used the new UI, and no one tapped through it on a phone.",
+  "The before/after numbers compare like for like: the same 16 screens, the same range footage and the same scripted tour every round. That makes the rise from round 0 to round 15 the most trustworthy result here, but it is still model judgement.",
+  "The reference apps were scored from their App Store marketing screenshots, and the same images got different scores in different rounds (Gemini's Sportsbox score fell from 7.4 to 5.8). Treat the 'above the references' claim as unproven, especially against Onform, where every margin is within that noise.",
+  "Members knew which app was ours, and the brief included Ruari's product principles, so the scoring was not blind."
+ ],
+ "why_up": {
+  "color": "One accent instead of three: the lime is the app tint, with a darker lime ink (5.6:1) in light mode, and system blue is gone. Green, amber and red mean only coaching status, from one threshold (in zone, 1–3 steps out, 4+ out). Guides and unjudged checks are neutral grey, so green always means a pass. Help and caption text got shared contrast tokens (5:1 or better, ~6.2:1 in light).",
+  "subject": "More of the golfer on every camera and player screen. The full-width 'Auto is on' panel is gone, and Auto's state lives in the toggle. The recap card shrank to one picture, one finding and one button. The tool rail folds away during the walkthrough. The step card was compacted and lifted so the feet, ball and club head clear it. 'Recap: 5' moved to the top edge.",
+  "overlays": "One idea per frame: a walkthrough stop draws only its own finding, with one name tag beside the drawing instead of tags stacked on the head. Zone edges and lines got a dark halo so they hold up over grass and sky. The head ring is sized to the head, the address ring is hidden on a stop, and the zone is an outlined band.",
+  "hierarchy": "Every screen leads with one thing. The player opens on the finding. The session review leads with 'Start here' and its finding. All checks leads with '11 of 16 judged checks in zone'. Library has one filled 'Review' button and a quiet 'Select'.",
+  "consistency": "One verdict mark everywhere (tick, amber '!', red '!!', dash for not judged), one severity system (CoachingSeverity), one sheet style over the player, shared capsule buttons, and the same words on every screen ('All checks', 'Not judged', 'Good zone').",
+  "state": "The current position is always selected. 'Not judged' has its own dash mark and says why ('Short swing'). Low-confidence positions use a dashed chip and say 'Low confidence'. Auto shows ready, paused or a problem inside its segment.",
+  "polish": "Light mode now looks designed: card surfaces, the same sheet dimming as dark, and inset Swing Info cards. One type ramp, distinct SF Symbols per tool, and 44 pt capsules for Done and Back.",
+  "spacing": "The step card, sheets and footers were tightened. Library became a Photos-style grid with 2 pt gutters and pinch between 2, 3 and 5 columns. Explanations moved out of glance screens into All checks.",
+  "typography": "A four-size Dynamic Type ramp with clear roles, tabular digits in rows and badges, and an 11 pt floor. Finding titles fit on one line.",
+  "clarity": "Findings say what the swing did, in plain past tense ('Head stayed high at impact'). Severity is a beginner word ('A little out', 'Well out'), and step counts stay in All checks. Every player tool has a caption, and the folded finding reads as an action ('Jump to impact finding').",
+  "data": "A shared zone track draws each reading against the good zone (a band with a marker), so the golfer sees where the swing sits without comparing two numbers. Readings elsewhere say what they are instead of bare percentages.",
+  "accessibility": "Status reads by shape as well as colour. Capsules, close buttons and Done/Back have 44 pt targets. The contrast tokens and the 11 pt text floor help, and Auto/Manual targets are about 48 pt.",
+  "overall": "The sum of the above: calmer screens with one focus each, one visual language, and more of the swing visible."
+ },
+ "gaps_structural": [
+  "<b>The P1–P10 strip.</b> All four members asked, more than a dozen times, for 44 pt-wide cells, which would mean a strip that scrolls and hides some positions. We kept all ten visible, and that one decision holds accessibility around 7 for every member. It's your call.",
+  "<b>Declined asks cost points by the rubric's own measure.</b> Members kept rewarding banners over the viewfinder and more explanatory text, and those were declined under your camera-first, less-text rules. The rubric was written before those rules, so it still pays for things you don't want.",
+  "<b>Screenshots can't show everything.</b> Members couldn't feel tap targets, try Dynamic Type or VoiceOver, or see motion, so they score those down to be safe.",
+  "<b>10 isn't a realistic absolute number.</b> The same judges score two 4.8–4.9★ App Store apps between 6 and 8. Model scorers almost never give 9.5+, so the 9.5 bar was arbitrary.",
+  "<b>The scores have flattened out.</b> The lowest score across members stopped rising after round 6, at 6.3–6.8. What's left is mostly design decisions (the strip, how much text) and real-world testing, not shared-style fixes."
+ ],
+ "next_steps": [
+  "Decide the P1–P10 strip: keep all ten visible, or 44 pt cells with scrolling.",
+  "One cheap round on Sol's remaining copy and size issues (1, 3, 4, 6, 7, 10–12 below are mostly wording and type-size changes).",
+  "Use it yourself on the phone at the range: walk back to the tripod and see whether the recap and step card read at a glance. That's the test this council couldn't run.",
+  "A VoiceOver and Dynamic Type pass on the device."
+ ],
+ "amend": "After the council stopped, Ruari reviewed these screens and asked for four changes, which are in the 'after' images: the shaft-line fix, the plain Auto / Manual switch with a red-dot status line, the bare padlock, and a narrower tool rail. They were not re-scored."
+}

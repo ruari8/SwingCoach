@@ -1,0 +1,321 @@
+{
+ "0": {
+  "changes": [
+   "Baseline: the coaching walkthrough pass from coaching-player-ux (0ebe504), plus the tour's fixture flag."
+  ],
+  "notes": "Gemini's round 0 scores arrived during round 4's fixes and were folded in here. Known capture gap: on the pre-PR build (d75f001) the tour's recap path left a review player open, so that build's '14-auto-camera' shot is a player, not the camera; Sol and Fable noticed and scored around it."
+ },
+ "1": {
+  "changes": [
+   "Drawing name tags stack instead of printing over each other (all three members).",
+   "Top row (Done, counter, star) pinned to the safe area with a lighter fill and edge, so it shows over the black band and video (Opus, Fable).",
+   "Step card compacted (12 pt padding, 6 pt gaps, legend wraps); the impact lift counts the club head so feet, ball and club head clear the card (all three).",
+   "One accent token, Color.appAccent: the lime on dark, a darker lime ink (5.6:1) on light; app tint, toggles, tabs, Select, Done, timeline, Lock (Opus, Fable).",
+   "One sheet style over the player: dark, 97% opaque, Done, bottom inset; Swing Info header 'Details', labelled Time and Confidence columns (all three).",
+   "Same words everywhere: 'All checks' sheet, 'Not judged', 'Halfway back (P3)' position names, 'Settings' title (Opus, Fable, Sol).",
+   "Auto armed state: title3 semibold label, 14 pt lime indicator on a dark capsule; red kept for recording only (all three).",
+   "Recap legend keys drawn by the same view as the bars; this swing's colour matches across card, thumbnail and comparison (all three).",
+   "Session review: a level badge per swing in a 44 pt target; 'Not judged' row shortened; darker 'Start here'; 13 pt caveats (all three).",
+   "One level badge (the player's circle) everywhere; P tags are neutral capsules (Fable).",
+   "Library: card surfaces in both modes; labelled 'Review' button; section Select as secondary text (Sol, Opus, Fable).",
+   "Folded finding says where: 'At impact: …'; only the current P chip has a ring (Sol).",
+   "Session review nav bar gets a background on scroll (Opus).",
+   "Rail fill only for an active tool (Fable)."
+  ],
+  "declined": [
+   "Move rail tools into one menu (Opus): hides tools and is a layout rewrite.",
+   "Remove the section-level Select (Opus, Fable): removes a feature; restyled as secondary instead.",
+   "Refit the whole video above the step card (Fable): layout rewrite; the lift plus a compact card covers the case."
+  ]
+ },
+ "2": {
+  "changes": [
+   "One name tag per walkthrough stop, placed beside the drawing; supporting drawings thinner, half opacity, untagged (Sol).",
+   "New CoachingZoneTrack: the good-players zone as a green band, the swing as a marker in its level colour, aligned tabular You / Good players / Above-Below-In zone (Sol, Fable).",
+   "Auto armed state on a solid dark capsule, title2 semibold, 20 pt indicator, apart from the saved count (Sol).",
+   "Recap slots carry the level badge and 'Swing N' under each bar (Sol).",
+   "Current P position always selected (opening step fixed); 56 pt chip cells, 11 pt semibold labels (Sol, Fable).",
+   "Not-judged comparison tile: rounded neutral tile with the dash badge (Sol).",
+   "Guides and unjudged checks drawn neutral grey everywhere (Sol).",
+   "Session review: one-line symbol key under the marks, compact counts that name their denominators (Sol).",
+   "Rail glyphs: Draw pencil.line, Drawings square.3.layers.3d, Positions figure.golf (Sol, Fable).",
+   "Low-confidence positions get a 'Low' tag (Sol).",
+   "Library thumbnails at card size × screen scale, cropped to keep the golfer's head (Sol).",
+   "Step card level badge carries a word: '4 steps out', 'In zone' (Opus)."
+  ],
+  "declined": [
+   "Horizontally scrolling P strip (Sol): hides positions.",
+   "Rename the Auto review counter to 'Session swing 2 of 12' (Sol): the counter already reads in the session's context."
+  ],
+  "notes": "Side effect logged: stored thumbnails are now card-shaped, so the Auto saved-count button and the player's loading poster show that crop."
+ },
+ "3": {
+  "changes": [
+   "Step card 9 pt padding, 5 pt rows, 2 pt above the scrubber; impact step clears shoes and ball (Sol). Partly: one Auto review frame still has the trail shoe under the card.",
+   "Shared Color.helpText: 5.0:1 on grouped grey, 5.5:1 on white, 6.2:1+ in dark; used for all help and footnote text (Sol).",
+   "Captioned tool rail: one 56 pt capsule, 10 pt semibold captions (Info, Speed, Draw, Layers, Delete, Positions, Expand), 46 pt targets (Sol, Opus, Fable).",
+   "Recap badges at 26 pt with one key, 'Number = steps out of zone' (Sol).",
+   "Unjudged guide rows say 'Not judged · a guide' up front and draw a dashed neutral track (Sol).",
+   "Level badges pinned inside their own P chip; 8 pt gap to the scrubber (Sol).",
+   "Address reference drawn thinner and dimmer so head marks don't stack (Sol).",
+   "Session review leads with '7 of 11 judged swings good' in large type; themes say '5 steps out, typical' (Sol).",
+   "Folded finding labelled 'Top finding · at impact' (Sol).",
+   "One severity wording: 'N steps out', 'In zone', 'Not judged' everywhere (Sol).",
+   "Session links are neutral connectors: 'Seen together on N swings' (Sol)."
+  ],
+  "declined": []
+ },
+ "4": {
+  "changes": [
+   "A walkthrough stop draws only its own finding; supporting drawings only with 'Every check on the frame' (Sol).",
+   "Finding titles describe what the swing did, past tense: 'Head didn't drop into impact', 'Shaft steepened coming down' (Sol).",
+   "Auto armed state: full-width solid capsule, 28 pt bold, 24 pt indicator with a matching 2 pt edge; saved count beneath (Sol, Gemini).",
+   "Step card about 18 pt shorter (3 pt rows, 7 pt padding); All checks capsule drawn at 28 pt with a 44 pt tap (Sol).",
+   "Comparison tiles share one 4:5 preview cropped to the golfer and club; four swings show on the first view (Sol).",
+   "'Finding 1 of 2' for progress, 'N steps out' for severity; 'Show findings' (Sol).",
+   "Shared Color.sectionHeading (about 9.5:1) for every list section heading (Sol).",
+   "Recap line: 'On all 4 swings with a halfway-back (P3) reading' (Sol).",
+   "'Start here' above the first theme's title in grey secondary style (Sol).",
+   "Session header button reads 'Select session' (Sol, Gemini).",
+   "The Layers rail tool opens 'Drawing layers' (Sol)."
+  ],
+  "declined": [
+   "Horizontally scrolling P strip with 44 pt-wide cells (Sol, second time): ten positions in 402 pt cannot each be 44 pt wide without hiding some; the strip's job is to show all ten. Cells are full-height 56 pt targets."
+  ]
+ },
+ "5": {
+  "changes": [
+   "One type ramp in Theme.swift: four Dynamic Type sizes (large title, title 3, subheadline, caption); bold for headings, semibold for labels, tabular digits in rows and badges; fixed sizes named where cells can't grow.",
+   "Head rings are thin solid outlines; the reading's dot is the strongest mark (Sol).",
+   "Auto capsule says how to stop: 'Switch to Manual to stop' (Sol). Partly: tapping the capsule doesn't stop Auto, so no stop glyph was added.",
+   "Club caveat on the step card shortened to 'Depends on camera position', full text in All checks (Sol). Partly: the card is only a few points shorter.",
+   "Session headline gets a qualifier: what counts as 'good' (Sol).",
+   "All checks leads with 'N of M checks in zone', then 'Top finding' (Sol).",
+   "Expanded card: 'N steps outside the good zone' (Sol).",
+   "Recap headline badge '4 steps out, typical'; example caption 'Swing 5 · 4 steps out' (Sol).",
+   "Folded card action shortened to 'Findings' (Sol).",
+   "Session photo captions keep the swing and zone result, no unexplained percentages (Sol).",
+   "'Select session' is a bordered secondary capsule (shared SecondaryCapsuleButtonStyle); 'Review' is the filled accent button (Sol).",
+   "Swing Info confidence numbers in the same tabular style as Time (Sol)."
+  ],
+  "declined": [
+   "Horizontally scrolling P strip with 44 pt-wide cells (Sol, third time): left for Ruari to decide; the strip keeps all ten positions visible."
+  ]
+ },
+ "6": {
+  "changes": [
+   "Head reading: small hollow marker with dark outline; head tags sit in the sky above the hat (Sol).",
+   "Every zone edge gets the measured line's dark outline at a lighter weight, in the shared drawing code (Sol).",
+   "Auto state is a solid dark status panel with no button-like outline; 'Switch to Manual to stop' near-white (Sol).",
+   "Recap bars removed; badges carry status, outlined for 'other way'; same in recap caption and Compare tiles (Sol).",
+   "Zone track captions larger, brighter, tabular, each with a swatch of its mark (Sol).",
+   "'N steps out' is the only severity wording; key defines a step as a set distance per check, matching COACHING.md (Sol). The implementer declined the brief's 'one zone-width' wording because each check has its own step size.",
+   "Low-confidence position named 'Address · Low confidence'; folded card 'Swing's top finding · at impact' (Sol).",
+   "Rail fold toggle captioned 'Hide' / 'Show' (Sol).",
+   "'Layers' sheet and tool; first toggle 'Coaching overlays' (Sol).",
+   "Toolbar 'Select swings' (Sol).",
+   "Settings footers: short first line, details after, none over three lines (Sol)."
+  ],
+  "declined": [
+   "Horizontally scrolling P strip with 44 pt-wide cells (Sol, fourth time): left for Ruari."
+  ],
+  "notes": "Decision: Sol's lowest metric held at 6.8, 6.7, 6.8 over rounds 3–5, so round 6 is scored by the full council for a fresh read rather than waiting for Sol to clear 9.5 alone. Gemini's round 6 scores arrived during round 11 and were folded in here."
+ },
+ "7": {
+  "changes": [
+   "Head drawing: address one thin dashed light ring with a dark halo, this swing one solid ring; legend swatches match the drawn shape (all three).",
+   "One key ('Number = steps out', one 16 pt badge) and one camera caveat ('Depends on camera position') everywhere (Opus, Fable).",
+   "Session key says a swing's number is its top finding; theme captions name their check (Opus).",
+   "Folded finding bar: 10 pt padding, one-line title, chevron only (Opus, Fable).",
+   "Step card: even ~8 pt text gaps, legend in caption type (Fable).",
+   "Sheets start ~14 pt under the title (Opus, Fable).",
+   "'Low' tag in the not-judged grey; regular-weight row (Opus, Fable).",
+   "Dark amber ink for light-mode pill text (Opus).",
+   "Recap card: finding, pill, caveat, 'Shows it most' picture and Compare; per-swing slots moved to the comparison; recap, verdict and Auto panel share one surface (Sol, Opus).",
+   "Library session header: meta on its own line, one capsule height, 'Select all 12' (Opus, Fable, Sol).",
+   "Zone edges get a dark halo and ~0.75 pt more weight (Opus).",
+   "Lock captioned; time reads '7.8 s' (Opus, Fable).",
+   "'Not judged' gives its reason (Fable, Sol).",
+   "Proportional digits on headline numerals (Fable).",
+   "Takeaway zone band runs past the club head so an in-zone reading sits inside it (Sol); coaching report version 8 → 9, redrawn from stored evidence.",
+   "P strip labels 12 pt; low confidence as a dimmed pose in a dashed chip, named by the time when current (Fable, Sol).",
+   "Auto review Delete last in the rail, after a divider, in red (Fable).",
+   "Coach menu 'Recap last 5' (Fable, Sol).",
+   "Empty saved-count box shows a neutral golfer glyph (Opus).",
+   "Tighter session summary; caveat at higher contrast; '11 of 16 judged checks in zone' (Sol)."
+  ],
+  "declined": [
+   "Horizontally scrolling P strip with 44 pt-wide cells (Sol, fifth time): left for Ruari; labels and low-confidence styling improved instead."
+  ],
+  "notes": "The report version bump makes the app re-score the seed's swings at launch, which also re-times P1–P10 to the frames the drawings were measured on (existing behaviour, as on a phone). From round 7 the Swing Info times differ slightly from earlier rounds for that reason."
+ },
+ "8": {
+  "changes": [
+   "'Tap Manual to stop' larger; Auto/Manual targets about 48 pt (Sol).",
+   "Recap example thumbnail shorter, one caption line (Sol).",
+   "Keys scoped: 'Top finding per swing'; theme pills 'Typically 5 steps out' (Sol).",
+   "Head rings: zone cut away under each ring; thinner address ring (Sol).",
+   "Comparison caption 'Tap a judged swing to walk through it' (Sol).",
+   "Shared low-confidence glyph on dashed chips, in the time label and the 'Low' tag (Sol).",
+   "Guide rows say 'Reference range' (Sol).",
+   "Settings footer leads with one line (Sol)."
+  ],
+  "declined": [
+   "Horizontally scrolling P strip (Sol, sixth time): left for Ruari.",
+   "'Session swing 2 of 12' (Sol, second time): would break consistency with the Library player's counter."
+  ]
+ },
+ "9": {
+  "changes": [
+   "Ruari's direction: the full-width 'Auto is on' panel and stop hint are gone; a small dot by the Auto/Manual switch shows Auto; compact '12 saved' capsule; a status line only when there's news.",
+   "Recap card cut to the picture, the finding with its number badge, and Compare (~130 pt).",
+   "Step card: position and '1/4' counter, badge and finding, Back / Play / Next and All checks; legend and camera caveat moved to All checks.",
+   "Library as a Photos-style grid: square tiles, 2 pt gutters, 3 columns, pinch between 2, 3 and 5 (remembered); duration in the corner; vantage tag only when a session mixes views; 'Select'. New UI test for the pinch.",
+   "Session review and All checks trimmed to one short line under each headline."
+  ],
+  "declined": [
+   "All council asks this round: the round implements only Ruari's direction."
+  ],
+  "notes": "Thumbnails are now square at 220 pt × screen scale, about 2.4× the memory of round 8's. Scored by Sol, Opus and Fable; Gemini's round 9 scores arrived after round 14 and were folded in here."
+ },
+ "10": {
+  "changes": [
+   "Auto's state inside the toggle: the Auto segment fills lime while listening; a 12 pt mark beside it is filled (listening), hollow (paused) or a warning glyph (problem). No banner (Opus, Fable, Sol, within Ruari's camera-first rule).",
+   "Off the walkthrough: floating pill removed; position name in the transport row; one 8 pt band gap (Opus, Fable).",
+   "On-video tag hidden while the step card shows (Opus, Fable).",
+   "'Head stayed high at impact' (Sol).",
+   "One plain severity word for beginners: 'A little out' / 'Well out' / 'Far out'; All checks keeps 'N steps out' (Sol).",
+   "One shared key with fixed symbols (you dot, good-zone band, address dashed ring) everywhere (Opus, Fable).",
+   "Recap picture fills the card height with that swing's own badge (Opus, Fable).",
+   "Head zone wider than the rings; address ring 1.5 pt at 50% (Fable).",
+   "All zones lighter (22% fill), measured lines keep full stroke (Sol).",
+   "All checks and comparison headers cut to one caption block (Fable, Sol).",
+   "Session summary cut; 'Shows it most' / 'Your best here' above the pictures (Fable, Sol).",
+   "Toolbar select is an icon; session header keeps 'Select' (Opus, Fable, Sol).",
+   "44 pt hit areas for capsules and close buttons (Fable).",
+   "Done/Back as 44 pt capsules (Fable).",
+   "Rail labels 11 pt in a 66 pt rail; Positions uses the line-drawn pose (Fable).",
+   "Swing Info in inset cards with a 48 pt bottom inset (Fable).",
+   "P strip badges 18 pt inside their own cells (Opus, Sol).",
+   "'All checks at this position' toggle (Sol)."
+  ],
+  "declined": [
+   "Delete into a menu (Opus): already last, after a divider, in red.",
+   "'My lines' / 'Coach lines' (Opus): Draw and Layers were settled.",
+   "Shift in-zone green away from the lime accent (Opus): hues differ; status set is fixed.",
+   "Scrolling P strip (Sol): left for Ruari.",
+   "'Session swing N of 12' (Sol, third time): consistency with the Library player."
+  ]
+ },
+ "11": {
+  "changes": [
+   "Head ring sized from the pose's head (0.85 of face-to-neck); dashed address ring 1.25 pt at 35%; report version 9 → 10 (Sol). Partly: it still misses the crown on a bent-over golfer.",
+   "Titles without 'Label:' shorthand: 'Shaft pointed outside the ball' (Sol).",
+   "Recap: 'Swing 5' under the picture's badge (Sol).",
+   "Session review: one-line key under the marks; first finding a heading size larger (Sol).",
+   "All checks: 'You' is a solid dot everywhere, colour carries the level (Sol).",
+   "Rail and player buttons 80% opaque (Sol).",
+   "Swing Info: 'Low · 50%' as one value (Sol).",
+   "P strip: the cell outline fills the strip height; 14 pt labels; badges in one corner (Sol).",
+   "Settings footer: two short sentences (Sol)."
+  ],
+  "declined": [
+   "'Watching' label for Auto (Sol): Ruari says the toggle is enough; the segment fills while armed.",
+   "Labelling the toolbar select icon (Sol): Opus and Fable asked for icon-only; VoiceOver has the label."
+  ]
+ },
+ "12": {
+  "changes": [
+   "Walkthrough opens with the tool rail folded; its reveal control is captioned 'Tools' (Sol).",
+   "Recap thumbnail has no badge, only 'Swing 5' (Sol).",
+   "Session tally at section-heading size; tighter marks; the large-title size dropped from the ramp (Sol).",
+   "Dashed address ring 1 pt at 25% (Sol).",
+   "P strip: a 16 pt badge slot above each pose; strip 66 pt tall (Sol, Opus).",
+   "'Address' with 'Low confidence' on a second line in the transport row (Sol).",
+   "All checks summary keys only the badge and the not-judged dash (Sol).",
+   "'Show all drawings here' toggle (Sol).",
+   "'240 fps' in the coach chip's capsule; both 44 pt taps (Gemini).",
+   "Plain filter glyph in the Library bar (Gemini)."
+  ],
+  "declined": [
+   "A status word beside the Auto toggle (Sol, again): Ruari says the toggle is enough.",
+   "Rewording the 'earliest often causes the later ones' footer (Sol): it's the coaching rule in COACHING.md, not a UI claim."
+  ],
+  "notes": "Full council (all four). Lowest score across members: 6.3 (Gemini, accessibility). Every member's top accessibility complaint is the P1–P10 strip's cell width."
+ },
+ "13": {
+  "changes": [
+   "One severity system (CoachingSeverity): amber 1–3 'A little out', red 4+ 'Well out', green 'In zone', one threshold for colour and word; 'N steps out' only in All checks rows (Opus, Fable).",
+   "Session dots are shapes only (tick, '!', dash); theme chips use the word tier; captions 'Swing 8' (Fable, Opus).",
+   "Recap shows the finding and picture only, no level word (Sol, Opus, Fable).",
+   "Dashed address ring hidden on a stop; zone an outlined band above the rings (Opus, Fable).",
+   "Scrubber dots hide while the step card shows; the stop lift may use the black band so feet and ball clear the card (Opus, Fable).",
+   "Auto's state mark inside the Auto segment (dot armed, ring paused, warning on a problem); separate dot removed (Fable, Opus).",
+   "Theme meta in one caption with a camera glyph (Fable).",
+   "All checks rows lead with the word; numbers with their unit; 64 pt thumbnails (Fable, Sol).",
+   "Library header one caption line; 'down the line' spelled out; impact (P7) frame as the tile poster (Fable, Opus, Sol).",
+   "Same sheet dimming in both appearances; Layers sheet sized to content (Fable, Opus).",
+   "11 pt text floor in the ramp; 'Low confidence' at 12 pt (Opus, Fable).",
+   "Rail 16 pt from the edge; Speed has a gauge symbol (Fable, Opus).",
+   "Settings footers one line; 'Show recap now'; 'Coach's drawings' (Opus, Fable).",
+   "Not-judged comparison tile half height (Opus).",
+   "The review lock captioned 'Controls', which is what it locks (Opus).",
+   "Tiles ignore the finger lift at the end of a pinch (bug found by the new pinch test)."
+  ],
+  "declined": [
+   "A dimmer Next button (Fable): the primary action from the tripod stays brightest.",
+   "Removing the toolbar select icon (Fable): library-wide selection is a feature.",
+   "'Session swing N of 12', a 'Watching' word, a scrolling P strip, rewording the coaching-rule footer (Sol): unchanged decisions."
+  ]
+ },
+ "14": {
+  "changes": [
+   "Auto segment reads 'Auto ready' while detection is active, plain 'Auto' when paused; same 184 × 44 pt control (Sol).",
+   "Recap button 'Compare last 5' (Sol).",
+   "Amber '!' and red '!!' verdict dots (Sol).",
+   "Folded card: 'Jump to impact finding' (Sol).",
+   "Comparison keys only what its tiles draw; camera caveat in All checks only (Sol).",
+   "Guide rows say 'Reference only' (Sol).",
+   "Comparison tiles all one size again (Sol; reverses round 13's half-height tile).",
+   "Footer: 'Listed in swing order. Work on the earliest first.' (Sol, third ask).",
+   "'Show Auto recap' in Settings; 'Recap: every 5 swings' chip (Sol)."
+  ],
+  "declined": [
+   "'4 steps out' instead of the severity word (Sol): Ruari wants words for beginners; the badge carries the number.",
+   "Redrawing the shaft line from the grip (Sol): the line shows where the shaft points, extended to the ground."
+  ],
+  "notes": "A usage limit stopped the first round-14 implementer before it changed any code; it was rerun from the same HEAD after the reset. The full council scores this round (moved up from 15). All four members score SwingCoach above both reference apps overall on this build (Sol 8.2 vs 7.6/8.1, Opus 7.3 vs 6.6/7.2, Fable 7.5 vs 6.5/7.2, Gemini 7.8 vs 6.0/7.6). Lowest score across members: 6.4 (Opus, consistency); three full rounds (9, 12, 14) without beating round 6's 6.8, so the plateau rule's fresh-angle round followed."
+ },
+ "15": {
+  "changes": [
+   "Fresh angle on the two stalled metrics, consistency and accessibility: one glyph verdict badge everywhere (tick, amber '!', red '!!', dash); numbers only in All checks rows; the severity word one size larger (Opus, Fable, Gemini, Sol).",
+   "'Good zone' everywhere a range is named; 'Good: x to y' on the swing-by-swing chart (Fable, Gemini).",
+   "Session pictures cropped to the same 4:5 golfer-centred region (Opus, Fable).",
+   "Zone strokes ~3 pt with a dark halo and 16–20% fill (Opus).",
+   "'Recap: 5' moved into the top row beside '240 fps'; nothing centred over the viewfinder (Opus, Fable).",
+   "Transport label on two lines; lock captioned 'Lock' / 'Unlock' (Opus, Fable, Gemini).",
+   "Video keeps the same top on and off the walkthrough (Fable).",
+   "All checks summary: no 'Top finding' repeat, one-line key (Fable).",
+   "Session copy: '7 of 11 swings good', 'N of M measured', no bare camera glyph (Opus, Fable, Gemini).",
+   "Light caption grey darkened to ~6.2:1 (Fable).",
+   "Library session row drops the duplicated count (Fable, Opus).",
+   "Next and the card's primary actions use the lime fill (Fable, second ask).",
+   "'Clubhead' and sentence-case section headers (Fable, Gemini)."
+  ],
+  "declined": [
+   "Removing the toolbar select icon (Opus, Fable, Gemini): library-wide selection is a feature.",
+   "A compact end-of-list not-judged tile (Opus): round 14 restored one tile size so the grid reads in swing order."
+  ],
+  "notes": "Last round: Ruari asked to stop after one more round because of usage. The interrupted implementer's partial work was finished by a second one. Scored by Sol only, to save usage."
+ },
+ "16": {
+  "changes": [
+   "Fixed: coaching drawings sat about 23 pt below the video on edge-to-edge clips (a council-round regression), so the shaft line ran beside the club. The drawing layer now shares the video's frame (Ruari).",
+   "Capture: plain Auto / Manual switch again; Auto's state is a red dot and 'Swings save automatically' in the bottom corner (Ruari).",
+   "The review lock is a bare padlock again, no caption (Ruari).",
+   "Tool rail about 53 pt wide instead of 72: the Positions tool is captioned 'P1–P10' (Ruari)."
+  ],
+  "declined": [],
+  "notes": "Ruari's review amendments after the council stopped. Not scored."
+ }
+}

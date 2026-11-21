@@ -2,454 +2,12 @@
 //  SwingCoachingViews.swift
 //  SwingCoach
 //
-//  Coaching in the review player: the drawings over the video, the one-line
-//  verdict, the full metric list, and the session summary.
+//  The session review. Coaching inside the player
+//  is in CoachingPlayerViews.swift.
 //
 
 import AVFoundation
 import SwiftUI
-
-extension Color {
-    static func coachingLevel(_ level: Int) -> Color {
-        switch abs(level) {
-        case 0: Color(red: 0.24, green: 0.86, blue: 0.43)
-        case 1...3: Color(red: 1.0, green: 0.75, blue: 0.16)
-        default: Color(red: 1.0, green: 0.33, blue: 0.27)
-        }
-    }
-}
-
-// MARK: - Which checks are drawn
-
-/// The coach decides what is drawn (the one fault in the swing's verdict,
-/// nothing on a good swing) unless the golfer has turned a check on or off. The choices are app-wide, stored as
-/// comma-separated metric ids.
-struct CoachingDrawingChoices {
-    static let shownKey = "coaching.shownMetrics"
-    static let hiddenKey = "coaching.hiddenMetrics"
-
-    var shown: Set<String>
-    var hidden: Set<String>
-
-    init(shown: String, hidden: String) {
-        self.shown = Set(shown.split(separator: ",").map(String.init))
-        self.hidden = Set(hidden.split(separator: ",").map(String.init))
-    }
-
-    var isCoachsChoice: Bool { shown.isEmpty && hidden.isEmpty }
-
-    func draws(_ id: CoachingMetricID, coachPicked: Bool, showsAll: Bool) -> Bool {
-        if hidden.contains(id.rawValue) { return false }
-        return showsAll || coachPicked || shown.contains(id.rawValue)
-    }
-
-    /// Flips a check against what is drawn now.
-    mutating func toggle(_ id: CoachingMetricID, drawnNow: Bool) {
-        if drawnNow {
-            shown.remove(id.rawValue)
-            hidden.insert(id.rawValue)
-        } else {
-            hidden.remove(id.rawValue)
-            shown.insert(id.rawValue)
-        }
-    }
-
-    var shownValue: String { shown.sorted().joined(separator: ",") }
-    var hiddenValue: String { hidden.sorted().joined(separator: ",") }
-}
-
-// MARK: - Drawings over the video
-
-/// Draws a swing's coaching on the frames it was measured on. A metric's
-/// drawing shows while the playhead is within a frame or two of its swing
-/// position, so it holds when paused there and passes when playing.
-struct SwingCoachingOverlay: View {
-    let report: SwingCoachingReport?
-    /// The checks the coach draws unasked: the verdict's fault.
-    let picks: Set<CoachingMetricID>
-    let aspectRatio: Double?
-    let currentTime: CMTime
-    /// The clip's slow-motion factor; sets how long a drawing stays up.
-    let timeScale: Double
-    /// Metric picked from the list: shown even when it is in zone.
-    let highlighted: CoachingMetricID?
-    /// On a still picture of one check (`CoachingFrameView`): only
-    /// `highlighted` is drawn, whatever the drawing settings say, and
-    /// without its caption.
-    var still = false
-
-    @AppStorage("coaching.showAllDrawings") private var showsAll = false
-    @AppStorage("coaching.showDrawings") private var showsDrawings = true
-    @AppStorage(CoachingDrawingChoices.shownKey) private var shownMetrics = ""
-    @AppStorage(CoachingDrawingChoices.hiddenKey) private var hiddenMetrics = ""
-
-    private var visible: [CoachingMetricResult] {
-        guard let report else { return [] }
-        if still { return report.metrics.filter { $0.id == highlighted } }
-        guard showsDrawings else { return [] }
-        let now = CMTimeGetSeconds(currentTime)
-        guard now.isFinite else { return [] }
-        // One slot of the position grid either side, in clip time.
-        let window = timeScale / 30
-        let choices = CoachingDrawingChoices(shown: shownMetrics, hidden: hiddenMetrics)
-        return report.metrics.filter { result in
-            guard abs(result.clipTime - now) <= window else { return false }
-            // A check picked from the list shows on its own.
-            if result.id == highlighted { return true }
-            if highlighted != nil, !showsAll { return false }
-            return choices.draws(result.id, coachPicked: picks.contains(result.id), showsAll: showsAll)
-        }
-    }
-
-    var body: some View {
-        let results = visible
-        GeometryReader { geometry in
-            if let aspectRatio, !results.isEmpty {
-                let rect = VideoDisplayGeometry.contentRect(in: geometry.size, aspectRatio: aspectRatio)
-                ZStack(alignment: .topLeading) {
-                    Canvas { context, _ in
-                        for result in results {
-                            draw(result, in: rect, context: &context)
-                        }
-                    }
-                    if !still {
-                        // Under the verdict pill.
-                        captions(results)
-                            .padding(.leading, max(rect.minX, 0) + 12)
-                            .padding(.top, max(rect.minY + 12, 118))
-                    }
-                }
-            }
-        }
-        .allowsHitTesting(false)
-    }
-
-    private func captions(_ results: [CoachingMetricResult]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ForEach(results, id: \.id) { result in
-                HStack(spacing: 6) {
-                    Circle().fill(Color.coachingLevel(result.level)).frame(width: 8, height: 8)
-                    Text(result.finding ?? "\(result.definition.title): in zone")
-                        .font(.system(size: 13, weight: .semibold))
-                    Text(result.definition.unit.format(result.value))
-                        .font(.system(size: 12, weight: .medium).monospacedDigit())
-                        .foregroundStyle(.white.opacity(0.7))
-                }
-                .foregroundStyle(.white)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Capsule().fill(.black.opacity(0.55)))
-                .accessibilityElement(children: .combine)
-                .accessibilityIdentifier("coaching-caption-\(result.id.rawValue)")
-            }
-        }
-    }
-
-    private func draw(_ result: CoachingMetricResult, in rect: CGRect, context: inout GraphicsContext) {
-        let subject = Color.coachingLevel(result.level)
-        func place(_ point: CoachingPoint) -> CGPoint {
-            CGPoint(x: rect.minX + point.x * rect.width, y: rect.minY + point.y * rect.height)
-        }
-        for shape in result.drawings {
-            let colour: Color = switch shape.role {
-            case .reference: .white
-            case .zone: Color.coachingLevel(0)
-            case .subject: subject
-            }
-            let points = shape.points.map(place)
-            let size = CGFloat(shape.size ?? 0) * rect.height
-            // Thinner on a small still picture.
-            let weight: CGFloat = still ? max(1.5, min(3, rect.height / 110)) : 3
-            let stroke = StrokeStyle(lineWidth: weight, lineCap: .round, dash: shape.dashed ? [7, 6] : [])
-            switch shape.kind {
-            case .line:
-                guard points.count == 2 else { continue }
-                var path = Path()
-                path.move(to: points[0])
-                path.addLine(to: points[1])
-                // A dark edge keeps a white line readable on sky.
-                context.stroke(path, with: .color(.black.opacity(0.35)), style: StrokeStyle(lineWidth: weight + 2, lineCap: .round, dash: stroke.dash))
-                context.stroke(path, with: .color(colour), style: stroke)
-            case .area:
-                guard points.count >= 3 else { continue }
-                var path = Path()
-                path.addLines(points)
-                path.closeSubpath()
-                context.fill(path, with: .color(colour.opacity(0.24)))
-            case .band:
-                guard points.count == 2 else { continue }
-                let delta = CGPoint(x: points[1].x - points[0].x, y: points[1].y - points[0].y)
-                let length = max(hypot(delta.x, delta.y), 0.001)
-                let normal = CGPoint(x: -delta.y / length * size, y: delta.x / length * size)
-                var path = Path()
-                path.move(to: CGPoint(x: points[0].x + normal.x, y: points[0].y + normal.y))
-                path.addLine(to: CGPoint(x: points[1].x + normal.x, y: points[1].y + normal.y))
-                path.addLine(to: CGPoint(x: points[1].x - normal.x, y: points[1].y - normal.y))
-                path.addLine(to: CGPoint(x: points[0].x - normal.x, y: points[0].y - normal.y))
-                path.closeSubpath()
-                context.fill(path, with: .color(colour.opacity(0.28)))
-            case .circle:
-                guard let centre = points.first else { continue }
-                let path = Path(ellipseIn: CGRect(x: centre.x - size, y: centre.y - size, width: size * 2, height: size * 2))
-                context.stroke(path, with: .color(colour), style: stroke)
-            case .dot:
-                guard let centre = points.first else { continue }
-                let radius = weight * 2
-                let path = Path(ellipseIn: CGRect(x: centre.x - radius, y: centre.y - radius, width: radius * 2, height: radius * 2))
-                context.fill(path, with: .color(colour))
-                context.stroke(path, with: .color(.black.opacity(0.6)), lineWidth: 1.5)
-            case .label:
-                guard let anchor = points.first, let text = shape.text else { continue }
-                context.draw(Text(text).font(.system(size: 12, weight: .semibold)).foregroundColor(colour), at: anchor, anchor: .leading)
-            }
-        }
-    }
-}
-
-// MARK: - Verdict pill
-
-/// One line on the swing: the verdict, or that coaching is still running.
-/// Tapping opens the metric list.
-struct SwingCoachingPill: View {
-    let swing: SavedSwing
-    /// Jumps the player to a clip time.
-    let seek: (Double) -> Void
-    @Binding var highlighted: CoachingMetricID?
-
-    @ObservedObject private var store = SwingCoachingStore.shared
-    @State private var showsList = false
-
-    var body: some View {
-        let report = store.report(for: swing)
-        Group {
-            if let report {
-                let verdict = store.verdict(for: swing, report: report)
-                Button {
-                    if case .focus(let finding) = verdict, let result = report.metric(finding.metric), highlighted == nil {
-                        highlighted = finding.metric
-                        seek(result.clipTime)
-                    } else {
-                        showsList = true
-                    }
-                } label: {
-                    HStack(spacing: 8) {
-                        Circle().fill(colour(verdict)).frame(width: 9, height: 9)
-                        Text(verdict.headline)
-                            .font(.system(size: 14, weight: .semibold))
-                            .lineLimit(1)
-                        if case .focus(let finding) = verdict {
-                            Text("P\(finding.position)")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(.white.opacity(0.65))
-                        }
-                        Image(systemName: "chevron.up")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(.white.opacity(0.6))
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 9)
-                    .background(Capsule().fill(.black.opacity(0.55)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 0.5))
-                }
-                .buttonStyle(.plain)
-                .simultaneousGesture(LongPressGesture().onEnded { _ in showsList = true })
-                .accessibilityIdentifier("swing-coaching-pill")
-                .accessibilityLabel("Coaching: \(verdict.headline)")
-                .accessibilityHint("Shows the measurements for this swing")
-            } else if store.pending.contains(swing.id) {
-                HStack(spacing: 8) {
-                    ProgressView().controlSize(.small).tint(.white)
-                    Text("Reading swing")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.8))
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 9)
-                .background(Capsule().fill(.black.opacity(0.45)))
-                .accessibilityIdentifier("swing-coaching-pending")
-            }
-        }
-        .sheet(isPresented: $showsList) {
-            if let report {
-                let verdict = store.verdict(for: swing, report: report)
-                SwingCoachingList(report: report, verdict: verdict, coachPicks: CoachingFeedback.picks(for: verdict)) { result in
-                    highlighted = result.id
-                    seek(result.clipTime)
-                    showsList = false
-                }
-                .presentationDetents([.medium, .large])
-            }
-        }
-        .onAppear { store.coachWithSession(swing) }
-        .onChange(of: swing.swingPositions) { _, _ in store.coachWithSession(swing) }
-    }
-
-    private func colour(_ verdict: CoachingVerdict) -> Color {
-        switch verdict {
-        case .notJudged: .gray
-        case .good, .better: .coachingLevel(0)
-        case .focus(let finding): .coachingLevel(finding.level)
-        }
-    }
-}
-
-// MARK: - Metric list
-
-struct SwingCoachingList: View {
-    let report: SwingCoachingReport
-    let verdict: CoachingVerdict
-    /// The checks the coach draws unasked: the verdict's fault.
-    let coachPicks: Set<CoachingMetricID>
-    let onSelect: (CoachingMetricResult) -> Void
-
-    @AppStorage("coaching.showAllDrawings") private var showsAll = false
-    @AppStorage("coaching.showDrawings") private var showsDrawings = true
-    @AppStorage(CoachingDrawingChoices.shownKey) private var shownMetrics = ""
-    @AppStorage(CoachingDrawingChoices.hiddenKey) private var hiddenMetrics = ""
-
-    private var choices: CoachingDrawingChoices {
-        CoachingDrawingChoices(shown: shownMetrics, hidden: hiddenMetrics)
-    }
-
-    private func isDrawn(_ id: CoachingMetricID) -> Bool {
-        showsDrawings && choices.draws(id, coachPicked: coachPicks.contains(id), showsAll: showsAll)
-    }
-
-    private func toggleDrawing(_ id: CoachingMetricID) {
-        var updated = choices
-        updated.toggle(id, drawnNow: isDrawn(id))
-        shownMetrics = updated.shownValue
-        hiddenMetrics = updated.hiddenValue
-    }
-
-    private var positions: [Int] {
-        Array(Set(report.metrics.map(\.position))).sorted()
-    }
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(verdict.headline).font(.headline)
-                        Text(summary).font(.subheadline).foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 2)
-                    .accessibilityElement(children: .combine)
-                    .accessibilityIdentifier("coaching-summary")
-                    Toggle("Drawings on the video", isOn: $showsDrawings)
-                    Toggle("Draw every check", isOn: $showsAll)
-                        .disabled(!showsDrawings)
-                    if !choices.isCoachsChoice || showsAll {
-                        Button("Let the coach decide what is drawn") {
-                            shownMetrics = ""
-                            hiddenMetrics = ""
-                            showsAll = false
-                        }
-                        .accessibilityIdentifier("coaching-reset-choices")
-                    }
-                } footer: {
-                    Text("The coach draws the one fault it names, and nothing on a good swing. Use the eye on a check to always draw it or never draw it.")
-                }
-                ForEach(positions, id: \.self) { position in
-                    Section("P\(position) · \(SwingPosition.names[position - 1])") {
-                        ForEach(report.metrics.filter { $0.position == position }, id: \.id) { result in
-                            HStack(spacing: 8) {
-                                Button { onSelect(result) } label: { row(result) }
-                                    .buttonStyle(.plain)
-                                    .accessibilityIdentifier("coaching-metric-\(result.id.rawValue)")
-                                Button { toggleDrawing(result.id) } label: {
-                                    Image(systemName: isDrawn(result.id) ? "eye" : "eye.slash")
-                                        .foregroundStyle(isDrawn(result.id) ? Color.accentColor : Color.secondary)
-                                        .frame(width: 34, height: 34)
-                                }
-                                .buttonStyle(.plain)
-                                .disabled(!showsDrawings)
-                                .accessibilityIdentifier("coaching-draw-\(result.id.rawValue)")
-                                .accessibilityLabel("Draw \(result.definition.title)")
-                                .accessibilityValue(isDrawn(result.id) ? "On" : "Off")
-                            }
-                        }
-                    }
-                }
-                if !report.unavailable.isEmpty {
-                    Section("Not measured on this swing") {
-                        Text(report.unavailable.map { CoachingMetricDefinition.definition($0).title }.joined(separator: ", "))
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            .navigationTitle("Swing measurements")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-
-    private var summary: String {
-        switch report.exclusion {
-        case .shortSwing?:
-            return "A chip or pitch. The zones come from full swings, so it is measured but not judged."
-        case .cameraMoved?:
-            return "The camera moved during the swing, so it can't be compared with address."
-        case .positionsUnclear?:
-            return "Address or impact couldn't be found clearly on this clip."
-        case nil:
-            let judged = report.metrics.filter { $0.definition.scored }
-            let out = judged.filter { !$0.inZone }.count
-            return out == 0 ? "All \(judged.count) measurements in zone."
-                : "\(judged.count - out) of \(judged.count) measurements in zone."
-        }
-    }
-
-    private func rowNote(_ result: CoachingMetricResult) -> String {
-        let state = !result.definition.scored ? "Guide, not judged" : result.inZone ? "In zone" : result.definition.title
-        return result.definition.dependsOnCamera ? state + " · depends on camera position" : state
-    }
-
-    private func row(_ result: CoachingMetricResult) -> some View {
-        HStack(spacing: 12) {
-            LevelMeter(level: result.level)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(result.finding ?? result.definition.title)
-                    .font(.subheadline.weight(.medium))
-                Text(rowNote(result))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            Text(result.definition.unit.format(result.value))
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(.secondary)
-        }
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-        .accessibilityValue(result.inZone ? "In zone" : "Level \(abs(result.level))")
-    }
-}
-
-/// A metric's level as a number in its colour: a tick in zone, otherwise
-/// 1...10 with an arrow for the side of the zone it is on.
-private struct LevelMeter: View {
-    let level: Int
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.coachingLevel(level).opacity(0.18))
-            if level == 0 {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(Color.coachingLevel(0))
-            } else {
-                Text("\(abs(level))")
-                    .font(.system(size: 15, weight: .bold).monospacedDigit())
-                    .foregroundStyle(Color.coachingLevel(level))
-            }
-        }
-        .frame(width: 34, height: 34)
-    }
-}
 
 // MARK: - Session review
 
@@ -500,31 +58,43 @@ struct SessionCoachingView: View {
                         }
                         .accessibilityIdentifier("session-coaching-progress")
                     }
-                    if !measured.isEmpty {
-                        swingDots(measured, verdicts)
+                    // One card with its own dividers, so the headline, the
+                    // marks and the counts sit closer than list rows do and
+                    // the first theme starts higher.
+                    VStack(alignment: .leading, spacing: Self.summaryGap) {
+                        if !judged.isEmpty {
+                            headline(good: good, judged: judged.count)
+                            Divider()
+                        }
+                        if !measured.isEmpty {
+                            VStack(alignment: .leading, spacing: 4) {
+                                // Shapes, no numerals and no key: a tick,
+                                // "!" amber or "!!" red, a dash.
+                                // Then the swings without a level, and why.
+                                swingDots(measured, verdicts)
+                                if judged.count < reports.count {
+                                    Text(notJudgedTotal(reports))
+                                        .font(.appCaption.monospacedDigit())
+                                        .foregroundStyle(Color.helpText)
+                                        .accessibilityIdentifier("session-coaching-not-judged")
+                                }
+                            }
+                        }
                     }
-                    LabeledContent("Swings measured", value: "\(reports.count) of \(swings.count)")
-                    LabeledContent("Good swings", value: "\(good) of \(judged.count)")
-                    if judged.count < reports.count {
-                        LabeledContent("Not judged (chips, moved camera, unclear)", value: "\(reports.count - judged.count)")
-                    }
-                } footer: {
-                    if !measured.isEmpty {
-                        Text("One dot a swing, in the order hit. Green needed no pointer, amber or red had one, grey wasn't judged. Tap a dot to open the swing.")
-                    }
+                    .padding(.vertical, 2)
                 }
                 if themes.isEmpty, waiting == 0 {
                     Section {
                         Text(judged.count < CoachingFeedback.themeMinimumSwings
                              ? "Not enough measured swings to see a pattern yet."
-                             : "Nothing kept repeating. No single fault showed up on half the swings.")
-                            .foregroundStyle(.secondary)
+                             : "Nothing kept repeating: no fault on half the swings.")
+                            .foregroundStyle(Color.helpText)
                     }
                 }
                 if !themes.isEmpty {
                     // Three is plenty to think about; the rest are weaker.
                     let shown = Array(themes.prefix(3))
-                    Section("What kept happening") {
+                    Section {
                         ForEach(Array(shown.enumerated()), id: \.element.id) { index, theme in
                             VStack(alignment: .leading, spacing: 10) {
                                 themeRow(theme, leads: index == 0)
@@ -536,34 +106,44 @@ struct SessionCoachingView: View {
                             .accessibilityElement(children: .contain)
                             .accessibilityIdentifier("session-theme-\(theme.id)")
                         }
+                    } header: {
+                        SectionHeading("What kept happening")
                     }
                     if shown.count > 1 {
                         Section {
                             links(shown.sorted { ($0.position, $0.id) < ($1.position, $1.id) }, reports)
                         } header: {
-                            Text("How they sit together")
+                            SectionHeading("How they sit together")
                         } footer: {
-                            Text("In swing order. An earlier fault often causes a later one, so the earliest is the one to work on first.")
+                            Text("Listed in swing order. Work on the earliest first.")
                         }
                     }
-                    Section("Swing by swing") {
+                    Section {
                         ForEach(shown) { theme in
                             trend(of: theme, measured, reports)
                         }
+                    } header: {
+                        SectionHeading("Swing by swing")
                     }
                     if themes.count > 3 {
-                        Section("Also seen, weaker") {
+                        Section {
                             ForEach(Array(themes.dropFirst(3))) { theme in
-                                Text("\(theme.text) · \(theme.swings) of \(theme.measured) swings")
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
+                                Text("\(theme.text) · \(CoachingWords.themeShare(theme))")
+                                    .font(.appCaption)
+                                    .foregroundStyle(Color.helpText)
                             }
+                        } header: {
+                            SectionHeading("Also seen, weaker")
                         }
                     }
                 }
             }
+            .sheetContentTop()
             .navigationTitle("Session coaching")
             .navigationBarTitleDisplayMode(.inline)
+            // A bar of its own once the list scrolls, so the title and
+            // Done never sit on the photos.
+            .hardTopScrollEdge()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
@@ -575,66 +155,121 @@ struct SessionCoachingView: View {
                 }
             }
         }
+        .tint(.appAccent)
         // Positions can arrive while the sheet is open.
         .task(id: coachable.map(\.id)) {
             for swing in coachable { store.coachIfNeeded(swing) }
         }
     }
 
+    /// The session in one line at a section heading's size: "7 of 11
+    /// swings good", out of the swings judged (the caption under the
+    /// marks says why any weren't), the swings the coach had nothing to
+    /// say about. Not larger, so "Start here" and its pictures come into
+    /// view.
+    private func headline(good: Int, judged: Int) -> some View {
+        // Proportional digits: a headline number, never a column, so "11"
+        // never reads as "1 1".
+        Text("\(good) of \(judged) swing\(judged == 1 ? "" : "s") good")
+            .font(.appTitle)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("session-coaching-headline")
+    }
+
+
+    /// Between the summary's headline, marks and counts: tight, so the
+    /// summary stays short and the first theme starts higher.
+    private static let summaryGap: CGFloat = 6
+    /// A swing's mark as laid out: 44 points wide, shorter than that, with
+    /// its target grown to 44 points tall, so rows of marks sit closer.
+    private static let dotWidth: CGFloat = 44
+    private static let dotHeight: CGFloat = 32
+
+    /// "1 not judged", and why when every one of them shares the reason:
+    /// "1 not judged · short swing".
+    private func notJudgedTotal(_ reports: [SwingCoachingReport]) -> String {
+        let exclusions = reports.compactMap(\.exclusion)
+        let count = "\(exclusions.count) not judged"
+        guard let reason = exclusions.first, exclusions.allSatisfy({ $0 == reason }) else { return count }
+        return "\(count) · \(CoachingWords.reason(reason))"
+    }
+
+    /// A mark a swing, each a 44 point target, wrapping in the order hit:
+    /// a tick for a good swing, the top finding's level as a glyph in its
+    /// colour ("!" amber a little out, "!!" red well out), a dash not
+    /// judged. No numeral,
+    /// so a swing's mark never disagrees with a theme's word below.
     private func swingDots(_ measured: [SavedSwing], _ verdicts: [CoachingVerdict]) -> some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 22, maximum: 22), spacing: 2)], alignment: .leading, spacing: 2) {
+        FlowLayout(spacing: 0, lineSpacing: 0) {
             ForEach(Array(zip(measured, verdicts).enumerated()), id: \.element.0.id) { index, entry in
                 Button {
                     opened = entry.0.id
                 } label: {
-                    Circle()
-                        .fill(entry.1.colour)
-                        .frame(width: 12, height: 12)
-                        .frame(width: 22, height: 22)
-                        .contentShape(.rect)
+                    badge(entry.1)
+                        .frame(width: Self.dotWidth, height: Self.dotHeight)
+                        .contentShape(.rect.inset(by: -(44 - Self.dotHeight) / 2))
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel("Swing \(index + 1): \(entry.1.headline)")
                 .accessibilityIdentifier("session-swing-dot-\(index + 1)")
             }
         }
-        .padding(.vertical, 2)
+        .padding(.horizontal, -9)
+    }
+
+    private func badge(_ verdict: CoachingVerdict) -> CoachingLevelBadge {
+        switch verdict {
+        case .notJudged: CoachingLevelBadge(level: 0, neutral: true, size: CoachingLevelBadge.markSize)
+        case .good, .better: CoachingLevelBadge(level: 0, size: CoachingLevelBadge.markSize)
+        case .focus(let finding): CoachingLevelBadge(level: finding.level, size: CoachingLevelBadge.markSize)
+        }
     }
 
     private func themeRow(_ theme: CoachingTheme, leads: Bool) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            LevelMeter(level: theme.medianLevel)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(theme.text).font(.subheadline.weight(.semibold))
-                Text("\(theme.swings) of \(theme.measured) swings · P\(theme.position) \(SwingPosition.names[theme.position - 1].lowercased())")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                if CoachingMetricDefinition.definition(theme.metric).dependsOnCamera {
-                    Text("A club reading: it shifts with where the camera stands. Check it with the camera on your hand line.")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
+            VStack(alignment: .leading, spacing: 4) {
+                // Above the title in the secondary style, so it reads as
+                // where to begin, never as a level.
                 if leads {
                     Text("Start here")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(Color.coachingLevel(1))
+                        .font(.appCaptionLabel)
+                        .foregroundStyle(Color.helpText)
+                        .accessibilityIdentifier("session-start-here")
                 }
+                // The lead finding a heading size up, so it, not the
+                // tally's key, is the first thing read after the count.
+                Text(theme.text).font(leads ? .appTitle : .appLabel)
+                // The typical level as its word tier: "Typically well out".
+                CoachingLevelPill(level: theme.medianLevel, lead: "Typically")
+                // One caption: how many of the measured swings, and which
+                // check. A club check's camera caveat is in All checks,
+                // with its words.
+                Text(CoachingWords.themeShare(theme))
+                    .font(.appCaption)
+                    .foregroundStyle(Color.helpText)
             }
         }
     }
 
     /// The lead theme on the swing that shows it most and on the best one
-    /// that doesn't.
+    /// that doesn't, both cut to the same golfer-centred region (body,
+    /// club and ball, from everything drawn on either swing) in the same
+    /// 4:5 shape, so the drawing is large and the two compare like for
+    /// like.
     @ViewBuilder
     private func examples(of theme: CoachingTheme, _ measured: [SavedSwing], _ reports: [SwingCoachingReport]) -> some View {
         let picked = CoachingFeedback.examples(of: theme, in: reports)
+        let shown = [picked.most, picked.best].compactMap { $0 }.map { reports[$0] }
+        let region = CoachingFrameView.golferRegion(shown, pictured: shown.compactMap { report in
+            CoachingFeedback.metric(showing: theme, in: report).flatMap(report.metric)
+        })
         if picked.most != nil || picked.best != nil {
             HStack(alignment: .top, spacing: 10) {
                 if let most = picked.most {
-                    example("Shows it most", most, theme, measured, reports)
+                    example("Shows it most", most, theme, measured, reports, region: region)
                 }
                 if let best = picked.best {
-                    example("Your best here", best, theme, measured, reports)
+                    example("Your best here", best, theme, measured, reports, region: region)
                 }
             }
         }
@@ -642,20 +277,25 @@ struct SessionCoachingView: View {
 
     @ViewBuilder
     private func example(_ title: String, _ index: Int, _ theme: CoachingTheme,
-                         _ measured: [SavedSwing], _ reports: [SwingCoachingReport]) -> some View {
+                         _ measured: [SavedSwing], _ reports: [SwingCoachingReport], region: CGRect?) -> some View {
         let report = reports[index]
         if let metric = CoachingFeedback.metric(showing: theme, in: report), let result = report.metric(metric) {
             Button {
                 opened = measured[index].id
             } label: {
                 VStack(alignment: .leading, spacing: 5) {
-                    CoachingFrameView(swing: measured[index], report: report, metric: metric)
-                        .aspectRatio(9.0 / 16.0, contentMode: .fit)
+                    // What the picture is, above it, so it is read first.
+                    Text(title).font(.appCaptionLabel)
+                    CoachingFrameView(swing: measured[index], report: report, metric: metric,
+                                      cropsToGolfer: true, region: region)
+                        .aspectRatio(CoachingPreview.golferAspect, contentMode: .fit)
                         .clipShape(.rect(cornerRadius: 10))
-                    Text(title).font(.caption.weight(.semibold))
-                    Text("Swing \(index + 1) · \(result.level == 0 ? "in zone" : "level \(abs(result.level))") · \(result.definition.unit.format(result.value))")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                    // The swing only: the picture's own colours carry
+                    // its level, and the numbers are in All checks.
+                    Text("Swing \(index + 1)")
+                        .font(.appCaption.monospacedDigit())
+                        .foregroundStyle(Color.helpText)
+                        .accessibilityLabel("Swing \(index + 1), \(CoachingSeverity(level: result.level).word.lowercased())")
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -669,24 +309,27 @@ struct SessionCoachingView: View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(Array(ordered.enumerated()), id: \.element.id) { index, theme in
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Text("P\(theme.position)")
-                        .font(.caption.weight(.bold).monospacedDigit())
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(Color.coachingLevel(theme.medianLevel).opacity(0.22), in: .rect(cornerRadius: 6))
+                    PositionTag(position: theme.position)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(theme.text).font(.subheadline.weight(.semibold))
-                        Text("\(theme.swings) of \(theme.measured) swings")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        Text(theme.text).font(.appLabel)
+                        Text(CoachingWords.themeShare(theme, namingPosition: false))
+                            .font(.appCaption)
+                            .foregroundStyle(Color.helpText)
                     }
                 }
                 if index + 1 < ordered.count {
                     let both = CoachingFeedback.swingsShowingBoth(theme, ordered[index + 1], in: reports)
-                    Label("Both on \(both) swing\(both == 1 ? "" : "s")", systemImage: "arrow.down")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.leading, 4)
+                    // A plain connector, no arrowhead: seen together is
+                    // not one causing the other.
+                    HStack(spacing: 10) {
+                        Capsule()
+                            .fill(Color.helpText.opacity(0.6))
+                            .frame(width: 2, height: 18)
+                            .frame(width: 28)
+                        Text("Seen together on \(both) swing\(both == 1 ? "" : "s")")
+                            .font(.appCaption)
+                            .foregroundStyle(Color.helpText)
+                    }
                 }
             }
         }
@@ -705,16 +348,16 @@ struct SessionCoachingView: View {
         }
         return VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
-                Text(definition.title).font(.subheadline.weight(.semibold))
+                Text(definition.title).font(.appLabel)
                 Spacer()
-                Text("green band \(definition.unit.format(definition.zone.lowerBound)) to \(definition.unit.format(definition.zone.upperBound))")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                Text("Good: \(definition.unit.format(definition.zone.lowerBound)) to \(definition.unit.format(definition.zone.upperBound))")
+                    .font(.appCaption)
+                    .foregroundStyle(Color.helpText)
             }
             if points.count < 2 {
                 Text("Too few swings to show a trend.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.appCaption)
+                    .foregroundStyle(Color.helpText)
             } else {
                 CoachingTrendChart(points: points, zone: definition.zone)
                     .frame(height: 96)
@@ -723,8 +366,8 @@ struct SessionCoachingView: View {
                     Spacer()
                     Text("Last swing")
                 }
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(.appCaption)
+                .foregroundStyle(Color.helpText)
             }
         }
         .padding(.vertical, 2)
@@ -734,7 +377,8 @@ struct SessionCoachingView: View {
 }
 
 /// One metric across a session: a dot a swing, left to right in the order
-/// hit, over the green band of its zone.
+/// hit, over its good zone as a green band, named "Good" in words on the
+/// band's own side of the chart so the better place reads without a key.
 struct CoachingTrendChart: View {
     struct Point: Identifiable {
         /// The swing's number among the session's measured swings, and
@@ -758,19 +402,26 @@ struct CoachingTrendChart: View {
             func y(_ value: Double) -> CGFloat {
                 size.height * CGFloat(1 - (value - bottom) / (top - bottom))
             }
+            // The better place in words: "Good" in a gutter of its own at
+            // the trailing edge, level with the band, so no dot covers it.
+            let word = context.resolve(Text("Good").font(.appCaptionLabel).foregroundColor(Color.coachingLevelText(0)))
+            let wordSize = word.measure(in: size)
+            let plotWidth = max(size.width - wordSize.width - 10, 1)
             func x(_ point: Point) -> CGFloat {
                 let inset: CGFloat = 6
-                guard point.of > 1 else { return size.width / 2 }
-                return inset + (size.width - 2 * inset) * CGFloat(point.swing - 1) / CGFloat(point.of - 1)
+                guard point.of > 1 else { return plotWidth / 2 }
+                return inset + (plotWidth - 2 * inset) * CGFloat(point.swing - 1) / CGFloat(point.of - 1)
             }
             let band = CGRect(x: 0, y: y(zone.upperBound), width: size.width, height: y(zone.lowerBound) - y(zone.upperBound))
             context.fill(Path(roundedRect: band, cornerRadius: 3), with: .color(Color.coachingLevel(0).opacity(0.2)))
+            let wordY = min(max(band.midY, wordSize.height / 2), size.height - wordSize.height / 2)
+            context.draw(word, at: CGPoint(x: size.width - 4, y: wordY), anchor: .trailing)
             for point in points {
                 let centre = CGPoint(x: x(point), y: y(point.value))
                 let dot = Path(ellipseIn: CGRect(x: centre.x - 3.5, y: centre.y - 3.5, width: 7, height: 7))
                 context.fill(dot, with: .color(Color.coachingLevel(point.level)))
             }
         }
-        .accessibilityLabel("\(points.filter { $0.level == 0 }.count) of \(points.count) swings in the green band")
+        .accessibilityLabel("\(points.filter { $0.level == 0 }.count) of \(points.count) swings in the good zone")
     }
 }

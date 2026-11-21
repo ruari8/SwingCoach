@@ -18,7 +18,7 @@ struct SwingLineControls: View {
         if isDrawing {
             HStack(spacing: 4) {
                 Label("Line", systemImage: "line.diagonal")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(FixedType.railLabel)
                     .foregroundColor(.black)
                     .padding(.horizontal, 11)
                     .frame(height: 36)
@@ -56,11 +56,11 @@ struct SwingLineControls: View {
                     draft = nil
                 } label: {
                     Text("Done")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(FixedType.railLabel)
                         .foregroundColor(.black)
                         .padding(.horizontal, 14)
                         .frame(height: 36)
-                        .background(Capsule().fill(Color.swingPositionAccent))
+                        .background(Capsule().fill(Color.accentLime))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Finish drawing lines")

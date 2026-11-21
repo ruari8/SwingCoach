@@ -31,7 +31,7 @@ struct TrimReviewView: View {
                         .accessibilityLabel("Close trim review")
                     Spacer()
                     Text("\(selectedIndex + 1) of \(clips.count)")
-                        .font(.subheadline.weight(.medium))
+                        .font(.appLabel)
                         .padding(8)
                         .background(Capsule().fill(.black.opacity(0.48)))
                         .accessibilityIdentifier("swing-position")
