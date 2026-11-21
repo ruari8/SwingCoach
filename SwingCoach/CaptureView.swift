@@ -2012,7 +2012,7 @@ struct CaptureView: View {
                 // The camera's picture comes first: the switch stays a plain
                 // Auto / Manual toggle, and Auto's state is one small line in
                 // the bottom corner beside the saved count, a red dot while
-                // it is saving swings, as a recording light would be.
+                // it listens, as a recording light would be.
                 HStack(alignment: .center, spacing: 12) {
                     CaptureStatusLabel(
                         title: autoStatusTitle,
@@ -2054,13 +2054,12 @@ struct CaptureView: View {
     /// height, 44 points. A plain two-way switch; Auto's state is the
     /// status line in the bottom corner.
     private var modeSwitch: some View {
-        AccentSegmentedControl(
+        CaptureModeSwitch(
             titles: CaptureWorkflowMode.allCases.map(\.displayName),
             selectedIndex: Binding(
                 get: { CaptureWorkflowMode.allCases.firstIndex(of: workflowMode) ?? 0 },
                 set: { workflowMode = CaptureWorkflowMode.allCases[$0] }
             ),
-            accentsSelection: false,
             identifier: "capture-mode",
             font: CaptureControl.modeFont
         )
@@ -2123,8 +2122,7 @@ struct CaptureView: View {
             .padding(.leading, 5)
             .padding(.trailing, 12)
             .frame(minHeight: CaptureControl.height)
-            .background(Capsule().fill(.black.opacity(0.45)))
-            .overlay(Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 0.5))
+            .captureCapsuleBackground()
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -2152,7 +2150,8 @@ struct CaptureView: View {
         return pending > 0 ? "Saving \(pending) swing\(pending == 1 ? "" : "s")…" : nil
     }
 
-    /// Red while Auto is saving swings, the usual recording light.
+    /// Red while Auto listens, the usual recording light; orange when it
+    /// needs attention, grey while it is off.
     private var autoStatusIndicator: Color {
         if camera.autoCaptureStatus.lastErrorMessage != nil || camera.liveSwingDetection.status == .unavailable {
             return .orange

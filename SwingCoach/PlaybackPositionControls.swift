@@ -370,7 +370,6 @@ enum PlayerToolSide: String {
 struct PlayerTool: Identifiable {
     enum Icon {
         case system(String)
-        case text(String)
         /// A position's stick-figure pose, as on the pose strip: a line
         /// drawing, the same weight as the rail's outline symbols.
         case pose(Int)
@@ -423,12 +422,17 @@ struct PlayerToolRail: View {
     /// it goes.
     static let buttonSize: CGFloat = 38
     static let buttonHeight: CGFloat = 46
-    /// The tools' capsule: as wide as the longest caption a tool can
-    /// carry, with `captionInset` either side. Captions are kept short
-    /// ("P1–P10", not "Positions") so the rail stays narrow over the video.
+    /// Every caption a tool shows under its icon. The Speed tool shows
+    /// its rate, so its captions are the rates; Positions and Full screen
+    /// carry shorter captions than their names, to keep the rail narrow
+    /// over the video. A tool with a new caption adds it here.
+    static let captions = ["Info", "0.25x", "0.5x", "0.75x", "1x", "Real", "Draw", "P1–P10",
+                           "Expand", "Layers", "Delete"]
+    /// The tools' capsule: as wide as the longest of `captions` in
+    /// `FixedType.railCaption`, with `captionInset` either side.
     static let width: CGFloat = {
-        let font = UIFont.systemFont(ofSize: 11, weight: .semibold)  // FixedType.railCaption
-        let longest = ["Layers", "Delete", "Expand", "P1–P10", "Speed"]
+        let font = UIFont.systemFont(ofSize: FixedType.railCaptionSize, weight: .semibold)
+        let longest = captions
             .map { ($0 as NSString).size(withAttributes: [.font: font]).width }.max() ?? 40
         return (longest + 2 * captionInset).rounded(.up)
     }()
@@ -718,11 +722,6 @@ private struct RailToolRow: View {
         case .system(let name):
             Image(systemName: name)
                 .font(.system(size: 16, weight: .semibold))
-        case .text(let text):
-            Text(text)
-                .font(FixedType.readout)
-                .lineLimit(1)
-                .fixedSize()
         case .pose(let number):
             let colour: Color = tool.isOn ? .black : tool.isDestructive ? Self.destructiveColour : .white
             SwingPositionGlyph(number: number, figure: colour, club: colour)

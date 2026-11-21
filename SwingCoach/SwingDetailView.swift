@@ -66,15 +66,8 @@ struct SwingDetailView: View {
             }
 
             if !isDrawingLines, !coachingLayers.isCoachsChoice {
-                VStack {
-                    HStack {
-                        CoachingLayersChangedTag(layers: $coachingLayers)
-                        Spacer(minLength: 0)
-                    }
-                    Spacer(minLength: 0)
-                }
-                .padding(.horizontal, 14)
-                .padding(.top, ReviewTopBar.topPadding + ReviewTopBar.railTop)
+                CoachingLayersChangedTag(layers: $coachingLayers)
+                    .underReviewTopBar()
             }
         }
         .swingCoachingOpening(swing: currentSwing, isActive: true, seek: $coachingSeek,
@@ -205,7 +198,7 @@ struct SwingDetailView: View {
                     ))
                 } : nil,
                 stopFocus: { time in coachingStore.focusRange(for: swing, at: time, highlighted: swing.id == currentSwingID ? highlightedMetric : nil) },
-                contentOverlay: { currentTime, _ in
+                contentOverlay: { currentTime in
                     AnyView(
                         ZStack {
                             SwingCoachingOverlay(
@@ -228,8 +221,6 @@ struct SwingDetailView: View {
                     )
                 }
             ) {
-                EmptyView()
-            } overlayAccessory: {
                 EmptyView()
             }
             .environment(\.reviewCornerControlsInNavigation, true)
@@ -276,7 +267,7 @@ struct SwingDetailView: View {
             isDrawing: $isDrawingLines,
             draft: $draftLine
         )
-        .padding(.top, 60)
+        .padding(.top, ReviewTopBar.topPadding + ReviewTopBar.railTop)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 

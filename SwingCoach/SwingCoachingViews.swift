@@ -180,9 +180,10 @@ struct SessionCoachingView: View {
     /// Between the summary's headline, marks and counts: tight, so the
     /// summary stays short and the first theme starts higher.
     private static let summaryGap: CGFloat = 6
-    /// A swing's mark as laid out: 44 points wide, shorter than that, with
-    /// its target grown to 44 points tall, so rows of marks sit closer.
-    private static let dotWidth: CGFloat = 44
+    /// A swing's mark as laid out: the minimum target wide, shorter than
+    /// that, with its target grown to the minimum tall, so rows of marks
+    /// sit closer.
+    private static let dotWidth: CGFloat = HitArea.minimum
     private static let dotHeight: CGFloat = 32
 
     /// "1 not judged", and why when every one of them shares the reason:
@@ -194,11 +195,11 @@ struct SessionCoachingView: View {
         return "\(count) · \(CoachingWords.reason(reason))"
     }
 
-    /// A mark a swing, each a 44 point target, wrapping in the order hit:
-    /// a tick for a good swing, the top finding's level as a glyph in its
-    /// colour ("!" amber a little out, "!!" red well out), a dash not
-    /// judged. No numeral,
-    /// so a swing's mark never disagrees with a theme's word below.
+    /// One mark for each swing, each a 44 point target, wrapping in the
+    /// order hit: a tick for a good swing, the top finding's level as a
+    /// glyph in its colour ("!" amber a little out, "!!" red well out), a
+    /// dash for a swing that isn't judged. A glyph, never a numeral, so a
+    /// swing's mark never disagrees with a theme's word below.
     private func swingDots(_ measured: [SavedSwing], _ verdicts: [CoachingVerdict]) -> some View {
         FlowLayout(spacing: 0, lineSpacing: 0) {
             ForEach(Array(zip(measured, verdicts).enumerated()), id: \.element.0.id) { index, entry in
@@ -207,7 +208,7 @@ struct SessionCoachingView: View {
                 } label: {
                     badge(entry.1)
                         .frame(width: Self.dotWidth, height: Self.dotHeight)
-                        .contentShape(.rect.inset(by: -(44 - Self.dotHeight) / 2))
+                        .contentShape(.rect.inset(by: -(HitArea.minimum - Self.dotHeight) / 2))
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel("Swing \(index + 1): \(entry.1.headline)")
@@ -350,7 +351,7 @@ struct SessionCoachingView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(definition.title).font(.appLabel)
                 Spacer()
-                Text("Good: \(definition.unit.format(definition.zone.lowerBound)) to \(definition.unit.format(definition.zone.upperBound))")
+                Text("Good: \(CoachingWords.zone(definition))")
                     .font(.appCaption)
                     .foregroundStyle(Color.helpText)
             }

@@ -70,10 +70,12 @@ enum FixedType {
         min(1, minimumSize / size)
     }
 
-    /// The tool rail's captions and the timeline's ticks: 11 points, with
-    /// `PlayerToolRail.captionInset` either side, so "Positions" never
+    /// The tool rail's captions and the timeline's ticks: 11 points. The
+    /// rail is as wide as its longest caption (`PlayerToolRail.captions`)
+    /// plus `PlayerToolRail.captionInset` either side, so no caption
     /// touches the rail's edges.
-    static let railCaption = Font.system(size: 11, weight: .semibold)
+    static let railCaptionSize: CGFloat = 11
+    static let railCaption = Font.system(size: railCaptionSize, weight: .semibold)
     /// A label inside a fixed cell: the strip's "P3", "¼ speed", Trim's
     /// detector line.
     static let cellLabel = Font.system(size: 11, weight: .semibold)
@@ -197,9 +199,6 @@ enum CoachingSeverity: Equatable {
         case .wellOut: "exclamationmark.2"
         }
     }
-
-    /// The word mid-sentence, after "Typically": "typically well out".
-    var lowercasedWord: String { word.prefix(1).lowercased() + word.dropFirst() }
 
     /// The level's colour: green, amber, red.
     var colour: Color {
@@ -464,9 +463,15 @@ extension View {
     func captureChip() -> some View {
         padding(.horizontal, CaptureControl.chipPadding)
             .frame(minHeight: CaptureControl.chipHeight)
-            .background(Capsule().fill(.black.opacity(0.45)))
-            .overlay(Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 0.5))
+            .captureCapsuleBackground()
             .minimumHitArea(visible: CGSize(width: HitArea.minimum, height: CaptureControl.chipHeight))
+    }
+
+    /// The dark capsule behind Capture's controls over the camera (the
+    /// menu chips, the saved count).
+    func captureCapsuleBackground() -> some View {
+        background(Capsule().fill(.black.opacity(0.45)))
+            .overlay(Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 0.5))
     }
 }
 
@@ -479,7 +484,7 @@ enum CoachingPreview {
     static let compareAspect: CGFloat = 4.0 / 5.0
     /// The recap card's picture over the camera: as tall as the card,
     /// cut toward the golfer and club, wide enough to read from the
-    /// tripod, with that swing's own badge on its corner.
+    /// tripod, with that swing's number on its corner.
     static let recapPictureWidth: CGFloat = 96
     static let recapPictureMinHeight: CGFloat = 120
     /// The session review's two pictures of its lead theme: the same
@@ -490,15 +495,15 @@ enum CoachingPreview {
 
 // MARK: - Capsule buttons
 
-/// The pair of capsule buttons on a header (Select all beside Review):
-/// one height, so the two read as a pair.
+/// The pair of capsule buttons on a session's header (Select beside
+/// Review): one height, so the two read as a pair.
 enum CapsuleButton {
     static let height: CGFloat = 32
     /// The capsule plus the space above and below it: 44 points to tap.
     static let tapPadding: CGFloat = 6
 }
 
-/// A secondary action beside a primary one ("Select all 12" beside
+/// A secondary action beside a primary one (a session's Select beside
 /// Review): a neutral filled capsule with a hairline edge, so it reads as
 /// a button, never as grey metadata, without competing with the primary
 /// one. 44 points to tap.
@@ -596,7 +601,7 @@ struct PanelCapsuleButtonStyle: ButtonStyle {
 /// rounded slab the 44-point minimum tall. The card's one primary action
 /// (Next, or Play swing on the last step, All checks on a picked check,
 /// Look on the last swing's verdict) is `prominent`: the lime accent with
-/// a dark label, like Review and Auto ready; the rest are a quiet
+/// a dark label, like a session's Review; the rest are a quiet
 /// translucent grey with a white label, so the finding above, not a
 /// white slab, is what the eye lands on.
 struct PanelButtonStyle: ButtonStyle {
@@ -610,14 +615,23 @@ struct PanelButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.appLabel)
-            .foregroundStyle(prominent ? Color.black : Color.white)
-            .padding(.horizontal, fills ? 0 : 16)
-            .frame(maxWidth: fills ? .infinity : nil, minHeight: Self.height)
-            .background(RoundedRectangle(cornerRadius: Self.radius)
-                .fill(prominent ? Color.accentLime : Color.white.opacity(0.16)))
+            .panelButtonSlab(prominent: prominent, fills: fills)
             .opacity(configuration.isPressed ? 0.7 : 1)
             .contentShape(RoundedRectangle(cornerRadius: Self.radius))
+    }
+}
+
+extension View {
+    /// `PanelButtonStyle`'s slab on a label that is not itself a button:
+    /// the "Look" on the last swing's verdict, where the whole card is
+    /// the tap.
+    func panelButtonSlab(prominent: Bool = false, fills: Bool = true) -> some View {
+        font(.appLabel)
+            .foregroundStyle(prominent ? Color.black : Color.white)
+            .padding(.horizontal, fills ? 0 : 16)
+            .frame(maxWidth: fills ? .infinity : nil, minHeight: PanelButtonStyle.height)
+            .background(RoundedRectangle(cornerRadius: PanelButtonStyle.radius)
+                .fill(prominent ? Color.accentLime : Color.white.opacity(0.16)))
     }
 }
 
@@ -656,15 +670,13 @@ struct PlayerChromeCapsuleButtonStyle: ButtonStyle {
 
 // MARK: - Mode switch
 
-/// A segmented switch with its own font and white titles over the camera
-/// (Capture's Auto / Manual); its chosen segment can fill with the accent
-/// (dark text on lime). It stays a system segmented control, so VoiceOver and Voice Control
-/// read it as one.
-struct AccentSegmentedControl: UIViewRepresentable {
+/// Capture's Auto / Manual switch: a system segmented control with its
+/// own font and white titles over the camera, the chosen segment in the
+/// system's grey with a semibold title. It stays a system control, so
+/// VoiceOver and Voice Control read it as one.
+struct CaptureModeSwitch: UIViewRepresentable {
     let titles: [String]
     @Binding var selectedIndex: Int
-    /// Fill the chosen segment with the accent.
-    var accentsSelection: Bool
     var identifier: String
     var font: UIFont = .preferredFont(forTextStyle: .callout)
 
@@ -686,11 +698,8 @@ struct AccentSegmentedControl: UIViewRepresentable {
             control.selectedSegmentIndex = selectedIndex
         }
         let chosen = UIFont.systemFont(ofSize: font.pointSize, weight: .semibold)
-        control.selectedSegmentTintColor = accentsSelection ? UIColor(Color.accentLime) : nil
         control.setTitleTextAttributes([.font: font, .foregroundColor: UIColor.white], for: .normal)
-        control.setTitleTextAttributes([.font: chosen,
-                                        .foregroundColor: accentsSelection ? UIColor.black : UIColor.white],
-                                       for: .selected)
+        control.setTitleTextAttributes([.font: chosen, .foregroundColor: UIColor.white], for: .selected)
     }
 }
 

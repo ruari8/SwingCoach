@@ -14,10 +14,6 @@ private struct ReviewCornerControlsInNavigationKey: EnvironmentKey {
     static let defaultValue = false
 }
 
-private struct ReviewToolRailTrailingTopKey: EnvironmentKey {
-    static let defaultValue: CGFloat? = nil
-}
-
 extension EnvironmentValues {
     var reviewPlaybackControlsPlacement: ReviewPlaybackControlsPlacement {
         get { self[ReviewPlaybackControlsPlacementKey.self] }
@@ -27,13 +23,6 @@ extension EnvironmentValues {
     var reviewCornerControlsInNavigation: Bool {
         get { self[ReviewCornerControlsInNavigationKey.self] }
         set { self[ReviewCornerControlsInNavigationKey.self] = newValue }
-    }
-
-    /// Where a navigation-hosted tool rail starts on the right: under the
-    /// top-right button by default, or 0 to take an empty top-right slot.
-    var reviewToolRailTrailingTop: CGFloat? {
-        get { self[ReviewToolRailTrailingTopKey.self] }
-        set { self[ReviewToolRailTrailingTopKey.self] = newValue }
     }
 }
 
@@ -199,5 +188,15 @@ struct ReviewTopBar: View {
         let ordered = swings.sorted { date($0) < date($1) }
         guard let index = ordered.firstIndex(where: { key($0) == id }) else { return nil }
         return "Swing \(index + 1) of \(swings.count)"
+    }
+}
+
+extension View {
+    /// Pins a tag to the review screen's leading edge, one gap under the
+    /// top row, where the tool rail starts on the other side.
+    func underReviewTopBar() -> some View {
+        frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .padding(.horizontal, 14)
+            .padding(.top, ReviewTopBar.topPadding + ReviewTopBar.railTop)
     }
 }

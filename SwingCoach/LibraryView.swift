@@ -1214,7 +1214,7 @@ private struct LibraryTilePicture: View {
 
 // MARK: - Playback View
 
-struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
+struct PlaybackChromeView<Header: View>: View {
     let playerItem: AVPlayerItem
     let initialPlaybackRate: Float
     let playbackEnabled: Bool
@@ -1253,12 +1253,10 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
     let stopFocus: ((Double) -> ClosedRange<Double>?)?
 
     private let header: Header
-    private let overlayAccessory: OverlayAccessory
-    private let contentOverlay: (CMTime, CGSize) -> AnyView
+    private let contentOverlay: (CMTime) -> AnyView
 
     @Environment(\.reviewPlaybackControlsPlacement) private var reviewControlsPlacement
     @Environment(\.reviewCornerControlsInNavigation) private var cornerControlsInNavigation
-    @Environment(\.reviewToolRailTrailingTop) private var toolRailTrailingTop
 
     @State private var player: AVPlayer?
     @State private var isPlaying = false
@@ -1316,9 +1314,8 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         walkthroughStops: [PlayerWalkthroughStop] = [],
         bottomPanel: ((PlayerPanelContext) -> AnyView)? = nil,
         stopFocus: ((Double) -> ClosedRange<Double>?)? = nil,
-        contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
-        @ViewBuilder header: () -> Header,
-        @ViewBuilder overlayAccessory: () -> OverlayAccessory
+        contentOverlay: @escaping (CMTime) -> AnyView = { _ in AnyView(EmptyView()) },
+        @ViewBuilder header: () -> Header
     ) {
         self.playerItem = playerItem
         self.initialPlaybackRate = initialPlaybackRate
@@ -1341,7 +1338,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         self.bottomPanel = bottomPanel
         self.stopFocus = stopFocus
         self.header = header()
-        self.overlayAccessory = overlayAccessory()
         self.contentOverlay = contentOverlay
         _playbackSpeed = State(initialValue: max(0.1, initialPlaybackRate))
     }
@@ -1359,7 +1355,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         .preference(
             key: ReviewPlaybackCornerControlsKey.self,
             value: cornerControlsInNavigation && reviewControlsPlacement != .otherPage && !isDrawing
-                ? AnyView(toolRail(trailingTop: toolRailTrailingTop ?? navigationToolRailTop,
+                ? AnyView(toolRail(trailingTop: navigationToolRailTop,
                                    leadingTop: navigationToolRailTop)) : nil
         )
         .onAppear {
@@ -1422,7 +1418,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 // That frame starts above the top row (and higher still
                 // when lifted), so the overlay is told where the row ends.
                 fillLayer(
-                    contentOverlay(currentTime, geometry.size)
+                    contentOverlay(currentTime)
                         .environment(\.playerIsPlaying, isPlaying)
                         .environment(\.playerPanelIsShown, controlsVisible && bottomPanel != nil && !isDrawing)
                         .environment(\.playerTopRowBottom,
@@ -1491,12 +1487,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             let timelineWidth = max(geometry.size.width - 28, 1)
             let topControlPadding = max(12, geometry.safeAreaInsets.top + 8)
             let bottomControlPadding = max(12, geometry.safeAreaInsets.bottom + 12)
-            // Auto's delete accessory sits above the timeline when Lock uses
-            // the bottom-right transport slot.
-            let accessoryBottomPadding = max(34, geometry.safeAreaInsets.bottom + 34)
-                + (controlsLocked == nil ? 0 : 80)
-                + (visiblePositions == nil ? 0 : positionStripLift(bottomControlPadding: bottomControlPadding))
-
             ZStack {
                 if controlsVisible {
                     chromeGradients
@@ -1567,21 +1557,10 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                             .padding(.top, topControlPadding)
                             .transition(.opacity)
                     }
-
-                    VStack {
-                        Spacer()
-
-                        HStack {
-                            Spacer()
-                            overlayAccessory
-                        }
-                        .padding(.trailing, 12)
-                        .padding(.bottom, accessoryBottomPadding)
-                    }
                 }
             }
             // The strip appears when paging to a swing with positions, or when
-            // Auto's positions land: ease the controls, accessory and gradient.
+            // Auto's positions land: ease the controls and gradient.
             .animation(.easeInOut(duration: 0.2), value: visiblePositions == nil)
         }
     }
@@ -1659,8 +1638,10 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         }
     }
 
-    /// The transport row's right slot: the padlock button.
-    private static var lockSlotWidth: CGFloat { 64 }
+    /// The transport row's right slot: the padlock button's tap target.
+    private static var lockSlotWidth: CGFloat { HitArea.minimum }
+    /// The padlock's drawn circle, the size of the transport buttons.
+    private static var lockCircleSize: CGFloat { transportButtonSize }
 
     /// The step-back, play and step-forward buttons, centred in the row.
     private static var transportButtonSize: CGFloat { 40 }
@@ -1745,21 +1726,20 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 Button {
                     setLocked(!isLocked)
                 } label: {
-                    // A bare padlock: the glyph is familiar, and a
-                    // caption under it only added clutter.
+                    // A bare padlock, with no caption: the glyph is
+                    // familiar, and VoiceOver reads the button's label.
                     Image(systemName: isLocked ? "lock.fill" : "lock.open")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundColor(isLocked ? .black : .white)
-                        .frame(width: 40, height: 40)
+                        .frame(width: Self.lockCircleSize, height: Self.lockCircleSize)
                         .background(Circle().fill(isLocked ? Color.accentLime : PlayerChrome.fill))
                         .overlay(Circle().strokeBorder(isLocked ? Color.clear : PlayerChrome.edge, lineWidth: 1))
-                        .frame(width: 44, height: 44)
+                        .frame(width: HitArea.minimum, height: HitArea.minimum)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(isLocked ? "Unlock controls" : "Keep controls on screen")
                 .accessibilityInputLabels(isLocked ? ["Unlock", "Unlock controls"] : ["Lock", "Lock controls"])
-                .frame(width: Self.lockSlotWidth, alignment: .trailing)
             } else {
                 Color.clear.frame(width: Self.lockSlotWidth, height: 1)
             }
@@ -1791,11 +1771,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         max(8, bottomControlPadding - 16)
     }
 
-    /// How far the strip raises the timeline and transport row.
-    private func positionStripLift(bottomControlPadding: CGFloat) -> CGFloat {
-        positionStripBottomPadding(bottomControlPadding: bottomControlPadding) + Self.positionStripHeight + 8
-            - (bottomControlPadding + 10)
-    }
     /// Hosted by the review screen, the rail starts one gap under its corner
     /// buttons (the star, or Done when docked left).
     private var navigationToolRailTop: CGFloat { ReviewTopBar.railTop }
@@ -1934,7 +1909,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         ZStack(alignment: .topLeading) {
             Color.black.ignoresSafeArea()
 
-            PlaybackChromeView<EmptyView, EmptyView>(
+            PlaybackChromeView<EmptyView>(
                 playerItem: playerItem,
                 initialPlaybackRate: playbackSpeed,
                 playbackEnabled: playbackEnabled,
@@ -1948,8 +1923,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 realTimeRate: realTimeRate,
                 contentOverlay: contentOverlay
             ) {
-                EmptyView()
-            } overlayAccessory: {
                 EmptyView()
             }
 
@@ -2414,39 +2387,6 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             return "0.75x"
         }
         return String(format: "%.2fx", speed)
-    }
-}
-
-extension PlaybackChromeView where OverlayAccessory == EmptyView {
-    init(
-        playerItem: AVPlayerItem,
-        initialPlaybackRate: Float = 1.0,
-        playbackEnabled: Bool = true,
-        showsSpeedControls: Bool = true,
-        startsPlaying: Bool = true,
-        allowsFullscreen: Bool = true,
-        allowsTransportGestures: Bool = true,
-        edgeToEdge: Bool = false,
-        controlsLocked: Binding<Bool>? = nil,
-        infoAction: (() -> Void)? = nil,
-        contentOverlay: @escaping (CMTime, CGSize) -> AnyView = { _, _ in AnyView(EmptyView()) },
-        @ViewBuilder header: () -> Header
-    ) {
-        self.init(
-            playerItem: playerItem,
-            initialPlaybackRate: initialPlaybackRate,
-            playbackEnabled: playbackEnabled,
-            showsSpeedControls: showsSpeedControls,
-            startsPlaying: startsPlaying,
-            allowsFullscreen: allowsFullscreen,
-            allowsTransportGestures: allowsTransportGestures,
-            edgeToEdge: edgeToEdge,
-            controlsLocked: controlsLocked,
-            infoAction: infoAction,
-            contentOverlay: contentOverlay,
-            header: header,
-            overlayAccessory: { EmptyView() }
-        )
     }
 }
 

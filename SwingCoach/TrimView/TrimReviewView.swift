@@ -65,8 +65,6 @@ private struct TrimReviewPage: View {
                                    playbackEnabled: isSelected, startsPlaying: false,
                                    allowsFullscreen: false, edgeToEdge: true) {
                     EmptyView()
-                } overlayAccessory: {
-                    EmptyView()
                 }
             } else if let loadError {
                 ContentUnavailableView("Couldn’t Open Swing", systemImage: "exclamationmark.triangle",

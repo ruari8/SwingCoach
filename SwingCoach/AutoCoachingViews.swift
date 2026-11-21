@@ -146,11 +146,7 @@ struct AutoCoachingPanel: View {
                 // The card's primary action, drawn as the panel's accent
                 // button; the whole card is the tap.
                 Text("Look")
-                    .font(.appLabel)
-                    .foregroundStyle(.black)
-                    .padding(.horizontal, 16)
-                    .frame(minHeight: PanelButtonStyle.height)
-                    .background(RoundedRectangle(cornerRadius: PanelButtonStyle.radius).fill(Color.accentLime))
+                    .panelButtonSlab(prominent: true, fills: false)
             }
             .foregroundStyle(.white)
             .solidPanelBackground()
@@ -556,8 +552,8 @@ struct CoachingCompareView: View {
         }
     }
 
-    /// The colours the tiles draw their swing in, so the legend's "This
-    /// swing" shows each of them, not only the first swing's.
+    /// The colours the tiles draw their swing in, so the legend's "You"
+    /// shows each of them, not only the first swing's.
     private var subjectColours: [Color] {
         var colours: [Color] = []
         for entry in swings {
@@ -611,7 +607,7 @@ struct CoachingCompareView: View {
                 .aspectRatio(CoachingPreview.compareAspect, contentMode: .fit)
                 .clipShape(.rect(cornerRadius: 12))
                 HStack(spacing: 6) {
-                    // The same badge as the swing's picture on the recap.
+                    // The shared level badge for this swing on the theme.
                     showing.badge(size: 20)
                     Text("Swing \(number)").font(.appLabel)
                         .fixedSize()

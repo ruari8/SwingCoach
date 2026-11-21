@@ -18,7 +18,7 @@ import UIKit
 
 // MARK: - Which drawings are on
 
-/// What the player draws over a swing, chosen with the player's Drawings
+/// What the player draws over a swing, chosen with the player's Layers
 /// tool. It lasts for one review and covers every swing in it; the video
 /// says when it differs from the coach's choice.
 struct CoachingLayers: Equatable {
@@ -599,11 +599,12 @@ struct CoachingTrailLayer: View {
 }
 
 /// Coaching over the playing video. Paused on a step's frame, that step's
-/// drawing builds up: address, then the zone, then the swing, each with a
-/// tag of its number on the drawing. Playing, each step's drawing holds,
-/// faded, from its frame until the next step's, under the club's path.
-/// Paused anywhere else, only checks measured on that frame are drawn,
-/// and only with "Every check at this frame" on.
+/// drawing builds up: address, then the zone, then the swing, then a tag
+/// with the check's name unless the card under the video names it.
+/// Playing, each step's drawing holds, faded, from its frame until the
+/// next step's, under the club's path. Paused anywhere else, only checks
+/// measured on that frame are drawn, and only with "Show all drawings
+/// here" on.
 struct SwingCoachingOverlay: View {
     let report: SwingCoachingReport?
     let steps: [CoachingStep]
@@ -636,8 +637,8 @@ struct SwingCoachingOverlay: View {
     }
 
     /// A step draws only its own finding, so the eye goes to one place on
-    /// the body; the checks supporting it are drawn only with "Every check
-    /// on the frame".
+    /// the body; the checks supporting it are drawn only with "Show all
+    /// drawings here".
     private func leadOnly(_ shown: inout Shown) {
         guard let lead = shown.results.first else { return }
         shown.results = [lead]
@@ -907,10 +908,8 @@ struct CoachingLevelBadge: View {
 
 /// A club reading's caveat, the one wording everywhere
 /// (`CoachingWords.cameraCaveat`), with a camera glyph so it reads as a
-/// note on the reading, never as part of its level. On the player it is
-/// near-white on the dark panel; on lists and sheets the help grey.
+/// note on the reading, never as part of its level, in the help grey.
 struct CoachingCameraCaveat: View {
-    var onPlayer = false
     /// Adds what to do about it, where there is room (All checks).
     var advice = false
 
@@ -923,7 +922,7 @@ struct CoachingCameraCaveat: View {
         }
         .labelStyle(CaveatLabelStyle())
         .font(.appCaption)
-        .foregroundStyle(onPlayer ? PlayerChrome.secondaryText : Color.helpText)
+        .foregroundStyle(Color.helpText)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("coaching-camera-caveat")
     }
@@ -1066,9 +1065,10 @@ struct CoachingLevelPill: View {
 }
 
 /// The card under the video that walks through a swing's coaching. Paused
-/// on a step it shows where in the swing, the one sentence, the numbers,
-/// what the drawing's colours mean, and Back / Play / Next. Anywhere else
-/// it folds to one line that brings the walkthrough back.
+/// on a step it shows where in the swing, which finding of how many, the
+/// one sentence with its level badge, All checks, and Back / Play / Next.
+/// The numbers and the key to the drawing's colours are in All checks.
+/// Anywhere else it folds to one line that brings the walkthrough back.
 struct SwingCoachingPanel: View {
     let swing: SavedSwing
     let context: PlayerPanelContext
@@ -1478,7 +1478,7 @@ struct SwingCoachingPanel: View {
     /// rounded edge.
     private static let foldedPadding: CGFloat = 10
     /// The card's buttons: the 44 pt minimum, no taller.
-    private static let buttonHeight: CGFloat = 44
+    private static let buttonHeight: CGFloat = HitArea.minimum
 
     // MARK: Actions
 
@@ -1567,9 +1567,6 @@ struct CoachingKeyGlyph: View {
 /// row or the drawing can show is keyed. The verdict badges need no key:
 /// a tick, "!" and "!!" carry their meaning, and a word sits beside them.
 struct CoachingLegend: View {
-    /// What the line covers, leading the line in the caption label style
-    /// ("Each swing" on the session review).
-    var title: String? = nil
     /// The drawing keyed: its parts come from the first result's shapes.
     var results: [CoachingMetricResult] = []
     /// Several swings side by side: every colour their lines are drawn
@@ -1577,8 +1574,6 @@ struct CoachingLegend: View {
     var subjectColours: [Color]? = nil
     /// The swing isn't judged: its line is drawn grey.
     var neutral = false
-    /// Adds the club readings' camera caveat at the end of the line.
-    var cameraCaveat = false
     /// Keys only what the pictures beside it show the way the key draws
     /// it (the recap's comparison): You, the zone, and Address only where
     /// it is the dashed ring round the head. The full key and the camera
@@ -1596,12 +1591,6 @@ struct CoachingLegend: View {
     var body: some View {
         let roles = keyedRoles
         FlowLayout(spacing: 12, lineSpacing: 4) {
-            if let title {
-                Text(title)
-                    .font(.appCaptionLabel)
-                    .foregroundStyle(Color.sectionHeading)
-                    .fixedSize()
-            }
             if trackKey {
                 entry(CoachingKeyGlyph(role: .you, colours: [.coachingLevel(0), .coachingLevel(1),
                                                              .coachingLevel(CoachingSeverity.wellOutFrom)]), "You")
@@ -1622,9 +1611,6 @@ struct CoachingLegend: View {
             }
             if roles.contains(.reference) {
                 entry(CoachingKeyGlyph(role: .address), "Address")
-            }
-            if cameraCaveat {
-                CoachingCameraCaveat()
             }
         }
         .font(.appCaption)
@@ -1667,7 +1653,6 @@ struct CoachingLegend: View {
                                                                     : "the green shading is the good zone")
         }
         if roles.contains(.reference) { parts.append("white is where you were at address") }
-        if cameraCaveat { parts.append(CoachingWords.cameraCaveat) }
         return "Key: " + parts.joined(separator: ", ")
     }
 }
@@ -1813,9 +1798,9 @@ struct CoachingLayersChangedTag: View {
                     .font(.appLabel)
                     .foregroundStyle(.black)
                     .padding(.horizontal, 12)
-                    .frame(minHeight: 32)
+                    .frame(minHeight: CapsuleButton.height)
                     .background(Capsule().fill(Color.white))
-                    .padding(.vertical, 6)
+                    .padding(.vertical, CapsuleButton.tapPadding)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -1825,8 +1810,8 @@ struct CoachingLayersChangedTag: View {
         .foregroundStyle(.white)
         .padding(.leading, 12)
         .padding(.trailing, 6)
-        .frame(minHeight: 44)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color(white: 0.07).opacity(0.88)))
+        .frame(minHeight: HitArea.minimum)
+        .background(RoundedRectangle(cornerRadius: 12).fill(PlayerChrome.panel))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("coaching-layers-custom")
     }

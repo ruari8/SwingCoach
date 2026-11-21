@@ -77,15 +77,8 @@ struct AutoSwingReviewView: View {
             reviewToolbar
 
             if !isDrawingLines, !coachingLayers.isCoachsChoice {
-                VStack {
-                    HStack {
-                        CoachingLayersChangedTag(layers: $coachingLayers)
-                        Spacer(minLength: 0)
-                    }
-                    Spacer(minLength: 0)
-                }
-                .padding(.horizontal, 14)
-                .padding(.top, ReviewTopBar.topPadding + ReviewTopBar.railTop)
+                CoachingLayersChangedTag(layers: $coachingLayers)
+                    .underReviewTopBar()
             }
         }
         .sheet(isPresented: $showsInfo) {
@@ -261,7 +254,7 @@ private struct AutoSwingReviewPage: View {
                         ))
                     } : nil,
                     stopFocus: { time in coachingStore.focusRange(for: librarySwing, at: time, highlighted: isSelected ? highlightedMetric : nil) },
-                    contentOverlay: { currentTime, _ in
+                    contentOverlay: { currentTime in
                         AnyView(ZStack {
                             SwingCoachingOverlay(
                                 report: coachingStore.report(for: librarySwing),
@@ -282,8 +275,6 @@ private struct AutoSwingReviewPage: View {
                         })
                     }
                 ) {
-                    EmptyView()
-                } overlayAccessory: {
                     EmptyView()
                 }
                 // The review screen hosts the rail, under the star.
