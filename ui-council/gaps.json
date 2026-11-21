@@ -1,0 +1,101 @@
+{
+ "source": "GPT Sol 6.2, round 15 (build 221e3d6)",
+ "issues": [
+  {
+   "rank": 1,
+   "screen": "14-auto-camera-dark.png",
+   "element": "Auto ready segment",
+   "metric": "accessibility",
+   "problem": "The lime fill is easy to spot, but the word Ready is about the same size as the frame-rate and recap text. From the tripod it will be easier to see that Auto is selected than to read its current state.",
+   "fix": "Give Ready more size and weight inside the existing toggle and reduce the emphasis of the frame-rate chip."
+  },
+  {
+   "rank": 2,
+   "screen": "05-player-open-dark.png",
+   "element": "P1–P10 position rail",
+   "metric": "accessibility",
+   "problem": "Ten tightly packed positions leave less than 44 pt per column on this phone. The small verdict badges also sit close to adjacent positions.",
+   "fix": "Give each position a 44 pt hit area and let the existing rail scroll horizontally when needed, keeping the selected position in view."
+  },
+  {
+   "rank": 3,
+   "screen": "11-auto-recap-dark.png",
+   "element": "Recap: 5 chip",
+   "metric": "clarity",
+   "problem": "The 5 can read as a current swing count, especially beside Swing 5, Compare last 5, and 12 saved. The chip also gives little indication that it opens a menu.",
+   "fix": "Label the chip Recap with a small chevron and show the selected cadence with the checkmark already in the menu."
+  },
+  {
+   "rank": 4,
+   "screen": "03-session-review-light.png",
+   "element": "Session verdict summary",
+   "metric": "data",
+   "problem": "The headline says 7 of 11 swings good above 12 markers. The explanation for the extra marker is in the smallest line in the card.",
+   "fix": "Use 7 of 11 judged swings good in the headline and retain Short swing as the reason below the markers."
+  },
+  {
+   "rank": 5,
+   "screen": "12-auto-compare-dark.png",
+   "element": "Five-swing thumbnail grid",
+   "metric": "spacing",
+   "problem": "The comparison opens with only four complete tiles. The fifth swing is clipped before its verdict, so the most severe example in this set takes a scroll to identify.",
+   "fix": "Reduce the thumbnail height and row gaps enough to show the fifth verdict at the default text size, preserving the full swing frame within each tile."
+  },
+  {
+   "rank": 6,
+   "screen": "06-player-next-step-dark.png",
+   "element": "Walkthrough progress badge",
+   "metric": "state",
+   "problem": "The small 2/4 badge has no label and shares the screen with Swing 12 of 12 and the P1–P10 rail. These are three different sequences.",
+   "fix": "Change the badge to Step 2 of 4 and keep it beside Halfway back."
+  },
+  {
+   "rank": 7,
+   "screen": "07-all-checks-dark.png",
+   "element": "Shaft check verdict and measurement",
+   "metric": "consistency",
+   "problem": "The previous screen calls the verdict A little out. This sheet calls it Above zone · 3 steps out, introducing a second severity scale beside the numeric range.",
+   "fix": "Reuse A little out as the verdict and keep the direction and amount in the existing measurement line."
+  },
+  {
+   "rank": 8,
+   "screen": "04-session-review-scrolled-dark.png",
+   "element": "Swing by swing takeaway chart",
+   "metric": "data",
+   "problem": "The good band is labelled, but red and yellow are both small round dots. Position shows distance from the band, while severity still depends on distinguishing those hues.",
+   "fix": "Use different marker shapes for the two out-of-zone levels and give both a shared high-contrast outline."
+  },
+  {
+   "rank": 9,
+   "screen": "10-player-address-P1-dark.png",
+   "element": "Folded finding and Address confidence label",
+   "metric": "hierarchy",
+   "problem": "The red impact finding remains the strongest signal after moving to address. The current position and Low confidence sit in small type over the grass, making it easy to read the impact verdict as feedback on the displayed frame.",
+   "fix": "Lead the folded row with Jump to impact finding and give the current position and confidence stronger type on a stable dark backing."
+  },
+  {
+   "rank": 10,
+   "screen": "07-all-checks-dark.png",
+   "element": "Check legend and numeric captions",
+   "metric": "typography",
+   "problem": "The legend and numeric captions use small, muted type. In the shaft row, the unit wraps onto a separate line, making the value and range harder to scan together.",
+   "fix": "Raise the shared caption size and contrast, and keep the unit attached to the values it qualifies."
+  },
+  {
+   "rank": 11,
+   "screen": "01-library-light.png",
+   "element": "Toolbar checkmark and session Select button",
+   "metric": "clarity",
+   "problem": "A checkmark action and a labelled Select action appear together, but their scopes are only implied by placement.",
+   "fix": "Label the session action Select swings to make its scope explicit next to the session date."
+  },
+  {
+   "rank": 12,
+   "screen": "08-drawings-tool-dark.png",
+   "element": "Show all drawings here toggle",
+   "metric": "clarity",
+   "problem": "Here suggests the current swing, but the footer says the setting applies to every swing until review closes. The label also overlaps in meaning with Coach's drawings.",
+   "fix": "Rename the toggle Show in-zone checks and retain the existing footer for its scope."
+  }
+ ]
+}

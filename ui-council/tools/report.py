@@ -160,6 +160,64 @@ def bullet_list(items):
     return "<ul>" + "".join(f"<li>{esc(i)}</li>" for i in items) + "</ul>" if items else "<p>None.</p>"
 
 
+# ---- Why the score rose, and what is still short of 10 --------------------
+
+def last_scored(member):
+    scored = [n for n, r in sorted(rounds.items()) if member in r["members"]]
+    return scored[-1] if scored else None
+
+
+def why_up_table():
+    why = summary.get("why_up", {})
+    start = rounds[min(rounds)]["members"]
+    ends = {m: rounds[last_scored(m)]["members"][m]["swingcoach"] for m in MEMBERS if last_scored(m) is not None}
+    order = sorted((k for k in K if k != "overall"), key=lambda k: -(ends["sol"][k] - start["sol"]["swingcoach"][k])) + ["overall"]
+    head = "<tr><th>Metric</th>" + "".join(
+        f"<th class=num>{esc(MEMBERS[m].split()[0])}<br><span class=sub>r0 → r{last_scored(m)}</span></th>" for m in ends) + "<th>What drove it</th></tr>"
+    rows = []
+    for k in order:
+        cells = ""
+        for m, e in ends.items():
+            a, b = start[m]["swingcoach"][k], e[k]
+            cells += f"<td class=num>{a:.1f} → <b>{b:.1f}</b><br><span class=gain>+{b - a:.1f}</span></td>"
+        rows.append(f"<tr><td><b>{esc(NAMES[k])}</b></td>{cells}<td class=why>{esc(why.get(k, ''))}</td></tr>")
+    return f"<div class=scroll><table class=whyt><thead>{head}</thead><tbody>{''.join(rows)}</tbody></table></div>"
+
+
+def gaps_list():
+    path = root / "gaps.json"
+    if not path.exists():
+        return ""
+    g = json.loads(path.read_text())
+    items = "".join(
+        f"<li><span class=tag>{esc(NAMES.get(i['metric'], i['metric']))}</span> <b>{esc(i['element'])}</b> "
+        f"<span class=who>({esc(i['screen'].replace('.png', ''))})</span><br>{esc(i['problem'])}<br>"
+        f"<span class=fix>Suggested fix: {esc(i['fix'])}</span></li>" for i in g["issues"])
+    return f"<p class=lede>Every issue {esc(g['source'])} still listed, most important first.</p><ol class=gaps>{items}</ol>"
+
+
+def reference_section():
+    rows = []
+    for n, r in sorted(rounds.items()):
+        cells = "".join(
+            (f"<td class=num>{r['members'][m]['sportsbox']['overall']:.1f} / {r['members'][m]['onform']['overall']:.1f}</td>"
+             if m in r["members"] else "<td></td>") for m in MEMBERS)
+        rows.append(f"<tr><td>{n}</td>{cells}</tr>")
+    table = ("<div class=scroll><table><thead><tr><th>Round</th>" + "".join(f"<th class=num>{esc(MEMBERS[m])}</th>" for m in MEMBERS)
+             + "</tr></thead><tbody>" + "".join(rows) + "</tbody></table></div>")
+    shots = []
+    for app in ("sportsbox", "onform"):
+        for src in sorted((root / "references" / app).glob("*.jpg")):
+            t = thumb(src, f"ref-{src.stem}.jpg", width=240)
+            shots.append(f"<img loading=lazy src='{t}' alt='{esc(app)} App Store screenshot'>")
+    return (f"<p class=lede>The reference apps, Sportsbox 3D Golf and Onform, were scored from App Store marketing screenshots "
+            f"(below), the same images every round. Nobody used either app. The scores still moved from round to round, so "
+            f"any gap under about half a point is noise. Sportsbox / Onform overall, by round:</p>{table}"
+            f"<p class=lede>A sound setup would freeze each member's round 0 reference scores. Measured that way, only Sol's "
+            f"latest 8.1 clears both apps (7.4 / 7.7), and that rests on one model reading marketing images.</p>"
+            f"<div class=refs>{''.join(shots)}</div>")
+
+
 first, last = rounds[min(rounds)], rounds[final]
 declined = [d for n in sorted(notes, key=int) for d in notes[n].get("declined", [])]
 start_end = ""
@@ -192,21 +250,41 @@ th{{color:var(--ink2);font-weight:600}} .num{{font-variant-numeric:tabular-nums;
 .pair figure{{margin:0}} .pair img{{width:100%;border-radius:10px;border:1px solid var(--line);display:block}} .pair figcaption{{font-size:12px;color:var(--ink2);margin-top:4px}}
 .callouts{{max-width:820px}} .callouts li{{margin:6px 0}} .who{{color:var(--ink2)}} code{{font-size:13px}}
 .verdict{{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid var(--line);font-weight:600}}
+.toc{{display:flex;flex-wrap:wrap;gap:8px 16px;margin:16px 0 0;font-size:14px}} .toc a{{color:var(--accent);text-decoration:none;font-weight:600}}
+.callout{{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--low);border-radius:10px;padding:4px 18px;max-width:880px}}
+.callout li{{margin:8px 0}} .sub{{font-weight:400;font-size:11px}} .gain{{color:var(--accent);font-size:12px;font-weight:600}}
+table.whyt td.why{{min-width:320px;max-width:520px;color:var(--ink)}} table.whyt td.num{{white-space:nowrap}}
+.structural li,.gaps li{{margin:10px 0;max-width:880px}} .tag{{display:inline-block;font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--ink2)}}
+.fix{{color:var(--ink2)}} .refs{{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px}} .refs img{{height:300px;border-radius:8px;border:1px solid var(--line)}}
 </style><main>
 <h1>SwingCoach UI Council</h1>
 <p class=lede>{esc(summary.get('lede', 'Four models scored the app and two reference apps on a frozen 13-metric rubric, round by round, while the UI was fixed between rounds.'))}</p>
+<nav class=toc><a href="#read">How far to trust this</a><a href="#screens">Before and after</a><a href="#why">Why the score rose</a><a href="#gaps">Why not 10</a><a href="#refs">Reference apps</a><a href="#tables">Score tables</a></nav>
 <h2>Summary</h2>
 <p><span class=verdict>{esc(summary.get('verdict', 'In progress'))}</span></p>
 <ul><li>Rounds: {final} after the baseline.</li><li>Stop reason: {esc(summary.get('stop', 'still running'))}</li></ul>
 <table><thead><tr><th>Member</th><th>Start: lowest metric</th><th>Start: overall</th><th>Latest: lowest metric</th><th>Latest: overall</th></tr></thead><tbody>{start_end}</tbody></table>
-<h2>Scores, round by round</h2>{score_table()}
-<h3>Round 14, the last full council, every metric</h3>{metric_table(14)}<h3>Round {final}, every metric</h3>{metric_table(final)}
-<h2>Each metric, baseline to final</h2>
-<p class=legend><span><i style='background:var(--s1)'></i>SwingCoach</span><span><i style='background:var(--s2)'></i>Sportsbox</span><span><i style='background:var(--s3)'></i>Onform</span><span>GPT Sol 6.2's scores, the one member who scored every round; dashed line at 9.5.</span></p>
-<div class=charts>{''.join(chart(k) for k in K)}</div>
-<h2>Before and after, screen by screen</h2>
-<p class=lede>Before is round 0 (the start of this council); after is round {final}. Numbers on the after image match the notes under it.</p>
+<h2 id=read>How far to trust these scores</h2>
+<div class=callout><ul>{''.join(f'<li>{esc(i)}</li>' for i in summary.get('honest', []))}</ul></div>
+<h2 id=screens>Before and after, screen by screen</h2>
+<p class=lede>Before is round 0, the start of this council. After is round {final}, the build on the PR. The numbers on each after image match the notes under it: what changed, why, and who asked for it.</p>
 {screen_section('shots/r00', f'shots/r{final:02d}', 'council', 'council')}
+<h2 id=why>Why the score rose from the start</h2>
+<p class=lede>Each member's round 0 score next to their last one: round {final} for Sol, round 14 for the others. Every member scored every metric higher. Each row names the changes behind the gain; the screens above show them.</p>
+{why_up_table()}
+<h3>Each metric by round</h3>
+<p class=legend><span><i style='background:var(--s1)'></i>SwingCoach</span><span><i style='background:var(--s2)'></i>Sportsbox</span><span><i style='background:var(--s3)'></i>Onform</span><span>Sol's scores, the one member who scored every round. The dashed line is the 9.5 bar.</span></p>
+<div class=charts>{''.join(chart(k) for k in K)}</div>
+<h2 id=gaps>Why we're still well short of 10</h2>
+<ul class=structural>{''.join(f'<li>{i}</li>' for i in summary.get('gaps_structural', []))}</ul>
+<h3>What a reviewer still flags</h3>
+{gaps_list()}
+<h3>What would close the gap</h3>
+<ol>{''.join(f'<li>{esc(i)}</li>' for i in summary.get('next_steps', []))}</ol>
+<h2 id=refs>The reference apps</h2>
+{reference_section()}
+<h2 id=tables>Scores, round by round</h2>{score_table()}
+<h3>Round 14, the last full council, every metric</h3>{metric_table(14)}<h3>Round {final}, every metric</h3>{metric_table(final)}
 <h2>What the earlier pass did</h2>
 <p class=lede>{esc(summary.get('earlier', 'The coaching walkthrough pass on coaching-player-ux, from d75f001 to 0ebe504.'))}</p>
 {screen_section('shots/pre-pr', 'shots/r00', 'earlier', 'earlier')}
