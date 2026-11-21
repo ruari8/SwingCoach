@@ -386,7 +386,7 @@ extension View {
 
 /// The Library's grid, as in Photos: square tiles with hairline gutters,
 /// pinched between a few column counts.
-enum LibraryGrid {
+nonisolated enum LibraryGrid {
     /// Between tiles, across and down.
     static let gutter: CGFloat = 2
     /// Under each group's tiles, before the next group's header.
@@ -397,8 +397,8 @@ enum LibraryGrid {
     /// The remembered column count, in user defaults.
     static let columnsKey = "library.gridColumns"
     /// The biggest a tile gets: two columns on the widest iPhone (440
-    /// points). Thumbnails are made at this size times the screen scale,
-    /// so they stay sharp at every column count.
+    /// points). A tile's picture is made at the tile's own size times
+    /// the screen scale, and never above this (`LibraryTilePictures`).
     static let largestTile: CGFloat = 220
     /// Where a portrait clip's square thumbnail is cut, from 0 (its top)
     /// to 1 (its bottom): above the middle, so a down-the-line golfer's

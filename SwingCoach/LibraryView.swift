@@ -823,13 +823,7 @@ struct LibraryView: View {
         return Color(.secondarySystemFill)
             .aspectRatio(1, contentMode: .fit)
             .overlay {
-                if let thumbnail = swing.thumbnail {
-                    Image(uiImage: thumbnail)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    ProgressView()
-                }
+                LibraryTilePicture(swing: swing)
             }
             .clipped()
             .overlay(alignment: .bottom) {
@@ -1163,6 +1157,48 @@ struct LibraryView: View {
     private func formatDuration(_ seconds: Double) -> String {
         let secs = Int(seconds)
         return "\(secs)s"
+    }
+}
+
+// MARK: - Tile picture
+
+/// A library tile's picture. It shows the swing's small placeholder, then
+/// the picture made for the tile's own size (`LibraryTilePictures`). A
+/// tile scrolled back on screen reads the cache as it is drawn, so it
+/// never shows the placeholder again while its picture is still held.
+private struct LibraryTilePicture: View {
+    let swing: SavedSwing
+
+    @Environment(\.displayScale) private var displayScale
+    /// The picture this tile last loaded, kept while a sharper one or a
+    /// new poster frame is read.
+    @State private var loaded: UIImage?
+
+    private struct Request: Equatable {
+        let key: String
+        let pixelSide: CGFloat
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let pixelSide = LibraryTilePictures.pixelSide(points: proxy.size.width, scale: displayScale)
+            Group {
+                if let picture = LibraryTilePictures.shared.cached(for: swing) ?? loaded ?? swing.thumbnail {
+                    Image(uiImage: picture)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    ProgressView()
+                }
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+            .task(id: Request(key: LibraryTilePictures.key(for: swing), pixelSide: pixelSide)) {
+                guard pixelSide > 0,
+                      let picture = await LibraryTilePictures.shared.picture(for: swing, pixelSide: pixelSide)
+                else { return }
+                loaded = picture
+            }
+        }
     }
 }
 

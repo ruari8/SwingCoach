@@ -43,6 +43,9 @@ struct SavedSwing: Identifiable, Codable, Equatable {
     var swingWindow: ClosedRange<Double>? = nil
 
     // Not persisted - loaded at runtime
+    /// A small square stand-in (`SwingPoster.placeholderSide`), made for
+    /// every swing at launch. Library tiles show a sharper picture from
+    /// `LibraryTilePictures` once it has loaded.
     var thumbnail: UIImage?
     var videoURL: URL?
 
@@ -135,51 +138,6 @@ class SwingLibrary: ObservableObject {
     
     private let storageURL: URL
     private let videosDirectory: URL
-    /// A library tile's picture in pixels: the largest tile (two columns)
-    /// times the screen scale, so it is sharp at every column count.
-    static var thumbnailTargetSize: CGSize {
-        let displayScale = UITraitCollection.current.displayScale
-        let scale = displayScale > 0 ? max(displayScale, 2) : 3
-        return CGSize(width: LibraryGrid.largestTile * scale, height: LibraryGrid.largestTile * scale)
-    }
-
-    private var thumbnailTargetSize: CGSize { Self.thumbnailTargetSize }
-
-    /// What a frame is read at before it is cropped: big enough that a
-    /// 16:9 frame either way up still covers the card.
-    private var thumbnailSourceSize: CGSize {
-        let side = max(thumbnailTargetSize.width, thumbnailTargetSize.height) * 16 / 9
-        return CGSize(width: side, height: side)
-    }
-
-    /// The tile's picture cut from a whole frame: a square at the tile's
-    /// largest pixel size, never scaled up. A portrait clip is cut nearer
-    /// its top than its middle (`LibraryGrid.thumbnailFocus`), so the
-    /// golfer's head and body show rather than the feet and the mat.
-    static func cardThumbnail(from image: UIImage) -> UIImage {
-        let target = thumbnailTargetSize
-        let source = CGSize(width: image.size.width * image.scale, height: image.size.height * image.scale)
-        guard source.width > 0, source.height > 0, target.width > 0, target.height > 0 else { return image }
-        let aspect = target.width / target.height
-        var crop = CGRect(origin: .zero, size: source)
-        if source.width / source.height > aspect {
-            crop.size.width = source.height * aspect
-            crop.origin.x = (source.width - crop.width) / 2
-        } else {
-            crop.size.height = source.width / aspect
-            crop.origin.y = (source.height - crop.height) * LibraryGrid.thumbnailFocus
-        }
-        let factor = min(1, target.width / crop.width)
-        let output = CGSize(width: (crop.width * factor).rounded(), height: (crop.height * factor).rounded())
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
-        format.opaque = true
-        return UIGraphicsImageRenderer(size: output, format: format).image { _ in
-            image.draw(in: CGRect(x: -crop.minX * factor, y: -crop.minY * factor,
-                                  width: source.width * factor, height: source.height * factor))
-        }
-    }
-
     static let shared = SwingLibrary()
 
     private init() {
@@ -309,13 +267,13 @@ class SwingLibrary: ObservableObject {
                 sourceTimeScale: sourceTimeScale
             )
             swing.swingWindow = swingWindow
-            swing.thumbnail = initialThumbnail.map(Self.cardThumbnail)
+            swing.thumbnail = initialThumbnail.map { SwingPoster.cropped($0, side: SwingPoster.placeholderSide) }
             // Persist before publishing success or allowing temp-file cleanup.
             let updated = [swing] + swings
             try JSONEncoder().encode(updated).write(to: storageURL, options: .atomic)
             swings = updated
-            // The capture's quick preview is small; read a sharp one from
-            // the saved copy.
+            // The capture's preview is its first frame; read the poster
+            // frame from the saved copy.
             let saved = swing
             Task { await loadLocalThumbnail(for: saved) }
             return swing
@@ -346,7 +304,7 @@ class SwingLibrary: ObservableObject {
             createdAt: Date(),
             notes: notes
         )
-        swing.thumbnail = initialThumbnail.map(Self.cardThumbnail)
+        swing.thumbnail = initialThumbnail.map { SwingPoster.cropped($0, side: SwingPoster.placeholderSide) }
         if let localSourceURL {
             swing.localVideoFilename = storeLocalVideo(from: localSourceURL, swingID: id)
         }
@@ -370,6 +328,7 @@ class SwingLibrary: ObservableObject {
         swings.removeAll { ids.contains($0.id) }
         SwingCoachingStore.shared.removeCoaching(for: Set(removed.map(\.id)))
         for swing in removed {
+            LibraryTilePictures.shared.forget(swing.id)
             if let name = swing.localVideoFilename {
                 try? FileManager.default.removeItem(at: videosDirectory.appendingPathComponent(name))
             }
@@ -386,6 +345,7 @@ class SwingLibrary: ObservableObject {
         // The tile's picture moves to the new impact frame.
         if posterMoved {
             let swing = swings[index]
+            LibraryTilePictures.shared.forget(swing.id)
             Task { await loadLocalThumbnail(for: swing) }
         }
     }
@@ -458,16 +418,18 @@ class SwingLibrary: ObservableObject {
         fetchResult.enumerateObjects { asset, _, _ in
             imageManager.requestImage(
                 for: asset,
-                targetSize: self.thumbnailTargetSize,
+                targetSize: SwingPoster.placeholderRequestSize,
                 contentMode: .aspectFill,
                 options: options
             ) { image, _ in
+                guard let image else { return }
                 Task { @MainActor in
+                    let placeholder = await SwingPoster.croppedOffMain(image, side: SwingPoster.placeholderSide)
                     // Positions may have arrived since the request: the
                     // impact poster wins over Photos' first frame.
                     if let index = self.swings.firstIndex(where: { $0.photoAssetID == asset.localIdentifier }),
                        !self.hasImpactPoster(self.swings[index]) {
-                        self.swings[index].thumbnail = image.map(Self.cardThumbnail)
+                        self.swings[index].thumbnail = placeholder
                     }
                 }
             }
@@ -490,10 +452,11 @@ class SwingLibrary: ObservableObject {
             }
             
             if let image = await requestThumbnailImage(for: asset) {
+                let placeholder = await SwingPoster.croppedOffMain(image, side: SwingPoster.placeholderSide)
                 // Positions can land while Photos is still asked.
                 guard !keepsImpactPoster() else { return }
                 if let index = swings.firstIndex(where: { $0.photoAssetID == photoAssetID }) {
-                    swings[index].thumbnail = Self.cardThumbnail(from: image)
+                    swings[index].thumbnail = placeholder
                 }
                 return
             }
@@ -510,7 +473,7 @@ class SwingLibrary: ObservableObject {
             var didResume = false
             PHImageManager.default().requestImage(
                 for: asset,
-                targetSize: thumbnailTargetSize,
+                targetSize: SwingPoster.placeholderRequestSize,
                 contentMode: .aspectFill,
                 options: options
             ) { image, info in
@@ -578,28 +541,36 @@ class SwingLibrary: ObservableObject {
     
     /// Check if Photos contains the assets we expect (user may have deleted some)
     func validateAssets() {
-        // Every Photos-backed swing is checked: one left out of this fetch
-        // would look missing below and be removed.
-        let assetIDs = swings.filter { !$0.photoAssetID.isEmpty }.map { $0.photoAssetID }
-        let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: assetIDs, options: nil)
-        
-        var validIDs = Set<String>()
-        fetchResult.enumerateObjects { asset, _, _ in
-            validIDs.insert(asset.localIdentifier)
+        let missing = Self.swingsMissingFromPhotos(swings) { assetIDs in
+            var found = Set<String>()
+            PHAsset.fetchAssets(withLocalIdentifiers: assetIDs, options: nil).enumerateObjects { asset, _, _ in
+                found.insert(asset.localIdentifier)
+            }
+            return found
         }
-        
-        // Remove swings whose assets no longer exist
-        let originalCount = swings.count
-        let missing = swings.filter { !$0.isReference && !$0.photoAssetID.isEmpty && !validIDs.contains($0.photoAssetID) }
-        swings.removeAll { !$0.isReference && !$0.photoAssetID.isEmpty && !validIDs.contains($0.photoAssetID) }
-        SwingCoachingStore.shared.removeCoaching(for: Set(missing.map(\.id)))
-        
-        if swings.count != originalCount {
-            print("⚠️ Removed \(originalCount - swings.count) swings with missing assets")
-            saveToDisk()
-        }
+        guard !missing.isEmpty else { return }
+        swings.removeAll { missing.contains($0.id) }
+        for id in missing { LibraryTilePictures.shared.forget(id) }
+        SwingCoachingStore.shared.removeCoaching(for: missing)
+        print("⚠️ Removed \(missing.count) swings with missing assets")
+        saveToDisk()
     }
-    
+
+    /// The swings whose Photos asset is gone. `assetsInPhotos` is asked
+    /// about every Photos-backed swing, whatever else the swing has
+    /// (positions, a local copy), and answers with the ids Photos still
+    /// holds: a swing it was never asked about would look missing.
+    /// Reference swings and app-local clips are never missing.
+    static func swingsMissingFromPhotos(
+        _ swings: [SavedSwing],
+        assetsInPhotos: ([String]) -> Set<String>
+    ) -> Set<UUID> {
+        let backed = swings.filter { !$0.photoAssetID.isEmpty }
+        guard !backed.isEmpty else { return [] }
+        let found = assetsInPhotos(backed.map(\.photoAssetID))
+        return Set(backed.filter { !$0.isReference && !found.contains($0.photoAssetID) }.map(\.id))
+    }
+
     // MARK: - Persistence
     
     private func saveToDisk() {
@@ -745,16 +716,17 @@ class SwingLibrary: ObservableObject {
         swing.swingPositions.flatMap(Self.impactTime) != nil && localVideoURL(for: swing) != nil
     }
 
-    /// The card's picture from the app's own copy of the clip.
+    /// The placeholder from the app's own copy of the clip.
     private func loadLocalThumbnail(for swing: SavedSwing) async {
         guard let url = localVideoURL(for: swing) else { return }
-        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
-        generator.appliesPreferredTrackTransform = true
-        generator.maximumSize = thumbnailSourceSize
-        let thumbnailTime = CMTime(seconds: Self.posterTime(for: swing), preferredTimescale: 600)
-        guard let generated = try? await generator.image(at: thumbnailTime) else { return }
-        if let index = swings.firstIndex(where: { $0.id == swing.id }) {
-            swings[index].thumbnail = Self.cardThumbnail(from: UIImage(cgImage: generated.image))
+        let time = Self.posterTime(for: swing)
+        guard let placeholder = await SwingPoster.picture(
+            fromClipAt: url, time: time, side: SwingPoster.placeholderSide
+        ) else { return }
+        // The poster frame may have moved while this one was read.
+        if let index = swings.firstIndex(where: { $0.id == swing.id }),
+           Self.posterTime(for: swings[index]) == time {
+            swings[index].thumbnail = placeholder
         }
     }
 }
