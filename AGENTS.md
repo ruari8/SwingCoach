@@ -93,6 +93,7 @@ SwingCoach/
 | Trim | `SwingCoach/TrimView/TrimView.swift`, `TrimReviewView.swift` |
 | Debug tab, replay through the detector | `SwingCoach/DebugReplayView.swift` |
 | Saved library (`Documents/swing_library.json`) | `SwingCoach/Models/SwingLibrary.swift` |
+| Swing pictures: each swing's small placeholder, the Library tiles' picture cache | `SwingCoach/Models/SwingPoster.swift` |
 
 ### Swing detection
 
