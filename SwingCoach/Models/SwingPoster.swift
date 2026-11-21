@@ -73,22 +73,78 @@ nonisolated enum SwingPoster {
         guard !assetID.isEmpty, status == .authorized || status == .limited,
               let asset = PHAsset.fetchAssets(withLocalIdentifiers: [assetID], options: nil).firstObject
         else { return nil }
-        let image: UIImage? = await withCheckedContinuation { continuation in
-            let options = PHImageRequestOptions()
-            // One answer, at the size asked for.
-            options.deliveryMode = .highQualityFormat
-            options.resizeMode = .fast
-            options.isNetworkAccessAllowed = true
-            PHImageManager.default().requestImage(
-                for: asset,
-                targetSize: CGSize(width: side, height: side),
-                contentMode: .aspectFill,
-                options: options
-            ) { image, _ in
-                continuation.resume(returning: image)
+        let request = PhotosRequest()
+        let image: UIImage? = await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                let options = PHImageRequestOptions()
+                // One answer, at the size asked for.
+                options.deliveryMode = .highQualityFormat
+                options.resizeMode = .fast
+                options.isNetworkAccessAllowed = true
+                let id = PHImageManager.default().requestImage(
+                    for: asset,
+                    targetSize: CGSize(width: side, height: side),
+                    contentMode: .aspectFill,
+                    options: options
+                ) { image, info in
+                    // A degraded picture with no image is not the answer;
+                    // the full one, an error or a cancellation is.
+                    let degraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
+                    if image == nil, degraded { return }
+                    request.finish(continuation, with: image)
+                }
+                request.started(id, continuation)
             }
+        } onCancel: {
+            request.cancel()
         }
         return image.map { cropped($0, side: side) }
+    }
+
+    /// One Photos read: answers its continuation exactly once, however
+    /// often Photos calls back, and stops the read when the task that
+    /// wanted it is cancelled.
+    private final class PhotosRequest: @unchecked Sendable {
+        private let lock = NSLock()
+        private var id: PHImageRequestID?
+        private var continuation: CheckedContinuation<UIImage?, Never>?
+        private var answered = false
+        private var cancelled = false
+
+        func started(_ id: PHImageRequestID, _ continuation: CheckedContinuation<UIImage?, Never>) {
+            lock.lock()
+            let alreadyCancelled = cancelled
+            let alreadyAnswered = answered
+            if !alreadyAnswered {
+                self.id = id
+                self.continuation = continuation
+            }
+            lock.unlock()
+            if alreadyCancelled, !alreadyAnswered {
+                PHImageManager.default().cancelImageRequest(id)
+                finish(continuation, with: nil)
+            }
+        }
+
+        func finish(_ continuation: CheckedContinuation<UIImage?, Never>, with image: UIImage?) {
+            lock.lock()
+            let first = !answered
+            answered = true
+            self.continuation = nil
+            lock.unlock()
+            if first { continuation.resume(returning: image) }
+        }
+
+        func cancel() {
+            lock.lock()
+            cancelled = true
+            let id = self.id
+            let continuation = self.continuation
+            lock.unlock()
+            guard let id, let continuation else { return }
+            PHImageManager.default().cancelImageRequest(id)
+            finish(continuation, with: nil)
+        }
     }
 }
 
@@ -122,12 +178,17 @@ nonisolated final class LibraryTilePictures {
         let id = UUID()
         let side: CGFloat
         let task: Task<UIImage?, Never>
+        /// The tiles waiting on this read; it stops when the last leaves.
+        var waiters = 0
     }
 
     private let cache = NSCache<NSString, Entry>()
     /// The cache key last used for each swing, so `forget` finds it.
     @MainActor private var keys: [UUID: NSString] = [:]
     @MainActor private var loads: [NSString: Load] = [:]
+    /// Counts `forget` per swing, so a read that finishes after its swing
+    /// was forgotten is not handed out or cached.
+    @MainActor private var generations: [UUID: Int] = [:]
 
     init(byteLimit: Int = LibraryTilePictures.byteLimit) {
         cache.totalCostLimit = byteLimit
@@ -160,25 +221,55 @@ nonisolated final class LibraryTilePictures {
     func picture(for swing: SavedSwing, pixelSide: CGFloat) async -> UIImage? {
         let key = Self.key(for: swing) as NSString
         if let entry = cache.object(forKey: key), entry.side >= pixelSide { return entry.image }
-        if let running = loads[key], running.side >= pixelSide { return await running.task.value }
 
-        let time = SwingLibrary.posterTime(for: swing)
-        let localURL = SwingLibrary.shared.localVideoURL(for: swing)
-        let assetID = swing.photoAssetID
-        let load = Load(side: pixelSide, task: Task {
-            if let localURL {
-                return await SwingPoster.picture(fromClipAt: localURL, time: time, side: pixelSide)
-            }
-            return await SwingPoster.picture(fromPhotosAsset: assetID, side: pixelSide)
-        })
-        loads[key] = load
-        let image = await load.task.value
-        // Forgotten or overtaken by a bigger request while it was read.
-        guard loads[key]?.id == load.id else { return nil }
-        loads[key] = nil
+        let generation = generations[swing.id, default: 0]
+        let load: Load
+        if let running = loads[key], running.side >= pixelSide {
+            load = running
+        } else {
+            // A smaller read under way is overtaken: its tiles are asking
+            // for this size too.
+            loads[key]?.task.cancel()
+            let time = SwingLibrary.posterTime(for: swing)
+            let localURL = SwingLibrary.shared.localVideoURL(for: swing)
+            let assetID = swing.photoAssetID
+            load = Load(side: pixelSide, task: Task {
+                if let localURL {
+                    return await SwingPoster.picture(fromClipAt: localURL, time: time, side: pixelSide)
+                }
+                return await SwingPoster.picture(fromPhotosAsset: assetID, side: pixelSide)
+            })
+            loads[key] = load
+        }
+        loads[key]?.waiters += 1
+
+        let loadID = load.id
+        let image = await withTaskCancellationHandler {
+            await load.task.value
+        } onCancel: {
+            // The tile scrolled away or asked for something else.
+            Task { @MainActor in self.leave(key, loadID) }
+        }
+        guard !Task.isCancelled, generations[swing.id, default: 0] == generation else { return nil }
+        if loads[key]?.id == loadID { loads[key] = nil }
         guard let image else { return nil }
-        store(image, side: pixelSide, for: swing)
+        if (cache.object(forKey: key)?.side ?? 0) < load.side {
+            store(image, side: load.side, for: swing)
+        }
         return image
+    }
+
+    /// One tile stops waiting; the read stops with its last tile.
+    @MainActor
+    private func leave(_ key: NSString, _ loadID: UUID) {
+        guard var load = loads[key], load.id == loadID else { return }
+        load.waiters -= 1
+        if load.waiters <= 0 {
+            load.task.cancel()
+            loads[key] = nil
+        } else {
+            loads[key] = load
+        }
     }
 
     @MainActor
@@ -191,6 +282,7 @@ nonisolated final class LibraryTilePictures {
     /// Drops a swing's picture: it was deleted, or its poster frame moved.
     @MainActor
     func forget(_ id: UUID) {
+        generations[id, default: 0] += 1
         let prefix = id.uuidString
         for key in loads.keys where key.hasPrefix(prefix) {
             loads[key]?.task.cancel()

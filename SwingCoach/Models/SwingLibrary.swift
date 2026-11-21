@@ -404,8 +404,10 @@ class SwingLibrary: ObservableObject {
 
         let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
         guard status == .authorized || status == .limited else { return }
-        // A swing with its own impact poster keeps it over Photos' frame.
-        let assetIDs = swings.filter { !$0.photoAssetID.isEmpty && !hasImpactPoster($0) }.map { $0.photoAssetID }
+        // Photos supplies a placeholder only where the app's own copy
+        // did not: its first frame must not replace a later, better one.
+        let assetIDs = swings.filter { !$0.photoAssetID.isEmpty && $0.thumbnail == nil && !hasImpactPoster($0) }
+            .map { $0.photoAssetID }
         guard !assetIDs.isEmpty else { return }
         
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: assetIDs, options: nil)

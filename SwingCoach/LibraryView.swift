@@ -511,17 +511,17 @@ struct LibraryView: View {
                 MagnifyGesture(minimumScaleDelta: 0.05)
                     .updating($isPinching) { _, pinching, _ in
                         pinching = true
-                        pinchClock.lastActivity = Date()
+                        pinchClock.lastActivity = ProcessInfo.processInfo.systemUptime
                     }
                     .onEnded { value in
-                        pinchClock.lastActivity = Date()
+                        pinchClock.lastActivity = ProcessInfo.processInfo.systemUptime
                         pinched(value.magnification)
                     }
             )
             // The gesture state resets when a pinch ends or is cancelled:
             // either way the lifting fingers get the cooldown.
             .onChange(of: isPinching) { _, pinching in
-                if !pinching { pinchClock.lastActivity = Date() }
+                if !pinching { pinchClock.lastActivity = ProcessInfo.processInfo.systemUptime }
             }
             .accessibilityAction(named: "Bigger thumbnails") { pinched(2) }
             .accessibilityAction(named: "Smaller thumbnails") { pinched(0.5) }
@@ -760,7 +760,7 @@ struct LibraryView: View {
 
     /// A finger lifting during a pinch, or just after one, is not a tap.
     private var tapBelongsToPinch: Bool {
-        isPinching || Date().timeIntervalSince(pinchClock.lastActivity) < LibraryGrid.pinchTapCooldown
+        isPinching || ProcessInfo.processInfo.systemUptime - pinchClock.lastActivity < LibraryGrid.pinchTapCooldown
     }
 
     private func swingCard(_ swing: SavedSwing, reviewSwings: [SavedSwing]? = nil, showsVantage: Bool = false) -> some View {
@@ -1187,6 +1187,11 @@ private struct LibraryTilePicture: View {
     private struct Request: Equatable {
         let key: String
         let pixelSide: CGFloat
+        /// A swing gains a source for its picture after the tile first
+        /// asked: Photos access is granted (its placeholder arrives) or
+        /// its clip is copied into the app. Either asks again.
+        let hasPlaceholder: Bool
+        let hasLocalCopy: Bool
     }
 
     var body: some View {
@@ -1202,9 +1207,11 @@ private struct LibraryTilePicture: View {
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
-            .task(id: Request(key: LibraryTilePictures.key(for: swing), pixelSide: pixelSide)) {
+            .task(id: Request(key: LibraryTilePictures.key(for: swing), pixelSide: pixelSide,
+                              hasPlaceholder: swing.thumbnail != nil, hasLocalCopy: swing.localVideoFilename != nil)) {
                 guard pixelSide > 0,
-                      let picture = await LibraryTilePictures.shared.picture(for: swing, pixelSide: pixelSide)
+                      let picture = await LibraryTilePictures.shared.picture(for: swing, pixelSide: pixelSide),
+                      !Task.isCancelled
                 else { return }
                 loaded = picture
             }
@@ -2903,18 +2910,19 @@ private struct ActivityView: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
+/// When the grid's pinch last moved, ended or was cancelled, in system
+/// uptime, which never steps backwards. Noted as the fingers move, so a
+/// tap from a lifting finger is refused whichever of the tap and the
+/// pinch's end is delivered first; a reference, so noting it never
+/// redraws the grid.
+private nonisolated final class LibraryPinchClock {
+    var lastActivity = -TimeInterval.infinity
+}
+
 /// Window-space frames of the visible session cards, for drag selection hit tests.
 /// A plain class so frame updates while scrolling don't re-render the Library.
 /// Nonisolated so its deinit doesn't hop to the main actor: that isolated
 /// deinit aborted in swift_task_deinitOnExecutorImpl on iOS 26.3.
-/// When the grid's pinch last moved, ended or was cancelled. Noted as
-/// the fingers move, so a tap from a lifting finger is refused whichever
-/// of the tap and the pinch's end is delivered first; a reference, so
-/// noting it never redraws the grid.
-private nonisolated final class LibraryPinchClock {
-    var lastActivity = Date.distantPast
-}
-
 private nonisolated final class LibraryCardFrames {
     var frames: [UUID: CGRect] = [:]
 
