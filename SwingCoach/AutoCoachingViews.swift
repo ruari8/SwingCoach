@@ -10,6 +10,50 @@
 import AVFoundation
 import SwiftUI
 
+/// How often the coach recaps, as a compact chip in the camera's top row
+/// beside the frame rate ("Recap: 5"), never centred over the viewfinder.
+/// Its menu sets the cadence and shows a recap now.
+struct CoachingCadenceChip: View {
+    /// The Auto session's swings, oldest first.
+    let swings: [SavedSwing]
+    /// The recap on screen, shared with `AutoCoachingPanel`.
+    @Binding var recapIDs: [UUID]?
+
+    @ObservedObject private var store = SwingCoachingStore.shared
+    @AppStorage(CoachingCadence.key) private var cadenceName = CoachingCadence.standard.rawValue
+
+    private var cadence: CoachingCadence { CoachingCadence(rawValue: cadenceName) ?? .standard }
+    /// Swings in a recap: the setting's window, or the asked-for size.
+    private var recapSize: Int { cadence.recapSize ?? CoachingCadence.requestedRecapSize }
+
+    var body: some View {
+        let measured = swings.filter { store.report(for: $0) != nil }
+        Menu {
+            Picker("Recap", selection: $cadenceName) {
+                ForEach(CoachingCadence.allCases) { Text($0.title).tag($0.rawValue) }
+            }
+            // An action, not another cadence: a leading symbol sets it
+            // apart from the options above. It recaps the setting's
+            // window of swings.
+            Button {
+                recapIDs = measured.suffix(recapSize).map(\.id)
+            } label: {
+                Label("Show recap now", systemImage: "rectangle.stack")
+            }
+            .accessibilityHint("Recaps the last \(recapSize) swings")
+            .disabled(measured.isEmpty)
+        } label: {
+            Text("Recap: \(cadence.shortTitle)")
+                .font(.appLabel)
+                .lineLimit(1)
+                .fixedSize()
+                .captureChip()
+        }
+        .accessibilityIdentifier("coach-cadence")
+        .accessibilityLabel("Recap: \(cadence.title)")
+    }
+}
+
 /// What the Auto review cover opens on.
 struct AutoSwingReviewPresentation: Identifiable {
     let id = UUID()
@@ -27,7 +71,9 @@ struct CoachingComparison: Equatable {
 
 // MARK: - On the camera screen
 
-/// Sits between the camera's top bar and its bottom row in Auto.
+/// Sits between the camera's top bar and its bottom row in Auto: the
+/// recap, or the last swing's verdict. Its cadence chip is in the top
+/// bar (`CoachingCadenceChip`).
 struct AutoCoachingPanel: View {
     /// The Auto session's swings, oldest first.
     let swings: [SavedSwing]
@@ -43,8 +89,6 @@ struct AutoCoachingPanel: View {
     @AppStorage(CoachingCadence.key) private var cadenceName = CoachingCadence.standard.rawValue
 
     private var cadence: CoachingCadence { CoachingCadence(rawValue: cadenceName) ?? .standard }
-    /// Swings in a recap: the setting's window, or the asked-for size.
-    private var recapSize: Int { cadence.recapSize ?? CoachingCadence.requestedRecapSize }
 
     private var measured: [(swing: SavedSwing, report: SwingCoachingReport)] {
         swings.compactMap { swing in store.report(for: swing).map { (swing, $0) } }
@@ -53,8 +97,6 @@ struct AutoCoachingPanel: View {
     var body: some View {
         let measured = measured
         VStack(spacing: 0) {
-            chip(canRecap: !measured.isEmpty)
-                .padding(.top, 10)
             Spacer(minLength: 16)
             if let recapIDs {
                 recapCard(for: measured.filter { recapIDs.contains($0.swing.id) })
@@ -82,34 +124,6 @@ struct AutoCoachingPanel: View {
         }
     }
 
-    private func chip(canRecap: Bool) -> some View {
-        Menu {
-            Picker("Recap", selection: $cadenceName) {
-                ForEach(CoachingCadence.allCases) { Text($0.title).tag($0.rawValue) }
-            }
-            // An action, not another cadence: a leading symbol sets it
-            // apart from the options above. It recaps the setting's
-            // window of swings.
-            Button {
-                recapIDs = measured.suffix(recapSize).map(\.swing.id)
-            } label: {
-                Label("Show recap now", systemImage: "rectangle.stack")
-            }
-            .accessibilityHint("Recaps the last \(recapSize) swings")
-            .disabled(!canRecap)
-        } label: {
-            HStack(spacing: 6) {
-                Text("Recap: \(cadence.title.lowercased())")
-                    .font(.appLabel)
-                Image(systemName: "chevron.down")
-                    .font(.appCaptionLabel)
-            }
-            .captureChip()
-        }
-        .accessibilityIdentifier("coach-cadence")
-        .accessibilityLabel("Recap: \(cadence.title)")
-    }
-
     /// The last swing's verdict, big enough to read from the tee. Opens
     /// the swing on the coach's first step.
     private func latestVerdict(_ verdict: CoachingVerdict, swing: SavedSwing) -> some View {
@@ -129,12 +143,14 @@ struct AutoCoachingPanel: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
+                // The card's primary action, drawn as the panel's accent
+                // button; the whole card is the tap.
                 Text("Look")
                     .font(.appLabel)
                     .foregroundStyle(.black)
                     .padding(.horizontal, 16)
-                    .frame(minHeight: 44)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(.white))
+                    .frame(minHeight: PanelButtonStyle.height)
+                    .background(RoundedRectangle(cornerRadius: PanelButtonStyle.radius).fill(Color.accentLime))
             }
             .foregroundStyle(.white)
             .solidPanelBackground()
@@ -255,13 +271,10 @@ struct CoachingRecapCard: View {
                         // Names its scope, so the card reads as a pattern
                         // over swings, not one shot.
                         Text(recap.theme == nil ? "Look at them" : "Compare last \(numbers.count)")
-                            .font(.appLabel)
                         Image(systemName: "chevron.right").font(.appCaptionLabel)
                     }
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(.white.opacity(0.14)))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PanelButtonStyle())
                 .accessibilityLabel(recap.theme == nil ? "Look at them" : "Compare the last \(numbers.count) swings")
                 .accessibilityIdentifier("coach-recap-open")
             }
@@ -338,6 +351,38 @@ struct CoachingFrameView: View {
     /// on this frame) instead of fitting the whole frame with its sky and
     /// foreground.
     var cropsToGolfer = false
+    /// With `cropsToGolfer`, the part of the frame to fill the view with
+    /// (0...1 of the frame each way, from `golferRegion`), so pictures
+    /// side by side show the same region at the same scale. Nil fills
+    /// the view with the whole frame's width or height.
+    var region: CGRect? = nil
+
+    /// The golfer's region across these swings: the body checks' drawings
+    /// at every position (head to knees, wherever the swing takes them) and
+    /// the pictured checks' own drawings (the club and ball), with a margin
+    /// that reaches the feet, so it holds the golfer on a tripod clip
+    /// without the sky and turf. Club checks drawn elsewhere are left out:
+    /// their long lines run to the frame's edges. Nil when nothing is drawn.
+    static func golferRegion(_ reports: [SwingCoachingReport], pictured: [CoachingMetricResult]) -> CGRect? {
+        var xs: [Double] = [], ys: [Double] = []
+        let body = reports.flatMap(\.metrics).filter { !$0.definition.dependsOnCamera }
+        for result in body + pictured {
+            for shape in result.drawings where shape.kind != .label {
+                let radius = shape.size ?? 0
+                xs += shape.points.flatMap { [$0.x - radius, $0.x + radius] }
+                ys += shape.points.flatMap { [$0.y - radius, $0.y + radius] }
+            }
+        }
+        guard let minX = xs.min(), let maxX = xs.max(), let minY = ys.min(), let maxY = ys.max() else { return nil }
+        let left = max(0, minX - regionMargin.side), right = min(1, maxX + regionMargin.side)
+        let top = max(0, minY - regionMargin.top), bottom = min(1, maxY + regionMargin.bottom)
+        guard right > left, bottom > top else { return nil }
+        return CGRect(x: left, y: top, width: right - left, height: bottom - top)
+    }
+
+    /// Round the drawings, as a share of the frame: a little over the head
+    /// and either side, more under them for the feet and the ball.
+    private static let regionMargin = (side: 0.06, top: 0.05, bottom: 0.1)
 
     /// The last frame read, and what it was read for. A frame read for
     /// another time is never shown under this reading's drawing.
@@ -390,10 +435,21 @@ struct CoachingFrameView: View {
     }
 
     /// Where the frame sits when it fills `size`: centred on everything
-    /// drawn on this frame (the golfer's body and the club), kept inside
-    /// the frame's own edges.
+    /// drawn on this frame (the golfer's body and the club), or on
+    /// `region` scaled to fit the view, kept inside the frame's own edges.
     private func croppedRect(of image: CGSize, in size: CGSize, around result: CoachingMetricResult?) -> CGRect {
-        let scale = max(size.width / max(image.width, 1), size.height / max(image.height, 1))
+        let fill = max(size.width / max(image.width, 1), size.height / max(image.height, 1))
+        if let region, region.width > 0, region.height > 0 {
+            // The region as big as the view allows, never past the frame's
+            // edges, and no more than `maxZoom` past filling the view.
+            let fit = min(size.width / (region.width * image.width), size.height / (region.height * image.height))
+            let scale = min(max(fit, fill), fill * Self.maxZoom)
+            let width = image.width * scale, height = image.height * scale
+            let x = min(0, max(size.width - width, size.width / 2 - region.midX * width))
+            let y = min(0, max(size.height - height, size.height / 2 - region.midY * height))
+            return CGRect(x: x, y: y, width: width, height: height)
+        }
+        let scale = fill
         let width = image.width * scale, height = image.height * scale
         var xs: [Double] = [], ys: [Double] = []
         if let result {
@@ -411,6 +467,10 @@ struct CoachingFrameView: View {
         let y = min(0, max(size.height - height, size.height / 2 - CGFloat(centreY) * height))
         return CGRect(x: x, y: y, width: width, height: height)
     }
+
+    /// How far a region may enlarge the frame past filling the view, so
+    /// a picture stays sharp from the 720-point frame it is read at.
+    private static let maxZoom: CGFloat = 2
 
     private static func frame(of swing: SavedSwing, at clipTime: Double?) async -> UIImage? {
         guard let clipTime, let url = SwingLibrary.shared.localVideoURL(for: swing) else { return nil }

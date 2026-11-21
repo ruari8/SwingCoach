@@ -62,10 +62,10 @@ final class SwingCoachingUITests: XCTestCase {
         let summary = app.descendants(matching: .any)["coaching-summary"]
         XCTAssertTrue(summary.waitForExistence(timeout: 3))
         XCTAssertTrue(summary.label.contains("1 of 3 judged checks in zone."), summary.label)
-        XCTAssertTrue(legend.exists, "All checks keys the level badges")
+        XCTAssertTrue(legend.exists, "All checks keys the rows' tracks")
         let head = app.buttons["coaching-metric-headHeightTop"]
         XCTAssertTrue(head.exists)
-        XCTAssertTrue(head.label.contains("Good players: −6% to 0%"), head.label)
+        XCTAssertTrue(head.label.contains("Good zone: −6% to 0%"), head.label)
         attach(app, "coaching-every-check")
         head.tap()
         XCTAssertTrue(app.descendants(matching: .any)["coaching-caption-headHeightTop"].waitForExistence(timeout: 3))
@@ -161,7 +161,7 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertTrue(theme.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Shaft steepened coming down"].firstMatch.exists)
         // One caption: how many swings, and the check the theme's level is read on.
-        XCTAssertTrue(app.staticTexts["4 of 5 swings · transition"].exists)
+        XCTAssertTrue(app.staticTexts["4 of 5 measured · transition"].exists)
         XCTAssertTrue(app.staticTexts["Start here"].exists)
 
         // A dot a swing, in the order hit. The fifth is the first with four
@@ -182,7 +182,7 @@ final class SwingCoachingUITests: XCTestCase {
             app.collectionViews.firstMatch.swipeUp(velocity: .slow)
         }
         XCTAssertTrue(trend.exists)
-        XCTAssertTrue(trend.label.contains("1 of 5 swings in the green band"), trend.label)
+        XCTAssertTrue(trend.label.contains("1 of 5 swings in the good zone"), trend.label)
         attach(app, "session-coaching-trend")
 
         // A dot opens its swing, on what went right.

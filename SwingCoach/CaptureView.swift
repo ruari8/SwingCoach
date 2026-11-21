@@ -1971,40 +1971,36 @@ struct CaptureView: View {
                             .monospacedDigit()
                             .accessibilityIdentifier("capture-recording-timer")
                     }
-                    .frame(maxWidth: .infinity)
+                    // Level with the chips it replaces: centred in the
+                    // switch's height, the row now being top-aligned.
+                    .frame(maxWidth: .infinity, minHeight: CaptureControl.height)
                 } else {
-                    HStack {
-                        frameRateMenu
-                        Spacer()
-                        // Tapped from a step away to stop Auto: the shared
-                        // Capture control height, 44 points. While Auto
-                        // listens its segment reads "Auto ready" and fills
-                        // with the accent; its state mark sits inside the
-                        // segment, before the title.
-                        AccentSegmentedControl(
-                            titles: CaptureWorkflowMode.allCases.map(modeTitle),
-                            selectedIndex: Binding(
-                                get: { CaptureWorkflowMode.allCases.firstIndex(of: workflowMode) ?? 0 },
-                                set: { workflowMode = CaptureWorkflowMode.allCases[$0] }
-                            ),
-                            accentsSelection: autoIsReady,
-                            identifier: "capture-mode",
-                            font: CaptureControl.modeFont,
-                            firstSegmentWidth: CaptureControl.autoSegmentWidth,
-                            firstTitleShift: workflowMode == .auto ? CaptureControl.autoTitleShift : 0
-                        )
-                        .frame(width: CaptureControl.modeWidth, height: CaptureControl.height)
-                        .overlay(alignment: .leading) {
+                    // The chips beside the switch: the frame rate, and in
+                    // Auto the coach's recap ("Recap: 5"), so nothing sits
+                    // over the viewfinder's centre. When large text leaves
+                    // no room, the recap chip drops under the frame rate,
+                    // still at the edge.
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 0) {
+                            frameRateMenu
                             if workflowMode == .auto {
-                                autoIndicator
-                                    .offset(x: CaptureControl.autoMarkOffset(title: modeTitle(.auto)))
-                                    .allowsHitTesting(false)
+                                recapChip.padding(.leading, CaptureControl.chipGap)
                             }
+                            Spacer(minLength: CaptureControl.chipGap)
+                            modeSwitch
+                        }
+                        HStack(alignment: .top, spacing: CaptureControl.chipGap) {
+                            VStack(alignment: .leading, spacing: CaptureControl.chipGap) {
+                                frameRateMenu
+                                if workflowMode == .auto { recapChip }
+                            }
+                            Spacer(minLength: 0)
+                            modeSwitch
                         }
                     }
                 }
             }
-            .frame(height: CaptureControl.height)
+            .frame(minHeight: CaptureControl.height, alignment: .top)
             .padding(.top, 8)
             .animation(.easeInOut(duration: 0.2), value: isRecording)
 
@@ -2055,8 +2051,40 @@ struct CaptureView: View {
                 .padding(.bottom, 20)
             }
         }
-        .padding(.horizontal, 22)
+        .padding(.horizontal, CaptureControl.edgeMargin)
         .foregroundStyle(.white)
+    }
+
+    /// Tapped from a step away to stop Auto: the shared Capture control
+    /// height, 44 points. While Auto listens its segment reads "Auto
+    /// ready" and fills with the accent; its state mark sits inside the
+    /// segment, before the title.
+    private var modeSwitch: some View {
+        AccentSegmentedControl(
+            titles: CaptureWorkflowMode.allCases.map(modeTitle),
+            selectedIndex: Binding(
+                get: { CaptureWorkflowMode.allCases.firstIndex(of: workflowMode) ?? 0 },
+                set: { workflowMode = CaptureWorkflowMode.allCases[$0] }
+            ),
+            accentsSelection: autoIsReady,
+            identifier: "capture-mode",
+            font: CaptureControl.modeFont,
+            firstSegmentWidth: CaptureControl.autoSegmentWidth,
+            firstTitleShift: workflowMode == .auto ? CaptureControl.autoTitleShift : 0
+        )
+        .frame(width: CaptureControl.modeWidth, height: CaptureControl.height)
+        .overlay(alignment: .leading) {
+            if workflowMode == .auto {
+                autoIndicator
+                    .offset(x: CaptureControl.autoMarkOffset(title: modeTitle(.auto)))
+                    .allowsHitTesting(false)
+            }
+        }
+    }
+
+    /// How often the coach recaps, beside the frame rate in Auto.
+    private var recapChip: some View {
+        CoachingCadenceChip(swings: camera.autoSessionSwings, recapIDs: $recapSwingIDs)
     }
 
     private var frameRateMenu: some View {
@@ -2066,13 +2094,11 @@ struct CaptureView: View {
             Button("120fps HD") { camera.switchMode(to: .standard) }
             Button("240fps HD") { camera.switchMode(to: .ultra) }
         } label: {
-            HStack(spacing: 5) {
-                Text("\(camera.captureMode.shortName) fps")
-                    .font(.appLabel)
-                Image(systemName: "chevron.down")
-                    .font(.appCaptionLabel)
-            }
-            .captureChip()
+            Text("\(camera.captureMode.shortName) fps")
+                .font(.appLabel)
+                .lineLimit(1)
+                .fixedSize()
+                .captureChip()
         }
         .accessibilityIdentifier("capture-frame-rate")
         .accessibilityLabel("Frame rate, \(camera.captureMode.shortName) frames per second")

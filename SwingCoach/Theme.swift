@@ -78,10 +78,15 @@ enum FixedType {
     /// detector line.
     static let cellLabel = Font.system(size: 11, weight: .semibold)
     /// A tag or readout over the video: the scrub badge, the time beside
-    /// the transport (and its "Low confidence" line), Trim's timecodes, a
-    /// label drawn on a frame.
+    /// the transport, Trim's timecodes, a label drawn on a frame.
     static let readoutSize: CGFloat = 12
     static let readout = Font.system(size: readoutSize, weight: .semibold)
+    /// A second readout line in a slot too narrow for the readout: the
+    /// transport row's "Low confidence" under the position's name, so the
+    /// two stay two lines. At the floor size, condensed, never shrunk;
+    /// `readoutTightest` is the compressed width for the narrowest phones.
+    static let readoutTight = Font.system(size: minimumSize, weight: .semibold).width(.condensed)
+    static let readoutTightest = Font.system(size: minimumSize, weight: .semibold).width(.compressed)
     /// The rail's names shown beside it, and the drawing tool's buttons.
     static let railLabel = Font.system(size: 14, weight: .semibold)
     /// A position's name on the pose strip ("P3"): the rail labels' size,
@@ -95,12 +100,14 @@ extension Color {
     /// Secondary text: footers, help, captions and footnotes on Library,
     /// Settings, the session review and the sheets. The system's secondary
     /// label is about 3.3:1 on grouped grey in light appearance; this is
-    /// 5:1 on grouped grey and 5.5:1 on white, and 6.2:1 or more on the
-    /// dark grouped backgrounds (5.1:1 on an elevated sheet's rows).
+    /// 6.2:1 on grouped grey and 6.9:1 on white, so a thin caption at 12
+    /// points still clears 4.5:1 once antialiased, and 6.2:1 or more on
+    /// the dark grouped backgrounds (5.1:1 on an elevated sheet's rows).
+    /// Lighter than `sectionHeading`, so a heading still leads.
     static let helpText = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
             ? UIColor(red: 0.612, green: 0.612, blue: 0.635, alpha: 1)
-            : UIColor(red: 0.408, green: 0.408, blue: 0.427, alpha: 1)
+            : UIColor(red: 0.353, green: 0.353, blue: 0.373, alpha: 1)
     })
 }
 
@@ -154,11 +161,12 @@ struct SectionHeading: View {
 
 // MARK: - Coaching levels
 
-/// The one severity system: a level's colour, its word and its text ink
-/// come from here and nowhere else, so a badge, a pill and a drawing never
-/// disagree. In zone is green "In zone"; one to three steps out is amber
-/// "A little out"; `wellOutFrom` steps or more is red "Well out". The
-/// numbers ("N steps out") are said only in All checks' rows.
+/// The one severity system: a level's colour, its word, its badge glyph
+/// and its text ink come from here and nowhere else, so a badge, a pill
+/// and a drawing never disagree. In zone is green "In zone" and a tick;
+/// one to three steps out is amber "A little out" and "!"; `wellOutFrom`
+/// steps or more is red "Well out" and "!!". The numbers ("N steps out")
+/// are said only in All checks' rows.
 enum CoachingSeverity: Equatable {
     case inZone, littleOut, wellOut
 
@@ -179,8 +187,8 @@ enum CoachingSeverity: Equatable {
         }
     }
 
-    /// A summing-up mark's glyph out of zone (`CoachingLevelBadge`'s
-    /// `.glyph` kind): one "!" a little out, "!!" well out, so amber and
+    /// The level badge's glyph out of zone (`CoachingLevelBadge`, every
+    /// verdict badge): one "!" a little out, "!!" well out, so amber and
     /// red differ by shape as well as colour. Nil in zone (a tick).
     var markSymbol: String? {
         switch self {
@@ -463,15 +471,26 @@ enum CaptureControl {
     /// A menu chip over the camera (the frame rate, the coach's cadence):
     /// drawn this tall, 44 to tap.
     static let chipHeight: CGFloat = 36
+    /// Inside a chip, each side: tight enough that the frame rate and
+    /// "Recap: 10" share the top row with the Auto / Manual switch.
+    static let chipPadding: CGFloat = 10
+    /// Between the chips in the top row, and the least between them and
+    /// the switch.
+    static let chipGap: CGFloat = 6
+    /// Capture's controls from the screen's sides: room for the frame
+    /// rate, "Recap: 10" and the switch in one row on a 402-point phone.
+    static let edgeMargin: CGFloat = 16
 }
 
 extension View {
     /// A menu's label over the camera (the frame rate, the coach's
     /// cadence): a dark capsule with a hairline edge, so its white text
     /// holds up over bright sky like the Auto / Manual switch beside it.
-    /// Drawn `CaptureControl.chipHeight` tall, 44 to tap.
+    /// Its value alone ("240 fps", "Recap: 5"), no chevron, so both chips
+    /// fit the top row beside the switch. Drawn
+    /// `CaptureControl.chipHeight` tall, 44 to tap.
     func captureChip() -> some View {
-        padding(.horizontal, 14)
+        padding(.horizontal, CaptureControl.chipPadding)
             .frame(minHeight: CaptureControl.chipHeight)
             .background(Capsule().fill(.black.opacity(0.45)))
             .overlay(Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 0.5))
@@ -491,6 +510,10 @@ enum CoachingPreview {
     /// tripod, with that swing's own badge on its corner.
     static let recapPictureWidth: CGFloat = 96
     static let recapPictureMinHeight: CGFloat = 120
+    /// The session review's two pictures of its lead theme: the same
+    /// golfer-centred 4:5 region on both (`CoachingFrameView.golferRegion`),
+    /// so the drawing is large and the sky and turf are cut away.
+    static let golferAspect: CGFloat = 4.0 / 5.0
 }
 
 // MARK: - Capsule buttons
@@ -576,6 +599,36 @@ struct PanelCapsuleButtonStyle: ButtonStyle {
             .background(Capsule().strokeBorder(.white.opacity(0.35), lineWidth: 1))
             .opacity(configuration.isPressed ? 0.6 : 1)
             .minimumHitArea(visible: CGSize(width: HitArea.minimum, height: Self.height))
+    }
+}
+
+/// A full button on a dark panel over the video or the camera (the step
+/// card's Back, Play swing and Next, the recap's Compare, Try again): a
+/// rounded slab the 44-point minimum tall. The card's one primary action
+/// (Next, or Play swing on the last step, All checks on a picked check,
+/// Look on the last swing's verdict) is `prominent`: the lime accent with
+/// a dark label, like Review and Auto ready; the rest are a quiet
+/// translucent grey with a white label, so the finding above, not a
+/// white slab, is what the eye lands on.
+struct PanelButtonStyle: ButtonStyle {
+    var prominent = false
+    /// Fills the row's width, shared with the buttons beside it; off for
+    /// a square icon button or one sized to its label.
+    var fills = true
+
+    static let height: CGFloat = HitArea.minimum
+    static let radius: CGFloat = 14
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.appLabel)
+            .foregroundStyle(prominent ? Color.black : Color.white)
+            .padding(.horizontal, fills ? 0 : 16)
+            .frame(maxWidth: fills ? .infinity : nil, minHeight: Self.height)
+            .background(RoundedRectangle(cornerRadius: Self.radius)
+                .fill(prominent ? Color.accentLime : Color.white.opacity(0.16)))
+            .opacity(configuration.isPressed ? 0.7 : 1)
+            .contentShape(RoundedRectangle(cornerRadius: Self.radius))
     }
 }
 

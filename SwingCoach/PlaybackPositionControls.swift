@@ -144,13 +144,13 @@ struct SwingPositionGlyph: View {
 
 // MARK: - Pose strip
 
-/// A mark on a pose chip: what was found at that position. The shape says
-/// it as well as the colour does.
+/// A mark on a pose chip: what was found at that position, drawn as the
+/// shared verdict badge. The glyph says it as well as the colour does.
 struct SwingPositionMark: Equatable {
     enum Shape: Equatable {
         /// Checked and in zone.
         case tick
-        /// Out of zone by this many steps.
+        /// Out of zone by this many steps: "!" or "!!" by its severity.
         case level(Int)
     }
 
@@ -220,7 +220,7 @@ struct SwingPositionStrip: View {
     static let height: CGFloat = 66
     /// A low-confidence position's pose, dimmed inside its dashed outline.
     static let unsureGlyphOpacity = 0.45
-    /// A chip's level badge: 16 points with 11-point digits.
+    /// A chip's level badge: 16 points, its glyph sized to it.
     static let markSize: CGFloat = 16
     /// The shallow slot at the top of each cell, over the chip, that holds
     /// its marks (the level badge, the low-confidence glyph), so no mark
@@ -332,23 +332,17 @@ struct SwingPositionStrip: View {
 }
 
 extension SwingPositionStrip {
-    /// A level number in a filled circle, a tick for in zone. No ring: the
-    /// only ring on the strip is the current position's chip.
+    /// The shared verdict badge (`CoachingLevelBadge`): a tick in zone,
+    /// "!" a little out, "!!" well out, never a number. With a dark edge,
+    /// but no ring: the only ring on the strip is the current position's
+    /// chip.
     fileprivate func markBadge(_ mark: SwingPositionMark) -> some View {
-        ZStack {
-            Circle().fill(mark.colour)
+        Group {
             switch mark.shape {
-            case .tick:
-                Image(systemName: "checkmark")
-                    .font(.system(size: 9, weight: .black))
-                    .foregroundColor(.black)
-            case .level(let level):
-                Text("\(level)")
-                    .font(.system(size: 11, weight: .heavy).monospacedDigit())
-                    .foregroundColor(.black)
+            case .tick: CoachingLevelBadge(level: 0, size: Self.markSize)
+            case .level(let level): CoachingLevelBadge(level: level, size: Self.markSize)
             }
         }
-        .frame(width: Self.markSize, height: Self.markSize)
         .overlay(Circle().strokeBorder(Color.black.opacity(0.55), lineWidth: 1))
         .allowsHitTesting(false)
     }

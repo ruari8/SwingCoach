@@ -207,6 +207,18 @@ nonisolated enum CoachingCadence: String, CaseIterable, Identifiable {
         }
     }
 
+    /// The cadence in the camera's compact chip ("Recap: 5"): the swings
+    /// a recap covers, "1" for a verdict after every swing, "ask" when
+    /// only asked for.
+    var shortTitle: String {
+        switch self {
+        case .everySwing: "1"
+        case .everyFive: "5"
+        case .everyTen: "10"
+        case .onRequest: "ask"
+        }
+    }
+
     /// How many swings a recap covers, or nil when none is shown unasked.
     var recapSize: Int? {
         switch self {

@@ -112,7 +112,7 @@ struct ExperimentalSettingsView: View {
             Section {
                 Toggle("Capture practice swings", isOn: $capturePracticeSwings)
             } header: {
-                SectionHeading("Auto & Manual Capture")
+                SectionHeading("Auto & manual capture")
             } footer: {
                 HelpFooter("Off: only real shots are detected.")
             }

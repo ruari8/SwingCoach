@@ -408,7 +408,7 @@ struct LibraryView: View {
                 .font(.system(size: 60))
                 .foregroundStyle(Color.helpText)
 
-            Text("No Swings Yet")
+            Text("No swings yet")
                 .font(.appTitle)
 
             Text("Record a swing or import from Photos")
@@ -555,15 +555,18 @@ struct LibraryView: View {
         let title = sessionTitle(session)
         let count = session.swings.count
 
-        // One compact row: the day over its time and count, then the
-        // session's actions.
+        // One compact row: the day over its time (and its count when
+        // there is more than one session), then the session's actions.
         return HStack(alignment: .center, spacing: 8) {
             VStack(alignment: .leading, spacing: 0) {
                 Text(title)
                     .font(.appTitle)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
-                Text("\(sessionTimeRange(session)) · \(count) swing\(count == 1 ? "" : "s")")
+                // The count only where the header line doesn't already
+                // say it: with one session, the library's count is it.
+                Text(count == library.totalSwings ? sessionTimeRange(session)
+                     : "\(sessionTimeRange(session)) · \(count) swing\(count == 1 ? "" : "s")")
                     .font(.appCaption.monospacedDigit())
                     .foregroundStyle(Color.helpText)
                     .lineLimit(1)
@@ -584,7 +587,8 @@ struct LibraryView: View {
                 }
             } label: {
                 // A secondary action beside Review, the primary one; the
-                // count it covers is on the line beside it.
+                // count it covers is on the line beside it, or the
+                // header's when the session is the whole library.
                 Text(isWholeSessionSelected ? "Deselect" : "Select")
             }
             .buttonStyle(SecondaryCapsuleButtonStyle())
@@ -896,7 +900,7 @@ struct LibraryView: View {
                 filterVantage = nil
             } label: {
                 HStack {
-                    Text("All Swings")
+                    Text("All swings")
                     if filterVantage == nil {
                         Image(systemName: "checkmark")
                     }
@@ -1349,7 +1353,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             ZStack {
                 // Video fills its container; in edge-to-edge mode it extends behind
                 // the notch/home indicator while the chrome below keeps its insets.
-                let lift = stopLift(in: geometry)
+                let lift = videoLift(in: geometry)
                 fillLayer(
                     Group {
                         if let player {
@@ -1383,31 +1387,38 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 }
             }
             .background(Color.black)
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: stopLift(in: geometry))
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: videoLift(in: geometry))
         }
     }
 
-    /// How far to lift the video so the part that matters at a stop, and
-    /// the feet and ball under it, sit clear above the panel, without
-    /// pushing its top under the top row. The black band above a
-    /// letterboxed clip is free to use whatever the top row allows: only
-    /// sky moves into it.
-    private func stopLift(in geometry: GeometryProxy) -> CGFloat {
-        guard isAtWalkthroughStop, let stopFocus, let focus = stopFocus(seconds(currentTime)),
-              let aspect = videoAspect, aspect > 0, let panelTop else { return 0 }
+    /// How far the video sits above the middle of the screen. Edge to
+    /// edge, a portrait clip is anchored with its top at the safe area's top in every state,
+    /// on the walkthrough or off it, so it never jumps when the card comes
+    /// and goes; only the black band below it grows. At a stop it may lift
+    /// further, so the part that matters, and the feet and ball under it,
+    /// sit clear above the panel, without pushing its top under the top
+    /// row; any black band left above a letterboxed clip is free to use
+    /// whatever the top row allows: only sky moves into it.
+    private func videoLift(in geometry: GeometryProxy) -> CGFloat {
+        guard let aspect = videoAspect, aspect > 0 else { return 0 }
         // Edge to edge, the video is centred in the whole screen, not in
         // the safe area this reader measures.
         let insets = edgeToEdge ? geometry.safeAreaInsets : EdgeInsets()
         let size = CGSize(width: geometry.size.width + insets.leading + insets.trailing,
                           height: geometry.size.height + insets.top + insets.bottom)
         let height = size.width / max(size.height, 1) > CGFloat(aspect) ? size.height : size.width / CGFloat(aspect)
-        let videoTop = geometry.frame(in: .global).minY - insets.top + (size.height - height) / 2
+        let screenTop = geometry.frame(in: .global).minY - insets.top
+        let centredTop = screenTop + (size.height - height) / 2
+        let anchor = edgeToEdge && aspect < 1 ? max(0, centredTop - geometry.frame(in: .global).minY) : 0
+        let videoTop = centredTop - anchor
+        guard isAtWalkthroughStop, let stopFocus, let focus = stopFocus(seconds(currentTime)),
+              let panelTop else { return anchor.rounded() }
         let bottom = videoTop + CGFloat(focus.upperBound) * height + Self.stopFootClearance
         let top = videoTop + CGFloat(focus.lowerBound) * height - 24
         let wanted = max(0, bottom - panelTop)
         let room = max(0, top - (geometry.frame(in: .global).minY + ReviewTopBar.topPadding + ReviewTopBar.buttonSize + 12))
-        let blackBand = max(0, videoTop - (geometry.frame(in: .global).minY - insets.top))
-        return min(wanted, max(room, blackBand), size.height * 0.4).rounded()
+        let blackBand = max(0, videoTop - screenTop)
+        return (anchor + min(wanted, max(room, blackBand), size.height * 0.4)).rounded()
     }
 
     /// Under the lowest part that matters at a stop (the ball at the end
@@ -1562,12 +1573,15 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
             // buttons stay centred over both.
             HStack(spacing: 0) {
                 transportReadout
-                    .frame(maxWidth: Self.transportReadoutWidth, alignment: .leading)
-                Spacer(minLength: 0)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                // The transport buttons' own width, so the readout takes
+                // all the room up to the step-back button.
+                Color.clear.frame(width: Self.transportClusterWidth + 2 * Self.transportReadoutGap, height: 1)
                 lockSlot
+                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
 
-            HStack(spacing: 26) {
+            HStack(spacing: Self.transportButtonGap) {
                 frameStepButton(systemImage: "backward.frame.fill", direction: -1)
 
                 Button {
@@ -1576,7 +1590,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                         .font(.system(size: 22, weight: .bold))
                         .foregroundColor(.white)
-                        .frame(width: 40, height: 40)
+                        .frame(width: Self.transportButtonSize, height: Self.transportButtonSize)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -1587,36 +1601,49 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         }
     }
 
-    /// The transport row's right slot: the Lock button, "Controls" with
-    /// the rail's caption inset either side.
+    /// The transport row's right slot: the Lock button, "Lock" or
+    /// "Unlock" with the rail's caption inset either side.
     private static var lockSlotWidth: CGFloat { 64 }
 
-    /// The transport row's left slot: wide enough for a position's name
-    /// on two short lines, clear of the step-back button on a 375-point
-    /// phone.
-    private static var transportReadoutWidth: CGFloat { 84 }
+    /// The step-back, play and step-forward buttons, centred in the row.
+    private static var transportButtonSize: CGFloat { 40 }
+    private static var transportButtonGap: CGFloat { 26 }
+    private static var transportClusterWidth: CGFloat { transportButtonSize * 3 + transportButtonGap * 2 }
+    /// Between the readout and the step-back button.
+    private static var transportReadoutGap: CGFloat { 6 }
 
     /// The one readout of where the playhead is: the position's name on a
     /// position, else the time; "¼ speed" under it while fine-scrubbing.
     /// Neutral grey, never the accent, and no total duration (Swing Info
     /// has it). When the model was unsure of the position, a second line
     /// says so in words beside the shared glyph ("Low confidence"), so the
-    /// glyph never reads as help.
+    /// glyph never reads as help: two lines at most, the name on one and
+    /// the glyph and words on the other in the tighter readout
+    /// (`FixedType.readoutTight`).
     private var transportReadout: some View {
         let position = currentPositionNumber.flatMap { number in visiblePositions?.first { $0.number == number } }
         return VStack(alignment: .leading, spacing: 3) {
             Group {
                 if let position {
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(position.name)
-                            .lineLimit(2)
-                        // The readout's own 12-point size, wrapping
-                        // rather than shrinking past the 11-point floor.
                         if position.isLowConfidence {
-                            Text("\(LowConfidenceGlyph.image) \(SwingPosition.lowConfidenceTitle)")
-                                .font(FixedType.readout)
+                            // Two lines in all: the name on one, then the
+                            // glyph and "Low confidence", condensed (or
+                            // compressed on the narrowest phones) rather
+                            // than wrapping.
+                            ViewThatFits(in: .horizontal) {
+                                Text(position.name).fixedSize()
+                                Text(position.name).font(FixedType.readoutTight).fixedSize()
+                                Text(position.name).font(FixedType.readoutTightest).lineLimit(1)
+                            }
+                            ViewThatFits(in: .horizontal) {
+                                lowConfidenceLine(FixedType.readoutTight).fixedSize()
+                                lowConfidenceLine(FixedType.readoutTightest).fixedSize()
+                                lowConfidenceLine(FixedType.readoutTightest).lineLimit(2)
+                            }
+                        } else {
+                            Text(position.name)
                                 .lineLimit(2)
-                                .minimumScaleFactor(FixedType.minimumScale(of: FixedType.readoutSize))
                         }
                     }
                     .accessibilityElement(children: .ignore)
@@ -1645,6 +1672,15 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         .accessibilityIdentifier("playback-readout")
     }
 
+    /// The low-confidence glyph and its words, as one line in `font`.
+    private func lowConfidenceLine(_ font: Font) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 2) {
+            LowConfidenceGlyph.image
+            Text(SwingPosition.lowConfidenceTitle)
+        }
+        .font(font)
+    }
+
     @ViewBuilder
     private var lockSlot: some View {
             // Right: pin the controls for this review, or explicitly unlock.
@@ -1653,12 +1689,13 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                     setLocked(!isLocked)
                 } label: {
                     // Captioned like the tool rail, so no control on the
-                    // player is a bare glyph: the padlock over what it
-                    // locks, the controls on screen.
+                    // player is a bare glyph: the padlock over what a tap
+                    // does, "Lock" (keep the controls on screen) or
+                    // "Unlock".
                     VStack(spacing: 2) {
                         Image(systemName: isLocked ? "lock.fill" : "lock.open")
                             .font(.system(size: 14, weight: .bold))
-                        Text("Controls")
+                        Text(isLocked ? "Unlock" : "Lock")
                             .font(FixedType.railCaption)
                             .lineLimit(1)
                             .fixedSize()
@@ -1673,6 +1710,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(isLocked ? "Unlock controls" : "Keep controls on screen")
+                .accessibilityInputLabels(isLocked ? ["Unlock", "Unlock controls"] : ["Lock", "Lock controls"])
                 .frame(width: Self.lockSlotWidth, alignment: .trailing)
             } else {
                 Color.clear.frame(width: Self.lockSlotWidth, height: 1)
@@ -1683,7 +1721,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         Image(systemName: systemImage)
             .font(.system(size: 17, weight: .semibold))
             .foregroundColor(.white)
-            .frame(width: 40, height: 40)
+            .frame(width: Self.transportButtonSize, height: Self.transportButtonSize)
             .background(
                 Circle()
                     .fill(Color.white.opacity(activeStepDirection == direction ? 0.24 : 0.0))
@@ -2574,7 +2612,7 @@ struct FPSExportSheet: View {
             VStack(spacing: 24) {
                 // Header info
                 VStack(spacing: 8) {
-                    Text("Export Slower Version")
+                    Text("Export slower version")
                         .font(.appTitle)
 
                     Text("Current: \(formatDuration(currentDuration)) at \(Int(sourceFPS))fps")
