@@ -96,12 +96,9 @@ def metric_table(n):
 # ---- Per-metric small multiples (inline SVG, three series) ----------------
 
 def series(app, metric):
-    pts = []
-    for n, r in sorted(rounds.items()):
-        v = mean(apps[app][metric] for apps in r["members"].values() if app in apps)
-        if v is not None:
-            pts.append((n, v))
-    return pts
+    """Sol's scores: the one member who scored every round."""
+    return [(n, r["members"]["sol"][app][metric]) for n, r in sorted(rounds.items())
+            if "sol" in r["members"] and app in r["members"]["sol"]]
 
 
 def chart(metric):
@@ -168,20 +165,21 @@ declined = [d for n in sorted(notes, key=int) for d in notes[n].get("declined", 
 start_end = ""
 for m in MEMBERS:
     a = first["members"].get(m, {}).get("swingcoach")
-    b = last["members"].get(m, {}).get("swingcoach")
+    scored = [n for n, r in sorted(rounds.items()) if m in r["members"]]
+    b = rounds[scored[-1]]["members"][m]["swingcoach"] if scored else None
     start_end += (f"<tr><td>{esc(MEMBERS[m])}</td>"
                   f"<td class=num>{'%.1f' % min(a[k] for k in K) if a else '–'}</td><td class=num>{'%.1f' % a['overall'] if a else '–'}</td>"
                   f"<td class=num>{'%.1f' % min(b[k] for k in K) if b else '–'}</td><td class=num>{'%.1f' % b['overall'] if b else '–'}</td></tr>")
 
-page = f"""<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>
-<title>SwingCoach UI Council</title>
+page = f"""<title>SwingCoach UI Council</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <style>
 :root{{--bg:#fbfbf9;--surface:#ffffff;--ink:#141413;--ink2:#55544f;--line:#e4e2dc;--accent:#5b7f00;--low:#b3261e;
 --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;}}
 @media (prefers-color-scheme:dark){{:root:not([data-theme="light"]){{--bg:#151514;--surface:#1d1d1b;--ink:#f0efec;--ink2:#b9b8ae;--line:#33332f;--accent:#d8f36a;--low:#ff8a80;--s1:#3987e5;--s2:#d95926;--s3:#199e70;}}}}
 :root[data-theme="dark"]{{--bg:#151514;--surface:#1d1d1b;--ink:#f0efec;--ink2:#b9b8ae;--line:#33332f;--accent:#d8f36a;--low:#ff8a80;--s1:#3987e5;--s2:#d95926;--s3:#199e70;}}
 *{{box-sizing:border-box}} body{{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}}
-main{{max-width:1180px;margin:0 auto;padding:32px 16px 80px}} h1{{font-size:32px;margin:0 0 4px}} h2{{margin-top:48px;font-size:24px}} h3{{font-size:18px;margin:28px 0 8px}}
+main{{max-width:1180px;margin:0 auto;padding-block:32px 80px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}} h1{{font-size:32px;margin:0 0 4px}} h2{{margin-top:48px;font-size:24px}} h3{{font-size:18px;margin:28px 0 8px}}
 .lede{{color:var(--ink2);max-width:760px}} table{{border-collapse:collapse;margin:12px 0;font-size:14px}} th,td{{border-bottom:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}}
 th{{color:var(--ink2);font-weight:600}} .num{{font-variant-numeric:tabular-nums;text-align:right}} .low{{color:var(--low);font-weight:600}}
 .scroll{{overflow-x:auto}} table.wide{{font-size:12.5px}} tr.sportsbox td,tr.onform td{{color:var(--ink2)}}
@@ -194,17 +192,17 @@ th{{color:var(--ink2);font-weight:600}} .num{{font-variant-numeric:tabular-nums;
 .pair figure{{margin:0}} .pair img{{width:100%;border-radius:10px;border:1px solid var(--line);display:block}} .pair figcaption{{font-size:12px;color:var(--ink2);margin-top:4px}}
 .callouts{{max-width:820px}} .callouts li{{margin:6px 0}} .who{{color:var(--ink2)}} code{{font-size:13px}}
 .verdict{{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid var(--line);font-weight:600}}
-</style></head><body><main>
+</style><main>
 <h1>SwingCoach UI Council</h1>
 <p class=lede>{esc(summary.get('lede', 'Four models scored the app and two reference apps on a frozen 13-metric rubric, round by round, while the UI was fixed between rounds.'))}</p>
 <h2>Summary</h2>
 <p><span class=verdict>{esc(summary.get('verdict', 'In progress'))}</span></p>
 <ul><li>Rounds: {final} after the baseline.</li><li>Stop reason: {esc(summary.get('stop', 'still running'))}</li></ul>
-<table><thead><tr><th>Member</th><th>Start: lowest metric</th><th>Start: overall</th><th>End: lowest metric</th><th>End: overall</th></tr></thead><tbody>{start_end}</tbody></table>
+<table><thead><tr><th>Member</th><th>Start: lowest metric</th><th>Start: overall</th><th>Latest: lowest metric</th><th>Latest: overall</th></tr></thead><tbody>{start_end}</tbody></table>
 <h2>Scores, round by round</h2>{score_table()}
-<h3>Final round, every metric</h3>{metric_table(final)}
+<h3>Round 14, the last full council, every metric</h3>{metric_table(14)}<h3>Round {final}, every metric</h3>{metric_table(final)}
 <h2>Each metric, baseline to final</h2>
-<p class=legend><span><i style='background:var(--s1)'></i>SwingCoach</span><span><i style='background:var(--s2)'></i>Sportsbox</span><span><i style='background:var(--s3)'></i>Onform</span><span>Mean of the members who scored that round; dashed line at 9.5.</span></p>
+<p class=legend><span><i style='background:var(--s1)'></i>SwingCoach</span><span><i style='background:var(--s2)'></i>Sportsbox</span><span><i style='background:var(--s3)'></i>Onform</span><span>GPT Sol 6.2's scores, the one member who scored every round; dashed line at 9.5.</span></p>
 <div class=charts>{''.join(chart(k) for k in K)}</div>
 <h2>Before and after, screen by screen</h2>
 <p class=lede>Before is round 0 (the start of this council); after is round {final}. Numbers on the after image match the notes under it.</p>
@@ -215,6 +213,7 @@ th{{color:var(--ink2);font-weight:600}} .num{{font-variant-numeric:tabular-nums;
 <h2>Declined asks</h2>{bullet_list(declined)}
 <h2>Where members disagreed</h2>{bullet_list(summary.get('disagreements', []))}
 <h2>Council flubs</h2>{bullet_list(summary.get('flubs', []))}
-</main></body></html>"""
-(root / "report.html").write_text(page)
+</main>"""
+(root / "report-artifact.html").write_text(page)
+(root / "report.html").write_text("<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1,viewport-fit=cover'>" + page + "</html>")
 print(root / "report.html")

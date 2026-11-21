@@ -34,6 +34,7 @@ Scores are 1–10 per metric (see [rubric.md](rubric.md)). Columns: typo = typog
 | 9 | `3bad0b4` | sol | 6.4 | 7.8 | 7.1 | 7.6 |
 | 9 | `3bad0b4` | opus | 6.5 | 7.2 | 7.0 | 7.4 |
 | 9 | `3bad0b4` | fable | 6.6 | 7.5 | 6.5 | 7.9 |
+| 9 | `3bad0b4` | gemini | 6.8 | 7.5 | 6.0 | 7.8 |
 | 10 | `32a6525` | sol | 6.6 | 7.7 | 7.5 | 8.0 |
 | 11 | `4d540ad` | sol | 6.8 | 8.0 | 7.3 | 7.8 |
 | 12 | `c7ddd21` | sol | 6.6 | 8.0 | 7.6 | 8.1 |
@@ -41,6 +42,11 @@ Scores are 1–10 per metric (see [rubric.md](rubric.md)). Columns: typo = typog
 | 12 | `c7ddd21` | fable | 6.8 | 7.5 | 6.1 | 7.4 |
 | 12 | `c7ddd21` | gemini | 6.3 | 7.4 | 6.6 | 8.0 |
 | 13 | `a0a49d5` | sol | 6.7 | 8.0 | 7.3 | 7.8 |
+| 14 | `16f3d2a` | sol | 6.9 | 8.2 | 7.6 | 8.1 |
+| 14 | `16f3d2a` | opus | 6.4 | 7.3 | 6.6 | 7.2 |
+| 14 | `16f3d2a` | fable | 6.7 | 7.5 | 6.5 | 7.2 |
+| 14 | `16f3d2a` | gemini | 6.8 | 7.8 | 6.0 | 7.6 |
+| 15 | `221e3d6` | sol | 6.8 | 8.1 | 7.5 | 7.8 |
 
 ## Round 0
 
@@ -409,7 +415,15 @@ Declined:
 | Sportsbox | 6.3 | 6.5 | 6.2 | 6.0 | 6.0 | 6.2 | 5.6 | 6.8 | 6.2 | 7.4 | 6.4 | 6.2 | 6.5 | 5.6 |
 | Onform | 7.6 | 7.4 | 7.8 | 7.5 | 8.0 | 6.6 | 6.8 | 8.4 | 7.2 | 6.4 | 7.2 | 8.4 | 7.9 | 6.4 |
 
-Thumbnails are now square at 220 pt × screen scale, about 2.4× the memory of round 8's. Scored by Sol, Opus and Fable; Gemini's round 9 scores were still running when round 10 started.
+**gemini**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.8 | 7.7 | 7.6 | 7.5 | 7.2 | 7.4 | 6.9 | 8.0 | 8.1 | 6.8 | 7.3 | 7.6 | 7.5 | 6.8 |
+| Sportsbox | 5.6 | 6.0 | 6.1 | 6.4 | 5.4 | 5.8 | 6.0 | 6.8 | 6.3 | 7.0 | 6.5 | 5.7 | 6.0 | 5.4 |
+| Onform | 7.9 | 7.6 | 8.0 | 7.8 | 8.1 | 6.5 | 7.5 | 8.8 | 7.4 | 6.9 | 8.0 | 8.2 | 7.8 | 6.5 |
+
+Thumbnails are now square at 220 pt × screen scale, about 2.4× the memory of round 8's. Scored by Sol, Opus and Fable; Gemini's round 9 scores arrived after round 14 and were folded in here.
 
 ## Round 10
 
@@ -573,3 +587,93 @@ Declined:
 | SwingCoach | 8.0 | 8.1 | 7.8 | 8.3 | 7.5 | 7.4 | 6.7 | 9.1 | 8.3 | 7.1 | 7.4 | 8.2 | 8.0 | 6.7 |
 | Sportsbox | 7.0 | 7.2 | 6.6 | 7.4 | 7.1 | 6.8 | 6.2 | 7.9 | 7.6 | 8.6 | 6.9 | 7.3 | 7.3 | 6.2 |
 | Onform | 7.5 | 7.8 | 7.3 | 7.6 | 7.9 | 7.1 | 6.7 | 9.0 | 8.0 | 7.2 | 7.4 | 8.1 | 7.8 | 6.7 |
+
+## Round 14
+
+Build: `16f3d2a`
+
+Changes this round:
+
+- Auto segment reads 'Auto ready' while detection is active, plain 'Auto' when paused; same 184 × 44 pt control (Sol).
+- Recap button 'Compare last 5' (Sol).
+- Amber '!' and red '!!' verdict dots (Sol).
+- Folded card: 'Jump to impact finding' (Sol).
+- Comparison keys only what its tiles draw; camera caveat in All checks only (Sol).
+- Guide rows say 'Reference only' (Sol).
+- Comparison tiles all one size again (Sol; reverses round 13's half-height tile).
+- Footer: 'Listed in swing order. Work on the earliest first.' (Sol, third ask).
+- 'Show Auto recap' in Settings; 'Recap: every 5 swings' chip (Sol).
+
+Declined:
+
+- '4 steps out' instead of the severity word (Sol): Ruari wants words for beginners; the badge carries the number.
+- Redrawing the shaft line from the grip (Sol): the line shows where the shaft points, extended to the ground.
+
+**sol**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 8.1 | 8.4 | 8.1 | 8.3 | 7.7 | 8.1 | 6.9 | 9.0 | 8.0 | 7.4 | 8.0 | 8.5 | 8.2 | 6.9 |
+| Sportsbox | 7.1 | 7.8 | 7.1 | 7.6 | 7.4 | 7.0 | 6.7 | 8.0 | 7.5 | 8.5 | 7.0 | 7.6 | 7.6 | 6.7 |
+| Onform | 7.8 | 8.0 | 7.7 | 8.0 | 8.2 | 7.3 | 7.2 | 8.7 | 8.1 | 7.5 | 7.6 | 8.4 | 8.1 | 7.2 |
+
+**opus**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.4 | 7.4 | 7.1 | 7.0 | 6.4 | 6.9 | 7.3 | 7.6 | 6.8 | 6.6 | 7.3 | 7.5 | 7.3 | 6.4 |
+| Sportsbox | 6.4 | 6.5 | 6.2 | 6.6 | 6.3 | 6.0 | 5.5 | 6.5 | 6.7 | 7.2 | 6.0 | 6.7 | 6.6 | 5.5 |
+| Onform | 7.4 | 6.8 | 7.0 | 6.8 | 7.4 | 6.3 | 6.5 | 7.7 | 7.0 | 6.0 | 6.3 | 7.8 | 7.2 | 6.0 |
+
+**fable**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.4 | 7.7 | 7.4 | 7.6 | 7.1 | 7.3 | 6.7 | 7.2 | 7.8 | 7.0 | 8.1 | 7.7 | 7.5 | 6.7 |
+| Sportsbox | 6.4 | 6.7 | 6.3 | 6.4 | 6.0 | 6.0 | 5.7 | 6.4 | 6.6 | 7.2 | 6.5 | 6.4 | 6.5 | 5.7 |
+| Onform | 7.1 | 6.8 | 7.0 | 7.2 | 7.5 | 6.1 | 6.5 | 8.3 | 7.2 | 5.9 | 6.9 | 7.7 | 7.2 | 5.9 |
+
+**gemini**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.4 | 8.1 | 7.0 | 7.8 | 7.2 | 7.6 | 7.1 | 8.4 | 8.7 | 6.8 | 8.4 | 7.8 | 7.8 | 6.8 |
+| Sportsbox | 5.8 | 6.1 | 5.7 | 6.4 | 5.3 | 5.6 | 5.9 | 6.4 | 6.9 | 6.5 | 6.7 | 5.6 | 6.0 | 5.3 |
+| Onform | 7.8 | 7.6 | 7.5 | 6.9 | 8.0 | 6.4 | 6.7 | 8.5 | 8.1 | 6.3 | 7.7 | 7.7 | 7.6 | 6.3 |
+
+A usage limit stopped the first round-14 implementer before it changed any code; it was rerun from the same HEAD after the reset. The full council scores this round (moved up from 15). All four members score SwingCoach above both reference apps overall on this build (Sol 8.2 vs 7.6/8.1, Opus 7.3 vs 6.6/7.2, Fable 7.5 vs 6.5/7.2, Gemini 7.8 vs 6.0/7.6). Lowest score across members: 6.4 (Opus, consistency); three full rounds (9, 12, 14) without beating round 6's 6.8, so the plateau rule's fresh-angle round followed.
+
+## Round 15
+
+Build: `221e3d6`
+
+Changes this round:
+
+- Fresh angle on the two stalled metrics, consistency and accessibility: one glyph verdict badge everywhere (tick, amber '!', red '!!', dash); numbers only in All checks rows; the severity word one size larger (Opus, Fable, Gemini, Sol).
+- 'Good zone' everywhere a range is named; 'Good: x to y' on the swing-by-swing chart (Fable, Gemini).
+- Session pictures cropped to the same 4:5 golfer-centred region (Opus, Fable).
+- Zone strokes ~3 pt with a dark halo and 16–20% fill (Opus).
+- 'Recap: 5' moved into the top row beside '240 fps'; nothing centred over the viewfinder (Opus, Fable).
+- Transport label on two lines; lock captioned 'Lock' / 'Unlock' (Opus, Fable, Gemini).
+- Video keeps the same top on and off the walkthrough (Fable).
+- All checks summary: no 'Top finding' repeat, one-line key (Fable).
+- Session copy: '7 of 11 swings good', 'N of M measured', no bare camera glyph (Opus, Fable, Gemini).
+- Light caption grey darkened to ~6.2:1 (Fable).
+- Library session row drops the duplicated count (Fable, Opus).
+- Next and the card's primary actions use the lime fill (Fable, second ask).
+- 'Clubhead' and sentence-case section headers (Fable, Gemini).
+
+Declined:
+
+- Removing the toolbar select icon (Opus, Fable, Gemini): library-wide selection is a feature.
+- A compact end-of-list not-judged tile (Opus): round 14 restored one tile size so the grid reads in swing order.
+
+**sol**
+
+| App | typo | hier | space | color | cons | clar | a11y | subj | overl | data | state | polish | overall | min |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SwingCoach | 7.8 | 8.3 | 7.7 | 8.2 | 8.0 | 7.8 | 6.8 | 8.7 | 8.5 | 7.3 | 7.9 | 8.2 | 8.1 | 6.8 |
+| Sportsbox | 7.1 | 7.0 | 6.8 | 7.1 | 7.4 | 6.7 | 6.5 | 8.1 | 7.7 | 8.1 | 7.0 | 7.5 | 7.5 | 6.5 |
+| Onform | 7.6 | 7.6 | 7.5 | 7.2 | 7.8 | 7.0 | 6.7 | 8.6 | 8.0 | 7.2 | 7.4 | 8.0 | 7.8 | 6.7 |
+
+Last round: Ruari asked to stop after one more round because of usage. The interrupted implementer's partial work was finished by a second one. Scored by Sol only, to save usage.

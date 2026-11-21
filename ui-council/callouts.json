@@ -41,5 +41,172 @@
     "who": "the earlier pass"
    }
   ]
+ },
+ "council": {
+  "01-library": [
+   {
+    "x": 0.5,
+    "y": 0.62,
+    "what": "A dense Photos-style grid of square tiles (pinch for 2, 3 or 5 columns), each showing the impact frame.",
+    "why": "More swings at a glance, and tiles that differ from each other; the golfer finds a swing by its picture, not by reading.",
+    "who": "Ruari (grid); Fable (impact poster)"
+   },
+   {
+    "x": 0.83,
+    "y": 0.26,
+    "what": "One filled 'Review' button and a quiet 'Select'.",
+    "why": "One primary action per row; a bare golfer glyph became a labelled action.",
+    "who": "Sol, Opus, Fable"
+   },
+   {
+    "x": 0.75,
+    "y": 0.1,
+    "what": "Lime accent as the app tint, a darker lime ink in light mode.",
+    "why": "One accent instead of system blue, lime and green; status colours stay status-only.",
+    "who": "Opus, Fable"
+   }
+  ],
+  "03-session-review": [
+   {
+    "x": 0.5,
+    "y": 0.25,
+    "what": "One mark per swing: tick, amber '!', red '!!' or dash, in a 44 pt target.",
+    "why": "Severity reads by shape as well as colour, so it survives colour blindness and glare.",
+    "who": "Sol, Gemini, Opus, Fable"
+   },
+   {
+    "x": 0.5,
+    "y": 0.46,
+    "what": "'Start here' leads, with the finding and its severity word.",
+    "why": "The first thing to work on is the first thing read; the tally steps back to a heading.",
+    "who": "Sol"
+   }
+  ],
+  "05-player-open": [
+   {
+    "x": 0.49,
+    "y": 0.35,
+    "what": "Only this finding's drawing, with the ring sized to the head and the zone as an outlined band.",
+    "why": "One idea on the frame at a time; the gap between head and zone is the message.",
+    "who": "Sol, Opus, Fable"
+   },
+   {
+    "x": 0.5,
+    "y": 0.71,
+    "what": "A short step card: where, '1/4', a glyph badge (! or !!) with its word, the finding, Play and a lime Next.",
+    "why": "Readable at a glance from the tripod; caveats and legends moved one tap deeper. The card sits low, so the feet and ball stay visible.",
+    "who": "Ruari; all four members (glyph badge: Opus, Fable, Gemini)"
+   },
+   {
+    "x": 0.91,
+    "y": 0.16,
+    "what": "Tools fold away during the walkthrough, captioned 'Tools'.",
+    "why": "More of the golfer, and every control on the player now has a word under it.",
+    "who": "Sol, Opus, Fable"
+   },
+   {
+    "x": 0.5,
+    "y": 0.9,
+    "what": "The current position is always selected; level badges sit in their own slot above each pose.",
+    "why": "State is never ambiguous, and a badge clearly belongs to its pose.",
+    "who": "Sol, Gemini, Opus"
+   }
+  ],
+  "07-all-checks": [
+   {
+    "x": 0.5,
+    "y": 0.54,
+    "what": "Leads with '11 of 16 judged checks in zone', then the top finding.",
+    "why": "Whole swing first, detail second.",
+    "who": "Sol"
+   },
+   {
+    "x": 0.55,
+    "y": 0.71,
+    "what": "Each reading on a zone track; guide rows say 'Reference only' and are drawn dashed and neutral.",
+    "why": "A golfer sees where the swing sits against the good zone without comparing numbers, and a guide can't be mistaken for a pass.",
+    "who": "Sol, Fable"
+   }
+  ],
+  "09-swing-info": [
+   {
+    "x": 0.5,
+    "y": 0.6,
+    "what": "Dark, near-opaque sheet with Done and inset cards; 'Low \u00b7 50%' as one value.",
+    "why": "The same sheet style over the player everywhere, with no video ghosting through text.",
+    "who": "Sol, Opus, Fable"
+   }
+  ],
+  "10-player-address-P1": [
+   {
+    "x": 0.4,
+    "y": 0.71,
+    "what": "The folded finding says 'Jump to impact finding'.",
+    "why": "It reads as an action, not as a verdict on the frame you're looking at.",
+    "who": "Sol"
+   },
+   {
+    "x": 0.12,
+    "y": 0.83,
+    "what": "The frame's name in the transport row, with 'Low confidence' when it applies.",
+    "why": "One place for 'where am I', instead of a floating pill and a repeated time.",
+    "who": "Opus, Fable"
+   }
+  ],
+  "11-auto-recap": [
+   {
+    "x": 0.5,
+    "y": 0.72,
+    "what": "Recap cut to the finding, one picture and 'Compare last 5'.",
+    "why": "Read in a second on the walk back to the tripod, and it covers far less of the camera view.",
+    "who": "Ruari; Sol, Opus, Fable"
+   },
+   {
+    "x": 0.62,
+    "y": 0.11,
+    "what": "Auto's state lives in the toggle: the segment fills lime and reads 'Auto ready'.",
+    "why": "The live camera stays clear; no banner over the viewfinder.",
+    "who": "Ruari; Opus, Fable, Sol"
+   }
+  ],
+  "12-auto-compare": [
+   {
+    "x": 0.25,
+    "y": 0.22,
+    "what": "Keys only what the tiles draw.",
+    "why": "No legend entries for marks that aren't on screen.",
+    "who": "Sol"
+   },
+   {
+    "x": 0.25,
+    "y": 0.4,
+    "what": "Not-judged tile says why ('Short swing') in the same grid.",
+    "why": "An unjudged swing reads as a decision, not a broken thumbnail.",
+    "who": "Sol, Fable"
+   }
+  ],
+  "14-auto-camera": [
+   {
+    "x": 0.62,
+    "y": 0.11,
+    "what": "Auto ready in the toggle; the big 'Auto is on' panel is gone.",
+    "why": "Camera view first: the toggle already says the mode.",
+    "who": "Ruari"
+   },
+   {
+    "x": 0.36,
+    "y": 0.11,
+    "what": "'Recap: 5' sits in the top row beside '240 fps', in the same pill.",
+    "why": "Settings stay at the edge; nothing centred over where the golfer's hands and club are at the top.",
+    "who": "Opus, Fable"
+   },
+   {
+    "x": 0.75,
+    "y": 0.87,
+    "what": "Compact '12 saved' capsule.",
+    "why": "Secondary information stays small and out of the frame.",
+    "who": "Ruari"
+   }
+  ]
  }
 }

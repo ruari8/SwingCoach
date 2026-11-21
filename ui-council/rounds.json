@@ -176,7 +176,7 @@
   "declined": [
    "All council asks this round: the round implements only Ruari's direction."
   ],
-  "notes": "Thumbnails are now square at 220 pt \u00d7 screen scale, about 2.4\u00d7 the memory of round 8's. Scored by Sol, Opus and Fable; Gemini's round 9 scores were still running when round 10 started."
+  "notes": "Thumbnails are now square at 220 pt \u00d7 screen scale, about 2.4\u00d7 the memory of round 8's. Scored by Sol, Opus and Fable; Gemini's round 9 scores arrived after round 14 and were folded in here."
  },
  "10": {
   "changes": [
@@ -284,6 +284,28 @@
    "'4 steps out' instead of the severity word (Sol): Ruari wants words for beginners; the badge carries the number.",
    "Redrawing the shaft line from the grip (Sol): the line shows where the shaft points, extended to the ground."
   ],
-  "notes": "A usage limit stopped the first round-14 implementer before it changed any code; it was rerun from the same HEAD after the reset. The full council scores this round (moved up from 15)."
+  "notes": "A usage limit stopped the first round-14 implementer before it changed any code; it was rerun from the same HEAD after the reset. The full council scores this round (moved up from 15). All four members score SwingCoach above both reference apps overall on this build (Sol 8.2 vs 7.6/8.1, Opus 7.3 vs 6.6/7.2, Fable 7.5 vs 6.5/7.2, Gemini 7.8 vs 6.0/7.6). Lowest score across members: 6.4 (Opus, consistency); three full rounds (9, 12, 14) without beating round 6's 6.8, so the plateau rule's fresh-angle round followed."
+ },
+ "15": {
+  "changes": [
+   "Fresh angle on the two stalled metrics, consistency and accessibility: one glyph verdict badge everywhere (tick, amber '!', red '!!', dash); numbers only in All checks rows; the severity word one size larger (Opus, Fable, Gemini, Sol).",
+   "'Good zone' everywhere a range is named; 'Good: x to y' on the swing-by-swing chart (Fable, Gemini).",
+   "Session pictures cropped to the same 4:5 golfer-centred region (Opus, Fable).",
+   "Zone strokes ~3 pt with a dark halo and 16\u201320% fill (Opus).",
+   "'Recap: 5' moved into the top row beside '240 fps'; nothing centred over the viewfinder (Opus, Fable).",
+   "Transport label on two lines; lock captioned 'Lock' / 'Unlock' (Opus, Fable, Gemini).",
+   "Video keeps the same top on and off the walkthrough (Fable).",
+   "All checks summary: no 'Top finding' repeat, one-line key (Fable).",
+   "Session copy: '7 of 11 swings good', 'N of M measured', no bare camera glyph (Opus, Fable, Gemini).",
+   "Light caption grey darkened to ~6.2:1 (Fable).",
+   "Library session row drops the duplicated count (Fable, Opus).",
+   "Next and the card's primary actions use the lime fill (Fable, second ask).",
+   "'Clubhead' and sentence-case section headers (Fable, Gemini)."
+  ],
+  "declined": [
+   "Removing the toolbar select icon (Opus, Fable, Gemini): library-wide selection is a feature.",
+   "A compact end-of-list not-judged tile (Opus): round 14 restored one tile size so the grid reads in swing order."
+  ],
+  "notes": "Last round: Ruari asked to stop after one more round because of usage. The interrupted implementer's partial work was finished by a second one. Scored by Sol only, to save usage."
  }
 }
