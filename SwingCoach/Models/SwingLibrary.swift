@@ -463,7 +463,10 @@ class SwingLibrary: ObservableObject {
                 options: options
             ) { image, _ in
                 Task { @MainActor in
-                    if let index = self.swings.firstIndex(where: { $0.photoAssetID == asset.localIdentifier }) {
+                    // Positions may have arrived since the request: the
+                    // impact poster wins over Photos' first frame.
+                    if let index = self.swings.firstIndex(where: { $0.photoAssetID == asset.localIdentifier }),
+                       !self.hasImpactPoster(self.swings[index]) {
                         self.swings[index].thumbnail = image.map(Self.cardThumbnail)
                     }
                 }
@@ -575,8 +578,9 @@ class SwingLibrary: ObservableObject {
     
     /// Check if Photos contains the assets we expect (user may have deleted some)
     func validateAssets() {
-        // A swing with its own impact poster keeps it over Photos' frame.
-        let assetIDs = swings.filter { !$0.photoAssetID.isEmpty && !hasImpactPoster($0) }.map { $0.photoAssetID }
+        // Every Photos-backed swing is checked: one left out of this fetch
+        // would look missing below and be removed.
+        let assetIDs = swings.filter { !$0.photoAssetID.isEmpty }.map { $0.photoAssetID }
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: assetIDs, options: nil)
         
         var validIDs = Set<String>()
