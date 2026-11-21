@@ -427,47 +427,15 @@ enum LibraryGrid {
 /// away while the phone sits on a tripod.
 enum CaptureControl {
     static let height: CGFloat = 44
-    /// The switch's titles: subheadline, one step under body, so "Auto
-    /// ready" and its mark fit the Auto segment. Capped at its default
-    /// size, since the switch keeps one width (`modeWidth`) and a title
-    /// may not outgrow its segment.
+    /// The switch's titles: subheadline, one step under body. Capped at
+    /// its default size, since the switch keeps one width (`modeWidth`).
     static var modeFont: UIFont {
         UIFontMetrics(forTextStyle: .subheadline)
             .scaledFont(for: .systemFont(ofSize: modeFontSize), maximumPointSize: modeFontSize)
     }
     static let modeFontSize: CGFloat = 15
-    /// The state mark inside the switch's Auto segment while Auto is
-    /// chosen, with a shape per state (a filled dot listening, a hollow
-    /// ring paused, a warning glyph on a problem), so colour is never the
-    /// only signal. The switch itself carries the mode and Auto's state in
-    /// words: its Auto segment reads "Auto ready" and fills with the
-    /// accent while Auto listens, plain "Auto" otherwise. As tall as the
-    /// title's capitals, so it reads as part of the word.
-    static var indicatorSize: CGFloat {
-        modeFont.capHeight.rounded()
-    }
-    /// Between the state mark and the Auto title.
-    static let indicatorGap: CGFloat = 5
-    /// The Auto / Manual switch's width: unchanged as Auto's title grows
-    /// to "Auto ready"; the Auto segment takes the larger share
-    /// (`autoSegmentWidth`), Manual the rest.
-    static let modeWidth: CGFloat = 184
-    /// The Auto segment: room for the mark and "Auto ready" with a margin
-    /// each side; Manual keeps 76 points.
-    static let autoSegmentWidth: CGFloat = 108
-    /// How far the Auto title moves right while its mark shows, so the
-    /// mark and title sit centred in the segment together.
-    static var autoTitleShift: CGFloat { (indicatorGap + indicatorSize) / 2 }
-
-    /// Where the state mark sits from the switch's leading edge: just
-    /// before the Auto segment's title, which the switch centres in the
-    /// segment and moves right by `autoTitleShift` (`AccentSegmentedControl`
-    /// sets the chosen title semibold).
-    static func autoMarkOffset(title: String) -> CGFloat {
-        let font = UIFont.systemFont(ofSize: modeFont.pointSize, weight: .semibold)
-        let titleWidth = (title as NSString).size(withAttributes: [.font: font]).width
-        return max(4, (autoSegmentWidth - titleWidth - indicatorGap - indicatorSize) / 2)
-    }
+    /// The Auto / Manual switch's width, two equal segments.
+    static let modeWidth: CGFloat = 168
     /// A menu chip over the camera (the frame rate, the coach's cadence):
     /// drawn this tall, 44 to tap.
     static let chipHeight: CGFloat = 36
@@ -667,10 +635,9 @@ struct PlayerChromeCapsuleButtonStyle: ButtonStyle {
 
 // MARK: - Mode switch
 
-/// A segmented switch whose chosen segment can fill with the accent (dark
-/// text on lime): Capture's Auto / Manual, filled while Auto listens, so
-/// the switch itself shows the state with nothing over the viewfinder.
-/// It stays a system segmented control, so VoiceOver and Voice Control
+/// A segmented switch with its own font and white titles over the camera
+/// (Capture's Auto / Manual); its chosen segment can fill with the accent
+/// (dark text on lime). It stays a system segmented control, so VoiceOver and Voice Control
 /// read it as one.
 struct AccentSegmentedControl: UIViewRepresentable {
     let titles: [String]
@@ -679,12 +646,6 @@ struct AccentSegmentedControl: UIViewRepresentable {
     var accentsSelection: Bool
     var identifier: String
     var font: UIFont = .preferredFont(forTextStyle: .callout)
-    /// The first segment's width, the rest sharing what is left; nil
-    /// shares the width evenly.
-    var firstSegmentWidth: CGFloat? = nil
-    /// Moves the first segment's title right, to make room for a mark
-    /// drawn before it.
-    var firstTitleShift: CGFloat = 0
 
     func makeUIView(context: Context) -> UISegmentedControl {
         let control = UISegmentedControl(items: titles)
@@ -703,9 +664,6 @@ struct AccentSegmentedControl: UIViewRepresentable {
         if control.selectedSegmentIndex != selectedIndex {
             control.selectedSegmentIndex = selectedIndex
         }
-        control.setWidth(firstSegmentWidth ?? 0, forSegmentAt: 0)
-        control.setContentPositionAdjustment(UIOffset(horizontal: firstTitleShift, vertical: 0),
-                                             forSegmentType: .left, barMetrics: .default)
         let chosen = UIFont.systemFont(ofSize: font.pointSize, weight: .semibold)
         control.selectedSegmentTintColor = accentsSelection ? UIColor(Color.accentLime) : nil
         control.setTitleTextAttributes([.font: font, .foregroundColor: UIColor.white], for: .normal)

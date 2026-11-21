@@ -1369,10 +1369,15 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 )
                 .offset(y: -lift)
 
-                contentOverlay(currentTime, geometry.size)
-                    .environment(\.playerIsPlaying, isPlaying)
-                    .environment(\.playerPanelIsShown, controlsVisible && bottomPanel != nil && !isDrawing)
-                    .frame(width: geometry.size.width, height: geometry.size.height)
+                // The drawings share the video's frame exactly: edge to
+                // edge the video ignores the safe area, and a drawing
+                // centred in the safe area instead would sit off the swing.
+                fillLayer(
+                    contentOverlay(currentTime, geometry.size)
+                        .environment(\.playerIsPlaying, isPlaying)
+                        .environment(\.playerPanelIsShown, controlsVisible && bottomPanel != nil && !isDrawing)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                )
                     .offset(y: -lift)
                     .allowsHitTesting(contentOverlayAllowsHitTesting)
 
@@ -1601,8 +1606,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         }
     }
 
-    /// The transport row's right slot: the Lock button, "Lock" or
-    /// "Unlock" with the rail's caption inset either side.
+    /// The transport row's right slot: the padlock button.
     private static var lockSlotWidth: CGFloat { 64 }
 
     /// The step-back, play and step-forward buttons, centred in the row.
@@ -1688,25 +1692,16 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
                 Button {
                     setLocked(!isLocked)
                 } label: {
-                    // Captioned like the tool rail, so no control on the
-                    // player is a bare glyph: the padlock over what a tap
-                    // does, "Lock" (keep the controls on screen) or
-                    // "Unlock".
-                    VStack(spacing: 2) {
-                        Image(systemName: isLocked ? "lock.fill" : "lock.open")
-                            .font(.system(size: 14, weight: .bold))
-                        Text(isLocked ? "Unlock" : "Lock")
-                            .font(FixedType.railCaption)
-                            .lineLimit(1)
-                            .fixedSize()
-                    }
-                    .foregroundColor(isLocked ? .black : .white)
-                    .padding(.horizontal, PlayerToolRail.captionInset)
-                    .frame(minWidth: PlayerToolRail.buttonSize, minHeight: PlayerToolRail.buttonHeight,
-                           maxHeight: PlayerToolRail.buttonHeight)
-                    .background(Capsule().fill(isLocked ? Color.accentLime : PlayerChrome.fill))
-                    .overlay(Capsule().strokeBorder(isLocked ? Color.clear : PlayerChrome.edge, lineWidth: 1))
-                    .contentShape(Capsule())
+                    // A bare padlock: the glyph is familiar, and a
+                    // caption under it only added clutter.
+                    Image(systemName: isLocked ? "lock.fill" : "lock.open")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(isLocked ? .black : .white)
+                        .frame(width: 40, height: 40)
+                        .background(Circle().fill(isLocked ? Color.accentLime : PlayerChrome.fill))
+                        .overlay(Circle().strokeBorder(isLocked ? Color.clear : PlayerChrome.edge, lineWidth: 1))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(isLocked ? "Unlock controls" : "Keep controls on screen")
@@ -1816,7 +1811,7 @@ struct PlaybackChromeView<Header: View, OverlayAccessory: View>: View {
         if swingPositions?.positions.isEmpty == false {
             // Shown is the default, so the button is not filled while the
             // strip is up: the strip itself says it is on.
-            tools.append(PlayerTool(id: "positions", title: "Positions",
+            tools.append(PlayerTool(id: "positions", title: "Positions", caption: "P1–P10",
                                     accessibilityLabel: showsSwingPositions ? "Hide swing positions" : "Show swing positions",
                                     icon: .pose(4)) {
                 withAnimation(.easeInOut(duration: 0.2)) { showsSwingPositions.toggle() }

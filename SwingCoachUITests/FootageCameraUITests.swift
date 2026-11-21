@@ -34,7 +34,7 @@ final class FootageCameraUITests: XCTestCase {
         let status = app.staticTexts["footage-camera-status"]
         XCTAssertTrue(status.waitForExistence(timeout: 20), "Capture did not show the footage camera")
         XCTAssertFalse(status.label.contains("Footage camera:"), "Footage camera failed: \(status.label)")
-        XCTAssertEqual(app.staticTexts["capture-status-title"].label, "Auto is on")
+        XCTAssertEqual(app.staticTexts["capture-status-title"].label, "Swings save automatically")
 
         // Auto never records through movieOutput; the stats must still leave
         // "Waiting for model…" once the detector has run on a frame.
@@ -55,8 +55,9 @@ final class FootageCameraUITests: XCTestCase {
         let allSaved = NSPredicate(format: "label == %@", "Review \(expected) saved swings")
         expectation(for: allSaved, evaluatedWith: saved)
         waitForExpectations(timeout: 60)
-        XCTAssertEqual(app.staticTexts["capture-status-detail"].label, "Swings save automatically",
-                       "Auto reported an error or is still saving")
+        XCTAssertEqual(app.staticTexts["capture-status-title"].label, "Swings save automatically",
+                       "Auto reported an error")
+        XCTAssertFalse(app.staticTexts["capture-status-detail"].exists, "Auto is still saving")
 
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "footage-finished"

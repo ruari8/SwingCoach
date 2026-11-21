@@ -18,7 +18,7 @@
    {
     "x": 0.5,
     "y": 0.9,
-    "what": "Level badges on the P1\u2013P10 strip.",
+    "what": "Level badges on the P1–P10 strip.",
     "why": "The strip doubles as a map of where the swing went wrong.",
     "who": "the earlier pass"
    }
@@ -132,7 +132,7 @@
    {
     "x": 0.5,
     "y": 0.6,
-    "what": "Dark, near-opaque sheet with Done and inset cards; 'Low \u00b7 50%' as one value.",
+    "what": "Dark, near-opaque sheet with Done and inset cards; 'Low · 50%' as one value.",
     "why": "The same sheet style over the player everywhere, with no video ghosting through text.",
     "who": "Sol, Opus, Fable"
    }
@@ -151,6 +151,13 @@
     "what": "The frame's name in the transport row, with 'Low confidence' when it applies.",
     "why": "One place for 'where am I', instead of a floating pill and a repeated time.",
     "who": "Opus, Fable"
+   },
+   {
+    "x": 0.86,
+    "y": 0.815,
+    "what": "The lock is a bare padlock again.",
+    "why": "The glyph is familiar; the caption under it only added clutter.",
+    "who": "Ruari"
    }
   ],
   "11-auto-recap": [
@@ -162,11 +169,11 @@
     "who": "Ruari; Sol, Opus, Fable"
    },
    {
-    "x": 0.62,
-    "y": 0.11,
-    "what": "Auto's state lives in the toggle: the segment fills lime and reads 'Auto ready'.",
-    "why": "The live camera stays clear; no banner over the viewfinder.",
-    "who": "Ruari; Opus, Fable, Sol"
+    "x": 0.56,
+    "y": 0.865,
+    "what": "Auto's state is one small line in the corner: a red dot and 'Swings save automatically'.",
+    "why": "The switch stays a plain Auto / Manual toggle and the camera view stays clear. Red is the usual recording light.",
+    "who": "Ruari"
    }
   ],
   "12-auto-compare": [
@@ -187,10 +194,10 @@
   ],
   "14-auto-camera": [
    {
-    "x": 0.62,
-    "y": 0.11,
-    "what": "Auto ready in the toggle; the big 'Auto is on' panel is gone.",
-    "why": "Camera view first: the toggle already says the mode.",
+    "x": 0.56,
+    "y": 0.865,
+    "what": "A red dot and 'Swings save automatically'; the Auto / Manual switch is plain again.",
+    "why": "Ruari preferred the clean toggle with a small indicator line to 'Auto ready' in the switch, and one line to 'Auto is on' plus a caption.",
     "who": "Ruari"
    },
    {
@@ -201,10 +208,28 @@
     "who": "Opus, Fable"
    },
    {
-    "x": 0.75,
-    "y": 0.87,
+    "x": 0.9,
+    "y": 0.82,
     "what": "Compact '12 saved' capsule.",
     "why": "Secondary information stays small and out of the frame.",
+    "who": "Ruari"
+   }
+  ],
+  "06-player-next-step": [
+   {
+    "x": 0.3,
+    "y": 0.42,
+    "look": "dark",
+    "what": "The shaft line sits on the club again.",
+    "why": "A council-round bug drew every coaching drawing about 23 pt below the video on edge-to-edge clips, so the line ran parallel to the shaft instead of along it. The drawing layer now shares the video's frame exactly.",
+    "who": "Ruari (found in review)"
+   },
+   {
+    "x": 0.91,
+    "y": 0.17,
+    "look": "dark",
+    "what": "Tools fold away on the walkthrough; the open rail is narrower.",
+    "why": "The rail was as wide as its longest caption, 'Positions'. That tool is now captioned 'P1–P10', so the rail is about 53 pt wide instead of 72.",
     "who": "Ruari"
    }
   ]

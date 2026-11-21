@@ -11,18 +11,17 @@ final class CaptureControlsUITests: XCTestCase {
 
     func testStatsDefaultOffPersistAndFollowBothCaptureModes() {
         let app = launch()
-        // Listening, the Auto segment says so in words.
-        let auto = app.segmentedControls.buttons["Auto ready"]
+        let auto = app.segmentedControls.buttons["Auto"]
         let manual = app.segmentedControls.buttons["Manual"]
         XCTAssertTrue(auto.waitForExistence(timeout: 5))
         XCTAssertTrue(auto.isSelected)
         XCTAssertLessThan(auto.frame.minX, manual.frame.minX)
         XCTAssertFalse(app.staticTexts["capture-model-stats"].exists)
         XCTAssertTrue(app.buttons["capture-saved-swings"].isEnabled)
-        // Armed and quiet: the switch's dot says Auto is on; no status panel
-        // or line covers the camera.
-        XCTAssertEqual(app.descendants(matching: .any)["capture-auto-indicator"].label, "Auto is on")
-        XCTAssertFalse(app.staticTexts["capture-status-title"].exists)
+        // Armed and quiet: one status line in the bottom corner, no panel
+        // over the camera.
+        XCTAssertEqual(app.staticTexts["capture-status-title"].label, "Swings save automatically")
+        XCTAssertFalse(app.staticTexts["capture-status-detail"].exists)
         XCTAssertFalse(app.staticTexts["capture-stop-hint"].exists)
         attach(app, "auto-default-clean")
 
@@ -285,7 +284,7 @@ final class CaptureControlsUITests: XCTestCase {
         let stats = app.staticTexts["capture-model-stats"]
         XCTAssertTrue(stats.waitForExistence(timeout: 5))
         XCTAssertEqual(stats.label, expected)
-        XCTAssertGreaterThan(stats.frame.minY, app.staticTexts["capture-status-detail"].frame.minY)
+        XCTAssertGreaterThan(stats.frame.minY, app.staticTexts["capture-status-title"].frame.minY)
     }
 
     private func attach(_ app: XCUIApplication, _ name: String) {

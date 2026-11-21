@@ -410,15 +410,17 @@ struct PlayerToolRail: View {
     /// it goes.
     static let buttonSize: CGFloat = 38
     static let buttonHeight: CGFloat = 46
-    /// The tools' capsule: the longest caption ("Positions") with
-    /// `captionInset` either side.
+    /// The tools' capsule: as wide as the longest caption a tool can
+    /// carry, with `captionInset` either side. Captions are kept short
+    /// ("P1–P10", not "Positions") so the rail stays narrow over the video.
     static let width: CGFloat = {
         let font = UIFont.systemFont(ofSize: 11, weight: .semibold)  // FixedType.railCaption
-        let longest = ("Positions" as NSString).size(withAttributes: [.font: font]).width
+        let longest = ["Layers", "Delete", "Expand", "P1–P10", "Speed"]
+            .map { ($0 as NSString).size(withAttributes: [.font: font]).width }.max() ?? 40
         return (longest + 2 * captionInset).rounded(.up)
     }()
     /// Between the longest caption and the capsule's edges.
-    static let captionInset: CGFloat = 8
+    static let captionInset: CGFloat = 6
     /// From the screen's edge to the rail and its fold button, the same
     /// on both: the fold button and the capsule line up on that edge.
     static let edgeMargin: CGFloat = 16

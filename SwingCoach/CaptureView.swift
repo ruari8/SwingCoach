@@ -79,9 +79,6 @@ enum CaptureWorkflowMode: String, CaseIterable, Identifiable {
         case .auto: return "Auto"
         }
     }
-
-    /// The Auto segment's title while detection listens.
-    static let autoReadyTitle = "Auto ready"
 }
 
 struct AutoCaptureStatus: Equatable {
@@ -2012,20 +2009,18 @@ struct CaptureView: View {
             }
 
             if workflowMode == .auto {
-                // The camera's picture comes first: the Auto / Manual switch
-                // and its dot carry the mode, so the bottom row is only the
-                // saved count, plus a small status line when there is news
-                // (saving, an error, detection off) or the model stats are on.
-                HStack(alignment: .bottom, spacing: 12) {
-                    if showsAutoStatus {
-                        CaptureStatusLabel(
-                            title: autoStatusTitle,
-                            detail: autoStatusDetail,
-                            indicator: autoStatusIndicator,
-                            modelSnapshot: showCaptureModelStats && camera.autoCaptureStatus.isActive
-                                ? camera.liveSwingDetection : nil
-                        )
-                    }
+                // The camera's picture comes first: the switch stays a plain
+                // Auto / Manual toggle, and Auto's state is one small line in
+                // the bottom corner beside the saved count, a red dot while
+                // it is saving swings, as a recording light would be.
+                HStack(alignment: .center, spacing: 12) {
+                    CaptureStatusLabel(
+                        title: autoStatusTitle,
+                        detail: autoStatusDetail,
+                        indicator: autoStatusIndicator,
+                        modelSnapshot: showCaptureModelStats && camera.autoCaptureStatus.isActive
+                            ? camera.liveSwingDetection : nil
+                    )
                     Spacer(minLength: 0)
                     savedSwingsButton
                         .fixedSize()
@@ -2056,30 +2051,20 @@ struct CaptureView: View {
     }
 
     /// Tapped from a step away to stop Auto: the shared Capture control
-    /// height, 44 points. While Auto listens its segment reads "Auto
-    /// ready" and fills with the accent; its state mark sits inside the
-    /// segment, before the title.
+    /// height, 44 points. A plain two-way switch; Auto's state is the
+    /// status line in the bottom corner.
     private var modeSwitch: some View {
         AccentSegmentedControl(
-            titles: CaptureWorkflowMode.allCases.map(modeTitle),
+            titles: CaptureWorkflowMode.allCases.map(\.displayName),
             selectedIndex: Binding(
                 get: { CaptureWorkflowMode.allCases.firstIndex(of: workflowMode) ?? 0 },
                 set: { workflowMode = CaptureWorkflowMode.allCases[$0] }
             ),
-            accentsSelection: autoIsReady,
+            accentsSelection: false,
             identifier: "capture-mode",
-            font: CaptureControl.modeFont,
-            firstSegmentWidth: CaptureControl.autoSegmentWidth,
-            firstTitleShift: workflowMode == .auto ? CaptureControl.autoTitleShift : 0
+            font: CaptureControl.modeFont
         )
         .frame(width: CaptureControl.modeWidth, height: CaptureControl.height)
-        .overlay(alignment: .leading) {
-            if workflowMode == .auto {
-                autoIndicator
-                    .offset(x: CaptureControl.autoMarkOffset(title: modeTitle(.auto)))
-                    .allowsHitTesting(false)
-            }
-        }
     }
 
     /// How often the coach recaps, beside the frame rate in Auto.
@@ -2149,83 +2134,30 @@ struct CaptureView: View {
         .accessibilityIdentifier("capture-saved-swings")
     }
 
+    /// One line while Auto is armed and quiet: what it does, not that it
+    /// is on (the switch says that).
     private var autoStatusTitle: String {
         if camera.autoCaptureStatus.lastErrorMessage != nil { return "Auto needs attention" }
         if camera.liveSwingDetection.status == .unavailable { return "Detection unavailable" }
-        return camera.autoCaptureStatus.isActive ? "Auto is on" : "Auto is off"
+        return camera.autoCaptureStatus.isActive ? "Swings save automatically" : "Auto is paused"
     }
 
-    /// A status line only when there is something to say beyond "armed":
-    /// saving, an error, detection unavailable, paused, or the model stats
-    /// the diagnostics setting asks for. Armed and quiet, the switch's dot
-    /// says it all.
-    private var showsAutoStatus: Bool {
-        let status = camera.autoCaptureStatus
-        return !status.isActive || status.lastErrorMessage != nil || status.pendingSwingCount > 0
-            || camera.liveSwingDetection.status == .unavailable || showCaptureModelStats
-    }
-
-    private enum AutoIndicatorState { case listening, paused, problem }
-
-    /// Auto is chosen and detection is listening.
-    private var autoIsReady: Bool { workflowMode == .auto && autoIndicatorState == .listening }
-
-    /// A segment's title: Auto's says its state in words while it listens
-    /// ("Auto ready"); paused or on a problem it is plain "Auto" beside
-    /// its mark.
-    private func modeTitle(_ mode: CaptureWorkflowMode) -> String {
-        mode == .auto && autoIsReady ? CaptureWorkflowMode.autoReadyTitle : mode.displayName
-    }
-
-    private var autoIndicatorState: AutoIndicatorState {
-        if camera.autoCaptureStatus.lastErrorMessage != nil || camera.liveSwingDetection.status == .unavailable {
-            return .problem
-        }
-        return camera.autoCaptureStatus.isActive ? .listening : .paused
-    }
-
-    /// The mark inside the Auto segment, before its title at cap height,
-    /// a shape per state so colour is never the only signal: a filled dot
-    /// listening (black on the lime segment), a hollow ring paused, an
-    /// orange warning glyph when it needs attention. No footprint of its
-    /// own over the viewfinder.
-    private var autoIndicator: some View {
-        let size = CaptureControl.indicatorSize
-        return Group {
-            switch autoIndicatorState {
-            case .listening:
-                Circle().fill(Color.black)
-            case .paused:
-                Circle().strokeBorder(Color.white, lineWidth: 2)
-            case .problem:
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: size, weight: .bold))
-                    .foregroundStyle(autoStatusIndicator)
-            }
-        }
-        .frame(width: size, height: size)
-        .accessibilityElement()
-        .accessibilityLabel(autoStatusTitle)
-        .accessibilityIdentifier("capture-auto-indicator")
-    }
-
-    private var autoStatusDetail: String {
+    /// A second line only when there is news: an error, or swings saving.
+    private var autoStatusDetail: String? {
         if let error = camera.autoCaptureStatus.lastErrorMessage { return error }
         if camera.liveSwingDetection.status == .unavailable {
             return camera.liveSwingDetection.primaryMessage
         }
         let pending = camera.autoCaptureStatus.pendingSwingCount
-        if pending > 0 { return "Saving \(pending) swing\(pending == 1 ? "" : "s")…" }
-        return camera.autoCaptureStatus.isActive ? "Swings save automatically" : "Capture is paused"
+        return pending > 0 ? "Saving \(pending) swing\(pending == 1 ? "" : "s")…" : nil
     }
 
-    /// Armed is the accent, not red: red means a recording is running
-    /// (Manual's timer and record button).
+    /// Red while Auto is saving swings, the usual recording light.
     private var autoStatusIndicator: Color {
         if camera.autoCaptureStatus.lastErrorMessage != nil || camera.liveSwingDetection.status == .unavailable {
             return .orange
         }
-        return camera.autoCaptureStatus.isActive ? .accentLime : .gray
+        return camera.autoCaptureStatus.isActive ? .red : .gray
     }
 
     private var manualStatusTitle: String {
@@ -2410,7 +2342,7 @@ struct FocusIndicatorView: View {
 
 private struct CaptureStatusLabel: View {
     let title: String
-    let detail: String
+    let detail: String?
     var indicator: Color? = nil
     var modelSnapshot: LiveSwingDetectionSnapshot? = nil
 
@@ -2425,11 +2357,13 @@ private struct CaptureStatusLabel: View {
                     .font(.appLabel)
                     .accessibilityIdentifier("capture-status-title")
             }
-            Text(detail)
-                .font(.appCaption)
-                .foregroundStyle(.white.opacity(0.8))
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("capture-status-detail")
+            if let detail {
+                Text(detail)
+                    .font(.appCaption)
+                    .foregroundStyle(.white.opacity(0.8))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("capture-status-detail")
+            }
 
             if let snapshot = modelSnapshot,
                snapshot.status != .disabled, snapshot.status != .unavailable {

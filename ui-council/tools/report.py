@@ -2,7 +2,7 @@
 """Builds ui-council/report.html and ui-council/report-assets/ from the
 scores, the round notes, callouts.json and the screenshot folders.
 
-Usage: report.py <media-root> <final-round>   (media-root holds shots/rNN, shots/pre-pr)
+Usage: report.py <media-root> <final-round> [<shots-round>]   (media-root holds shots/rNN, shots/pre-pr)
 
 The images show private range footage, so report.html and report-assets/ are
 gitignored; the page is published privately instead.
@@ -13,6 +13,7 @@ from PIL import Image, ImageDraw, ImageFont
 root = pathlib.Path(__file__).resolve().parents[1]
 media = pathlib.Path(sys.argv[1]).expanduser()
 final = int(sys.argv[2])
+shots = int(sys.argv[3]) if len(sys.argv) > 3 else final  # screenshots may be newer than the last scored round
 assets = root / "report-assets"
 assets.mkdir(exist_ok=True)
 
@@ -267,8 +268,8 @@ table.whyt td.why{{min-width:320px;max-width:520px;color:var(--ink)}} table.whyt
 <h2 id=read>How far to trust these scores</h2>
 <div class=callout><ul>{''.join(f'<li>{esc(i)}</li>' for i in summary.get('honest', []))}</ul></div>
 <h2 id=screens>Before and after, screen by screen</h2>
-<p class=lede>Before is round 0, the start of this council. After is round {final}, the build on the PR. The numbers on each after image match the notes under it: what changed, why, and who asked for it.</p>
-{screen_section('shots/r00', f'shots/r{final:02d}', 'council', 'council')}
+<p class=lede>Before is round 0, the start of this council. After is the build on the PR: round {final} plus Ruari's review amendments. {esc(summary.get('amend', ''))} The numbers on each after image match the notes under it: what changed, why, and who asked for it.</p>
+{screen_section('shots/r00', f'shots/r{shots:02d}', 'council', 'council')}
 <h2 id=why>Why the score rose from the start</h2>
 <p class=lede>Each member's round 0 score next to their last one: round {final} for Sol, round 14 for the others. Every member scored every metric higher. Each row names the changes behind the gain; the screens above show them.</p>
 {why_up_table()}
