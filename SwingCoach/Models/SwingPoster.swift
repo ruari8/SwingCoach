@@ -90,7 +90,8 @@ nonisolated enum SwingPoster {
                     // A degraded picture with no image is not the answer;
                     // the full one, an error or a cancellation is.
                     let degraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
-                    if image == nil, degraded { return }
+                    let ended = info?[PHImageErrorKey] != nil || (info?[PHImageCancelledKey] as? Bool) == true
+                    if image == nil, degraded, !ended { return }
                     request.finish(continuation, with: image)
                 }
                 request.started(id, continuation)
@@ -252,7 +253,16 @@ nonisolated final class LibraryTilePictures {
         }
         guard !Task.isCancelled, generations[swing.id, default: 0] == generation else { return nil }
         if loads[key]?.id == loadID { loads[key] = nil }
-        guard let image else { return nil }
+        guard let image else {
+            // Overtaken by a bigger read for another tile of this swing:
+            // take that one's picture. A read that simply failed has
+            // nothing in its place, so it is not tried again.
+            if let entry = cache.object(forKey: key), entry.side >= pixelSide { return entry.image }
+            if let bigger = loads[key], bigger.id != loadID, bigger.side >= pixelSide {
+                return await picture(for: swing, pixelSide: pixelSide)
+            }
+            return nil
+        }
         if (cache.object(forKey: key)?.side ?? 0) < load.side {
             store(image, side: load.side, for: swing)
         }
