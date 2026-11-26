@@ -31,6 +31,9 @@ import Foundation
 ///   gives the fixture's full report (or fails) instead of running Vision.
 /// - `-ui-testing-coaching-short`, with the `coaching` seed: the oldest swing
 ///   is a chip, measured but not judged.
+/// - `-ui-testing-coaching-camera-high`, with the `coaching` seed: every
+///   swing's camera read as above hand height, so its club check (the
+///   transition) is held: drawn, not judged.
 /// - `-ui-testing-auto-library`, with the synthetic camera and no seed: the
 ///   Library's own swings are the Auto session, as on the `coaching` seed. The
 ///   UI council's screenshot tour seeds a coached range session this way.
@@ -216,6 +219,15 @@ extension UITestFixture {
                 // The third swing of the session is the clean one.
                 var report = fixtureCoachingReport(steep: index != 2)
                 if index == 0, arguments.contains("-ui-testing-coaching-short") { report.swingLength = .short }
+                if arguments.contains("-ui-testing-coaching-camera-high") {
+                    let placement = CoachingCameraPlacement(heightAboveHands: 22, offHandLine: 2, lineUncertainty: 8)
+                    report.cameraPlacement = placement
+                    swings[index].cameraPlacement = placement
+                    for held in report.metrics.indices
+                    where report.metrics[held].definition.dependsOnCamera && report.metrics[held].definition.scored {
+                        report.metrics[held].cameraHold = true
+                    }
+                }
                 if simulatedClipRead != nil, index == 4 {
                     // A first reading from Auto's copies: body checks, no evidence file.
                     report.fromLiveCopies = true

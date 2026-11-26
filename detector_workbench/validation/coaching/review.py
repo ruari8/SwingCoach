@@ -71,7 +71,9 @@ def draw_tile(clip_dir, evidence, report, position, box):
     for metric in report["metrics"]:
         if metric["position"] != position:
             continue
-        subject = colour(metric["level"])
+        # A club check held for the camera is drawn grey, like a guide.
+        held = metric.get("cameraHold") is True
+        subject = (190, 190, 190) if held else colour(metric["level"])
         lines.append((metric, subject))
         for shape in metric["drawings"]:
             fill = {"reference": REFERENCE, "zone": ZONE, "subject": subject}[shape["role"]]
@@ -109,7 +111,8 @@ def draw_tile(clip_dir, evidence, report, position, box):
     t.text((10, TILE_H + 4), NAMES[position], fill=(255, 255, 255), font=font(24))
     for i, (metric, col) in enumerate(lines):
         unit = "°" if metric["unit"] == "degrees" else "%"
-        state = f"L{metric['level']:+d}" if metric["level"] else "in zone" if metric.get("scored", True) else "guide"
+        state = ("held: camera" if metric.get("cameraHold") is True else f"L{metric['level']:+d}" if metric["level"]
+                 else "in zone" if metric.get("scored", True) else "guide")
         text = f"{metric['title']}: {metric['value']:+.0f}{unit}  {state}"
         t.text((10, TILE_H + 34 + 30 * i), text, fill=col if metric.get("scored", True) else (190, 190, 190), font=font(21))
     return tile
@@ -160,9 +163,12 @@ def main():
             parts.append(f"<tr><td>{definition['title']}</td><td>P{definition['position']}</td><td>{zone}</td><td>0</td><td colspan=4></td></tr>")
             continue
         vals = [m["value"] for m in metrics]
-        levels = [m["level"] for m in metrics]
+        # In zone, under and over count the judged readings only.
+        held = sum(m.get("cameraHold") is True for m in metrics)
+        levels = [m["level"] for m in metrics if m.get("cameraHold") is not True]
+        measured = f"{len(metrics)} ({held} held)" if held else f"{len(metrics)}"
         parts.append(
-            f"<tr><td>{definition['title']}</td><td>P{definition['position']}</td><td>{zone}</td><td>{len(metrics)}</td>"
+            f"<tr><td>{definition['title']}</td><td>P{definition['position']}</td><td>{zone}</td><td>{measured}</td>"
             f"<td>{statistics.median(vals):+.1f}{unit}</td><td class=ok>{sum(l == 0 for l in levels)}</td>"
             f"<td class=lo title=\"{html.escape(definition['below'])}\">{sum(l < 0 for l in levels)}</td>"
             f"<td class=hi title=\"{html.escape(definition['above'])}\">{sum(l > 0 for l in levels)}</td></tr>")
@@ -188,6 +194,11 @@ def main():
             parts.append("</table>")
         else:
             parts.append("<p>No fault showed up on half the swings.</p>")
+        cameras = [v["camera"]["verdict"] for v in session["verdicts"] if "camera" in v]
+        if cameras:
+            counts = ", ".join(f"{cameras.count(word)} {html.escape(word)}" for word in sorted(set(cameras)))
+            parts.append(f"<p>Camera placement, read off each address frame: {counts}. "
+                         f"The club checks are judged only where it is good.</p>")
     for name, _, lens in rows[: (limit + 1) if limit is not None else None]:
         verdict = headlines.get(name)
         said = f" <span class={'ok' if verdict['kind'] in ('good', 'better') else 'lo' if verdict['kind'] == 'focus' else ''}>{html.escape(verdict['headline'])}</span>" if verdict else ""
@@ -196,7 +207,14 @@ def main():
             lens_tag = f" <small style='color:#9aa'>f={lens['focalLengthPixels']:.0f} px ({html.escape(src)})</small>"
         else:
             lens_tag = " <small style='color:#777'>lens unknown</small>"
-        parts.append(f"<h2>{html.escape(name)}{said}{lens_tag}</h2><img loading=lazy src=\"{name}.jpg\">")
+        camera = (verdict or {}).get("camera")
+        camera_tag = ""
+        if camera:
+            readings = [f"{label} {camera[key]:+.0f}%" for key, label in
+                        (("heightAboveHands", "height"), ("offHandLine", "line")) if camera.get(key) is not None]
+            camera_tag = (f" <small style='color:#9aa'>camera {html.escape(camera['verdict'])}"
+                          f"{' (' + ', '.join(readings) + ')' if readings else ''}</small>")
+        parts.append(f"<h2>{html.escape(name)}{said}{lens_tag}{camera_tag}</h2><img loading=lazy src=\"{name}.jpg\">")
     (out / "index.html").write_text("\n".join(parts))
     print(out / "index.html")
 

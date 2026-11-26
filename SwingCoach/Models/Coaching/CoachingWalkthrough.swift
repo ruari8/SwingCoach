@@ -97,7 +97,7 @@ nonisolated enum CoachingWalkthrough {
     /// `among` is considered when given.
     private static func goodPicture(in report: SwingCoachingReport, among: Set<CoachingMetricID>?)
         -> (position: Int, clipTime: Double, metrics: [CoachingMetricID])? {
-        let inZone = report.metrics.filter { $0.definition.scored && $0.inZone && (among?.contains($0.id) ?? true) }
+        let inZone = report.metrics.filter { $0.isJudged && $0.inZone && (among?.contains($0.id) ?? true) }
         let byPosition = Dictionary(grouping: inZone, by: \.position)
         let position = byPosition[7] != nil && among == nil ? 7
             : byPosition.max { ($0.value.count, -$0.key) < ($1.value.count, -$1.key) }?.key

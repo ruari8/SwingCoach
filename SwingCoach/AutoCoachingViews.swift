@@ -224,8 +224,8 @@ extension CoachingThemeShowing {
 /// glance from the tripod: a picture of the swing that shows it most and
 /// the finding, with "Compare last 5" (the recap's window). The picture's own drawing carries that
 /// swing's level in its colour, so the card has no badge or level word to
-/// disagree with it. The count, each swing's level, the key and the camera
-/// caveat are in the comparison, so the card covers as little of the
+/// disagree with it. The count, each swing's level and the key
+/// are in the comparison, so the card covers as little of the
 /// viewfinder as it can. With no theme, a tick (nothing kept repeating) or
 /// a dash (nothing judged) stands where the picture would be.
 struct CoachingRecapCard: View {
@@ -504,8 +504,7 @@ struct CoachingCompareView: View {
                             .font(.appBody)
                             .accessibilityIdentifier("coach-compare-share")
                         // Only the key to what the tiles below draw; the
-                        // full key and a club check's camera caveat are in
-                        // All checks.
+                        // full key is in All checks.
                         CoachingLegend(results: picturedResults, subjectColours: subjectColours, picturedOnly: true)
                             .padding(.top, 4)
                     }
@@ -591,7 +590,7 @@ struct CoachingCompareView: View {
                                     .foregroundStyle(PlayerChrome.secondaryText)
                                 // Why, on its own line.
                                 if showing == .notJudged {
-                                    Text(sentenceCase(CoachingWords.reason(notJudged: report)))
+                                    Text(sentenceCase(CoachingWords.reason(notJudged: report, on: theme)))
                                         .font(.appCaption)
                                         .foregroundStyle(PlayerChrome.secondaryText)
                                 }
