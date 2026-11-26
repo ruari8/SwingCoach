@@ -118,13 +118,17 @@ final class SwingTempoTests: XCTestCase {
         XCTAssertNil(SwingTempo.measure(positions: reversedImpact, timeScale: 8))
     }
 
-    func testFlagsLowConfidenceOnlyOnDefiningPositions() throws {
-        // Low confidence on P8 does not make tempo unsure.
+    func testFlagsLowConfidenceOnlyOnMeasuredEndpointsP4AndP7() throws {
+        // Low confidence on P1 (address, fuzzy across still frames) or P8 does not make
+        // tempo unsure, because backswing starts at the club-tracked takeaway start, not P1.
         let p8Low = makePositions(confidences: [8: 0.35])
         XCTAssertFalse(try XCTUnwrap(SwingTempo.measure(positions: p8Low, timeScale: 8)).isLowConfidence)
 
-        // Low confidence on P1, P4, or P7 flags tempo as unsure.
-        for number in [1, 4, 7] {
+        let p1Low = makePositions(confidences: [1: 0.42])
+        XCTAssertFalse(try XCTUnwrap(SwingTempo.measure(positions: p1Low, timeScale: 8)).isLowConfidence)
+
+        // Low confidence on P4 (top) or P7 (impact) flags tempo as unsure.
+        for number in [4, 7] {
             let low = makePositions(confidences: [number: 0.49])
             let tempo = try XCTUnwrap(SwingTempo.measure(positions: low, timeScale: 8))
             XCTAssertTrue(tempo.isLowConfidence, "Low confidence on P\(number) must mark tempo unsure")

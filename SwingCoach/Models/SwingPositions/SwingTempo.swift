@@ -20,7 +20,9 @@ nonisolated struct SwingTempo: Codable, Equatable {
     let backswingMilliseconds: Double
     /// Real-time downswing duration in milliseconds: top (P4) to impact (P7).
     let downswingMilliseconds: Double
-    /// True when P1, P4, or P7 had low model confidence (< `SwingPosition.lowConfidence`).
+    /// True when P4 (top) or P7 (impact) had low model confidence (< `SwingPosition.lowConfidence`).
+    /// P1 (address) is not included: the TCN spreads probability across still address frames,
+    /// and backswing starts at the club-tracked `takeawayStartClipTime`, not P1 itself.
     let isLowConfidence: Bool
     /// Clip time of takeaway start (first movement after P1), on the clip's timeline.
     let takeawayStartClipTime: Double
@@ -78,7 +80,7 @@ nonisolated struct SwingTempo: Codable, Equatable {
             return nil
         }
 
-        let lowConfidence = p1.isLowConfidence || p4.isLowConfidence || p7.isLowConfidence
+        let lowConfidence = p4.isLowConfidence || p7.isLowConfidence
         return SwingTempo(
             backswingMilliseconds: backswingMs,
             downswingMilliseconds: downswingMs,

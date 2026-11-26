@@ -382,7 +382,7 @@ struct SwingInfoView: View {
                     SectionHeading("Tempo")
                 } footer: {
                     Text(tempo.isLowConfidence
-                         ? "First club movement after P1 to top (P4), then top to impact (P7). A ? and Low mark tempo when P1, P4 or P7 had low confidence."
+                         ? "First club movement after P1 to top (P4), then top to impact (P7). A ? and Low mark tempo when P4 or P7 had low confidence."
                          : "First club movement after P1 to top (P4), then top to impact (P7). Tour swings are often near 3:1.")
                         .foregroundStyle(Color.helpText)
                 }

@@ -64,11 +64,13 @@ The re-timed positions and `takeawayStartClipTime` are saved back on the swing, 
 - **Downswing time (ms):** `(P7 − P4) / sourceTimeScale × 1000`.
 - **Ratio:** backswing divided by downswing, shown to one decimal (e.g. `2.8:1`; tour swings are often near `3.0:1`).
 
-Down-the-line clips captured in the app only. Face-on clips, references, imports without a stored `sourceTimeScale`, and swings missing P1, P4, P7, or `takeawayStartClipTime` get no tempo; no frame rate is assumed and no number is invented. When P1, P4, or P7 has confidence under 0.5, the tempo reading is flagged `isLowConfidence` (marked with `? Low` in Swing Info) and left out of the session trend.
+Down-the-line clips captured in the app only. Face-on clips, references, imports without a stored `sourceTimeScale`, and swings missing P1, P4, P7, or `takeawayStartClipTime` get no tempo; no frame rate is assumed and no number is invented. When P4 (top) or P7 (impact) has confidence under 0.5, the tempo reading is flagged `isLowConfidence` (marked with `? Low` in Swing Info) and left out of the session trend. P1's pose confidence does not flag tempo because address probability spreads across still frames and backswing starts at the club-tracked `takeawayStartClipTime`, not P1 itself.
 
 `SwingTempoTrend` aggregates confident, non-excluded full swings across a session (oldest first): median ratio, median backswing and downswing ms, a swing-by-swing ratio chart over a neutral dashed `3:1` reference line, and a first-half vs second-half direction (`Steady` within ±0.2, `Longer backswing`, or `Quicker backswing`, once at least 4 swings are measured). Short swings, moved-camera clips, unclear positions, and low-confidence readings are excluded from the trend.
 
-Checked on the Mac harness (`detector_workbench/validation/coaching/run.sh`) on 10 real 240 fps range clips from 15 November 2026 (`swingcoach_001`–`010`): 9 of 10 had confident tempo (clip 001 had P1 confidence 0.499 and was flagged low-confidence), with a session median of **2.8:1 (707 / 275 ms)**, steady across the run (individual confident swings: backswing 668–837 ms, downswing 226–302 ms, ratio 2.4:1–3.0:1; driver clip 006 measured 837 / 302 ms, 2.8:1).
+Checked on the Mac harness (`detector_workbench/validation/coaching/run.sh`) on two 240 fps range sessions (10 clips each):
+- **15 November 2026** (`swingcoach_001`–`010`): 10 of 10 confident full swings, session median **2.8:1 (708 / 274 ms)**, steady (backswing 668–837 ms, downswing 226–302 ms, ratio 2.4:1–3.0:1; driver clip 006: 837 / 302 ms, 2.8:1).
+- **7 November 2026** (`swingcoach_001`–`010`): 9 of 10 confident full swings (clip 010 excluded as a short swing), session median **3.1:1 (891 / 284 ms)**, quicker backswing across the run (backswing 709–943 ms, downswing 259–291 ms, ratio 2.5:1–3.3:1).
 
 At a position the club comes from the frame itself when the detector sees the shaft there, and otherwise from the track samples either side, joined by a straight line at lower confidence. At P2 and P6 the shaft points at the camera, the detector often misses it, and the reading leans on the track. These are the least reliable readings.
 
