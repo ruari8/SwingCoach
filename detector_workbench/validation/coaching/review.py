@@ -132,7 +132,7 @@ def main():
             metric.update(title=by_id[metric["id"]]["title"], unit=by_id[metric["id"]]["unit"],
                           scored=by_id[metric["id"]].get("scored", True))
             values.setdefault(metric["id"], []).append(metric)
-        rows.append((clip_dir.name, report))
+        rows.append((clip_dir.name, report, record.get("lens")))
         if limit is not None and index >= limit:
             continue
         box = crop_box(record["evidence"])
@@ -188,10 +188,15 @@ def main():
             parts.append("</table>")
         else:
             parts.append("<p>No fault showed up on half the swings.</p>")
-    for name, _ in rows[: (limit + 1) if limit is not None else None]:
+    for name, _, lens in rows[: (limit + 1) if limit is not None else None]:
         verdict = headlines.get(name)
         said = f" <span class={'ok' if verdict['kind'] in ('good', 'better') else 'lo' if verdict['kind'] == 'focus' else ''}>{html.escape(verdict['headline'])}</span>" if verdict else ""
-        parts.append(f"<h2>{html.escape(name)}{said}</h2><img loading=lazy src=\"{name}.jpg\">")
+        if lens:
+            src = "intrinsic" if lens.get("focalLengthSource") == "intrinsicMatrix" else f"{lens.get('videoFieldOfView', 0):.1f}° FOV"
+            lens_tag = f" <small style='color:#9aa'>f={lens['focalLengthPixels']:.0f} px ({html.escape(src)})</small>"
+        else:
+            lens_tag = " <small style='color:#777'>lens unknown</small>"
+        parts.append(f"<h2>{html.escape(name)}{said}{lens_tag}</h2><img loading=lazy src=\"{name}.jpg\">")
     (out / "index.html").write_text("\n".join(parts))
     print(out / "index.html")
 

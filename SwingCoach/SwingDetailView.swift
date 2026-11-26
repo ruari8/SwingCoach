@@ -342,6 +342,7 @@ struct SwingInfoView: View {
                     metadataRow("View", currentSwing.vantage.displayName)
                     metadataRow("Duration", formatDuration(currentSwing.duration))
                     metadataRow("Saved", formatDate(currentSwing.createdAt))
+                    metadataRow("Lens", currentSwing.lensData?.summaryText ?? "Unknown")
                 } header: {
                     SectionHeading("Details")
                 }

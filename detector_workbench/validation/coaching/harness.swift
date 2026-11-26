@@ -19,6 +19,49 @@ struct ClipRecord: Codable {
     var clip: String
     var positions: SwingPositions
     var evidence: SwingCoachingEvidence
+    /// Camera lens data joined from the export folder's `metadata.json`, if present.
+    var lens: CameraLensData?
+}
+
+struct ExportManifest: Decodable {
+    struct Item: Decodable {
+        let filename: String
+        let lens: CameraLensData?
+
+        enum CodingKeys: String, CodingKey { case filename, lens }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            filename = try container.decode(String.self, forKey: .filename)
+            do {
+                lens = try container.decodeIfPresent(CameraLensData.self, forKey: .lens)
+            } catch {
+                fputs("warning: could not decode lens for \(filename): \(error.localizedDescription)\n", stderr)
+                lens = nil
+            }
+        }
+    }
+    let swings: [Item]
+}
+
+private func loadLensByClip(from folder: URL) -> [String: CameraLensData] {
+    let manifestURL = folder.appendingPathComponent("metadata.json")
+    guard FileManager.default.fileExists(atPath: manifestURL.path) else { return [:] }
+    let manifest: ExportManifest
+    do {
+        let data = try Data(contentsOf: manifestURL)
+        manifest = try JSONDecoder().decode(ExportManifest.self, from: data)
+    } catch {
+        fputs("warning: could not read \(manifestURL.lastPathComponent): \(error.localizedDescription)\n", stderr)
+        return [:]
+    }
+    var result: [String: CameraLensData] = [:]
+    for item in manifest.swings {
+        guard let lens = item.lens else { continue }
+        result[item.filename] = lens
+        result[item.filename.lowercased()] = lens
+    }
+    return result
 }
 
 @main
@@ -53,9 +96,16 @@ struct Harness {
         // COACH_MODE=live coaches from what Auto holds in memory at impact
         // (copies 270 across, 30 a second) instead of the saved clip.
         let live = ProcessInfo.processInfo.environment["COACH_MODE"] == "live"
-        var session: [(name: String, report: SwingCoachingReport)] = []
+        var manifestCache: [URL: [String: CameraLensData]] = [:]
+        var session: [(name: String, report: SwingCoachingReport, lens: CameraLensData?)] = []
         for path in args.dropFirst(5) {
             let url = URL(fileURLWithPath: path)
+            let folder = url.deletingLastPathComponent()
+            if manifestCache[folder] == nil {
+                manifestCache[folder] = loadLensByClip(from: folder)
+            }
+            let manifestLens = manifestCache[folder]?[url.lastPathComponent]
+                ?? manifestCache[folder]?[url.lastPathComponent.lowercased()]
             let name = url.deletingPathExtension().lastPathComponent
             let outDir = outRoot.appendingPathComponent(name)
             let evidenceFile = outDir.appendingPathComponent("evidence.json")
@@ -65,6 +115,10 @@ struct Harness {
                    cached.evidence.version == SwingCoachingEvidence.currentVersion,
                    (cached.mode ?? "clip") == (live ? "live" : "clip"), cached.evidence.timeScale == timeScale {
                     record = cached
+                    if let manifestLens, record.lens != manifestLens {
+                        record.lens = manifestLens
+                        try encoder.encode(record).write(to: evidenceFile)
+                    }
                 } else {
                     try FileManager.default.createDirectory(at: outDir, withIntermediateDirectories: true)
                     let (positions, _) = try await analyzer.analyze(videoURL: url, timeScale: timeScale)
@@ -77,16 +131,17 @@ struct Harness {
                         }
                     }
                     record = ClipRecord(mode: live ? "live" : "clip", clip: url.lastPathComponent, positions: positions,
-                                        evidence: evidence)
+                                        evidence: evidence, lens: manifestLens)
                     try encoder.encode(record).write(to: evidenceFile)
                     let moved = [2, 6, 7].map { number -> String in
                         let model = positions.positions.first { $0.number == number }?.clipTime ?? 0
                         let used = evidence.frame(number)?.clipTime ?? model
                         return String(format: "P%d %+.0f", number, (used - model) / timeScale * 240)
                     }.joined(separator: " ")
+                    let lensText = manifestLens?.summaryText ?? "unknown"
                     print(name, String(format: "frames %.2fs pose %.2fs outline %.2fs detector %.2fs track %.2fs (%d)",
                                        timing.frameSeconds, timing.poseSeconds, timing.outlineSeconds, timing.detectorSeconds,
-                                       timing.trackSeconds, timing.trackSamples), "| moved (240 fps frames):", moved)
+                                       timing.trackSeconds, timing.trackSamples), "| moved (240 fps frames):", moved, "| lens:", lensText)
                 }
                 // Records cached before evidence said where it came from.
                 if live { record.evidence.fromLiveCopies = true }
@@ -94,7 +149,7 @@ struct Harness {
                 let reportFile = outDir.appendingPathComponent("report.json")
                 if let report = CoachingAnalyzer.analyze(record.evidence, positions: record.positions) {
                     try encoder.encode(report).write(to: reportFile)
-                    session.append((name, report))
+                    session.append((name, report, record.lens))
                 } else {
                     try? FileManager.default.removeItem(at: reportFile)
                     print(name, "no report: address frame lacks the golfer")
@@ -112,6 +167,16 @@ struct Harness {
         for (index, swing) in session.enumerated() {
             let verdict = CoachingFeedback.verdict(for: swing.report, earlier: session[..<index].map(\.report))
             var entry: [String: Any] = ["clip": swing.name, "headline": verdict.headline]
+            if let lens = swing.lens {
+                entry["lens"] = [
+                    "focalLengthPixels": lens.focalLengthPixels,
+                    "focalLengthSource": lens.focalLengthSource.rawValue,
+                    "videoFieldOfView": lens.videoFieldOfView,
+                    "videoZoomFactor": lens.videoZoomFactor,
+                    "recordedWidth": lens.recordedWidth,
+                    "recordedHeight": lens.recordedHeight
+                ] as [String: Any]
+            }
             // The same swing judged on its own, with no session behind it.
             switch CoachingFeedback.verdict(for: swing.report) {
             case .notJudged(let why): entry["alone"] = why.rawValue

@@ -21,6 +21,7 @@ private enum SwingAutoDetectionState: Equatable {
 struct TrimView: View {
     let source: TrimVideoSource
     var sourceCaptureMode: SloMoMode? = nil
+    var sourceLensData: CameraLensData? = nil
     var initialDetectedSwings: [DetectedSwing] = []
     var detectorSummary: LiveSwingDetectionSnapshot? = nil
     var runsPostRecordDetection = true
@@ -1037,6 +1038,7 @@ struct TrimView: View {
                             from: url, vantage: clip.vantage,
                             duration: clip.duration * displayTimeScale,
                             sourceTimeScale: sourceCaptureMode?.sourceTimeScale,
+                            lensData: sourceLensData,
                             initialThumbnail: thumbnail
                         )
                         savedClips.append(clip)
@@ -1138,6 +1140,7 @@ struct TrimView: View {
                     vantage: fullClip.vantage,
                     duration: fullClip.duration * displayTimeScale,
                     sourceTimeScale: sourceCaptureMode?.sourceTimeScale,
+                    lensData: sourceLensData,
                     initialThumbnail: thumbnail
                 )
 

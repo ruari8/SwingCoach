@@ -35,6 +35,29 @@ final class CaptureDiagnosticsExportTests: XCTestCase {
         XCTAssertEqual(record.bitRate, 50_000_000)
         XCTAssertEqual(record.sourceStart ?? 0, 207.73, accuracy: 0.0001)
         XCTAssertEqual(record.sourceEnd ?? 0, 210.63, accuracy: 0.0001)
+        XCTAssertNil(record.focalLengthPixels)
+        XCTAssertNil(record.focalLengthSource)
+    }
+
+    func testSavedSwingCarriesLensMetadataFromDiagnostics() throws {
+        let log = """
+        {"runID":"RUN-L","state":{"build":"2026.11.26"},"boundary":"run","date":"2026-11-26T20:00:00Z","uptime":1,"schema":1,"id":"","values":{}}
+        {"runID":"RUN-L","id":"CHUNK-1","boundary":"writer-start","schema":1,"uptime":2,"date":"2026-11-26T20:00:01Z","values":{"sourceFPS":240,"width":1920,"height":1080,"bitRate":50000000},"state":{"recordingPolicy":"quiet-rollover-v2"}}
+        {"runID":"RUN-L","id":"CHUNK-1","boundary":"swing-saved","schema":1,"uptime":3,"date":"2026-11-26T20:00:02Z","values":{"chunkStart":10.0,"start":0,"end":2.5,"focalLengthPixels":1598.2,"videoFieldOfView":62.0,"videoZoomFactor":1.0},"state":{"swingID":"SWING-L","focalLengthSource":"intrinsicMatrix"}}
+
+        """
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let logURL = folder.appendingPathComponent("capture.jsonl")
+        try log.write(to: logURL, atomically: true, encoding: .utf8)
+
+        let records = CaptureCadenceDiagnostics.captureRecords(in: [logURL], swingIDs: ["SWING-L"])
+        let record = try XCTUnwrap(records["SWING-L"])
+        XCTAssertEqual(record.focalLengthPixels ?? 0, 1598.2, accuracy: 0.001)
+        XCTAssertEqual(record.focalLengthSource, "intrinsicMatrix")
+        XCTAssertEqual(record.videoFieldOfView ?? 0, 62.0, accuracy: 0.001)
+        XCTAssertEqual(record.videoZoomFactor ?? 0, 1.0, accuracy: 0.001)
     }
 
     func testExportedLogKeepsOnlyTheRunsOfTheSelectedSwings() throws {

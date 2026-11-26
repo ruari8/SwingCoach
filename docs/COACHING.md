@@ -311,7 +311,7 @@ detector_workbench/validation/coaching/run.sh ~/Downloads/15:11_range_session /t
 open /tmp/coaching-1511/review/index.html
 ```
 
-The harness compiles the app's coaching sources on macOS, writes `evidence.json`, `report.json` and the ten position frames per clip, and `session.json` with the themes and per-swing verdicts (`alone` is the verdict with no session behind it). `review.py` draws each metric on its frame and lists the session's numbers. Evidence is reused between runs, so a change to metrics or zones re-scores in seconds; delete a clip's folder to rebuild its evidence.
+The harness compiles the app's coaching sources (including `CameraLensData.swift`) on macOS, writes `evidence.json`, `report.json` and the ten position frames per clip, and `session.json` with the themes and per-swing verdicts (`alone` is the verdict with no session behind it). When the clips folder contains a Library export `metadata.json` with `lens` entries, the harness joins each swing's `CameraLensData` (focal length in pixels for the recorded resolution, FOV, zoom, and intrinsic matrix when captured) into `evidence.json` and `session.json`, and `review.py` shows it beside each clip heading (`lens unknown` for older exports). `review.py` draws each metric on its frame and lists the session's numbers. Evidence is reused between runs, so a change to metrics or zones re-scores in seconds; delete a clip's folder to rebuild its evidence.
 
 Interaction mock-ups of coaching in Auto and at home, on real swings: [UI playground](./UI_PLAYGROUND.md#coaching-flows).
 
