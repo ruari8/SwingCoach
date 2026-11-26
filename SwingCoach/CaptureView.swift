@@ -2108,6 +2108,8 @@ struct CaptureView: View {
                             Spacer(minLength: CaptureControl.chipGap)
                             if manualCaptureEnabled { modeSwitch }
                         }
+                        // The chips stay put when the switch is hidden.
+                        .frame(minHeight: CaptureControl.height)
                         HStack(alignment: .top, spacing: CaptureControl.chipGap) {
                             VStack(alignment: .leading, spacing: CaptureControl.chipGap) {
                                 frameRateMenu

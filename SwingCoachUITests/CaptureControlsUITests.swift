@@ -90,8 +90,7 @@ final class CaptureControlsUITests: XCTestCase {
         XCTAssertEqual(status.label, "Swings save automatically")
         XCTAssertFalse(modeSwitch.exists)
         XCTAssertFalse(record.exists)
-        // No gap where the switch was: the chips keep the top row's height.
-        XCTAssertEqual(app.captureFrameRate.frame.height, 44, accuracy: 1)
+        let chipWithoutSwitch = app.captureFrameRate.frame
         attach(app, "manual-off-capture")
 
         let manualToggle = openManualSetting(app)
@@ -106,6 +105,9 @@ final class CaptureControlsUITests: XCTestCase {
         returnToCapture(app)
         XCTAssertTrue(modeSwitch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.segmentedControls.buttons["Auto"].isSelected)
+        // The chips sit where they did without the switch: nothing moved
+        // to fill, or leave, its place.
+        XCTAssertEqual(app.captureFrameRate.frame, chipWithoutSwitch)
         attach(app, "manual-on-capture-auto")
         app.segmentedControls.buttons["Manual"].tap()
         XCTAssertTrue(record.waitForExistence(timeout: 5))
