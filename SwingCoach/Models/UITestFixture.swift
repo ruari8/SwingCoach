@@ -211,8 +211,11 @@ extension UITestFixture {
             let coaching = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent("SwingCoaching", isDirectory: true)
             try! FileManager.default.createDirectory(at: coaching, withIntermediateDirectories: true)
+            let takeawayStarts = [0.55, 0.62, 0.50, 0.58, 0.55]
             for index in swings.indices {
-                swings[index].swingPositions = fixturePositions
+                var positions = fixturePositions
+                positions.takeawayStartClipTime = takeawayStarts[index]
+                swings[index].swingPositions = positions
                 swings[index].sourceTimeScale = 8
                 let id = swings[index].id.uuidString
                 if simulatedClipRead != nil, index == 3 { continue }
@@ -321,12 +324,14 @@ extension UITestFixture {
     }
 
     /// Positions on the 3-second fixture clip, bunched through the downswing
-    /// like a real swing.
+    /// like a real swing. Takeaway starts at 0.55 s (after P1 at 0.4 s), giving
+    /// 131 ms backswing / 44 ms downswing (3.0:1) at 8x.
     static let fixturePositions = SwingPositions(
         model: SwingPositions.currentModel,
         positions: zip([0.4, 0.9, 1.15, 1.6, 1.85, 1.9, 1.95, 2.05, 2.15, 2.7], 1...10).map { time, number in
             SwingPosition(number: number, clipTime: time, confidence: number == 8 ? 0.42 : 0.9)
-        }
+        },
+        takeawayStartClipTime: 0.55
     )
 }
 

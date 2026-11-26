@@ -105,7 +105,7 @@ The live detector is `SwingCoach/Models/SwingDetectorV3/` (used by `CaptureView`
 
 ### Swing positions
 
-During Auto, `SwingCoach/Models/SwingPositions/` finds P1–P10 on the phone from live frames, about 0.8 s after impact (saved clip as fallback), with `SwingPositionTCN` (detectSwings `tcn_vision_v2`, Apple Vision pose in) and stores them on the swing; Swing Info lists them. Down-the-line only. Design, accuracy and the parity harness: [SWING_POSITIONS.md](./docs/SWING_POSITIONS.md).
+During Auto, `SwingCoach/Models/SwingPositions/` finds P1–P10 on the phone from live frames, about 0.8 s after impact (saved clip as fallback), with `SwingPositionTCN` (detectSwings `tcn_vision_v2`, Apple Vision pose in) and stores them on the swing; Swing Info lists them. Once coaching reads the club track, takeaway start (first sustained club movement after P1) is stored on `SwingPositions`, and `SwingTempo.swift` computes real-time backswing/downswing ms, ratio and session tempo trend using `SavedSwing.sourceTimeScale`. Down-the-line only. Design, accuracy and the parity harness: [SWING_POSITIONS.md](./docs/SWING_POSITIONS.md) and [COACHING.md](./docs/COACHING.md#tempo).
 
 ## Fast Command Reference
 

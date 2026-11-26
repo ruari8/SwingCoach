@@ -97,7 +97,7 @@ struct Harness {
         // (copies 270 across, 30 a second) instead of the saved clip.
         let live = ProcessInfo.processInfo.environment["COACH_MODE"] == "live"
         var manifestCache: [URL: [String: CameraLensData]] = [:]
-        var session: [(name: String, report: SwingCoachingReport, lens: CameraLensData?)] = []
+        var session: [(name: String, report: SwingCoachingReport, lens: CameraLensData?, tempo: SwingTempo?)] = []
         for path in args.dropFirst(5) {
             let url = URL(fileURLWithPath: path)
             let folder = url.deletingLastPathComponent()
@@ -149,7 +149,11 @@ struct Harness {
                 let reportFile = outDir.appendingPathComponent("report.json")
                 if let report = CoachingAnalyzer.analyze(record.evidence, positions: record.positions, lens: record.lens) {
                     try encoder.encode(report).write(to: reportFile)
-                    session.append((name, report, record.lens))
+                    let retimed = CoachingCheckpointTiming.retimed(record.positions, by: record.evidence)
+                    let tempo = report.exclusion == nil
+                        ? SwingTempo.measure(positions: retimed, timeScale: timeScale)
+                        : nil
+                    session.append((name, report, record.lens, tempo))
                 } else {
                     try? FileManager.default.removeItem(at: reportFile)
                     print(name, "no report: address frame lacks the golfer")
@@ -175,6 +179,15 @@ struct Harness {
                     "videoZoomFactor": lens.videoZoomFactor,
                     "recordedWidth": lens.recordedWidth,
                     "recordedHeight": lens.recordedHeight
+                ] as [String: Any]
+            }
+            if let tempo = swing.tempo {
+                entry["tempo"] = [
+                    "backswingMs": tempo.backswingMS,
+                    "downswingMs": tempo.downswingMS,
+                    "ratio": (tempo.ratio * 10).rounded() / 10,
+                    "lowConfidence": tempo.isLowConfidence,
+                    "takeawayStartClipTime": tempo.takeawayStartClipTime,
                 ] as [String: Any]
             }
             // Where the camera stood, and whether the club checks were judged.
@@ -211,7 +224,27 @@ struct Harness {
             ["fault": $0.fault.rawValue, "title": $0.fault.title, "metric": $0.metric.rawValue, "position": $0.position,
              "text": $0.text, "swings": $0.swings, "measured": $0.measured, "medianLevel": $0.medianLevel, "score": $0.score]
         }
-        try JSONSerialization.data(withJSONObject: ["themes": themes, "verdicts": verdicts], options: [.prettyPrinted])
+        let tempoTrend = SwingTempoTrend.build(from: session.map {
+            (id: UUID(), tempo: $0.tempo, excluded: $0.report.exclusion != nil)
+        })
+        var sessionJSON: [String: Any] = ["themes": themes, "verdicts": verdicts]
+        if let ratio = tempoTrend.medianRatio,
+           let back = tempoTrend.medianBackswingMS,
+           let down = tempoTrend.medianDownswingMS {
+            var tempoSummary: [String: Any] = [
+                "swings": tempoTrend.samples.count,
+                "totalSwings": tempoTrend.totalSwings,
+                "medianRatio": (ratio * 10).rounded() / 10,
+                "medianBackswingMs": back,
+                "medianDownswingMs": down,
+            ]
+            if let direction = tempoTrend.direction { tempoSummary["direction"] = direction.label }
+            sessionJSON["tempo"] = tempoSummary
+            let dirText = tempoTrend.direction.map { " (\($0.label))" } ?? ""
+            print(String(format: "tempo: median %.1f:1 (%d / %d ms), %d/%d swings%@",
+                         ratio, back, down, tempoTrend.samples.count, tempoTrend.totalSwings, dirText))
+        }
+        try JSONSerialization.data(withJSONObject: sessionJSON, options: [.prettyPrinted])
             .write(to: outRoot.appendingPathComponent("session.json"))
         for theme in themes {
             print("theme:", theme["title"]!, "-", theme["text"]!, "\(theme["swings"]!)/\(theme["measured"]!) swings, median level", theme["medianLevel"]!)

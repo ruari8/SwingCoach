@@ -37,6 +37,24 @@ struct SavedSwing: Identifiable, Codable, Equatable {
     }
     /// P1-P10 found after capture (down-the-line clips only).
     var swingPositions: SwingPositions? = nil
+    /// Backswing time, downswing time, and their ratio (down-the-line clips
+    /// captured in the app with stored positions and takeaway start only).
+    var tempo: SwingTempo? {
+        guard vantage == .dtl, !isReference,
+              let swingPositions,
+              let sourceTimeScale
+        else { return nil }
+        return SwingTempo.measure(positions: swingPositions, timeScale: sourceTimeScale)
+    }
+
+    /// Tempo for a swing with a current, non-excluded coaching report; returns
+    /// nil when no current report is available (e.g. before coaching or while a
+    /// stale report awaits re-scoring) or for short swings, moved cameras, and
+    /// unclear positions.
+    func tempo(for report: SwingCoachingReport?) -> SwingTempo? {
+        guard let report, report.exclusion == nil else { return nil }
+        return tempo
+    }
     /// The swing itself on the clip's timeline, without the extra footage
     /// before and after. Swing positions are found only here; nil means the
     /// whole clip (imports, and swings saved before this was recorded).

@@ -23,10 +23,11 @@ Saved clips play 8× slower than real time for 240 fps capture (4× for 120 fps)
 Stored per swing in `swing_library.json` under `swingPositions`:
 - the model name
 - for each position: number, time on the clip's own slow-motion timeline, and confidence (the model's score through a sigmoid)
+- `takeawayStartClipTime` (optional): clip time of the first sustained club movement after P1, set once coaching follows the club track between P1 and P2, used as the start of the backswing for swing tempo (`SwingTempo.swift`)
 
 Swing Info and the player mark positions under 50% confidence with the low-confidence glyph (`questionmark.circle.dashed`, `LowConfidenceGlyph`); the label stays "P8". The glyph sits on the strip's dashed chip, beside "Low confidence" under the position's name in the player, and in Swing Info's "Low" tag; VoiceOver says "low confidence".
 
-Once a swing's clip has been coached, P2, P6 and P7 are re-timed off the club track (shaft level, ball struck) and saved back here, with the model's own times kept in `modelClipTimes`. See [COACHING.md](./COACHING.md#club-timing).
+Once a swing's clip has been coached, P2, P6 and P7 are re-timed off the club track (shaft level, ball struck) and `takeawayStartClipTime` is recorded (first club movement after P1), with the model's own times kept in `modelClipTimes`. See [COACHING.md](./COACHING.md#club-timing) and [Tempo](./COACHING.md#tempo).
 
 With `Measure swings while Auto records` on, the live path also hands the swing's copies to coaching with the positions found on them, for a first reading before the clip is saved (`LiveSwingPoses.positions(…copies:)`). Coaching keeps the ten copies nearest the positions until that reading is done, about 2 MB a swing. See [COACHING.md](./COACHING.md#the-first-reading-during-auto).
 

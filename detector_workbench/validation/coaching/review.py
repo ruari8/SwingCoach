@@ -186,6 +186,12 @@ def main():
                      f"<span class=ok>{kinds.count('good')} good swing</span>, "
                      f"<span class=ok>{kinds.count('better')} that's better</span>, "
                      f"<span class=lo>{kinds.count('focus')} one pointer</span>.</p>")
+        if session.get("tempo"):
+            t = session["tempo"]
+            direction = f" · {html.escape(t['direction'])}" if t.get("direction") else ""
+            parts.append(f"<p>Tempo: median <b>{t['medianRatio']:.1f}:1</b> "
+                         f"({t['medianBackswingMs']} / {t['medianDownswingMs']} ms) "
+                         f"across {t['swings']} of {t['totalSwings']} swings{direction}.</p>")
         if session["themes"]:
             parts.append("<table><tr><th>What kept happening</th><th>Position</th><th>Swings</th><th>Median level</th></tr>")
             for theme in session["themes"]:
@@ -202,6 +208,8 @@ def main():
     for name, _, lens in rows[: (limit + 1) if limit is not None else None]:
         verdict = headlines.get(name)
         said = f" <span class={'ok' if verdict['kind'] in ('good', 'better') else 'lo' if verdict['kind'] == 'focus' else ''}>{html.escape(verdict['headline'])}</span>" if verdict else ""
+        tempo = verdict.get("tempo") if verdict else None
+        tempo_tag = f" <small style='color:#9aa'>tempo {tempo['ratio']:.1f}:1 ({tempo['backswingMs']}/{tempo['downswingMs']} ms{' low' if tempo.get('lowConfidence') else ''})</small>" if tempo else ""
         if lens:
             src = "intrinsic" if lens.get("focalLengthSource") == "intrinsicMatrix" else f"{lens.get('videoFieldOfView', 0):.1f}° FOV"
             lens_tag = f" <small style='color:#9aa'>f={lens['focalLengthPixels']:.0f} px ({html.escape(src)})</small>"
@@ -214,7 +222,7 @@ def main():
                         (("heightAboveHands", "height"), ("offHandLine", "line")) if camera.get(key) is not None]
             camera_tag = (f" <small style='color:#9aa'>camera {html.escape(camera['verdict'])}"
                           f"{' (' + ', '.join(readings) + ')' if readings else ''}</small>")
-        parts.append(f"<h2>{html.escape(name)}{said}{lens_tag}{camera_tag}</h2><img loading=lazy src=\"{name}.jpg\">")
+        parts.append(f"<h2>{html.escape(name)}{said}{tempo_tag}{lens_tag}{camera_tag}</h2><img loading=lazy src=\"{name}.jpg\">")
     (out / "index.html").write_text("\n".join(parts))
     print(out / "index.html")
 

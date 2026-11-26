@@ -24,6 +24,7 @@ done
 swiftc -O -parse-as-library -suppress-warnings -o "$BUILD/harness" \
   SwingCoach/Models/CameraLensData.swift \
   SwingCoach/Models/SwingPositions/SwingPositions.swift \
+  SwingCoach/Models/SwingPositions/SwingTempo.swift \
   SwingCoach/Models/SwingPositions/SwingPositionAnalyzer.swift \
   SwingCoach/Models/GolfObjectDetector.swift \
   SwingCoach/Models/Coaching/Coaching*.swift \

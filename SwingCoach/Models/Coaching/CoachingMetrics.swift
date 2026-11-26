@@ -284,7 +284,8 @@ nonisolated struct SwingCoachingReport: Codable, Equatable {
     /// 10: the head rings are sized from the head, not the face (drawing
     /// only).
     /// 11: camera placement; club checks held when it doesn't pass.
-    static let currentVersion = 11
+    /// 12: re-times stored swings with takeaway start for swing tempo.
+    static let currentVersion = 12
 
     /// Feet shifting more than this share of body scale by the top means
     /// the camera moved. A tripod clip's ankle joints wander about 5%, and

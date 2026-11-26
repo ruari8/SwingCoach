@@ -26,6 +26,10 @@ nonisolated struct SwingPositions: Codable, Equatable {
     /// model's own clip times, P1 first, so coaching can start again from
     /// them. Nil while `positions` are the model's.
     var modelClipTimes: [Double]? = nil
+    /// First sustained club movement after P1 (address), on the clip's
+    /// slow-motion timeline. Found from the club track between P1 and P2 when
+    /// coaching reads the clip; used as the start of the backswing for tempo.
+    var takeawayStartClipTime: Double? = nil
 
     static let currentModel = "tcn_vision_v2"
 }
