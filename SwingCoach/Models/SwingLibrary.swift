@@ -100,7 +100,8 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         sourceTimeScale = try container.decodeIfPresent(Double.self, forKey: .sourceTimeScale)
         swingPositions = try container.decodeIfPresent(SwingPositions.self, forKey: .swingPositions)
         swingWindow = try container.decodeIfPresent(ClosedRange<Double>.self, forKey: .swingWindow)
-        lensData = try container.decodeIfPresent(CameraLensData.self, forKey: .lensData)
+        // Decode defensively so a future lens schema change never breaks loading the library.
+        lensData = try? container.decodeIfPresent(CameraLensData.self, forKey: .lensData)
     }
 
     // Custom Equatable (ignore non-codable properties)

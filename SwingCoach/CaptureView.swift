@@ -124,6 +124,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
     private let lensLock = NSLock()
     private var latestIntrinsicMatrix: CameraLensData.IntrinsicMatrix?
     private var intrinsicMatrixDeliverySupported = false
+    private var lastLoggedLensData: CameraLensData?
     private var nextIntrinsicSampleTime = 0.0
 
     private struct PendingAnalysisFrame {
@@ -196,8 +197,10 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
     /// The mode that was active when recording started (for correct playback rate)
     private(set) var recordedMode: SloMoMode = .ultra
-    /// Lens data captured during the most recent Manual recording.
+    /// Lens data captured during the most recent Manual recording (published on main with `lastRecordingURL`).
     private(set) var lastRecordingLensData: CameraLensData?
+    /// Pending manual recording lens data owned by `queue` until handed to `finishRecording`.
+    private var pendingManualRecordingLensData: CameraLensData?
     /// Cardinal capture rotation active when Manual recording started.
     private var manualRecordingRotationAngle: CGFloat = 0
 
@@ -385,10 +388,24 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         lensLock.lock()
         intrinsicMatrixDeliverySupported = supported
         latestIntrinsicMatrix = nil
+        lastLoggedLensData = nil
         lensLock.unlock()
         qualityQueue.async {
             self.nextIntrinsicSampleTime = 0
         }
+    }
+
+    private func emitLensDiagnosticIfChanged(_ lens: CameraLensData) {
+        lensLock.lock()
+        let changed = lastLoggedLensData != lens
+        if changed { lastLoggedLensData = lens }
+        lensLock.unlock()
+        guard changed else { return }
+        CaptureCadenceDiagnostics.shared.emit(
+            "camera-lens",
+            values: lens.diagnosticValues,
+            state: lens.diagnosticState
+        )
     }
 
     private func snapshotLensData(rotationAngle: CGFloat) -> CameraLensData? {
@@ -619,12 +636,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             self.resetLiveSwingDetection()
             let rotationAngle = self.currentCardinalCaptureRotationAngle()
             self.manualRecordingRotationAngle = rotationAngle
-            self.lastRecordingLensData = self.snapshotLensData(rotationAngle: rotationAngle)
-            if let lens = self.lastRecordingLensData {
-                CaptureCadenceDiagnostics.shared.emit("manual-recording-lens",
-                                                      values: lens.diagnosticValues,
-                                                      state: lens.diagnosticState)
-            }
+            self.pendingManualRecordingLensData = self.snapshotLensData(rotationAngle: rotationAngle)
             if let connection = self.movieOutput.connection(with: .video),
                connection.isVideoRotationAngleSupported(rotationAngle) {
                 connection.videoRotationAngle = rotationAngle
@@ -855,16 +867,21 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
 
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         queue.async {
-            if let refreshed = self.snapshotLensData(rotationAngle: self.manualRecordingRotationAngle) {
-                self.lastRecordingLensData = refreshed
+            let finalLensData = self.snapshotLensData(rotationAngle: self.manualRecordingRotationAngle)
+                ?? self.pendingManualRecordingLensData
+            self.pendingManualRecordingLensData = nil
+            if let finalLensData {
+                CaptureCadenceDiagnostics.shared.emit("manual-recording-lens",
+                                                      values: finalLensData.diagnosticValues,
+                                                      state: finalLensData.diagnosticState)
             }
             self.endRecordingAudio()
             self.manualRecordingIsPending = false
-            self.finishRecording(outputFileURL: outputFileURL, error: error)
+            self.finishRecording(outputFileURL: outputFileURL, lensData: finalLensData, error: error)
         }
     }
 
-    private func finishRecording(outputFileURL: URL, error: Error?) {
+    private func finishRecording(outputFileURL: URL, lensData: CameraLensData?, error: Error?) {
         analysisQueue.async {
             let detectionResult: (items: [DetectedSwing], summary: LiveSwingDetectionSnapshot?)
             if self.isLiveSwingDetectionEnabled {
@@ -878,12 +895,14 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
                 guard error == nil else {
                     self.recordingError = error
                     self.lastRecordingURL = nil
+                    self.lastRecordingLensData = nil
                     self.lastRecordingSwingDetections = []
                     self.lastRecordingSwingDetectionSummary = nil
                     return
                 }
 
                 self.recordingError = nil
+                self.lastRecordingLensData = lensData
                 self.lastRecordingSwingDetections = detectionResult.items
                 self.lastRecordingSwingDetectionSummary = detectionResult.summary
                 self.lastRecordingURL = outputFileURL
@@ -943,12 +962,17 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
         if !isFootage {
             let now = ProcessInfo.processInfo.systemUptime
             if now >= nextIntrinsicSampleTime {
-                let lensPosition = diagnosticDevice.map { Double($0.lensPosition) }
-                if let intrinsic = CameraLensData.extractIntrinsicMatrix(from: sampleBuffer, lensPosition: lensPosition) {
-                    lensLock.lock()
-                    latestIntrinsicMatrix = intrinsic
-                    lensLock.unlock()
-                    nextIntrinsicSampleTime = now + 1.0
+                nextIntrinsicSampleTime = now + 1.0
+                lensLock.lock()
+                let supported = intrinsicMatrixDeliverySupported
+                lensLock.unlock()
+                if supported {
+                    let lensPosition = diagnosticDevice.map { Double($0.lensPosition) }
+                    if let intrinsic = CameraLensData.extractIntrinsicMatrix(from: sampleBuffer, lensPosition: lensPosition) {
+                        lensLock.lock()
+                        latestIntrinsicMatrix = intrinsic
+                        lensLock.unlock()
+                    }
                 }
             }
         }
@@ -1054,8 +1078,7 @@ final class CameraSession: NSObject, ObservableObject, AVCaptureFileOutputRecord
             state["pressure"] = device.systemPressureState.level.rawValue
             state["camera"] = device.deviceType.rawValue
             if let lens = snapshotLensData(rotationAngle: currentCardinalCaptureRotationAngle()) {
-                for (key, value) in lens.diagnosticValues { values[key] = value }
-                for (key, value) in lens.diagnosticState { state[key] = value }
+                emitLensDiagnosticIfChanged(lens)
             }
         }
         #if DEBUG

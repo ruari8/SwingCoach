@@ -27,22 +27,39 @@ struct ExportManifest: Decodable {
     struct Item: Decodable {
         let filename: String
         let lens: CameraLensData?
+
+        enum CodingKeys: String, CodingKey { case filename, lens }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            filename = try container.decode(String.self, forKey: .filename)
+            do {
+                lens = try container.decodeIfPresent(CameraLensData.self, forKey: .lens)
+            } catch {
+                fputs("warning: could not decode lens for \(filename): \(error.localizedDescription)\n", stderr)
+                lens = nil
+            }
+        }
     }
     let swings: [Item]
 }
 
 private func loadLensByClip(from folder: URL) -> [String: CameraLensData] {
     let manifestURL = folder.appendingPathComponent("metadata.json")
-    guard let data = try? Data(contentsOf: manifestURL),
-          let manifest = try? JSONDecoder().decode(ExportManifest.self, from: data)
-    else { return [:] }
+    guard FileManager.default.fileExists(atPath: manifestURL.path) else { return [:] }
+    let manifest: ExportManifest
+    do {
+        let data = try Data(contentsOf: manifestURL)
+        manifest = try JSONDecoder().decode(ExportManifest.self, from: data)
+    } catch {
+        fputs("warning: could not read \(manifestURL.lastPathComponent): \(error.localizedDescription)\n", stderr)
+        return [:]
+    }
     var result: [String: CameraLensData] = [:]
     for item in manifest.swings {
         guard let lens = item.lens else { continue }
         result[item.filename] = lens
         result[item.filename.lowercased()] = lens
-        let stem = URL(fileURLWithPath: item.filename).deletingPathExtension().lastPathComponent
-        result[stem.lowercased()] = lens
     }
     return result
 }
@@ -89,7 +106,6 @@ struct Harness {
             }
             let manifestLens = manifestCache[folder]?[url.lastPathComponent]
                 ?? manifestCache[folder]?[url.lastPathComponent.lowercased()]
-                ?? manifestCache[folder]?[url.deletingPathExtension().lastPathComponent.lowercased()]
             let name = url.deletingPathExtension().lastPathComponent
             let outDir = outRoot.appendingPathComponent(name)
             let evidenceFile = outDir.appendingPathComponent("evidence.json")

@@ -77,7 +77,14 @@ nonisolated struct CameraLensData: Codable, Equatable, Sendable {
 
         let focalLength: Double
         let source: FocalLengthSource
-        if let intrinsic = intrinsicMatrix,
+        let matchedIntrinsic: IntrinsicMatrix? = {
+            guard let intrinsic = intrinsicMatrix,
+                  intrinsic.referenceWidth == formatWidth,
+                  intrinsic.referenceHeight == formatHeight
+            else { return nil }
+            return intrinsic
+        }()
+        if let intrinsic = matchedIntrinsic,
            let computed = focalLengthFromIntrinsic(intrinsic, recordedWidth: recordedWidth, recordedHeight: recordedHeight) {
             focalLength = computed
             source = .intrinsicMatrix
@@ -104,7 +111,7 @@ nonisolated struct CameraLensData: Codable, Equatable, Sendable {
             videoZoomFactor: videoZoomFactor,
             geometricDistortionCorrectionEnabled: geometricDistortionCorrectionEnabled,
             intrinsicMatrixDeliverySupported: intrinsicMatrixDeliverySupported,
-            intrinsicMatrix: intrinsicMatrix,
+            intrinsicMatrix: matchedIntrinsic,
             focalLengthPixels: focalLength,
             focalLengthSource: source
         )
@@ -295,12 +302,16 @@ nonisolated struct CameraLensData: Codable, Equatable, Sendable {
         let gdcEnabled = device.isGeometricDistortionCorrectionSupported
             ? device.isGeometricDistortionCorrectionEnabled
             : false
+        let correctedFOV = Double(format.geometricDistortionCorrectedVideoFieldOfView)
+        let effectiveFOV = (gdcEnabled && correctedFOV > 0)
+            ? correctedFOV
+            : Double(format.videoFieldOfView)
         return make(
             cameraType: device.deviceType.rawValue,
             formatWidth: Int(dims.width),
             formatHeight: Int(dims.height),
             videoRotationAngle: Double(videoRotationAngle),
-            videoFieldOfView: Double(format.videoFieldOfView),
+            videoFieldOfView: effectiveFOV,
             videoZoomFactor: Double(device.videoZoomFactor),
             geometricDistortionCorrectionEnabled: gdcEnabled,
             intrinsicMatrixDeliverySupported: intrinsicMatrixDeliverySupported,
