@@ -363,7 +363,7 @@ iPhone 17, iOS 27.2.1, Debug build of `d75f001`, 16 November 2026 ([#72](https:/
 scripts/verify.sh coaching
 ```
 
-runs `SwingCoachingUITests` (the `coaching` launch fixture: five swings with stored reports and a synthetic club track; with the synthetic camera they are the Auto session; `-ui-testing-coaching-reads <seconds>|fail` stands in for a clip read so the first-reading, reading and failed states can be checked), `CoachingWalkthroughTests` (step order, good and not-judged steps, the trail) and `SwingCoachingTests` (levels, measurements on synthetic evidence, club timing, the not-judged checks, camera placement and the club checks it holds, the feedback rules, recaps and their schedule, the join of a first reading to its swing, the session review's examples).
+runs `SwingCoachingUITests` (the `coaching` launch fixture: five swings with stored reports and a synthetic club track; with the synthetic camera they are the Auto session; `-ui-testing-coaching-reads <seconds>|fail` stands in for a clip read so the first-reading, reading and failed states can be checked; `-ui-testing-coaching-camera-high` reads every swing's camera as above hand height, so the club check is held), `CoachingWalkthroughTests` (step order, good and not-judged steps, the trail) and `SwingCoachingTests` (levels, measurements on synthetic evidence, club timing, the not-judged checks, camera placement and the club checks it holds, the feedback rules, recaps and their schedule, the join of a first reading to its swing, the session review's examples).
 
 No test covers the store's queue (pausing for Auto, a swing deleted mid-run, a first reading end to end) or checks a drawing's shapes against its number; both were reviewed by reading and by the review sheets.
 
