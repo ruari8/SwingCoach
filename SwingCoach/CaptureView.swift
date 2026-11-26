@@ -1872,7 +1872,9 @@ struct CaptureView: View {
     @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
     @AppStorage(ExperimentalSettingKey.capturePracticeSwings) private var capturePracticeSwings = false
     @AppStorage(ExperimentalSettingKey.showCaptureModelStats) private var showCaptureModelStats = false
+    @AppStorage(ExperimentalSettingKey.manualCaptureEnabled) private var manualCaptureEnabled = false
     @State private var workflowMode: CaptureWorkflowMode = .auto
+    @State private var isOnScreen = false
     @State private var isRecording = false
     @State private var currentRecordingURL: URL?
     @State private var currentRecordingMode: SloMoMode?
@@ -1981,7 +1983,10 @@ struct CaptureView: View {
             camera.liveModelDetectorSampleFPS = liveModelDetectorSampleFPS
             camera.capturesPracticeSwings = capturePracticeSwings
             camera.start()
-            if workflowMode == .auto {
+            isOnScreen = true
+            if leaveHiddenManual() {
+                // The mode change starts Auto.
+            } else if workflowMode == .auto {
                 preventIdleTimer()
                 requestAutoCapturePhotosAccess()
                 camera.startAutoCapture()
@@ -2010,6 +2015,7 @@ struct CaptureView: View {
             }
         }
         .onDisappear {
+            isOnScreen = false
             camera.stopAutoCapture()
             camera.stop()
             timerCancellable?.cancel()
@@ -2035,8 +2041,12 @@ struct CaptureView: View {
             stopRecordingTimer()
             restoreIdleTimer()
             isProcessing = false
+            leaveHiddenManual()
         }
-        .fullScreenCover(isPresented: $showTrimView, onDismiss: clearCurrentRecording) {
+        .fullScreenCover(isPresented: $showTrimView, onDismiss: {
+            clearCurrentRecording()
+            leaveHiddenManual()
+        }) {
             if let url = currentRecordingURL {
                 TrimView(
                     source: .capturedFile(url: url),
@@ -2096,7 +2106,7 @@ struct CaptureView: View {
                                 recapChip.padding(.leading, CaptureControl.chipGap)
                             }
                             Spacer(minLength: CaptureControl.chipGap)
-                            modeSwitch
+                            if manualCaptureEnabled { modeSwitch }
                         }
                         HStack(alignment: .top, spacing: CaptureControl.chipGap) {
                             VStack(alignment: .leading, spacing: CaptureControl.chipGap) {
@@ -2104,7 +2114,7 @@ struct CaptureView: View {
                                 if workflowMode == .auto { recapChip }
                             }
                             Spacer(minLength: 0)
-                            modeSwitch
+                            if manualCaptureEnabled { modeSwitch }
                         }
                     }
                 }
@@ -2286,6 +2296,17 @@ struct CaptureView: View {
             let count = camera.liveSwingDetection.detectedSwingCount
             return count == 0 ? "No swings yet" : "\(count) detected"
         }
+    }
+
+    /// Manual is a setting, off by default. When it is off and the screen
+    /// is still in Manual, go back to Auto. A recording in progress or
+    /// waiting in Trim finishes first.
+    @discardableResult
+    private func leaveHiddenManual() -> Bool {
+        guard isOnScreen, !manualCaptureEnabled, workflowMode == .manual,
+              !isRecording, !isProcessing, currentRecordingURL == nil else { return false }
+        workflowMode = .auto
+        return true
     }
 
     private func openAutoReview(_ presentation: AutoSwingReviewPresentation) {

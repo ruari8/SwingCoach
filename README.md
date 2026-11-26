@@ -32,7 +32,7 @@ SwingCoach/
 The app has two tabs:
 
 - `Library`: import videos from Photos, browse and star saved swings by session, open locally supplied DTL reference swings, batch delete or export, and open a swing. A swing opens in a player with left/right navigation, straight-line guides you draw yourself, the coaching verdict and its drawings. A session header opens that session's coaching review.
-- `Capture`: record manual clips, or use Auto, which saves detected swings straight to the library and can show the last verdict or a recap of the last few swings.
+- `Capture`: Auto saves detected swings straight to the library and can show the last verdict or a recap of the last few swings. Manual recording (record, then trim) is hidden until you turn on `Show Manual mode` in Settings.
 
 DEBUG builds also include:
 

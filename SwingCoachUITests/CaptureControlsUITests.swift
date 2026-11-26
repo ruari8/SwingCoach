@@ -78,6 +78,66 @@ final class CaptureControlsUITests: XCTestCase {
         attach(app, "manual-recording-clean")
     }
 
+    /// Manual is a setting, off by default: Capture is Auto with no switch.
+    /// Turning it on brings back the switch and the sound setting; turning
+    /// it off while Capture sits in Manual returns Capture to Auto.
+    func testManualModeIsHiddenUntilTurnedOnInSettings() {
+        let app = XCUIApplication.launched(seed: "references", Fixture.syntheticCamera)
+        let status = app.staticTexts["capture-status-title"]
+        let modeSwitch = app.segmentedControls["capture-mode"]
+        let record = app.buttons["Start recording"]
+        XCTAssertTrue(app.captureFrameRate.waitForExistence(timeout: 5))
+        XCTAssertEqual(status.label, "Swings save automatically")
+        XCTAssertFalse(modeSwitch.exists)
+        XCTAssertFalse(record.exists)
+        // No gap where the switch was: the chips keep the top row's height.
+        XCTAssertEqual(app.captureFrameRate.frame.height, 44, accuracy: 1)
+        attach(app, "manual-off-capture")
+
+        let manualToggle = openManualSetting(app)
+        XCTAssertEqual(manualToggle.value as? String, "0")
+        XCTAssertFalse(app.switches["record-sound"].exists, "Sound is Manual only")
+        attach(app, "manual-off-settings")
+        tapSwitch(manualToggle)
+        XCTAssertTrue(app.switches["record-sound"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.switches["record-sound"].value as? String, "0")
+        attach(app, "manual-on-settings")
+
+        returnToCapture(app)
+        XCTAssertTrue(modeSwitch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.segmentedControls.buttons["Auto"].isSelected)
+        attach(app, "manual-on-capture-auto")
+        app.segmentedControls.buttons["Manual"].tap()
+        XCTAssertTrue(record.waitForExistence(timeout: 5))
+        attach(app, "manual-on-capture-manual")
+
+        // Off again while Capture is still in Manual.
+        tapSwitch(openManualSetting(app))
+        XCTAssertFalse(app.switches["record-sound"].exists)
+        returnToCapture(app)
+        XCTAssertTrue(status.waitForExistence(timeout: 5))
+        XCTAssertEqual(status.label, "Swings save automatically")
+        XCTAssertFalse(modeSwitch.exists)
+        XCTAssertFalse(record.exists)
+        XCTAssertTrue(app.buttons["capture-saved-swings"].isEnabled)
+        attach(app, "manual-off-again-capture")
+
+        // The setting is saved: still off, and Auto, after a relaunch.
+        app.relaunch(Fixture.syntheticCamera)
+        XCTAssertTrue(app.captureFrameRate.waitForExistence(timeout: 5))
+        XCTAssertFalse(modeSwitch.exists)
+    }
+
+    private func openManualSetting(_ app: XCUIApplication) -> XCUIElement {
+        app.tabBars.buttons["Library"].tap()
+        app.buttons["Settings"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        let toggle = app.switches["manual-capture"]
+        for _ in 0..<4 where !(toggle.exists && toggle.isHittable) { app.swipeUp() }
+        XCTAssertTrue(toggle.exists && toggle.isHittable)
+        return toggle
+    }
+
     func testDisabledDetectionDoesNotClaimToBeRunning() {
         let app = launch()
         openSettings(app)
@@ -227,8 +287,9 @@ final class CaptureControlsUITests: XCTestCase {
 
     private let showStatsKey = "experimental.showCaptureModelStats"
 
+    /// Manual mode is on for these tests, as it is off by default.
     private func launch(extra: [String] = []) -> XCUIApplication {
-        XCUIApplication.launched(seed: "references", Fixture.syntheticCamera + extra)
+        XCUIApplication.launched(seed: "references", Fixture.syntheticCamera + Fixture.manualCapture + extra)
     }
 
     private func openSettings(_ app: XCUIApplication) {
@@ -257,7 +318,7 @@ final class CaptureControlsUITests: XCTestCase {
         waitUntilHittable(capture)
         capture.tap()
         let selected = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            capture.isSelected && app.segmentedControls["capture-mode"].exists
+            capture.isSelected && app.captureFrameRate.exists
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [selected], timeout: 10), .completed)
     }

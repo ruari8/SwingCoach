@@ -108,7 +108,7 @@ final class UICouncilTourUITests: XCTestCase {
     // MARK: Capture: Auto with the coach, then Manual
 
     private func captureScreens(_ look: String) {
-        let app = launch(["-ui-testing-camera", "synthetic", "-ui-testing-auto-library"])
+        let app = launch(["-ui-testing-camera", "synthetic", "-ui-testing-auto-library", "-ui-testing-manual-capture"])
         let recap = app.descendants(matching: .any)["coach-recap"]
         if recap.waitForExistence(timeout: 15) {
             settle(1.5)
