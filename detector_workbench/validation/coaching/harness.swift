@@ -147,7 +147,7 @@ struct Harness {
                 if live { record.evidence.fromLiveCopies = true }
                 // Metrics are cheap and change often: always recomputed.
                 let reportFile = outDir.appendingPathComponent("report.json")
-                if let report = CoachingAnalyzer.analyze(record.evidence, positions: record.positions) {
+                if let report = CoachingAnalyzer.analyze(record.evidence, positions: record.positions, lens: record.lens) {
                     try encoder.encode(report).write(to: reportFile)
                     session.append((name, report, record.lens))
                 } else {
@@ -177,6 +177,16 @@ struct Harness {
                     "recordedHeight": lens.recordedHeight
                 ] as [String: Any]
             }
+            // Where the camera stood, and whether the club checks were judged.
+            if let placement = swing.report.cameraPlacement {
+                var camera: [String: Any] = ["verdict": Self.words(placement.verdict),
+                                             "held": swing.report.metrics.filter(\.heldForCamera).map(\.id.rawValue)]
+                camera["heightAboveHands"] = placement.heightAboveHands
+                camera["offHandLine"] = placement.offHandLine
+                camera["lineUncertainty"] = placement.lineUncertainty
+                camera["distance"] = placement.distance
+                entry["camera"] = camera
+            }
             // The same swing judged on its own, with no session behind it.
             switch CoachingFeedback.verdict(for: swing.report) {
             case .notJudged(let why): entry["alone"] = why.rawValue
@@ -205,6 +215,19 @@ struct Harness {
             .write(to: outRoot.appendingPathComponent("session.json"))
         for theme in themes {
             print("theme:", theme["title"]!, "-", theme["text"]!, "\(theme["swings"]!)/\(theme["measured"]!) swings, median level", theme["medianLevel"]!)
+        }
+        let placements = session.compactMap(\.report.cameraPlacement)
+        let counts = Dictionary(grouping: placements.map { Self.words($0.verdict) }, by: { $0 }).mapValues(\.count)
+        print("camera placement:", counts.sorted { $0.key < $1.key }.map { "\($0.value) \($0.key)" }.joined(separator: ", "),
+              "of \(session.count) swings")
+    }
+
+    /// A placement verdict in words: "good", "unsure", "off: high towardFeet".
+    static func words(_ verdict: CoachingCameraPlacement.Verdict) -> String {
+        switch verdict {
+        case .good: "good"
+        case .unsure: "unsure"
+        case .off(let problems): "off: " + problems.map(\.rawValue).joined(separator: " ")
         }
     }
 }

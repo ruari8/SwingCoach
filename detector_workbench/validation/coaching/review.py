@@ -188,6 +188,11 @@ def main():
             parts.append("</table>")
         else:
             parts.append("<p>No fault showed up on half the swings.</p>")
+        cameras = [v["camera"]["verdict"] for v in session["verdicts"] if "camera" in v]
+        if cameras:
+            counts = ", ".join(f"{cameras.count(word)} {html.escape(word)}" for word in sorted(set(cameras)))
+            parts.append(f"<p>Camera placement, read off each address frame: {counts}. "
+                         f"The club checks are judged only where it is good.</p>")
     for name, _, lens in rows[: (limit + 1) if limit is not None else None]:
         verdict = headlines.get(name)
         said = f" <span class={'ok' if verdict['kind'] in ('good', 'better') else 'lo' if verdict['kind'] == 'focus' else ''}>{html.escape(verdict['headline'])}</span>" if verdict else ""
@@ -196,7 +201,14 @@ def main():
             lens_tag = f" <small style='color:#9aa'>f={lens['focalLengthPixels']:.0f} px ({html.escape(src)})</small>"
         else:
             lens_tag = " <small style='color:#777'>lens unknown</small>"
-        parts.append(f"<h2>{html.escape(name)}{said}{lens_tag}</h2><img loading=lazy src=\"{name}.jpg\">")
+        camera = (verdict or {}).get("camera")
+        camera_tag = ""
+        if camera:
+            readings = [f"{label} {camera[key]:+.0f}%" for key, label in
+                        (("heightAboveHands", "height"), ("offHandLine", "line")) if camera.get(key) is not None]
+            camera_tag = (f" <small style='color:#9aa'>camera {html.escape(camera['verdict'])}"
+                          f"{' (' + ', '.join(readings) + ')' if readings else ''}</small>")
+        parts.append(f"<h2>{html.escape(name)}{said}{lens_tag}{camera_tag}</h2><img loading=lazy src=\"{name}.jpg\">")
     (out / "index.html").write_text("\n".join(parts))
     print(out / "index.html")
 

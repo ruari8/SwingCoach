@@ -19,9 +19,15 @@ nonisolated enum CoachingAnalyzer {
     /// judged at all.
     static let minimumJudgedMetrics = 8
 
-    static func analyze(_ evidence: SwingCoachingEvidence, positions: SwingPositions? = nil) -> SwingCoachingReport? {
+    /// `lens` is the swing's recorded lens data, when it has any: it adds
+    /// the camera's distance to the placement check.
+    static func analyze(_ evidence: SwingCoachingEvidence, positions: SwingPositions? = nil,
+                        lens: CameraLensData? = nil) -> SwingCoachingReport? {
         guard let geometry = CoachingSwingGeometry(evidence: evidence) else { return nil }
         let builder = Builder(geometry: geometry, positions: positions)
+        // The club checks are judged only from a camera known to be on the
+        // hand line at hand height. Unsure is not a pass.
+        let placement = CoachingCameraPlacement(geometry: geometry, lens: lens)
         var metrics: [CoachingMetricResult] = []
         var unavailable: [CoachingMetricID] = []
         let live = evidence.fromLiveCopies == true
@@ -29,8 +35,9 @@ nonisolated enum CoachingAnalyzer {
             // Left for the saved clip: see `needsClip`.
             if live, definition.needsClip {
                 unavailable.append(definition.id)
-            } else if let result = builder.measure(definition), result.confidence >= minimumConfidence,
+            } else if var result = builder.measure(definition), result.confidence >= minimumConfidence,
                definition.isBelievable(result.value) {
+                if definition.dependsOnCamera, definition.scored, !placement.passes { result.cameraHold = true }
                 metrics.append(result)
             } else {
                 unavailable.append(definition.id)
@@ -39,12 +46,13 @@ nonisolated enum CoachingAnalyzer {
         let short = (geometry.handsAboveShoulderAtTop ?? 1) < 0
         let moved = (geometry.footShiftAtTop ?? 0) > SwingCoachingReport.steadyFootShift
         // "Good swing" has to mean most of the swing was seen and in zone,
-        // not that little of it could be measured.
+        // not that little of it could be measured. A held club check was
+        // still seen.
         let judged = metrics.filter { $0.definition.scored }.count
         let unclear = !geometry.positionsLookRight || judged < minimumJudgedMetrics
         return SwingCoachingReport(rightHanded: geometry.isRightHanded, swingLength: short ? .short : .full,
                                    cameraMoved: moved, positionsUnclear: unclear, fromLiveCopies: live,
-                                   metrics: metrics, unavailable: unavailable)
+                                   cameraPlacement: placement, metrics: metrics, unavailable: unavailable)
     }
 
     private struct Builder {

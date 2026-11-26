@@ -591,7 +591,7 @@ struct CoachingCompareView: View {
                                     .foregroundStyle(PlayerChrome.secondaryText)
                                 // Why, on its own line.
                                 if showing == .notJudged {
-                                    Text(sentenceCase(CoachingWords.reason(notJudged: report)))
+                                    Text(sentenceCase(CoachingWords.reason(notJudged: report, on: theme.metric)))
                                         .font(.appCaption)
                                         .foregroundStyle(PlayerChrome.secondaryText)
                                 }

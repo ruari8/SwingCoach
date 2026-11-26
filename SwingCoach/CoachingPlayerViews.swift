@@ -77,7 +77,7 @@ enum CoachingWords {
     /// A level spelled out, the one wording everywhere: "2 steps out",
     /// "In zone", "Not judged".
     static func level(_ result: CoachingMetricResult, neutral: Bool = false) -> String {
-        guard result.definition.scored, !neutral else { return "Not judged" }
+        guard result.isJudged, !neutral else { return "Not judged" }
         return steps(result.level)
     }
 
@@ -91,10 +91,12 @@ enum CoachingWords {
     /// range it is drawn against: drawn for reference, never judged.
     static let referenceOnly = "Reference only"
 
-    /// Why a check isn't judged, short enough for a row: "short swing";
-    /// nil for a guide, which says `referenceOnly` instead.
-    static func notJudgedReason(_ result: CoachingMetricResult, exclusion: CoachingExclusion?) -> String? {
-        if let exclusion { return reason(exclusion) }
+    /// Why a check isn't judged, short enough for a row: "short swing",
+    /// or "camera too high" for a club check held for the camera; nil for
+    /// a guide, which says `referenceOnly` instead.
+    static func notJudgedReason(_ result: CoachingMetricResult, in report: SwingCoachingReport) -> String? {
+        if let exclusion = report.exclusion { return reason(exclusion) }
+        if result.heldForCamera { return cameraReason(report.cameraPlacement) }
         return result.definition.scored ? "" : nil
     }
 
@@ -107,11 +109,14 @@ enum CoachingWords {
         }
     }
 
-    /// Why a swing has no level on a theme: its exclusion, or no reading
-    /// of the theme's check on it (or no reading yet).
-    static func reason(notJudged report: SwingCoachingReport?) -> String {
-        guard let exclusion = report?.exclusion else { return "no reading" }
-        return reason(exclusion)
+    /// Why a swing has no level on a theme: its exclusion, the theme's
+    /// check held for the camera, or no reading of it (or no reading yet).
+    static func reason(notJudged report: SwingCoachingReport?, on metric: CoachingMetricID? = nil) -> String {
+        if let exclusion = report?.exclusion { return reason(exclusion) }
+        if let report, let metric, report.metric(metric)?.heldForCamera == true {
+            return cameraReason(report.cameraPlacement)
+        }
+        return "no reading"
     }
 
     /// "Not judged", with its reason when known: "Not judged · camera
@@ -128,13 +133,67 @@ enum CoachingWords {
         level == 0 ? nil : CoachingSeverity(level: level).word
     }
 
-    /// A club reading's caveat, the one line everywhere it is shown: the
-    /// club checks move with where the camera stands.
-    static let cameraCaveat = "Depends on camera position"
+    /// Why the club checks aren't judged on a swing, short enough to
+    /// follow "Not judged ·": the first thing wrong with where the camera
+    /// stood, or that it couldn't be told.
+    static func cameraReason(_ placement: CoachingCameraPlacement?) -> String {
+        guard case .off(let problems) = placement?.verdict, let first = problems.first else {
+            return "camera position unclear"
+        }
+        return switch first {
+        case .high: "camera too high"
+        case .low: "camera too low"
+        case .towardBall, .towardFeet: "camera off the hand line"
+        case .close: "camera too close"
+        case .far: "camera too far away"
+        }
+    }
 
-    /// What to do about it, said only where there is room for the detail
-    /// (All checks).
-    static let cameraAdvice = "Check it with the camera on your hand line."
+    /// What to do about it, said only where there is room for a sentence
+    /// (All checks): one instruction for each thing wrong.
+    static func cameraAdvice(_ placement: CoachingCameraPlacement?) -> String {
+        guard case .off(let problems) = placement?.verdict else {
+            return "Couldn't tell where the camera stood on this swing. Put it on your hand line at hand height, with both feet in the picture."
+        }
+        return problems.map {
+            switch $0 {
+            case .high: "Lower the camera to hand height."
+            case .low: "Raise the camera to hand height."
+            case .towardBall: "Move the camera in toward your feet, onto your hand line."
+            case .towardFeet: "Move the camera out toward the ball, onto your hand line."
+            case .close: "Move the camera further back."
+            case .far: "Move the camera closer."
+            }
+        }.joined(separator: " ")
+    }
+
+    /// Where the camera stood, for Swing Info: "On the hand line at hand
+    /// height", what is wrong with it, or that it couldn't be told.
+    static func cameraSummary(_ placement: CoachingCameraPlacement?) -> String {
+        guard let placement else { return "Not read yet" }
+        switch placement.verdict {
+        case .good: return "On the hand line at hand height"
+        case .unsure: return "Unclear"
+        case .off(let problems):
+            let words = problems.map {
+                switch $0 {
+                case .high: "above hand height"
+                case .low: "below hand height"
+                case .towardBall: "outside the hand line"
+                case .towardFeet: "inside the hand line"
+                case .close: "too close"
+                case .far: "too far away"
+                }
+            }.joined(separator: ", ")
+            return words.prefix(1).uppercased() + words.dropFirst()
+        }
+    }
+
+    /// One line for a swing or a session whose club checks are held:
+    /// "Club checks not judged · camera too high".
+    static func clubChecksHeld(_ placement: CoachingCameraPlacement?) -> String {
+        "Club checks not judged · \(cameraReason(placement))"
+    }
 
     /// The word beside a level badge, wherever a word sits beside one: its
     /// `CoachingSeverity` word ("A little out", "Well out", "In zone"), or
@@ -180,7 +239,8 @@ enum CoachingWords {
 
     /// What a check says, in or out of its zone.
     static func headline(_ result: CoachingMetricResult) -> String {
-        result.finding ?? (result.definition.scored ? "\(result.definition.title): in zone" : result.definition.title)
+        guard result.isJudged else { return result.definition.title }
+        return result.finding ?? "\(result.definition.title): in zone"
     }
 
     static func exclusion(_ exclusion: CoachingExclusion) -> String {
@@ -264,7 +324,7 @@ enum CoachingStripMarks {
     static func marks(for report: SwingCoachingReport?, steps: [CoachingStep]) -> [Int: SwingPositionMark] {
         guard let report, report.exclusion == nil else { return [:] }
         var marks: [Int: SwingPositionMark] = [:]
-        let judged = Dictionary(grouping: report.metrics.filter(\.definition.scored), by: \.position)
+        let judged = Dictionary(grouping: report.metrics.filter(\.isJudged), by: \.position)
         for (position, results) in judged {
             let worst = results.max { abs($0.level) < abs($1.level) }
             let isStart = steps.first?.position == position
@@ -418,10 +478,10 @@ struct CoachingDrawingLayer: View {
         result.drawings.contains { $0.kind == .circle && $0.role != .zone }
     }
 
-    /// Drawn in the neutral guide style: a guide, or any check on a swing
-    /// that isn't judged.
+    /// Drawn in the neutral guide style: a guide, a club check held for
+    /// the camera, or any check on a swing that isn't judged.
     static func isNeutral(_ result: CoachingMetricResult, swingNeutral: Bool) -> Bool {
-        swingNeutral || !result.definition.scored
+        swingNeutral || !result.isJudged
     }
 
     /// The colour of the swing's own line (and its tag and legend key).
@@ -907,15 +967,15 @@ struct CoachingLevelBadge: View {
 }
 
 /// A club reading's caveat, the one wording everywhere
-/// (`CoachingWords.cameraCaveat`), with a camera glyph so it reads as a
+/// (`CoachingWords.cameraAdvice`), with a camera glyph so it reads as a
 /// note on the reading, never as part of its level, in the help grey.
 struct CoachingCameraCaveat: View {
-    /// Adds what to do about it, where there is room (All checks).
-    var advice = false
+    /// Where the camera stood on the swing.
+    let placement: CoachingCameraPlacement?
 
     var body: some View {
         Label {
-            Text(CoachingWords.cameraCaveat + (advice ? ". " + CoachingWords.cameraAdvice : ""))
+            Text(CoachingWords.cameraAdvice(placement))
                 .fixedSize(horizontal: false, vertical: true)
         } icon: {
             Image(systemName: "camera.viewfinder")
@@ -950,7 +1010,7 @@ struct CoachingZoneTrack: View {
     /// The swing isn't judged.
     var neutral = false
 
-    private var judged: Bool { result.definition.scored && !neutral }
+    private var judged: Bool { result.isJudged && !neutral }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -1372,10 +1432,10 @@ struct SwingCoachingPanel: View {
                 .font(.appLabel)
                 .foregroundStyle(.white.opacity(0.82))
             titleRow(CoachingLevelBadge(level: result.level, scored: result.definition.scored,
-                                        neutral: report.exclusion != nil, size: CoachingLevelBadge.markSize),
+                                        neutral: report.isNeutral(result), size: CoachingLevelBadge.markSize),
                      CoachingWords.headline(result),
-                     level: CoachingWords.level(result, neutral: report.exclusion != nil),
-                     severity: result.definition.scored && report.exclusion == nil && result.level != 0 ? result.level : nil)
+                     level: CoachingWords.level(result, neutral: report.isNeutral(result)),
+                     severity: result.isJudged && report.exclusion == nil && result.level != 0 ? result.level : nil)
             HStack(spacing: 10) {
                 Button {
                     highlighted = nil
@@ -1620,7 +1680,7 @@ struct CoachingLegend: View {
         .accessibilityIdentifier("coaching-legend")
     }
 
-    private var judged: Bool { !neutral && (results.first?.definition.scored ?? true) }
+    private var judged: Bool { !neutral && (results.first?.isJudged ?? true) }
 
     /// The drawing's parts to key: every role the results draw, less, for
     /// `picturedOnly`, an address drawn as anything but the ring.
@@ -1887,19 +1947,22 @@ struct SwingCoachingChecks: View {
     /// without a finding says in one line why there is nothing to work on;
     /// a swing that isn't judged leads with its verdict.
     private var summaryCard: some View {
-        let judged = report.metrics.filter(\.definition.scored)
-        let guides = report.metrics.count - judged.count
+        let judged = report.metrics.filter(\.isJudged)
+        let guides = report.metrics.filter { !$0.definition.scored }.count
         let inZone = judged.filter(\.inZone).count
-        // Says what it counts: judged checks, not the guides listed too.
+        // Says what it counts: judged checks, not the guides or the club
+        // checks held for the camera, which are listed too.
         let count = "\(inZone) of \(judged.count) judged checks in zone"
         let hasFinding = { if case .focus = verdict { true } else { false } }()
-        let note: String? = if let exclusion = report.exclusion {
-            CoachingWords.exclusion(exclusion)
-        } else if hasFinding {
-            nil
+        var notes: [String] = []
+        if let exclusion = report.exclusion {
+            notes.append(CoachingWords.exclusion(exclusion))
         } else {
-            "Nothing is far enough out to work on."
+            if !hasFinding { notes.append("Nothing is far enough out to work on.") }
+            // Said plainly, once, above the rows it applies to.
+            if report.holdsClubChecks { notes.append(CoachingWords.clubChecksHeld(report.cameraPlacement) + ".") }
         }
+        let note: String? = notes.isEmpty ? nil : notes.joined(separator: " ")
         return VStack(alignment: .leading, spacing: 6) {
             VStack(alignment: .leading, spacing: 6) {
                 if report.exclusion == nil {
@@ -1935,9 +1998,9 @@ struct SwingCoachingChecks: View {
     static let thumbnailHeight: CGFloat = 96
 
     private func row(_ result: CoachingMetricResult) -> some View {
-        let neutral = report.exclusion != nil
-        let judged = result.definition.scored && !neutral
-        let reason = CoachingWords.notJudgedReason(result, exclusion: report.exclusion)
+        let neutral = report.isNeutral(result)
+        let judged = result.isJudged && !neutral
+        let reason = CoachingWords.notJudgedReason(result, in: report)
         return HStack(spacing: 12) {
             // Cut toward the drawing, big enough to see it on.
             CoachingFrameView(swing: swing, report: report, metric: result.id, cropsToGolfer: true)
@@ -1962,14 +2025,15 @@ struct SwingCoachingChecks: View {
                 // The badge carries the level; VoiceOver reads it as the value.
                 CoachingZoneTrack(result: result, neutral: neutral)
                     .padding(.vertical, 2)
-                if result.definition.dependsOnCamera {
-                    CoachingCameraCaveat(advice: true)
+                // A held club check says what to do with the camera.
+                if result.heldForCamera, report.exclusion == nil {
+                    CoachingCameraCaveat(placement: report.cameraPlacement)
                 }
             }
             Spacer(minLength: 0)
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityValue(CoachingWords.level(result, neutral: report.exclusion != nil))
+        .accessibilityValue(CoachingWords.level(result, neutral: report.isNeutral(result)))
     }
 }

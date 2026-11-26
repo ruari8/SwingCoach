@@ -78,6 +78,15 @@ struct SessionCoachingView: View {
                                         .foregroundStyle(Color.helpText)
                                         .accessibilityIdentifier("session-coaching-not-judged")
                                 }
+                                // Club checks held for the camera: said
+                                // here, since they can't become a theme.
+                                if let held = clubChecksHeld(judged) {
+                                    Text(held)
+                                        .font(.appCaption.monospacedDigit())
+                                        .foregroundStyle(Color.helpText)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .accessibilityIdentifier("session-coaching-camera")
+                                }
                             }
                         }
                     }
@@ -193,6 +202,20 @@ struct SessionCoachingView: View {
         let count = "\(exclusions.count) not judged"
         guard let reason = exclusions.first, exclusions.allSatisfy({ $0 == reason }) else { return count }
         return "\(count) · \(CoachingWords.reason(reason))"
+    }
+
+    /// "Club checks not judged on 12 swings · camera too high": how many
+    /// judged swings had their club checks held for the camera, and why
+    /// when every one of them shares the reason. Nil when none did.
+    private func clubChecksHeld(_ judged: [SwingCoachingReport]) -> String? {
+        let held = judged.filter(\.holdsClubChecks)
+        guard let first = held.first else { return nil }
+        let count = "Club checks not judged on \(held.count == judged.count ? "any swing" : "\(held.count) swing\(held.count == 1 ? "" : "s")")"
+        let reason = CoachingWords.cameraReason(first.cameraPlacement)
+        guard held.allSatisfy({ CoachingWords.cameraReason($0.cameraPlacement) == reason }) else {
+            return "\(count) · camera position"
+        }
+        return "\(count) · \(reason)"
     }
 
     /// One mark for each swing, each a 44 point target, wrapping in the
@@ -343,7 +366,7 @@ struct SessionCoachingView: View {
     private func trend(of theme: CoachingTheme, _ measured: [SavedSwing], _ reports: [SwingCoachingReport]) -> some View {
         let definition = CoachingMetricDefinition.definition(theme.metric)
         let points = reports.enumerated().compactMap { index, report -> CoachingTrendChart.Point? in
-            guard report.exclusion == nil, let result = report.metric(theme.metric) else { return nil }
+            guard report.exclusion == nil, let result = report.countedMetric(theme.metric) else { return nil }
             return CoachingTrendChart.Point(swing: index + 1, of: reports.count, value: result.value, level: result.level,
                                             id: measured[index].id)
         }
