@@ -128,7 +128,7 @@ struct AutoCoachingPanel: View {
     /// the swing on the coach's first step.
     private func latestVerdict(_ verdict: CoachingVerdict, swing: SavedSwing) -> some View {
         let number = (swings.firstIndex { $0.id == swing.id } ?? 0) + 1
-        let tempoTag = swing.tempo.flatMap { $0.isLowConfidence ? nil : $0.ratioText }
+        let tempoTag = isNotJudged(verdict) ? nil : swing.tempo.flatMap { $0.isLowConfidence ? nil : $0.ratioText }
         return Button {
             open(AutoSwingReviewPresentation(startAt: swing.id))
         } label: {
@@ -181,7 +181,7 @@ struct AutoCoachingPanel: View {
             (id: entry.swing.id, tempo: entry.swing.tempo, excluded: entry.report.exclusion != nil)
         })
         let tempoSummary = tempoTrend.samples.count >= SwingTempoTrend.minimumTrendSamples
-            ? tempoTrend.summaryText
+            ? tempoTrend.medianRatioText
             : nil
         return CoachingRecapCard(recap: recap, numbers: numbers, example: example, tempoSummary: tempoSummary) {
             if let theme = recap.theme {
@@ -271,7 +271,7 @@ struct CoachingRecapCard: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityIdentifier("coach-recap-title")
                         if let tempoSummary {
-                            Text("Tempo \(tempoSummary)")
+                            Text("Median tempo \(tempoSummary)")
                                 .font(.appCaption.monospacedDigit())
                                 .foregroundStyle(PlayerChrome.secondaryText)
                                 .accessibilityIdentifier("coach-recap-tempo")

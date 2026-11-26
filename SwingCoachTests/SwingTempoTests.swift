@@ -77,7 +77,7 @@ final class SwingTempoTests: XCTestCase {
         XCTAssertEqual(tempo.ratioText, "2.7:1")
     }
 
-    // MARK: - Missing / invalid / low-confidence cases
+    // MARK: - Missing / invalid / low-confidence / excluded cases
 
     func testReturnsNilWithoutTakeawayStartAndNeverFallsBackToP1() {
         let missing = makePositions(takeawayStart: nil)
@@ -135,10 +135,10 @@ final class SwingTempoTests: XCTestCase {
         }
     }
 
-    // MARK: - SavedSwing gating & Codable backwards compatibility
+    // MARK: - SavedSwing gating, exclusions & Codable backwards compatibility
 
     @MainActor
-    func testSavedSwingTempoIsDownTheLineAndKnownRateOnly() throws {
+    func testSavedSwingTempoIsDownTheLineKnownRateAndUnexcludedOnly() throws {
         var swing = SavedSwing(
             id: UUID(),
             photoAssetID: "",
@@ -150,6 +150,12 @@ final class SwingTempoTests: XCTestCase {
         )
         swing.swingPositions = makePositions(p1: 8.0, takeawayStart: 8.64, p4: 14.40, p7: 16.32)
         XCTAssertEqual(swing.tempo?.ratioText, "3.0:1")
+        XCTAssertEqual(swing.tempo(excluding: nil)?.ratioText, "3.0:1")
+
+        // Swings coaching refuses to judge get no tempo.
+        for exclusion in [CoachingExclusion.shortSwing, .cameraMoved, .positionsUnclear] {
+            XCTAssertNil(swing.tempo(excluding: exclusion), "Excluded (\(exclusion.rawValue)) must hide tempo")
+        }
 
         // Face-on gets no tempo.
         var faceOn = swing
@@ -186,6 +192,7 @@ final class SwingTempoTests: XCTestCase {
         clubheadMoves: [(time: Double, headDX: Double, gripDX: Double)],
         p1: Double = 8.0,
         p2: Double = 11.2,
+        addressHasClubhead: Bool = true,
         mirrored: Bool = false
     ) -> SwingCoachingEvidence {
         let aspect = 1080.0 / 1920.0
@@ -207,7 +214,7 @@ final class SwingTempoTests: XCTestCase {
             if joint.rawValue.hasPrefix("right") { return "left" + joint.rawValue.dropFirst(5) }
             return joint.rawValue
         }
-        func makeFrame(position: Int, time: Double, headDX: Double, gripDX: Double) -> CoachingFrameEvidence {
+        func makeFrame(position: Int, time: Double, headDX: Double, gripDX: Double, includeHead: Bool = true) -> CoachingFrameEvidence {
             var frame = CoachingFrameEvidence(position: position, clipTime: time)
             let grip = (0.30 + gripDX, 0.52)
             let head = (0.42 + headDX, 0.80)
@@ -221,16 +228,18 @@ final class SwingTempoTests: XCTestCase {
                 jointName(.nose): pt(0.29, 0.30),
             ]
             frame.shafts = [box(grip, head)]
-            frame.clubheads = [spot(head.0, head.1)]
+            if includeHead {
+                frame.clubheads = [spot(head.0, head.1)]
+            }
             return frame
         }
-        let address = makeFrame(position: 1, time: p1, headDX: 0, gripDX: 0)
+        let address = makeFrame(position: 1, time: p1, headDX: 0, gripDX: 0, includeHead: addressHasClubhead)
         let takeaway = makeFrame(position: 2, time: p2, headDX: -0.10, gripDX: -0.04)
         var track = clubheadMoves.map { makeFrame(position: 0, time: $0.time, headDX: $0.headDX, gripDX: $0.gripDX) }
         // Later backswing/downswing samples past P2 (as in a real swing track), so
         // CoachingSwingGeometry's stationary-bag junk filter does not mistake the
         // address clubhead for a static object occupying >40% of the whole clip.
-        for step in 1...16 {
+        for step in 1...24 {
             let t = p2 + Double(step) * 0.25
             let move = -0.10 - Double(step) * 0.01
             track.append(makeFrame(position: 0, time: t, headDX: move, gripDX: -0.04))
@@ -246,8 +255,8 @@ final class SwingTempoTests: XCTestCase {
             (8.00, 0.000 * bodyScale, 0),
             (8.13, 0.004 * bodyScale, 0),  // resting jitter
             (8.27, 0.018 * bodyScale, 0),  // single-frame noise spike — must be ignored
-            (8.40, 0.005 * bodyScale, 0),  // still at address
-            (8.53, 0.010 * bodyScale, 0),  // just under 1.5%
+            (8.40, 0.005 * bodyScale, 0),  // still at address (still sample 1)
+            (8.53, 0.010 * bodyScale, 0),  // still at address (still sample 2, < 1.1%)
             (8.67, 0.020 * bodyScale, 0),  // crosses 1.5% halfway between 8.53 and 8.67 -> 8.60
             (8.80, 0.030 * bodyScale, 0),
             (8.93, 0.045 * bodyScale, 0),
@@ -274,6 +283,69 @@ final class SwingTempoTests: XCTestCase {
         XCTAssertEqual(mirroredStart, 8.60, accuracy: 0.005)
     }
 
+    func testTakeawayStartReturnsNilWhenAlreadyMovingAtFirstSample() throws {
+        let bodyScale = hypot(0.05, 0.16) + 0.30
+        // No still baseline after P1: club is already displaced on sample 0.
+        let alreadyMoving = buildTrackEvidence(clubheadMoves: [
+            (8.13, 0.025 * bodyScale, 0),
+            (8.27, 0.035 * bodyScale, 0),
+            (8.40, 0.045 * bodyScale, 0),
+            (8.53, 0.055 * bodyScale, 0),
+            (8.67, 0.065 * bodyScale, 0),
+        ])
+        let geometry = try XCTUnwrap(CoachingSwingGeometry(evidence: alreadyMoving))
+        XCTAssertNil(
+            CoachingCheckpointTiming.takeawayStart(geometry: geometry, modelTimes: [1: 8.0, 2: 11.2]),
+            "Must not fall back to P1+17ms when there is no still baseline after P1"
+        )
+    }
+
+    func testTakeawayStartReturnsNilWhenAddressShaftHasNoDetectedClubhead() throws {
+        let bodyScale = hypot(0.05, 0.16) + 0.30
+        // Address frame has a shaft box only (no clubhead detection): comparing box corner
+        // against tracked clubhead centres would invent fake displacement.
+        let noHead = buildTrackEvidence(clubheadMoves: [
+            (8.27, 0.004 * bodyScale, 0),
+            (8.40, 0.005 * bodyScale, 0),
+            (8.53, 0.010 * bodyScale, 0),
+            (8.67, 0.020 * bodyScale, 0),
+            (8.80, 0.030 * bodyScale, 0),
+            (8.93, 0.045 * bodyScale, 0),
+        ], addressHasClubhead: false)
+        let geometry = try XCTUnwrap(CoachingSwingGeometry(evidence: noHead))
+        XCTAssertNil(CoachingCheckpointTiming.takeawayStart(geometry: geometry, modelTimes: [1: 8.0, 2: 11.2]))
+    }
+
+    func testTakeawayStartSkipsWaggleThatReturnsToStillAndResistsForeshorteningDip() throws {
+        let bodyScale = hypot(0.05, 0.16) + 0.30
+        // Golfer stands still, waggles out to 4% for 4 samples, returns to still at address
+        // (< 1.1% for 2 samples), then starts the real takeaway at 9.80 (halfway 9.73..9.87),
+        // followed by a brief single-sample DTL foreshortening dip to 1.2% at 10.40.
+        let withWaggle = buildTrackEvidence(clubheadMoves: [
+            (8.13, 0.003 * bodyScale, 0),  // still
+            (8.27, 0.004 * bodyScale, 0),  // still
+            (8.40, 0.025 * bodyScale, 0),  // waggle starts
+            (8.53, 0.040 * bodyScale, 0),
+            (8.67, 0.035 * bodyScale, 0),
+            (8.80, 0.020 * bodyScale, 0),
+            (9.40, 0.006 * bodyScale, 0),  // returned to still at address (1)
+            (9.60, 0.004 * bodyScale, 0),  // returned to still at address (2)
+            (9.73, 0.010 * bodyScale, 0),  // just under 1.5%
+            (9.87, 0.020 * bodyScale, 0),  // real takeaway crosses 1.5% at 9.80
+            (10.00, 0.035 * bodyScale, 0),
+            (10.13, 0.050 * bodyScale, 0),
+            (10.40, 0.012 * bodyScale, 0), // brief DTL foreshortening dip (> 1.1%, must not reset)
+            (10.53, 0.040 * bodyScale, 0),
+            (10.67, 0.080 * bodyScale, 0),
+            (10.80, 0.120 * bodyScale, 0),
+        ])
+        let geometry = try XCTUnwrap(CoachingSwingGeometry(evidence: withWaggle))
+        let start = try XCTUnwrap(CoachingCheckpointTiming.takeawayStart(
+            geometry: geometry, modelTimes: [1: 8.0, 2: 11.2]
+        ))
+        XCTAssertEqual(start, 9.80, accuracy: 0.005, "Must skip the waggle and stay locked across the foreshortening dip")
+    }
+
     func testTakeawayStartReturnsNilWhenClubNeverLeavesAddressOrTrackIsTooShort() throws {
         let bodyScale = hypot(0.05, 0.16) + 0.30
         let still = buildTrackEvidence(clubheadMoves: [
@@ -281,13 +353,15 @@ final class SwingTempoTests: XCTestCase {
             (8.4, 0.008 * bodyScale, 0),
             (8.6, 0.010 * bodyScale, 0),
             (8.8, 0.006 * bodyScale, 0),
+            (9.0, 0.005 * bodyScale, 0),
         ])
         let stillGeometry = try XCTUnwrap(CoachingSwingGeometry(evidence: still))
         XCTAssertNil(CoachingCheckpointTiming.takeawayStart(geometry: stillGeometry, modelTimes: [1: 8.0, 2: 11.2]))
 
         let tooFew = buildTrackEvidence(clubheadMoves: [
-            (8.4, 0.03 * bodyScale, 0),
-            (8.6, 0.04 * bodyScale, 0),
+            (8.4, 0.004 * bodyScale, 0),
+            (8.6, 0.03 * bodyScale, 0),
+            (8.8, 0.04 * bodyScale, 0),
         ])
         let fewGeometry = try XCTUnwrap(CoachingSwingGeometry(evidence: tooFew))
         XCTAssertNil(CoachingCheckpointTiming.takeawayStart(geometry: fewGeometry, modelTimes: [1: 8.0, 2: 11.2]))
@@ -309,12 +383,14 @@ final class SwingTempoTests: XCTestCase {
 
     // MARK: - Session tempo trend
 
-    func testSessionTrendComputesMediansExcludesUnsureAndExcludedAndDetectsDirection() throws {
+    func testSessionTrendComputesMediansExcludesUnsureAndExcludedAndAttributesDirection() throws {
         func tempo(back: Double, down: Double, low: Bool = false) -> SwingTempo {
             SwingTempo(backswingMilliseconds: back, downswingMilliseconds: down,
                        isLowConfidence: low, takeawayStartClipTime: 8.5)
         }
 
+        // Backswing lengthens 700/750 -> 800/850 ms (+100 ms >= 60 ms), downswing steady 250 ms.
+        // Ratio shifts 2.9 -> 3.3 (+0.4 >= 0.4) -> .longerBackswing.
         let entries: [(id: UUID, tempo: SwingTempo?, excluded: Bool)] = [
             (UUID(), tempo(back: 700, down: 250), false),        // 2.8:1
             (UUID(), tempo(back: 750, down: 250), false),        // 3.0:1
@@ -328,30 +404,57 @@ final class SwingTempoTests: XCTestCase {
         XCTAssertEqual(trend.totalSwings, 7)
         XCTAssertEqual(trend.samples.count, 4)
         XCTAssertEqual(trend.samples.map(\.swingNumber), [1, 2, 6, 7])
-        // Median of [2.8, 3.0, 3.2, 3.4] = 3.1 -> "3.1:1"
         XCTAssertEqual(try XCTUnwrap(trend.medianRatio), 3.1, accuracy: 1e-6)
         XCTAssertEqual(trend.medianRatioText, "3.1:1")
         XCTAssertEqual(trend.medianBackswingMS, 775)
         XCTAssertEqual(trend.medianDownswingMS, 250)
-        // First half median 2.9, second half median 3.3 (+0.40 >= 0.2) -> slowerBackswing
-        XCTAssertEqual(trend.direction, .slowerBackswing)
+        XCTAssertEqual(trend.direction, .longerBackswing)
+        XCTAssertEqual(trend.direction?.label, "Longer backswing")
 
-        // Steady session (within ±0.2)
-        let steady = SwingTempoTrend.build(from: [2.8, 2.9, 2.9, 3.0].map { r in
-            (UUID(), tempo(back: r * 250, down: 250), false)
-        })
-        XCTAssertEqual(steady.direction, .steady)
+        // Steady backswing (750 ms) with quicker downswing (280 -> 230 ms, -50 ms >= 40 ms;
+        // ratio 2.68 -> 3.26, +0.58 >= 0.4) must read "Quicker downswing", never "Longer backswing".
+        let downswingQuicker = SwingTempoTrend.build(from: [
+            (UUID(), tempo(back: 750, down: 280), false),
+            (UUID(), tempo(back: 750, down: 280), false),
+            (UUID(), tempo(back: 750, down: 230), false),
+            (UUID(), tempo(back: 750, down: 230), false),
+        ])
+        XCTAssertEqual(downswingQuicker.direction, .quickerDownswing)
+        XCTAssertEqual(downswingQuicker.direction?.label, "Quicker downswing")
 
-        // Quicker backswing (-0.4 <= -0.2)
-        let quicker = SwingTempoTrend.build(from: [3.2, 3.1, 2.7, 2.6].map { r in
-            (UUID(), tempo(back: r * 250, down: 250), false)
-        })
+        // Steady backswing (750 ms) with slower downswing (230 -> 280 ms) -> "Slower downswing".
+        let downswingSlower = SwingTempoTrend.build(from: [
+            (UUID(), tempo(back: 750, down: 230), false),
+            (UUID(), tempo(back: 750, down: 230), false),
+            (UUID(), tempo(back: 750, down: 280), false),
+            (UUID(), tempo(back: 750, down: 280), false),
+        ])
+        XCTAssertEqual(downswingSlower.direction, .slowerDownswing)
+
+        // One-slot P4 quantisation shift (+33 ms backswing, -33 ms downswing) stays "Steady".
+        let p4OneSlotNoise = SwingTempoTrend.build(from: [
+            (UUID(), tempo(back: 720, down: 280), false),
+            (UUID(), tempo(back: 720, down: 280), false),
+            (UUID(), tempo(back: 753, down: 247), false),
+            (UUID(), tempo(back: 753, down: 247), false),
+        ])
+        XCTAssertEqual(p4OneSlotNoise.direction, .steady)
+
+        // Quicker backswing (820 -> 700 ms, steady 250 ms downswing) -> "Quicker backswing".
+        let quicker = SwingTempoTrend.build(from: [
+            (UUID(), tempo(back: 820, down: 250), false),
+            (UUID(), tempo(back: 800, down: 250), false),
+            (UUID(), tempo(back: 700, down: 250), false),
+            (UUID(), tempo(back: 680, down: 250), false),
+        ])
         XCTAssertEqual(quicker.direction, .quickerBackswing)
 
-        // Too few samples for direction (< 4)
-        let short = SwingTempoTrend.build(from: [2.8, 3.2, 3.5].map { r in
-            (UUID(), tempo(back: r * 250, down: 250), false)
-        })
+        // Too few samples for direction (< 4).
+        let short = SwingTempoTrend.build(from: [
+            (UUID(), tempo(back: 700, down: 250), false),
+            (UUID(), tempo(back: 800, down: 250), false),
+            (UUID(), tempo(back: 900, down: 250), false),
+        ])
         XCTAssertNil(short.direction)
     }
 }

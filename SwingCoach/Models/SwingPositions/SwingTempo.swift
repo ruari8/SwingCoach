@@ -5,17 +5,18 @@
 //  Backswing time, downswing time, and their ratio for a down-the-line swing,
 //  plus the session-level tempo trend.
 //
-//  Takeaway start is the first sustained club movement after P1 (address), not
-//  P1 itself, found from the club track between P1 and P2 and stored on
+//  Takeaway start is the last still-to-moving club departure after P1 (address),
+//  not P1 itself, found from the club track between P1 and P2 and stored on
 //  `SwingPositions.takeawayStartClipTime`. Times are converted from the clip's
 //  slow-motion timeline to real milliseconds using the capture's real time
 //  scale (e.g. 8 for 240 fps exported at 30 fps, 4 for 120 fps at 30 fps).
+//  Top (P4) sits on the 30 fps position-model grid (±33 ms).
 //
 
 import Foundation
 
 /// Tempo measurements for one down-the-line swing, in real time.
-nonisolated struct SwingTempo: Codable, Equatable {
+nonisolated struct SwingTempo: Equatable {
     /// Real-time backswing duration in milliseconds: takeaway start to top (P4).
     let backswingMilliseconds: Double
     /// Real-time downswing duration in milliseconds: top (P4) to impact (P7).
@@ -24,7 +25,7 @@ nonisolated struct SwingTempo: Codable, Equatable {
     /// P1 (address) is not included: the TCN spreads probability across still address frames,
     /// and backswing starts at the club-tracked `takeawayStartClipTime`, not P1 itself.
     let isLowConfidence: Bool
-    /// Clip time of takeaway start (first movement after P1), on the clip's timeline.
+    /// Clip time of takeaway start (first sustained club movement after P1), on the clip's timeline.
     let takeawayStartClipTime: Double
 
     /// Backswing divided by downswing (tour swings are often near 3.0:1).
@@ -115,18 +116,23 @@ nonisolated struct SwingTempoTrend: Equatable {
         var id: UUID { swingID }
     }
 
+    /// Direction of the session's tempo ratio between the first and second half,
+    /// attributed to whichever phase (backswing or downswing) actually shifted past
+    /// the ±33 ms P4 grid noise.
     enum Direction: Equatable {
         case steady
-        /// Ratio rose in the second half of the session (longer backswing relative to downswing).
-        case slowerBackswing
-        /// Ratio fell in the second half of the session (quicker backswing relative to downswing).
+        case longerBackswing
         case quickerBackswing
+        case slowerDownswing
+        case quickerDownswing
 
         var label: String {
             switch self {
             case .steady: "Steady"
-            case .slowerBackswing: "Longer backswing"
+            case .longerBackswing: "Longer backswing"
             case .quickerBackswing: "Quicker backswing"
+            case .slowerDownswing: "Slower downswing"
+            case .quickerDownswing: "Quicker downswing"
             }
         }
     }
@@ -140,8 +146,13 @@ nonisolated struct SwingTempoTrend: Equatable {
     static let minimumTrendSamples = 2
     /// Minimum samples needed to call a first-half vs second-half direction.
     static let minimumDirectionSamples = 4
-    /// Minimum ratio shift between the first and second half to leave "Steady".
-    static let directionThreshold = 0.2
+    /// Minimum ratio shift between the first and second half to leave "Steady"
+    /// (widened past a 1-slot ±33 ms P4 error on a ~270 ms downswing).
+    static let ratioShiftThreshold = 0.4
+    /// Minimum phase-time shifts (ms) required to attribute a ratio shift to
+    /// backswing or downswing rather than ±33 ms P4 slot quantisation.
+    static let backswingShiftThresholdMs = 60.0
+    static let downswingShiftThresholdMs = 40.0
 
     var medianRatio: Double? { Self.median(samples.map(\.tempo.ratio)) }
     var medianBackswingMilliseconds: Double? { Self.median(samples.map(\.tempo.backswingMilliseconds)) }
@@ -151,29 +162,55 @@ nonisolated struct SwingTempoTrend: Equatable {
     var medianBackswingMS: Int? { medianBackswingMilliseconds.map { Int($0.rounded()) } }
     var medianDownswingMS: Int? { medianDownswingMilliseconds.map { Int($0.rounded()) } }
 
-    /// Compact summary of the session's median times ("731 / 272 ms").
+    /// Independent medians of backswing and downswing times ("708 / 274 ms").
     var medianTimesText: String? {
         guard let back = medianBackswingMS, let down = medianDownswingMS else { return nil }
         return "\(back) / \(down) ms"
     }
 
-    /// Compact one-line summary for a recap ("2.8:1 · 731 / 272 ms").
-    var summaryText: String? {
-        guard let ratio = medianRatioText, let times = medianTimesText else { return nil }
-        return "\(ratio) · \(times)"
-    }
-
-    /// Compares the median ratio of the first half of samples against the second half.
+    /// Compares the first half of samples against the second half. Requires both
+    /// a ratio shift >= `ratioShiftThreshold` and a phase-time shift past P4's
+    /// ±33 ms grid noise, then names whichever phase (backswing or downswing)
+    /// drove the ratio change.
     var direction: Direction? {
         guard samples.count >= Self.minimumDirectionSamples else { return nil }
         let half = samples.count / 2
-        guard let early = Self.median(samples.prefix(half).map(\.tempo.ratio)),
-              let late = Self.median(samples.suffix(half).map(\.tempo.ratio))
+        let firstHalf = samples.prefix(half)
+        let secondHalf = samples.suffix(half)
+
+        guard let earlyRatio = Self.median(firstHalf.map(\.tempo.ratio)),
+              let lateRatio = Self.median(secondHalf.map(\.tempo.ratio)),
+              let earlyBack = Self.median(firstHalf.map(\.tempo.backswingMilliseconds)),
+              let lateBack = Self.median(secondHalf.map(\.tempo.backswingMilliseconds)),
+              let earlyDown = Self.median(firstHalf.map(\.tempo.downswingMilliseconds)),
+              let lateDown = Self.median(secondHalf.map(\.tempo.downswingMilliseconds))
         else { return nil }
-        let delta = late - early
-        if delta >= Self.directionThreshold { return .slowerBackswing }
-        if delta <= -Self.directionThreshold { return .quickerBackswing }
-        return .steady
+
+        let ratioDelta = lateRatio - earlyRatio
+        guard abs(ratioDelta) >= Self.ratioShiftThreshold else { return .steady }
+
+        let backDelta = lateBack - earlyBack
+        let downDelta = lateDown - earlyDown
+        // Only count a phase if it moved in the direction that explains `ratioDelta`
+        // (ratio rises when backswing lengthens or downswing quickens).
+        let backExplains = (ratioDelta > 0 ? backDelta : -backDelta) >= Self.backswingShiftThresholdMs
+        let downExplains = (ratioDelta > 0 ? -downDelta : downDelta) >= Self.downswingShiftThresholdMs
+
+        switch (backExplains, downExplains) {
+        case (true, false):
+            return backDelta > 0 ? .longerBackswing : .quickerBackswing
+        case (false, true):
+            return downDelta > 0 ? .slowerDownswing : .quickerDownswing
+        case (true, true):
+            let backStrength = abs(backDelta) / Self.backswingShiftThresholdMs
+            let downStrength = abs(downDelta) / Self.downswingShiftThresholdMs
+            if backStrength >= downStrength {
+                return backDelta > 0 ? .longerBackswing : .quickerBackswing
+            }
+            return downDelta > 0 ? .slowerDownswing : .quickerDownswing
+        case (false, false):
+            return .steady
+        }
     }
 
     /// Builds a trend from chronologically ordered swings. Drops swings with missing

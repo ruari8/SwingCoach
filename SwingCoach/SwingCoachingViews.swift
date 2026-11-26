@@ -146,7 +146,7 @@ struct SessionCoachingView: View {
                     } header: {
                         SectionHeading("Tempo")
                     } footer: {
-                        Text("First club movement after P1 to top (P4), then top to impact (P7). Dashed line is 3:1.")
+                        Text("First club movement after P1 to top (P4, ±33 ms), then top to impact (P7). Dashed line is 3:1.")
                             .foregroundStyle(Color.helpText)
                     }
                 }
@@ -392,21 +392,26 @@ struct SessionCoachingView: View {
     /// Session tempo summary and swing-by-swing ratio chart.
     private func tempoTrendCard(_ trend: SwingTempoTrend) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                if let ratio = trend.medianRatioText {
-                    Text(ratio)
-                        .font(.appTitle.monospacedDigit())
-                }
-                if let direction = trend.direction {
-                    Text(direction.label)
+            HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: .leading, spacing: 2) {
+                    if let ratio = trend.medianRatioText {
+                        Text(ratio)
+                            .font(.appTitle.monospacedDigit())
+                    }
+                    Text(trend.direction.map { "Median ratio · \($0.label)" } ?? "Median ratio")
                         .font(.appCaption)
                         .foregroundStyle(Color.helpText)
                 }
                 Spacer(minLength: 8)
                 if let times = trend.medianTimesText {
-                    Text(times)
-                        .font(.appBody.monospacedDigit())
-                        .foregroundStyle(Color.helpText)
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(times)
+                            .font(.appBody.monospacedDigit())
+                            .foregroundStyle(Color.helpText)
+                        Text("Median times")
+                            .font(.appCaption)
+                            .foregroundStyle(Color.helpText)
+                    }
                 }
             }
             if trend.samples.count < SwingTempoTrend.minimumTrendSamples {

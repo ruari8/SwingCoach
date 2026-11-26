@@ -46,6 +46,13 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         else { return nil }
         return SwingTempo.measure(positions: swingPositions, timeScale: sourceTimeScale)
     }
+
+    /// Tempo for a swing whose coaching report has no exclusion; returns nil for
+    /// short swings, moved cameras, and unclear positions.
+    func tempo(excluding exclusion: CoachingExclusion?) -> SwingTempo? {
+        guard exclusion == nil else { return nil }
+        return tempo
+    }
     /// The swing itself on the clip's timeline, without the extra footage
     /// before and after. Swing positions are found only here; nil means the
     /// whole clip (imports, and swings saved before this was recorded).

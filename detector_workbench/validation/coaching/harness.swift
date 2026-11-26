@@ -149,21 +149,10 @@ struct Harness {
                 let reportFile = outDir.appendingPathComponent("report.json")
                 if let report = CoachingAnalyzer.analyze(record.evidence, positions: record.positions) {
                     try encoder.encode(report).write(to: reportFile)
-                    // Build club-timed positions + takeaway start, matching SwingCoachingStore.retimed.
-                    var retimed = SwingPositions(model: record.positions.model, positions: record.positions.positions.map { position in
-                        SwingPosition(number: position.number,
-                                      clipTime: record.evidence.frame(position.number)?.clipTime ?? position.clipTime,
-                                      confidence: position.confidence)
-                    })
-                    var modelTimes: [Int: Double] = [:]
-                    for position in record.positions.positions { modelTimes[position.number] = position.clipTime }
-                    if let geometry = CoachingSwingGeometry(evidence: record.evidence) {
-                        let takeawayTime = retimed.positions.first { $0.number == 2 }?.clipTime
-                        retimed.takeawayStartClipTime = CoachingCheckpointTiming.takeawayStart(
-                            geometry: geometry, modelTimes: modelTimes, takeawayTime: takeawayTime
-                        )
-                    }
-                    let tempo = SwingTempo.measure(positions: retimed, timeScale: timeScale)
+                    let retimed = CoachingCheckpointTiming.retimed(record.positions, by: record.evidence)
+                    let tempo = report.exclusion == nil
+                        ? SwingTempo.measure(positions: retimed, timeScale: timeScale)
+                        : nil
                     session.append((name, report, record.lens, tempo))
                 } else {
                     try? FileManager.default.removeItem(at: reportFile)

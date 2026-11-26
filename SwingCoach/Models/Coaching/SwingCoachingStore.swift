@@ -488,7 +488,12 @@ final class SwingCoachingStore: ObservableObject {
             pending.remove(id)
             // The player's position strip jumps to the same frames the
             // drawings were measured on.
-            let retimed = Self.retimed(positions, by: evidence)
+            var retimed = Self.retimed(positions, by: evidence)
+            #if DEBUG
+            if UITestFixture.simulatedClipRead != nil, retimed.takeawayStartClipTime == nil {
+                retimed.takeawayStartClipTime = positions.takeawayStartClipTime
+            }
+            #endif
             if SwingLibrary.shared.swings.first(where: { $0.id == id })?.swingPositions != retimed {
                 SwingLibrary.shared.setSwingPositions(retimed, for: id)
             }
@@ -522,24 +527,6 @@ final class SwingCoachingStore: ObservableObject {
     }
 
     nonisolated static func retimed(_ positions: SwingPositions, by evidence: SwingCoachingEvidence) -> SwingPositions {
-        var result = SwingPositions(model: positions.model, positions: positions.positions.map { position in
-            SwingPosition(number: position.number,
-                          clipTime: evidence.frame(position.number)?.clipTime ?? position.clipTime,
-                          confidence: position.confidence)
-        })
-        var modelTimes: [Int: Double] = [:]
-        for position in positions.positions { modelTimes[position.number] = position.clipTime }
-        if let geometry = CoachingSwingGeometry(evidence: evidence) {
-            let takeawayTime = result.positions.first { $0.number == 2 }?.clipTime
-            result.takeawayStartClipTime = CoachingCheckpointTiming.takeawayStart(
-                geometry: geometry, modelTimes: modelTimes, takeawayTime: takeawayTime
-            )
-        } else if evidence.frames.isEmpty {
-            result.takeawayStartClipTime = positions.takeawayStartClipTime
-        }
-        if result.positions != positions.positions {
-            result.modelClipTimes = positions.positions.map(\.clipTime)
-        }
-        return result
+        CoachingCheckpointTiming.retimed(positions, by: evidence)
     }
 }

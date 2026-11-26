@@ -195,6 +195,12 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertFalse(app.descendants(matching: .any)["coaching-caption-headHeightTop"].exists)
         XCTAssertFalse(app.buttons["swing-position-P5"].label.contains("out of zone"), "No levels on a swing that isn't judged")
         attach(app, "coaching-not-judged")
+
+        // Excluded swing (short swing) must not show a confident tempo in Swing Info.
+        app.showPlayerTools()
+        app.buttons["Show swing metadata"].tap()
+        XCTAssertTrue(app.navigationBars["Swing Info"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.descendants(matching: .any)["swing-tempo-ratio"].exists)
     }
 
     func testSessionReviewShowsTheThemeItsPicturesAndEachSwing() {

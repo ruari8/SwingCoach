@@ -12,17 +12,21 @@
 import Foundation
 
 nonisolated enum CoachingCheckpointTiming {
-    /// Minimum clubhead or grip displacement from address (as a share of body
-    /// scale) that counts as the start of the takeaway. Resting jitter at
-    /// address stays under 0.8%; 1.5% sustained over `takeawayStartRun`
-    /// consecutive track samples (~33 ms at 60 fps) catches first movement
-    /// without tripping on single-frame detector noise or DTL foreshortening.
+    /// Hysteresis thresholds for takeaway start (as a share of body scale):
+    /// - Still at address: `takeawayStillRun` consecutive samples under
+    ///   `takeawayStillThreshold` (1.1%).
+    /// - Sustained takeaway: `takeawayStartRun` consecutive samples at or above
+    ///   `takeawayStartThreshold` (1.5%, ~33 ms at 60 fps).
+    /// Taking the last still-to-moving transition before P2 skips waggles or
+    /// regrips that return to address, while the 1.1% still band avoids false
+    /// resets from down-the-line foreshortening mid-takeaway.
+    static let takeawayStillThreshold = 0.011
+    static let takeawayStillRun = 2
     static let takeawayStartThreshold = 0.015
     static let takeawayStartRun = 3
 
     struct Times: Equatable {
         /// Clip times; nil where the track couldn't place the position.
-        var takeawayStart: Double?
         var takeaway: Double?
         var delivery: Double?
         var impact: Double?
@@ -52,9 +56,6 @@ nonisolated enum CoachingCheckpointTiming {
             break
         }
 
-        // First movement after P1 (address), before P2: takeaway start for tempo.
-        times.takeawayStart = takeawayStart(geometry: geometry, modelTimes: modelTimes, takeawayTime: times.takeaway)
-
         // Impact: the ball is on its spot through the downswing, then gone
         // for good. Any later sighting on the spot means an earlier gap was
         // the club or the hands passing in front of it, so impact is where
@@ -71,10 +72,15 @@ nonisolated enum CoachingCheckpointTiming {
         return times
     }
 
-    /// First sustained movement of the clubhead or grip away from address (P1),
-    /// strictly between P1 and P2. Returns nil when the address club is missing,
-    /// too few track samples fall in (P1, P2), or displacement never sustains
-    /// `takeawayStartThreshold` over `takeawayStartRun` consecutive samples.
+    /// Last still-to-moving departure of the clubhead or grip away from address
+    /// (P1), strictly between P1 and P2.
+    ///
+    /// Requires a detected address clubhead (`address.headDetected`) so clubhead
+    /// centres are compared like-for-like, and at least `takeawayStillRun`
+    /// consecutive still samples (< `takeawayStillThreshold`) before a sustained
+    /// `takeawayStartRun` run (>= `takeawayStartThreshold`). Returns nil when
+    /// the club is already moving at P1, the address head wasn't seen, or no
+    /// sustained departure follows a still baseline.
     static func takeawayStart(
         geometry: CoachingSwingGeometry,
         modelTimes: [Int: Double],
@@ -84,6 +90,7 @@ nonisolated enum CoachingCheckpointTiming {
               let p2 = takeawayTime ?? modelTimes[2],
               p2 > p1,
               let address = geometry.shaft(at: 1),
+              address.headDetected,
               geometry.bodyScale > 0
         else { return nil }
 
@@ -93,26 +100,68 @@ nonisolated enum CoachingCheckpointTiming {
             let gripMove = entry.shaft.grip.distance(to: address.grip)
             return (entry.time, max(headMove, gripMove) / geometry.bodyScale)
         }
-        guard early.count >= takeawayStartRun else { return nil }
+        guard early.count >= takeawayStillRun + takeawayStartRun else { return nil }
 
-        for index in 0...(early.count - takeawayStartRun) {
-            let window = early[index..<(index + takeawayStartRun)]
-            guard window.allSatisfy({ $0.displacement >= takeawayStartThreshold }) else { continue }
-            if index > 0 {
-                let previous = early[index - 1]
-                let current = early[index]
-                let span = current.displacement - previous.displacement
-                if previous.displacement < takeawayStartThreshold, span > 1e-9 {
-                    let fraction = (takeawayStartThreshold - previous.displacement) / span
-                    let interpolated = previous.time + fraction * (current.time - previous.time)
-                    if interpolated > p1 && interpolated < p2 {
-                        return interpolated
+        var lastTransition: Double?
+        var stillStreak = 0
+        var hasStillBaseline = false
+        var index = 0
+        while index < early.count {
+            if early[index].displacement < takeawayStillThreshold {
+                stillStreak += 1
+                if stillStreak >= takeawayStillRun { hasStillBaseline = true }
+                index += 1
+                continue
+            }
+            stillStreak = 0
+            if hasStillBaseline,
+               index + takeawayStartRun <= early.count,
+               early[index..<(index + takeawayStartRun)].allSatisfy({ $0.displacement >= takeawayStartThreshold }) {
+                var crossingTime = early[index].time
+                if index > 0 {
+                    let previous = early[index - 1]
+                    let current = early[index]
+                    let span = current.displacement - previous.displacement
+                    if previous.displacement < takeawayStartThreshold, span > 1e-9 {
+                        let fraction = (takeawayStartThreshold - previous.displacement) / span
+                        let interpolated = previous.time + fraction * (current.time - previous.time)
+                        if interpolated > p1 && interpolated < p2 {
+                            crossingTime = interpolated
+                        }
                     }
                 }
+                lastTransition = crossingTime
+                hasStillBaseline = false
+                index += takeawayStartRun
+            } else {
+                index += 1
             }
-            return early[index].time
         }
-        return nil
+        return lastTransition
+    }
+
+    /// Applies club-timed frame times and takeaway start from `evidence` onto
+    /// `positions` (which holds the position model's own times), preserving
+    /// `modelClipTimes` when any position moved. Shared by the app store and the
+    /// Mac coaching harness.
+    static func retimed(_ positions: SwingPositions, by evidence: SwingCoachingEvidence) -> SwingPositions {
+        var result = SwingPositions(model: positions.model, positions: positions.positions.map { position in
+            SwingPosition(number: position.number,
+                          clipTime: evidence.frame(position.number)?.clipTime ?? position.clipTime,
+                          confidence: position.confidence)
+        })
+        var modelTimes: [Int: Double] = [:]
+        for position in positions.positions { modelTimes[position.number] = position.clipTime }
+        if let geometry = CoachingSwingGeometry(evidence: evidence) {
+            let takeawayTime = result.positions.first { $0.number == 2 }?.clipTime
+            result.takeawayStartClipTime = takeawayStart(
+                geometry: geometry, modelTimes: modelTimes, takeawayTime: takeawayTime
+            )
+        }
+        if result.positions != positions.positions {
+            result.modelClipTimes = positions.positions.map(\.clipTime)
+        }
+        return result
     }
 
     /// The model's times with the club's times swapped in where they can
