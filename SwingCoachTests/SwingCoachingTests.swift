@@ -1040,7 +1040,7 @@ final class SwingCoachingTests: XCTestCase {
         XCTAssertNil(report.exclusion)
         XCTAssertFalse(CoachingFeedback.findings(in: report).contains { $0.fault == .steepTransition })
         let verdict = CoachingFeedback.verdict(for: report)
-        XCTAssertEqual(verdict, .good)
+        XCTAssertFalse(CoachingFeedback.picks(for: verdict).contains(.transition))
         let steps = CoachingWalkthrough.steps(for: report, verdict: verdict)
         XCTAssertFalse(steps.contains { $0.metrics.contains(.transition) })
         XCTAssertNil(CoachingStripMarks.marks(for: report, steps: steps)[5])

@@ -221,7 +221,7 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertTrue(transition.label.contains("Lower the camera to hand height."), transition.label)
         XCTAssertFalse(transition.label.contains("Shaft steepened"), transition.label)
         XCTAssertEqual(transition.value as? String, "Not judged")
-        XCTAssertFalse(app.buttons["coaching-metric-hipDepthImpact"].label.contains("camera"), "Body checks are judged as before")
+        XCTAssertFalse(app.buttons["coaching-metric-headHeightTop"].label.contains("camera"), "Body checks are judged as before")
         attach(app, "coaching-camera-held")
 
         // Picked, it is drawn on its frame, named and not judged.
