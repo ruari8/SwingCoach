@@ -113,6 +113,13 @@ final class CaptureControlsUITests: XCTestCase {
         XCTAssertTrue(record.waitForExistence(timeout: 5))
         attach(app, "manual-on-capture-manual")
 
+        // The setting is saved: still on after a relaunch, which opens in Auto.
+        app.relaunch(Fixture.syntheticCamera)
+        XCTAssertTrue(modeSwitch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.segmentedControls.buttons["Auto"].isSelected)
+        app.segmentedControls.buttons["Manual"].tap()
+        XCTAssertTrue(record.waitForExistence(timeout: 5))
+
         // Off again while Capture is still in Manual.
         tapSwitch(openManualSetting(app))
         XCTAssertFalse(app.switches["record-sound"].exists)

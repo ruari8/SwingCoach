@@ -1985,7 +1985,8 @@ struct CaptureView: View {
             camera.start()
             isOnScreen = true
             if leaveHiddenManual() {
-                // The mode change starts Auto.
+                // The mode change starts Auto; ask for Photos as Auto does.
+                requestAutoCapturePhotosAccess()
             } else if workflowMode == .auto {
                 preventIdleTimer()
                 requestAutoCapturePhotosAccess()
@@ -2001,6 +2002,9 @@ struct CaptureView: View {
         .onChange(of: capturePracticeSwings) { _, isEnabled in
             camera.capturesPracticeSwings = isEnabled
             camera.restartAutoDetection()
+        }
+        .onChange(of: manualCaptureEnabled) { _, _ in
+            if leaveHiddenManual() { requestAutoCapturePhotosAccess() }
         }
         .onChange(of: workflowMode) { _, mode in
             switch mode {

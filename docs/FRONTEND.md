@@ -263,6 +263,7 @@ Implemented feature set:
 - Toggle `Show model stats` under Capture diagnostics to expose measured detector FPS / average model milliseconds beneath the Auto and Manual recording status. This display preference defaults to off and persists across launches.
 - Configure the YOLO/Core ML V3 low sample rate used by capture, imported Trim detection, and Replay Debug.
 - Toggle ball-independent practice-swing detection (Settings > Capture > `Capture practice swings`) for Auto capture and Manual recording's detected trim ranges; real ball-departure capture remains the default. This preference does not affect Replay Debug's separate Advanced toggle or imported-video Trim detection, which remains impact-only.
+- Manual capture: `Show Manual mode` (`capture.manualCaptureEnabled`, off by default) adds the Auto / Manual switch to Capture. `Record sound` appears under it only while it is on.
 - Coaching: `Show Auto recap` (every swing, every 5 swings by default, every 10, or only when asked; the same choice as the chip on the camera screen) and `Measure swings while Auto records` (off by default, because it has not been checked on a phone; with it off, swings are measured when Auto pauses or stops).
 - Toggle the DEBUG Replay Debug tab on/off.
 - Replay Debug visible playback speed and source timing are configured inside the Replay Debug tab, not in the shared Settings screen.

@@ -108,7 +108,7 @@ final class UICouncilTourUITests: XCTestCase {
     // MARK: Capture: Auto with the coach, then Manual
 
     private func captureScreens(_ look: String) {
-        let app = launch(["-ui-testing-camera", "synthetic", "-ui-testing-auto-library", "-ui-testing-manual-capture"])
+        let app = launch(["-ui-testing-camera", "synthetic", "-ui-testing-auto-library"])
         let recap = app.descendants(matching: .any)["coach-recap"]
         if recap.waitForExistence(timeout: 15) {
             settle(1.5)
@@ -139,11 +139,17 @@ final class UICouncilTourUITests: XCTestCase {
             settle(0.8)
         }
 
-        if tap(app.segmentedControls.buttons["Manual"]) {
+        app.terminate()
+
+        // Manual is off by default. Turn it on for this launch only, as a
+        // launch argument, so nothing is saved for the next pass.
+        let manual = launch(["-ui-testing-camera", "synthetic", "-ui-testing-auto-library",
+                             "-capture.manualCaptureEnabled", "YES"])
+        if tap(manual.segmentedControls.buttons["Manual"], timeout: 15) {
             settle(1.5)
             shot("16-capture-manual", look)
         }
-        app.terminate()
+        manual.terminate()
     }
 
     // MARK: Helpers
