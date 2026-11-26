@@ -2727,6 +2727,8 @@ private struct SwingLibraryExportManifestItem: Encodable {
     let duration: Double
     let createdAt: Date
     let notes: String?
+    /// Camera lens data from capture; absent for imports and swings saved before lens recording.
+    var lens: CameraLensData?
     /// Absent for imports, manual recordings, and swings older than the log.
     var capture: CaptureRecord?
 }
@@ -2785,7 +2787,8 @@ private enum SwingLibraryBatchExporter {
                         vantage: swing.vantage.rawValue,
                         duration: swing.duration,
                         createdAt: swing.createdAt,
-                        notes: swing.notes
+                        notes: swing.notes,
+                        lens: swing.lensData
                     )
                 )
             }

@@ -22,10 +22,19 @@ for model in SwingPositionTCN SwingObjectsYOLO11n; do
 done
 # The store and the views need the app; everything else compiles on macOS.
 swiftc -O -parse-as-library -suppress-warnings -o "$BUILD/harness" \
+  SwingCoach/Models/CameraLensData.swift \
   SwingCoach/Models/SwingPositions/SwingPositions.swift \
   SwingCoach/Models/SwingPositions/SwingPositionAnalyzer.swift \
   SwingCoach/Models/GolfObjectDetector.swift \
   SwingCoach/Models/Coaching/Coaching*.swift \
   detector_workbench/validation/coaching/harness.swift
-"$BUILD/harness" "$BUILD/SwingPositionTCN.mlmodelc" "$BUILD/SwingObjectsYOLO11n.mlmodelc" "$SCALE" "$OUT" "$CLIPS"/*.mp4
+(
+  set --
+  for ext in mp4 MP4 mov MOV; do
+    for f in "$CLIPS"/*."$ext"; do
+      [ -e "$f" ] && set -- "$@" "$f"
+    done
+  done
+  "$BUILD/harness" "$BUILD/SwingPositionTCN.mlmodelc" "$BUILD/SwingObjectsYOLO11n.mlmodelc" "$SCALE" "$OUT" "$@"
+)
 tools/venv/bin/python detector_workbench/validation/coaching/review.py "$OUT" "$@"

@@ -182,6 +182,10 @@ nonisolated struct CaptureRecord: Codable, Sendable {
     /// Seconds since the Auto session started, the timeline of every log event.
     let sourceStart: Double?
     let sourceEnd: Double?
+    let focalLengthPixels: Double?
+    let focalLengthSource: String?
+    let videoFieldOfView: Double?
+    let videoZoomFactor: Double?
 }
 
 nonisolated extension CaptureCadenceDiagnostics {
@@ -282,6 +286,7 @@ nonisolated extension CaptureCadenceDiagnostics {
         var records: [String: CaptureRecord] = [:]
         for (swingID, event) in saved {
             let values = event["values"] as? [String: Double] ?? [:]
+            let eventState = event["state"] as? [String: String] ?? [:]
             let runID = event["runID"] as? String ?? ""
             let writer = (event["id"] as? String).flatMap { writers[$0] }
             let writerValues = writer?["values"] as? [String: Double] ?? [:]
@@ -296,7 +301,11 @@ nonisolated extension CaptureCadenceDiagnostics {
                 height: writerValues["height"].map { Int($0) },
                 bitRate: writerValues["bitRate"].map { Int($0) },
                 sourceStart: chunkStart,
-                sourceEnd: chunkStart.flatMap { start in values["end"].map { start + $0 } }
+                sourceEnd: chunkStart.flatMap { start in values["end"].map { start + $0 } },
+                focalLengthPixels: values["focalLengthPixels"],
+                focalLengthSource: eventState["focalLengthSource"],
+                videoFieldOfView: values["videoFieldOfView"],
+                videoZoomFactor: values["videoZoomFactor"]
             )
         }
         return records

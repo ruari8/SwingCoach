@@ -41,6 +41,9 @@ struct SavedSwing: Identifiable, Codable, Equatable {
     /// before and after. Swing positions are found only here; nil means the
     /// whole clip (imports, and swings saved before this was recorded).
     var swingWindow: ClosedRange<Double>? = nil
+    /// Camera lens and intrinsic data from the capture session; nil for imports
+    /// and swings saved before lens recording was added (marked unknown).
+    var lensData: CameraLensData? = nil
 
     // Not persisted - loaded at runtime
     /// A small square stand-in (`SwingPoster.placeholderSide`), made for
@@ -60,7 +63,8 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         isReference: Bool = false,
         title: String? = nil,
         localVideoFilename: String? = nil,
-        sourceTimeScale: Double? = nil
+        sourceTimeScale: Double? = nil,
+        lensData: CameraLensData? = nil
     ) {
         self.id = id
         self.photoAssetID = photoAssetID
@@ -73,11 +77,12 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         self.title = title
         self.localVideoFilename = localVideoFilename
         self.sourceTimeScale = sourceTimeScale
+        self.lensData = lensData
     }
 
     enum CodingKeys: String, CodingKey {
         case id, photoAssetID, vantage, duration, createdAt, notes, isFavorite, isReference, title, localVideoFilename
-        case sourceTimeScale, swingPositions, swingWindow
+        case sourceTimeScale, swingPositions, swingWindow, lensData
     }
 
     init(from decoder: Decoder) throws {
@@ -95,6 +100,7 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         sourceTimeScale = try container.decodeIfPresent(Double.self, forKey: .sourceTimeScale)
         swingPositions = try container.decodeIfPresent(SwingPositions.self, forKey: .swingPositions)
         swingWindow = try container.decodeIfPresent(ClosedRange<Double>.self, forKey: .swingWindow)
+        lensData = try container.decodeIfPresent(CameraLensData.self, forKey: .lensData)
     }
 
     // Custom Equatable (ignore non-codable properties)
@@ -111,7 +117,8 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         lhs.localVideoFilename == rhs.localVideoFilename &&
         lhs.sourceTimeScale == rhs.sourceTimeScale &&
         lhs.swingPositions == rhs.swingPositions &&
-        lhs.swingWindow == rhs.swingWindow
+        lhs.swingWindow == rhs.swingWindow &&
+        lhs.lensData == rhs.lensData
     }
 }
 
@@ -243,6 +250,7 @@ class SwingLibrary: ObservableObject {
         duration: Double,
         sourceTimeScale: Double? = nil,
         swingWindow: ClosedRange<Double>? = nil,
+        lensData: CameraLensData? = nil,
         initialThumbnail: UIImage? = nil
     ) async throws -> SavedSwing {
         let savesToPhotos = ClipStoragePreference.savesToPhotos
@@ -264,7 +272,8 @@ class SwingLibrary: ObservableObject {
                 id: id, photoAssetID: photoAssetID, vantage: vantage,
                 duration: duration, createdAt: Date(), notes: nil,
                 localVideoFilename: filename,
-                sourceTimeScale: sourceTimeScale
+                sourceTimeScale: sourceTimeScale,
+                lensData: lensData
             )
             swing.swingWindow = swingWindow
             swing.thumbnail = initialThumbnail.map { SwingPoster.cropped($0, side: SwingPoster.placeholderSide) }
