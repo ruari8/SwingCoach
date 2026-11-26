@@ -12,6 +12,7 @@ enum ExperimentalSettingKey {
     static let liveAutoSwingDetectionEnabled = "experimental.liveAutoSwingDetectionEnabled"
     static let liveModelDetectorSampleFPS = "experimental.liveModelDetectorSampleFPS"
     static let capturePracticeSwings = "capture.capturePracticeSwings"
+    static let manualCaptureEnabled = "capture.manualCaptureEnabled"
     static let showCaptureModelStats = "experimental.showCaptureModelStats"
     static let showDebugReplayTab = "experimental.showDebugReplayTab"
     static let debugReplaySpeedMultiplier = "experimental.debugReplaySpeedMultiplier"
@@ -48,6 +49,7 @@ struct ExperimentalSettingsView: View {
     @AppStorage(ExperimentalSettingKey.liveAutoSwingDetectionEnabled) private var liveAutoSwingDetectionEnabled = true
     @AppStorage(ExperimentalSettingKey.liveModelDetectorSampleFPS) private var liveModelDetectorSampleFPS = 8.0
     @AppStorage(ExperimentalSettingKey.capturePracticeSwings) private var capturePracticeSwings = false
+    @AppStorage(ExperimentalSettingKey.manualCaptureEnabled) private var manualCaptureEnabled = false
     @AppStorage(CaptureSoundPreference.recordsSoundKey) private var recordsSound = false
     @AppStorage(ExperimentalSettingKey.showCaptureModelStats) private var showCaptureModelStats = false
     @AppStorage(ExperimentalSettingKey.showDebugReplayTab) private var showDebugReplayTab = true
@@ -101,20 +103,26 @@ struct ExperimentalSettingsView: View {
             }
 
             Section {
-                Toggle("Record sound", isOn: $recordsSound)
-                    .accessibilityIdentifier("record-sound")
+                Toggle("Capture practice swings", isOn: $capturePracticeSwings)
             } header: {
-                SectionHeading("Sound")
+                SectionHeading("Capture")
             } footer: {
-                HelpFooter("Manual only: Auto clips never have sound.")
+                HelpFooter("Off: only real shots are detected.")
             }
 
             Section {
-                Toggle("Capture practice swings", isOn: $capturePracticeSwings)
+                Toggle("Show Manual mode", isOn: $manualCaptureEnabled)
+                    .accessibilityIdentifier("manual-capture")
+                if manualCaptureEnabled {
+                    Toggle("Record sound", isOn: $recordsSound)
+                        .accessibilityIdentifier("record-sound")
+                }
             } header: {
-                SectionHeading("Auto & manual capture")
+                SectionHeading("Manual capture")
             } footer: {
-                HelpFooter("Off: only real shots are detected.")
+                HelpFooter(manualCaptureEnabled
+                    ? "Sound is Manual only: Auto clips never have sound."
+                    : "Adds a Manual mode to Capture: record, then trim.")
             }
 
             Section {

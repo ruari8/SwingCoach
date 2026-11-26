@@ -203,6 +203,54 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertFalse(app.descendants(matching: .any)["swing-tempo-ratio"].exists)
     }
 
+    /// From a camera above hand height the club check is drawn and listed
+    /// with its numbers, but never the pointer, a strip mark or a theme,
+    /// and the app says why.
+    func testClubChecksAreNotJudgedFromACameraThatIsTooHigh() {
+        let app = XCUIApplication.launched(seed: "coaching", ["-ui-testing-library", "-ui-testing-coaching-camera-high"])
+        app.openLibraryCard("Coaching DTL", sessionCard: true)
+        let title = app.staticTexts["coaching-step-title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        // The steep transition is held, and hips one step out is no pointer.
+        XCTAssertEqual(title.label, "Good swing")
+        XCTAssertFalse(app.buttons["swing-position-P5"].label.contains("out of zone"), "No level on a held club check")
+        XCTAssertFalse(app.descendants(matching: .any)["coaching-caption-transition"].exists)
+
+        app.buttons["coaching-all-checks"].firstMatch.tap()
+        let summary = app.descendants(matching: .any)["coaching-summary"]
+        XCTAssertTrue(summary.waitForExistence(timeout: 3))
+        XCTAssertTrue(summary.label.contains("1 of 2 judged checks in zone."), summary.label)
+        XCTAssertTrue(summary.label.contains("Club checks not judged · camera too high."), summary.label)
+        let transition = app.buttons["coaching-metric-transition"]
+        XCTAssertTrue(transition.exists, "Still listed, with its numbers")
+        XCTAssertTrue(transition.label.contains("Not judged · camera too high"), transition.label)
+        XCTAssertTrue(transition.label.contains("Lower the camera to hand height."), transition.label)
+        XCTAssertFalse(transition.label.contains("Shaft steepened"), transition.label)
+        XCTAssertEqual(transition.value as? String, "Not judged")
+        XCTAssertFalse(app.buttons["coaching-metric-headHeightTop"].label.contains("camera"), "Body checks are judged as before")
+        attach(app, "coaching-camera-held")
+
+        // Picked, it is drawn on its frame, named and not judged.
+        transition.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["coaching-caption-transition"].waitForExistence(timeout: 3))
+        XCTAssertEqual(title.label, "Transition")
+        XCTAssertEqual(app.descendants(matching: .any)["coaching-step-level"].label, "Not judged")
+        attach(app, "coaching-camera-held-drawn")
+    }
+
+    func testSessionReviewSaysWhenClubChecksWereHeldForTheCamera() {
+        let app = XCUIApplication.launched(seed: "coaching", ["-ui-testing-library", "-ui-testing-coaching-camera-high"])
+        XCTAssertTrue(app.buttons["Filter swings"].waitForExistence(timeout: 10))
+        app.buttons["session-coaching-button"].firstMatch.tap()
+        let camera = app.staticTexts["session-coaching-camera"]
+        XCTAssertTrue(camera.waitForExistence(timeout: 5))
+        XCTAssertEqual(camera.label, "Club checks not judged on any swing · camera too high")
+        XCTAssertFalse(app.descendants(matching: .any)["session-theme-steepTransition-transition-1"].exists,
+                       "A held club check is never a theme")
+        XCTAssertEqual(app.buttons["session-swing-dot-5"].label, "Swing 5: Good swing")
+        attach(app, "session-coaching-camera-held")
+    }
+
     func testSessionReviewShowsTheThemeItsPicturesAndEachSwing() {
         let app = XCUIApplication.launched(seed: "coaching", ["-ui-testing-library"])
         XCTAssertTrue(app.buttons["Filter swings"].waitForExistence(timeout: 10))
@@ -337,25 +385,34 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["coaching-caption-transition"].firstMatch.waitForExistence(timeout: 2))
     }
 
-    func testSwingInfoShowsTempoForDownTheLineSwingAndOmitsItForReference() {
-        let app = XCUIApplication.launched(seed: "positions", ["-ui-testing-library"])
-        app.openLibraryCard("Positions DTL", sessionCard: true)
-        app.buttons["Show swing metadata"].tap()
+    func testSwingInfoShowsTempoForDownTheLineSwingAndOmitsItForUncoachedAndReference() {
+        let coachedApp = XCUIApplication.launched(seed: "coaching", ["-ui-testing-library"])
+        coachedApp.openLibraryCard("Coaching DTL", sessionCard: true)
+        XCTAssertTrue(coachedApp.staticTexts["coaching-step-title"].waitForExistence(timeout: 5))
+        coachedApp.showPlayerTools()
+        coachedApp.buttons["Show swing metadata"].tap()
 
-        let ratio = app.descendants(matching: .any)["swing-tempo-ratio"]
+        let ratio = coachedApp.descendants(matching: .any)["swing-tempo-ratio"]
         XCTAssertTrue(ratio.waitForExistence(timeout: 5))
         XCTAssertTrue(ratio.label.contains("3.0:1"), ratio.label)
-        XCTAssertTrue(app.staticTexts["131 ms"].exists)
-        XCTAssertTrue(app.staticTexts["44 ms"].exists)
-        attach(app, "swing-info-tempo")
-        app.navigationBars["Swing Info"].buttons["Done"].tap()
-        app.buttons["Back to library"].tap()
+        XCTAssertTrue(coachedApp.staticTexts["131 ms"].exists)
+        XCTAssertTrue(coachedApp.staticTexts["44 ms"].exists)
+        attach(coachedApp, "swing-info-tempo")
 
-        // Reference clip has no stored sourceTimeScale: tempo must not be invented.
-        app.openLibraryCard("Reference swing 1", sessionCard: false)
-        app.buttons["Show swing metadata"].tap()
-        XCTAssertTrue(app.navigationBars["Swing Info"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.descendants(matching: .any)["swing-tempo-ratio"].exists)
+        // A swing with no current coaching report (e.g. uncoached or stale version)
+        // and a reference clip without sourceTimeScale must both omit tempo.
+        let uncoachedApp = XCUIApplication.launched(seed: "positions", ["-ui-testing-library"])
+        uncoachedApp.openLibraryCard("Positions DTL", sessionCard: true)
+        uncoachedApp.buttons["Show swing metadata"].tap()
+        XCTAssertTrue(uncoachedApp.navigationBars["Swing Info"].waitForExistence(timeout: 5))
+        XCTAssertFalse(uncoachedApp.descendants(matching: .any)["swing-tempo-ratio"].exists)
+        uncoachedApp.navigationBars["Swing Info"].buttons["Done"].tap()
+        uncoachedApp.buttons["Back to library"].tap()
+
+        uncoachedApp.openLibraryCard("Reference swing 1", sessionCard: false)
+        uncoachedApp.buttons["Show swing metadata"].tap()
+        XCTAssertTrue(uncoachedApp.navigationBars["Swing Info"].waitForExistence(timeout: 5))
+        XCTAssertFalse(uncoachedApp.descendants(matching: .any)["swing-tempo-ratio"].exists)
     }
 
     private func attach(_ app: XCUIApplication, _ name: String) {

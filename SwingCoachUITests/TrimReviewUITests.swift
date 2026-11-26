@@ -5,7 +5,7 @@ import XCTest
 /// trim also checks the saved clips' files, durations and audio after each test.
 final class TrimReviewUITests: XCTestCase {
     private func fixture(frameRate: Int, context: Bool = false) -> [String] {
-        var arguments = Fixture.syntheticCamera + [
+        var arguments = Fixture.syntheticCamera + Fixture.manualCapture + [
             "-ui-testing-recording-seconds", "310", "-ui-testing-detections", "2,150,300",
             "-ui-testing-frame-rate", "\(frameRate)",
         ]

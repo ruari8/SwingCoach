@@ -47,7 +47,10 @@ private struct SyntheticSwing {
         return CoachingSilhouette(left: left, right: right)
     }
 
-    /// A frame with the body at address, optionally shifted.
+    /// A frame with the body at address, optionally shifted. The lead
+    /// ankle sits a little up the picture from the trail one, as from a
+    /// camera above the feet, and the line through them reaches the middle
+    /// row over the hands: a camera on the hand line near hand height.
     func frame(
         _ position: Int,
         clipTime: Double = 0,
@@ -56,14 +59,15 @@ private struct SyntheticSwing {
         grip: (Double, Double) = (0.30, 0.52),
         head: (Double, Double)? = (0.42, 0.80),
         wristConfidence: Double = 0.9,
-        ball: Bool = true
+        ball: Bool = true,
+        leadAnkle: (Double, Double) = (0.21, 0.77)
     ) -> CoachingFrameEvidence {
         var frame = CoachingFrameEvidence(position: position, clipTime: clipTime)
         frame.joints = [
             name(.leftHip): point(0.20, 0.50), name(.rightHip): point(0.20, 0.50), name(.root): point(0.20, 0.50),
             name(.neck): point(0.26, 0.34),
             name(.rightShoulder): point(0.25, 0.34), name(.leftShoulder): point(0.27, 0.35),
-            name(.rightAnkle): point(0.20, 0.80), name(.leftAnkle): point(0.21, 0.80),
+            name(.rightAnkle): point(0.20, 0.80), name(.leftAnkle): point(leadAnkle.0, leadAnkle.1),
             name(.rightElbow): point(0.27, 0.44), name(.leftElbow): point(0.28, 0.44),
             name(.rightWrist): point(grip.0, grip.1, confidence: wristConfidence),
             name(.leftWrist): point(grip.0, grip.1, confidence: wristConfidence),
@@ -970,5 +974,255 @@ final class SwingCoachingTests: XCTestCase {
         XCTAssertEqual(themes.count, 2)
         guard themes.count == 2 else { return }
         XCTAssertEqual(CoachingFeedback.swingsShowingBoth(themes[0], themes[1], in: session), 3)
+    }
+
+    // MARK: - Camera placement
+
+    /// A swing with a steep transition, seen from a camera whose address
+    /// frame has the hands and the lead ankle where given.
+    private func steepSwing(addressGrip: (Double, Double) = (0.30, 0.52),
+                            leadAnkle: (Double, Double) = (0.21, 0.77)) -> SwingCoachingEvidence {
+        let golfer = SyntheticSwing()
+        return golfer.evidence([
+            golfer.frame(1, grip: addressGrip, wristConfidence: 0.1, leadAnkle: leadAnkle),
+            golfer.frame(3, grip: (0.22, 0.40), head: (0.10, 0.28)),
+            golfer.frame(5, grip: (0.22, 0.40), head: (0.14, 0.40 - 0.08 * tan(72 * Double.pi / 180))),
+            golfer.frame(7, wristConfidence: 0.1, ball: false),
+        ])
+    }
+
+    /// Four frames give too few checks for a swing to be judged; these
+    /// tests are about the club checks, so that is set aside.
+    private func judgedSteepSwing(addressGrip: (Double, Double) = (0.30, 0.52)) throws -> SwingCoachingReport {
+        var report = try XCTUnwrap(CoachingAnalyzer.analyze(steepSwing(addressGrip: addressGrip)))
+        report.positionsUnclear = false
+        return report
+    }
+
+    func testCameraOnTheHandLineAtHandHeightPassesAndClubChecksAreJudged() throws {
+        let report = try judgedSteepSwing()
+        let placement = try XCTUnwrap(report.cameraPlacement)
+        // Hands 0.02 under the middle row; the feet's line meets it over them.
+        XCTAssertEqual(try XCTUnwrap(placement.heightAboveHands), 0.02 / SyntheticSwing.bodyScale * 100, accuracy: 0.01)
+        XCTAssertEqual(try XCTUnwrap(placement.offHandLine), 0, accuracy: 0.01)
+        XCTAssertEqual(try XCTUnwrap(placement.lineUncertainty), 10 * 2.0.squareRoot(), accuracy: 0.01)
+        XCTAssertNil(placement.distance)
+        XCTAssertEqual(placement.verdict, .good)
+        let transition = try XCTUnwrap(report.metric(.transition))
+        XCTAssertFalse(transition.heldForCamera)
+        XCTAssertTrue(transition.isJudged)
+        XCTAssertFalse(report.holdsClubChecks)
+        XCTAssertEqual(CoachingFeedback.findings(in: report).first?.metric, .transition)
+    }
+
+    func testLeftHanderReadsTheSamePlacement() throws {
+        let right = try XCTUnwrap(CoachingAnalyzer.analyze(swing(mirrored: false))?.cameraPlacement)
+        let left = try XCTUnwrap(CoachingAnalyzer.analyze(swing(mirrored: true))?.cameraPlacement)
+        XCTAssertEqual(try XCTUnwrap(left.offHandLine), try XCTUnwrap(right.offHandLine), accuracy: 1e-6)
+        XCTAssertEqual(left.heightAboveHands, right.heightAboveHands)
+        XCTAssertEqual(left.verdict, .good)
+    }
+
+    func testCameraAboveTheHandsHoldsTheClubChecks() throws {
+        // The hands sit 0.10 under the middle row: a camera 21% of body
+        // scale above them.
+        let report = try judgedSteepSwing(addressGrip: (0.30, 0.60))
+        XCTAssertEqual(report.cameraPlacement?.verdict, .off([.high]))
+        let transition = try XCTUnwrap(report.metric(.transition))
+        // Still measured and drawn, with its number and level.
+        XCTAssertTrue(transition.heldForCamera)
+        XCTAssertFalse(transition.isJudged)
+        XCTAssertGreaterThan(transition.level, 3)
+        XCTAssertFalse(transition.drawings.isEmpty)
+        XCTAssertTrue(report.holdsClubChecks)
+        XCTAssertTrue(report.isNeutral(transition))
+        // Never a pointer, a walkthrough step or a strip mark.
+        XCTAssertNil(report.exclusion)
+        XCTAssertFalse(CoachingFeedback.findings(in: report).contains { $0.fault == .steepTransition })
+        let verdict = CoachingFeedback.verdict(for: report)
+        XCTAssertFalse(CoachingFeedback.picks(for: verdict).contains(.transition))
+        let steps = CoachingWalkthrough.steps(for: report, verdict: verdict)
+        XCTAssertFalse(steps.contains { $0.metrics.contains(.transition) })
+        XCTAssertNil(CoachingStripMarks.marks(for: report, steps: steps)[5])
+        // Body checks are judged as before.
+        XCTAssertEqual(report.metric(.hipDepthImpact)?.isJudged, true)
+        // Guides stay guides.
+        XCTAssertNotEqual(report.metric(.setupPosture)?.heldForCamera, true)
+    }
+
+    func testCameraBelowTheHandsAndOffTheHandLineSayWhich() throws {
+        let low = try XCTUnwrap(CoachingAnalyzer.analyze(steepSwing(addressGrip: (0.30, 0.42))))
+        XCTAssertEqual(low.cameraPlacement?.verdict, .off([.low]))
+        // The feet's line reaches the middle row 0.2 outside the hands.
+        let outside = try XCTUnwrap(CoachingAnalyzer.analyze(steepSwing(leadAnkle: (0.23, 0.77))))
+        XCTAssertEqual(try XCTUnwrap(outside.cameraPlacement?.offHandLine), 0.2 / SyntheticSwing.bodyScale * 100, accuracy: 0.01)
+        XCTAssertEqual(outside.cameraPlacement?.verdict, .off([.towardBall]))
+        let inside = try XCTUnwrap(CoachingAnalyzer.analyze(steepSwing(leadAnkle: (0.19, 0.77))))
+        XCTAssertEqual(inside.cameraPlacement?.verdict, .off([.towardFeet]))
+        XCTAssertEqual(inside.metric(.transition)?.heldForCamera, true)
+    }
+
+    func testPlacementThatCannotBeToldIsNotAPass() throws {
+        // Ankles level in the picture: no line to follow.
+        let level = try XCTUnwrap(CoachingAnalyzer.analyze(steepSwing(leadAnkle: (0.21, 0.80))))
+        XCTAssertNil(level.cameraPlacement?.offHandLine)
+        XCTAssertEqual(level.cameraPlacement?.verdict, .unsure)
+        XCTAssertEqual(level.cameraPlacement?.passes, false)
+        XCTAssertEqual(level.metric(.transition)?.heldForCamera, true)
+        // Ankles nearly level: the line is followed too far to trust, even
+        // though it happens to land on the hands.
+        let shaky = try XCTUnwrap(CoachingAnalyzer.analyze(steepSwing(leadAnkle: (0.205, 0.785))))
+        XCTAssertEqual(try XCTUnwrap(shaky.cameraPlacement?.offHandLine), 0, accuracy: 0.01)
+        XCTAssertGreaterThan(try XCTUnwrap(shaky.cameraPlacement?.lineUncertainty), CoachingCameraPlacement.lineUncertaintyLimit)
+        XCTAssertEqual(shaky.cameraPlacement?.verdict, .unsure)
+        // A reading known to be off still says so when another is unknown.
+        XCTAssertEqual(CoachingCameraPlacement(heightAboveHands: 30).verdict, .off([.high]))
+        XCTAssertEqual(CoachingCameraPlacement().verdict, .unsure)
+    }
+
+    func testASlippedAnkleOrAShakyShaftAtAddressIsNotAPass() throws {
+        // The lead ankle found above the middle row: the line would be
+        // followed less than its own length and look sure.
+        let slipped = try XCTUnwrap(CoachingAnalyzer.analyze(steepSwing(leadAnkle: (0.30, 0.45))))
+        XCTAssertNil(slipped.cameraPlacement?.offHandLine)
+        XCTAssertEqual(slipped.cameraPlacement?.verdict, .unsure)
+
+        // The shaft at address under the confidence a check needs.
+        let golfer = SyntheticSwing()
+        var address = golfer.frame(1, wristConfidence: 0.1)
+        address.shafts = address.shafts.map { var box = $0; box.confidence = 0.2; return box }
+        let shaky = try XCTUnwrap(CoachingAnalyzer.analyze(golfer.evidence([
+            address,
+            golfer.frame(3, grip: (0.22, 0.40), head: (0.10, 0.28)),
+            golfer.frame(5, grip: (0.22, 0.40), head: (0.14, 0.26)),
+            golfer.frame(7, wristConfidence: 0.1, ball: false),
+        ])))
+        XCTAssertNil(shaky.cameraPlacement?.heightAboveHands)
+        XCTAssertEqual(shaky.cameraPlacement?.verdict, .unsure)
+    }
+
+    func testHeldClubChecksDoNotCountTowardEnoughOfTheSwingBeingSeen() throws {
+        // Four frames give fewer than 8 judged checks either way; what
+        // counts is which checks are counted.
+        let good = try XCTUnwrap(CoachingAnalyzer.analyze(steepSwing()))
+        let held = try XCTUnwrap(CoachingAnalyzer.analyze(steepSwing(addressGrip: (0.30, 0.60))))
+        XCTAssertGreaterThan(good.metrics.filter(\.isJudged).count, held.metrics.filter(\.isJudged).count)
+        XCTAssertLessThan(held.metrics.filter(\.isJudged).count, CoachingAnalyzer.minimumJudgedMetrics)
+        XCTAssertTrue(held.positionsUnclear)
+    }
+
+    func testDistanceIsCheckedOnlyWithLensData() throws {
+        func lens(focal: Double) throws -> CameraLensData {
+            try XCTUnwrap(CameraLensData.make(
+                cameraType: nil, formatWidth: 1920, formatHeight: 1080, videoRotationAngle: 90, videoFieldOfView: 60,
+                videoZoomFactor: 1, geometricDistortionCorrectionEnabled: nil, intrinsicMatrixDeliverySupported: true,
+                intrinsicMatrix: .init(fx: focal, fy: focal, cx: 960, cy: 540, referenceWidth: 1920, referenceHeight: 1080,
+                                       lensPosition: nil)))
+        }
+        // Body scale is 0.468 of a 1920-pixel frame: 898 pixels.
+        let bodyPixels = SyntheticSwing.bodyScale * 1920
+        let fine = try XCTUnwrap(CoachingAnalyzer.analyze(steepSwing(), lens: lens(focal: 2.5 * bodyPixels)))
+        XCTAssertEqual(try XCTUnwrap(fine.cameraPlacement?.distance), 2.5, accuracy: 0.01)
+        XCTAssertEqual(fine.cameraPlacement?.verdict, .good)
+        let close = try XCTUnwrap(CoachingAnalyzer.analyze(steepSwing(), lens: lens(focal: 1.2 * bodyPixels)))
+        XCTAssertEqual(close.cameraPlacement?.verdict, .off([.close]))
+        XCTAssertEqual(close.metric(.transition)?.heldForCamera, true)
+        let far = try XCTUnwrap(CoachingAnalyzer.analyze(steepSwing(), lens: lens(focal: 5 * bodyPixels)))
+        XCTAssertEqual(far.cameraPlacement?.verdict, .off([.far]))
+    }
+
+    func testHeldClubChecksNeverBecomeAThemeARecapOrAnExample() {
+        var held = result(.transition, level: 5)
+        held.cameraHold = true
+        // Every swing steepens by the picture, from a camera that didn't pass.
+        let session = (0..<6).map { _ in report([held, result(.hipDepthImpact, level: 0)]) }
+        XCTAssertTrue(CoachingFeedback.themes(in: session).isEmpty)
+        XCTAssertNil(CoachingFeedback.recap(of: session).theme)
+        XCTAssertEqual(CoachingFeedback.recap(of: session).good, 6)
+        XCTAssertEqual(CoachingFeedback.sessionVerdicts(session), Array(repeating: .good, count: 6))
+        XCTAssertTrue(CoachingFeedback.picks(for: CoachingFeedback.verdict(for: session[0], earlier: session)).isEmpty)
+
+        // Where the camera passed on some swings, only those are counted,
+        // and a held swing has no level on the theme.
+        let judged = (0..<4).map { _ in report([result(.transition, level: 5)]) }
+        let mixed = judged + session
+        let theme = CoachingFeedback.themes(in: mixed).first
+        XCTAssertEqual(theme?.metric, .transition)
+        XCTAssertEqual(theme?.swings, 4)
+        XCTAssertEqual(theme?.measured, 4)
+        if let theme {
+            XCTAssertNil(CoachingFeedback.level(of: theme, in: session[0]))
+            XCTAssertEqual(CoachingFeedback.showing(of: theme, in: session[0]), .notJudged)
+            XCTAssertNil(CoachingFeedback.metric(showing: theme, in: session[0]))
+            XCTAssertEqual(CoachingFeedback.examples(of: theme, in: mixed).most, 0)
+            // The pointer stays off a held swing even with the theme behind it.
+            XCTAssertEqual(CoachingFeedback.verdict(for: session[0], earlier: judged), .good)
+        }
+    }
+
+    func testWordsSayWhyClubChecksAreNotJudged() throws {
+        var held = result(.takeawayClub, level: -4)
+        held.cameraHold = true
+        var swing = report([held, result(.hipDepthImpact, level: 0)])
+        swing.cameraPlacement = CoachingCameraPlacement(heightAboveHands: 22, offHandLine: 0, lineUncertainty: 8)
+        XCTAssertEqual(CoachingWords.notJudgedReason(held, in: swing), "camera too high")
+        XCTAssertEqual(CoachingWords.level(held), "Not judged")
+        XCTAssertEqual(CoachingWords.headline(held), "Takeaway")
+        XCTAssertEqual(CoachingWords.clubChecksHeld(swing.cameraPlacement), "Club checks not judged · camera too high")
+        XCTAssertEqual(CoachingWords.cameraAdvice(swing.cameraPlacement), "Lower the camera to hand height.")
+        XCTAssertEqual(CoachingWords.cameraSummary(try XCTUnwrap(swing.cameraPlacement)), "Above hand height")
+        func theme(_ fault: CoachingFault, _ metric: CoachingMetricID) -> CoachingTheme {
+            CoachingTheme(fault: fault, metric: metric, direction: 1, position: 5, text: "", swings: 4, measured: 4,
+                          medianLevel: 3, score: 1)
+        }
+        XCTAssertEqual(CoachingWords.reason(notJudged: swing, on: theme(.takeaway, .takeawayClub)), "camera too high")
+        XCTAssertEqual(CoachingWords.reason(notJudged: swing, on: theme(.earlyExtension, .hipDepthImpact)), "no reading")
+        // A steep-coming-down theme read on the transition, on a swing
+        // with no transition but a held shaft halfway down.
+        var down = result(.shaftHalfwayDown, level: -3)
+        down.cameraHold = true
+        var other = report([down])
+        other.cameraPlacement = swing.cameraPlacement
+        XCTAssertEqual(CoachingWords.reason(notJudged: other, on: theme(.steepTransition, .transition)), "camera too high")
+        // Unsure is said as unsure, never as fine.
+        let unsure = CoachingCameraPlacement(heightAboveHands: 3)
+        XCTAssertEqual(CoachingWords.cameraReason(unsure), "camera position unclear")
+        XCTAssertEqual(CoachingWords.cameraSummary(unsure), "Unclear")
+        XCTAssertEqual(CoachingWords.cameraSummary(CoachingCameraPlacement(heightAboveHands: 3, offHandLine: 2, lineUncertainty: 8)),
+                       "On the hand line at hand height")
+        // A swing that isn't judged at all keeps its own reason.
+        swing.swingLength = .short
+        XCTAssertEqual(CoachingWords.notJudgedReason(held, in: swing), "short swing")
+    }
+
+    func testSavedSwingKeepsItsCameraPlacementAndOldLibrariesStillDecode() throws {
+        let legacy = """
+        {"id": "11111111-2222-3333-4444-555555555555", "photoAssetID": "", "vantage": "DTL", "duration": 2.4,
+         "createdAt": 785000000, "isFavorite": false, "isReference": false, "sourceTimeScale": 8}
+        """
+        XCTAssertNil(try JSONDecoder().decode(SavedSwing.self, from: Data(legacy.utf8)).cameraPlacement)
+
+        var swing = SavedSwing(id: UUID(), photoAssetID: "", vantage: .dtl, duration: 18,
+                               createdAt: Date(timeIntervalSinceReferenceDate: 785_000_000), notes: nil, sourceTimeScale: 8)
+        swing.cameraPlacement = CoachingCameraPlacement(heightAboveHands: 18.5, offHandLine: -4, lineUncertainty: 7, distance: 2.2)
+        let decoded = try JSONDecoder().decode(SavedSwing.self, from: JSONEncoder().encode(swing))
+        XCTAssertEqual(decoded, swing)
+        XCTAssertEqual(decoded.cameraPlacement?.verdict, .off([.high]))
+
+        // A placement of a shape this build doesn't know is dropped, not fatal.
+        let odd = legacy.replacingOccurrences(of: "\"sourceTimeScale\": 8", with: "\"sourceTimeScale\": 8, \"cameraPlacement\": [1, 2]")
+        XCTAssertNil(try JSONDecoder().decode(SavedSwing.self, from: Data(odd.utf8)).cameraPlacement)
+    }
+
+    func testReportsFromBeforeTheHoldStillDecode() throws {
+        var old = report([result(.transition, level: 5)])
+        old.version = 10
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(old)) as? [String: Any])
+        object["cameraPlacement"] = nil
+        let decoded = try JSONDecoder().decode(SwingCoachingReport.self, from: JSONSerialization.data(withJSONObject: object))
+        XCTAssertNil(decoded.cameraPlacement)
+        XCTAssertEqual(decoded.metric(.transition)?.heldForCamera, false)
+        // An older version is never shown: the store re-scores it.
+        XCTAssertLessThan(decoded.version, SwingCoachingReport.currentVersion)
     }
 }

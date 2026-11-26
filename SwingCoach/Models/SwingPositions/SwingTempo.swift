@@ -144,13 +144,14 @@ nonisolated struct SwingTempoTrend: Equatable {
 
     /// Minimum samples needed to draw a trend line.
     static let minimumTrendSamples = 2
-    /// Minimum samples needed to call a first-half vs second-half direction.
-    static let minimumDirectionSamples = 4
+    /// Minimum samples needed to call a first-half vs second-half direction
+    /// (3 per half, so each half's median resists a single 2-slot P4 miss).
+    static let minimumDirectionSamples = 6
     /// Minimum ratio shift between the first and second half to leave "Steady"
-    /// (widened past a 1-slot ±33 ms P4 error on a ~270 ms downswing).
+    /// (widened past a 1-slot 33 ms P4 error on a ~270 ms downswing).
     static let ratioShiftThreshold = 0.4
     /// Minimum phase-time shifts (ms) required to attribute a ratio shift to
-    /// backswing or downswing rather than ±33 ms P4 slot quantisation.
+    /// backswing or downswing rather than 33 ms P4 slot quantisation.
     static let backswingShiftThresholdMs = 60.0
     static let downswingShiftThresholdMs = 40.0
 

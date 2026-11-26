@@ -74,6 +74,8 @@ nonisolated struct CoachingMetricDefinition {
     /// line that picture changes with where the camera stands relative to
     /// the target line, so these readings moved between sessions (and
     /// within one when the tripod moved) while the body readings held.
+    /// Judged only on a swing whose camera placement passes
+    /// (`CoachingCameraPlacement`); otherwise drawn and not judged.
     var dependsOnCamera = false
 
     /// True for a check only made from the saved clip, never from the
@@ -221,8 +223,15 @@ nonisolated struct CoachingMetricResult: Codable, Equatable {
     /// 0...1: how sure the evidence behind this number is.
     let confidence: Double
     var drawings: [CoachingDrawing]
+    /// True on a club check measured on a swing whose camera placement
+    /// didn't pass: drawn, with its number, but not judged. Its level is
+    /// kept for when the numbers are looked at; nothing reads it as a fault.
+    var cameraHold: Bool? = nil
 
     var definition: CoachingMetricDefinition { .definition(id) }
+    var heldForCamera: Bool { cameraHold == true }
+    /// False for a guide, and for a club check held for the camera.
+    var isJudged: Bool { definition.scored && !heldForCamera }
     var inZone: Bool { level == 0 }
     var finding: String? { definition.finding(forLevel: level) }
 }
@@ -257,6 +266,9 @@ nonisolated struct SwingCoachingReport: Codable, Equatable {
     /// the camera's frames. The saved clip gives a fuller one later, which
     /// replaces it.
     var fromLiveCopies = false
+    /// Where the camera stood, read off the address frame. The club checks
+    /// are judged only when it passes. Nil in reports from before it.
+    var cameraPlacement: CoachingCameraPlacement? = nil
 
     /// Nil when the swing is judged.
     var exclusion: CoachingExclusion? {
@@ -271,8 +283,9 @@ nonisolated struct SwingCoachingReport: Codable, Equatable {
     /// 9: the takeaway zone runs down past the club head (drawing only).
     /// 10: the head rings are sized from the head, not the face (drawing
     /// only).
-    /// 11: re-times stored swings with takeaway start for swing tempo.
-    static let currentVersion = 11
+    /// 11: camera placement; club checks held when it doesn't pass.
+    /// 12: re-times stored swings with takeaway start for swing tempo.
+    static let currentVersion = 12
 
     /// Feet shifting more than this share of body scale by the top means
     /// the camera moved. A tripod clip's ankle joints wander about 5%, and
@@ -281,5 +294,28 @@ nonisolated struct SwingCoachingReport: Codable, Equatable {
 
     func metric(_ id: CoachingMetricID) -> CoachingMetricResult? {
         metrics.first { $0.id == id }
+    }
+
+    /// The results a verdict, a theme or a recap may count: every one
+    /// except a club check held for the camera. Guides are in here; their
+    /// level is always 0.
+    var countedMetrics: [CoachingMetricResult] {
+        metrics.filter { !$0.heldForCamera }
+    }
+
+    func countedMetric(_ id: CoachingMetricID) -> CoachingMetricResult? {
+        countedMetrics.first { $0.id == id }
+    }
+
+    /// True when a check is drawn in the neutral style and says "Not
+    /// judged" on this swing: the swing isn't judged, or the check is held
+    /// for the camera.
+    func isNeutral(_ result: CoachingMetricResult) -> Bool {
+        exclusion != nil || result.heldForCamera
+    }
+
+    /// True when this swing has club checks held for the camera.
+    var holdsClubChecks: Bool {
+        metrics.contains(where: \.heldForCamera)
     }
 }

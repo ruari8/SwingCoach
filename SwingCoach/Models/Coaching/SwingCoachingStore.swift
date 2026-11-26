@@ -299,12 +299,13 @@ final class SwingCoachingStore: ObservableObject {
         let clipPositions = SwingPositions(model: positions.model, positions: positions.positions.map {
             SwingPosition(number: $0.number, clipTime: ($0.clipTime - owner.offset) * owner.scale, confidence: $0.confidence)
         })
-        guard let report = CoachingAnalyzer.analyze(mapped, positions: clipPositions) else { return }
+        guard let report = CoachingAnalyzer.analyze(mapped, positions: clipPositions, lens: swing.lensData) else { return }
         // Only the report is kept: the evidence file is the clip's.
         try? JSONEncoder().encode(report).write(to: reportURL(owner.swing), options: .atomic)
         reports[owner.swing] = report
         checkedDisk.insert(owner.swing)
         revision += 1
+        SwingLibrary.shared.setCameraPlacement(report.cameraPlacement, for: owner.swing)
     }
 
     func removeCoaching(for ids: Set<UUID>) {
@@ -359,6 +360,7 @@ final class SwingCoachingStore: ObservableObject {
         }
         // Start from the model's own times, not ones an earlier run re-timed.
         let positions = Self.modelPositions(stored)
+        let lens = swing.lensData
         let videoURL = library.localVideoURL(for: swing)
         let evidenceURL = evidenceURL(id)
         let extractor = self.extractor
@@ -407,7 +409,7 @@ final class SwingCoachingStore: ObservableObject {
                     fresh = true
                 }
                 if let evidence {
-                    if let report = CoachingAnalyzer.analyze(evidence, positions: positions) {
+                    if let report = CoachingAnalyzer.analyze(evidence, positions: positions, lens: lens) {
                         outcome = .coached(report, evidence, freshEvidence: fresh)
                         CaptureCadenceDiagnostics.shared.emit("swing-coaching", id: id.uuidString, values: [
                             "seconds": ProcessInfo.processInfo.systemUptime - startedAt,
@@ -486,6 +488,8 @@ final class SwingCoachingStore: ObservableObject {
             checkedDisk.insert(id)
             revision += 1
             pending.remove(id)
+            // Where the camera stood goes on the swing itself.
+            SwingLibrary.shared.setCameraPlacement(report.cameraPlacement, for: id)
             // The player's position strip jumps to the same frames the
             // drawings were measured on.
             var retimed = Self.retimed(positions, by: evidence)

@@ -87,7 +87,7 @@ SwingCoach/
 | Coaching colours and the session review | `SwingCoach/SwingCoachingViews.swift` |
 | Coaching on the Auto camera screen: coach chip, recap, comparison | `SwingCoach/AutoCoachingViews.swift` |
 | Left/right swing paging | `SwingCoach/SwingReviewPager.swift` |
-| Capture tab, manual + Auto | `SwingCoach/CaptureView.swift` |
+| Capture tab: Auto, and Manual when its setting is on | `SwingCoach/CaptureView.swift` |
 | Auto rolling recording buffer | `SwingCoach/Models/AutoRollingVideoBuffer.swift` |
 | Review after Auto capture | `SwingCoach/AutoSwingReviewView.swift` |
 | Trim | `SwingCoach/TrimView/TrimView.swift`, `TrimReviewView.swift` |
@@ -101,7 +101,7 @@ The live detector is `SwingCoach/Models/SwingDetectorV3/` (used by `CaptureView`
 
 ### Coaching (on-device)
 
-`SwingCoach/Models/Coaching/` measures a down-the-line swing on the phone: evidence from Vision pose, person segmentation and the club detector at P1–P10, 21 metrics with zones and levels, a drawing per metric, one pointer per swing, recaps every few swings and session themes. Chips, moved cameras and unclear positions are measured but not judged. Every Auto swing is queued and its clip read when Auto pauses or stops; a setting (off by default) adds a first reading of the body checks while Auto records, from the live copies of the frames. A swing opens paused on the coach's first step with its drawing up, and a card walks the other faults in swing order (`CoachingWalkthrough.swift`). UI is `SwingCoach/CoachingPlayerViews.swift`, `SwingCoach/SwingCoachingViews.swift` and `SwingCoach/AutoCoachingViews.swift`. No backend. Zones come from 96 pro swings. Run on an iPhone 17 with range footage: a clip takes about 9 s, the first reading during Auto about 1 s with no extra dropped frames; not yet at the range. Design, metric table and the Mac review harness: [COACHING.md](./docs/COACHING.md).
+`SwingCoach/Models/Coaching/` measures a down-the-line swing on the phone: evidence from Vision pose, person segmentation and the club detector at P1–P10, 21 metrics with zones and levels, a drawing per metric, one pointer per swing, recaps every few swings and session themes. Chips, moved cameras and unclear positions are measured but not judged. The club checks are judged only when the camera placement read off the address frame passes (on the hand line at hand height; unsure is not a pass); the readings are saved on the swing. Every Auto swing is queued and its clip read when Auto pauses or stops; a setting (off by default) adds a first reading of the body checks while Auto records, from the live copies of the frames. A swing opens paused on the coach's first step with its drawing up, and a card walks the other faults in swing order (`CoachingWalkthrough.swift`). UI is `SwingCoach/CoachingPlayerViews.swift`, `SwingCoach/SwingCoachingViews.swift` and `SwingCoach/AutoCoachingViews.swift`. No backend. Zones come from 96 pro swings. Run on an iPhone 17 with range footage: a clip takes about 9 s, the first reading during Auto about 1 s with no extra dropped frames; not yet at the range. Design, metric table and the Mac review harness: [COACHING.md](./docs/COACHING.md).
 
 ### Swing positions
 
@@ -131,9 +131,9 @@ The shell is zsh on macOS: quote globs in flags (`grep -r --include='*.py'`), an
 
 ## Current Status
 
-- On-device coaching: metrics, drawings, per-swing verdicts, recaps on the Auto camera screen and a session review for down-the-line swings, checked on a Mac against range sessions. Run on an iPhone 17 with range footage (16 Nov 2026), not yet at the range. Measuring while Auto records is off by default. See [COACHING.md](./docs/COACHING.md).
+- On-device coaching: metrics, drawings, per-swing verdicts, recaps on the Auto camera screen and a session review for down-the-line swings, checked on a Mac against range sessions. Club checks are held unless the swing's camera placement passes (55 of 170 range swings pass). Run on an iPhone 17 with range footage (16 Nov 2026), not yet at the range. Measuring while Auto records is off by default. See [COACHING.md](./docs/COACHING.md).
 - The server-side coaching (a FastAPI backend, the Coach tab, Analyze Swing) was removed in November 2026; it is in the git history. Voice, drills and written explanations are not built.
-- iOS: capture, Auto capture, trim, library and swing detail are implemented. Auto-capture frame cadence is still under investigation; see the [evidence index](./docs/evidence/README.md).
+- iOS: capture, Auto capture, trim, library and swing detail are implemented. Manual capture is behind a setting, off by default. Auto-capture frame cadence is still under investigation; see the [evidence index](./docs/evidence/README.md).
 
 ## Technical Guardrails
 

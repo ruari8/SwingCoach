@@ -283,11 +283,13 @@ nonisolated enum CoachingFeedback {
     }
 
     /// Out-of-zone results grouped into faults, most important first.
-    /// A swing that isn't judged has none.
+    /// A swing that isn't judged has none, and a club check held for the
+    /// camera is never one: here and in every rule below, only
+    /// `countedMetrics` are read.
     static func findings(in report: SwingCoachingReport) -> [CoachingFinding] {
         guard report.exclusion == nil else { return [] }
         var byFault: [CoachingFault: [CoachingMetricResult]] = [:]
-        for result in report.metrics {
+        for result in report.countedMetrics {
             guard let fault = CoachingFault.fault(for: result) else { continue }
             byFault[fault, default: []].append(result)
         }
@@ -347,13 +349,13 @@ nonisolated enum CoachingFeedback {
                 // Any of its metrics shows it, so any of them measured
                 // counts the swing as one where it could have been seen.
                 let metrics = fault.metrics
-                let measured = judged.filter { report in metrics.contains { report.metric($0) != nil } }.count
+                let measured = judged.filter { report in metrics.contains { report.countedMetric($0) != nil } }.count
                 // A swing shows the fault when any of its metrics is at
                 // theme level; the strongest of those stands for the swing.
                 // Chosen among those only: a closer-to-zone reading with
                 // more confidence must not hide one that qualifies.
                 let shown = judged.compactMap { report in
-                    report.metrics
+                    report.countedMetrics
                         .filter { CoachingFault.fault(for: $0) == fault && abs($0.level) >= themeLevel }
                         .max { (score($0), -$0.position) < (score($1), -$1.position) }
                 }
@@ -368,7 +370,7 @@ nonisolated enum CoachingFeedback {
                 // metric and direction on its own.
                 for metric in fault.metrics {
                     for direction in [-1, 1] where CoachingFault.fault(for: metric, over: direction > 0) == fault {
-                        let results = judged.compactMap { $0.metric(metric) }
+                        let results = judged.compactMap { $0.countedMetric(metric) }
                         let levels = results.map(\.level).filter { $0 * direction >= themeLevel }
                         add(fault: fault, metric: metric, direction: direction, levels: levels, measured: results.count)
                     }
@@ -404,8 +406,8 @@ nonisolated enum CoachingFeedback {
         if theme.fault.isOneDirection {
             return findings.first { $0.fault == theme.fault }
         }
-        guard let result = report.metric(theme.metric), result.level * theme.direction > 0 else { return nil }
-        let sameFault = report.metrics.filter { CoachingFault.fault(for: $0) == theme.fault }
+        guard let result = report.countedMetric(theme.metric), result.level * theme.direction > 0 else { return nil }
+        let sameFault = report.countedMetrics.filter { CoachingFault.fault(for: $0) == theme.fault }
         return finding(theme.fault, lead: result, among: sameFault)
     }
 
@@ -426,7 +428,7 @@ nonisolated enum CoachingFeedback {
             }
             // "Better" means the theme's own metric is back in its zone,
             // not merely out on the other side, with nothing else to say.
-            let backInZone = report.metric(theme.metric)?.level == 0
+            let backInZone = report.countedMetric(theme.metric)?.level == 0
                 && !findings.contains { $0.fault == theme.fault }
             if backInZone, findings.allSatisfy({ $0.score < mentionScore }) {
                 return .better(theme.fault)
@@ -476,11 +478,11 @@ nonisolated enum CoachingFeedback {
     static func level(of theme: CoachingTheme, in report: SwingCoachingReport) -> Int? {
         guard report.exclusion == nil else { return nil }
         if theme.fault.isOneDirection {
-            let measured = theme.fault.metrics.compactMap { report.metric($0) }
+            let measured = theme.fault.metrics.compactMap { report.countedMetric($0) }
             guard !measured.isEmpty else { return nil }
             return measured.filter { CoachingFault.fault(for: $0) == theme.fault }.map { abs($0.level) }.max() ?? 0
         }
-        guard let result = report.metric(theme.metric) else { return nil }
+        guard let result = report.countedMetric(theme.metric) else { return nil }
         return result.level * theme.direction > 0 ? abs(result.level) : 0
     }
 
@@ -491,7 +493,7 @@ nonisolated enum CoachingFeedback {
     static func showing(of theme: CoachingTheme, in report: SwingCoachingReport) -> CoachingThemeShowing {
         guard let level = level(of: theme, in: report) else { return .notJudged }
         if level > 0 { return .shows(level) }
-        guard let drawn = metric(showing: theme, in: report).flatMap({ report.metric($0) }) else { return .notJudged }
+        guard let drawn = metric(showing: theme, in: report).flatMap({ report.countedMetric($0) }) else { return .notJudged }
         return drawn.level == 0 ? .inZone : .otherWay(abs(drawn.level))
     }
 
@@ -499,7 +501,7 @@ nonisolated enum CoachingFeedback {
     /// the label beside its picture: always that check's own level.
     static func showing(of theme: CoachingTheme, drawnIn report: SwingCoachingReport) -> CoachingThemeShowing {
         guard report.exclusion == nil,
-              let drawn = metric(showing: theme, in: report).flatMap({ report.metric($0) })
+              let drawn = metric(showing: theme, in: report).flatMap({ report.countedMetric($0) })
         else { return .notJudged }
         if shows(theme, drawn) { return .shows(abs(drawn.level)) }
         return drawn.level == 0 ? .inZone : .otherWay(abs(drawn.level))
@@ -521,9 +523,9 @@ nonisolated enum CoachingFeedback {
     /// furthest out of its zone (the other way), the theme's own on a tie;
     /// otherwise the theme's own metric.
     static func metric(showing theme: CoachingTheme, in report: SwingCoachingReport) -> CoachingMetricID? {
-        if let own = report.metric(theme.metric), shows(theme, own) { return own.id }
-        guard theme.fault.isOneDirection else { return report.metric(theme.metric)?.id }
-        let family = theme.fault.metrics.compactMap { report.metric($0) }
+        if let own = report.countedMetric(theme.metric), shows(theme, own) { return own.id }
+        guard theme.fault.isOneDirection else { return report.countedMetric(theme.metric)?.id }
+        let family = theme.fault.metrics.compactMap { report.countedMetric($0) }
         if let other = family.filter({ shows(theme, $0) })
             .max(by: { (score($0), -$0.position) < (score($1), -$1.position) }) {
             return other.id
@@ -543,7 +545,7 @@ nonisolated enum CoachingFeedback {
         let zone = CoachingMetricDefinition.definition(theme.metric).zone
         let middle = (zone.lowerBound + zone.upperBound) / 2
         func distance(_ index: Int) -> Double {
-            reports[index].metric(theme.metric).map { abs($0.value - middle) } ?? .infinity
+            reports[index].countedMetric(theme.metric).map { abs($0.value - middle) } ?? .infinity
         }
         let best = levels.indices.filter { levels[$0] == 0 && distance($0).isFinite }
             .min { (distance($0), $0) < (distance($1), $1) }

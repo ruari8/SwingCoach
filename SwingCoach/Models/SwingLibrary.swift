@@ -47,10 +47,12 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         return SwingTempo.measure(positions: swingPositions, timeScale: sourceTimeScale)
     }
 
-    /// Tempo for a swing whose coaching report has no exclusion; returns nil for
-    /// short swings, moved cameras, and unclear positions.
-    func tempo(excluding exclusion: CoachingExclusion?) -> SwingTempo? {
-        guard exclusion == nil else { return nil }
+    /// Tempo for a swing with a current, non-excluded coaching report; returns
+    /// nil when no current report is available (e.g. before coaching or while a
+    /// stale report awaits re-scoring) or for short swings, moved cameras, and
+    /// unclear positions.
+    func tempo(for report: SwingCoachingReport?) -> SwingTempo? {
+        guard let report, report.exclusion == nil else { return nil }
         return tempo
     }
     /// The swing itself on the clip's timeline, without the extra footage
@@ -60,6 +62,10 @@ struct SavedSwing: Identifiable, Codable, Equatable {
     /// Camera lens and intrinsic data from the capture session; nil for imports
     /// and swings saved before lens recording was added (marked unknown).
     var lensData: CameraLensData? = nil
+    /// Where the camera stood, read off the address frame when the swing
+    /// was coached (down-the-line clips only). The club checks are judged
+    /// only when it passes. Nil until the swing is coached.
+    var cameraPlacement: CoachingCameraPlacement? = nil
 
     // Not persisted - loaded at runtime
     /// A small square stand-in (`SwingPoster.placeholderSide`), made for
@@ -98,7 +104,7 @@ struct SavedSwing: Identifiable, Codable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case id, photoAssetID, vantage, duration, createdAt, notes, isFavorite, isReference, title, localVideoFilename
-        case sourceTimeScale, swingPositions, swingWindow, lensData
+        case sourceTimeScale, swingPositions, swingWindow, lensData, cameraPlacement
     }
 
     init(from decoder: Decoder) throws {
@@ -118,6 +124,7 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         swingWindow = try container.decodeIfPresent(ClosedRange<Double>.self, forKey: .swingWindow)
         // Decode defensively so a future lens schema change never breaks loading the library.
         lensData = try? container.decodeIfPresent(CameraLensData.self, forKey: .lensData)
+        cameraPlacement = try? container.decodeIfPresent(CoachingCameraPlacement.self, forKey: .cameraPlacement)
     }
 
     // Custom Equatable (ignore non-codable properties)
@@ -135,7 +142,8 @@ struct SavedSwing: Identifiable, Codable, Equatable {
         lhs.sourceTimeScale == rhs.sourceTimeScale &&
         lhs.swingPositions == rhs.swingPositions &&
         lhs.swingWindow == rhs.swingWindow &&
-        lhs.lensData == rhs.lensData
+        lhs.lensData == rhs.lensData &&
+        lhs.cameraPlacement == rhs.cameraPlacement
     }
 }
 
@@ -359,6 +367,13 @@ class SwingLibrary: ObservableObject {
                 try? FileManager.default.removeItem(at: videosDirectory.appendingPathComponent(name))
             }
         }
+        saveToDisk()
+    }
+
+    /// Saves where the camera stood on the swing, as coaching read it.
+    func setCameraPlacement(_ placement: CoachingCameraPlacement?, for id: UUID) {
+        guard let index = swings.firstIndex(where: { $0.id == id }), swings[index].cameraPlacement != placement else { return }
+        swings[index].cameraPlacement = placement
         saveToDisk()
     }
 

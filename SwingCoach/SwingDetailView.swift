@@ -344,6 +344,10 @@ struct SwingInfoView: View {
                     metadataRow("Duration", formatDuration(currentSwing.duration))
                     metadataRow("Saved", formatDate(currentSwing.createdAt))
                     metadataRow("Lens", currentSwing.lensData?.summaryText ?? "Unknown")
+                    // Down-the-line swings only: coaching reads it off address.
+                    if let placement = currentSwing.cameraPlacement {
+                        metadataRow("Camera", CoachingWords.cameraSummary(placement))
+                    }
                 } header: {
                     SectionHeading("Details")
                 }
@@ -367,9 +371,9 @@ struct SwingInfoView: View {
 
     @ViewBuilder
     private var swingTempoSection: some View {
-        let exclusion = coachingStore.report(for: currentSwing)?.exclusion
-        if SwingPositionProcessor.canFindPositions(for: currentSwing), exclusion == nil {
-            if let tempo = currentSwing.tempo(excluding: exclusion) {
+        if SwingPositionProcessor.canFindPositions(for: currentSwing) {
+            let report = coachingStore.report(for: currentSwing)
+            if let tempo = currentSwing.tempo(for: report) {
                 Section {
                     tempoSummaryRow(tempo)
                         .listRowInsets(Self.rowInsets)
@@ -383,11 +387,12 @@ struct SwingInfoView: View {
                     SectionHeading("Tempo")
                 } footer: {
                     Text(tempo.isLowConfidence
-                         ? "First club movement after P1 to top (P4), then top to impact (P7). Top (P4) is on a 30 fps grid (±33 ms). A ? and Low mark tempo when P4 or P7 had low confidence."
-                         : "First club movement after P1 to top (P4), then top to impact (P7). Top (P4) is on a 30 fps grid (±33 ms). Tour swings are often near 3:1.")
+                         ? "First club movement after P1 to top (P4), then top to impact (P7). Top (P4) is read on a 33 ms grid; about 1 in 5 is off by 2 or more steps. A ? and Low mark tempo when P4 or P7 had low confidence."
+                         : "First club movement after P1 to top (P4), then top to impact (P7). Top (P4) is read on a 33 ms grid; about 1 in 5 is off by 2 or more steps. Tour swings are often near 3:1.")
                         .foregroundStyle(Color.helpText)
                 }
-            } else if positionProcessor.pending.contains(currentSwing.id)
+            } else if report == nil || report?.fromLiveCopies == true,
+                      positionProcessor.pending.contains(currentSwing.id)
                         || coachingStore.pending.contains(currentSwing.id) {
                 Section {
                     HStack(spacing: 8) {

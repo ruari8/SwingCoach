@@ -13,6 +13,8 @@ import Foundation
 ///   shows the Library's reference swings as its session (see `CameraSession`).
 /// - `-ui-testing-camera audio` keeps the real preview setup with camera access
 ///   granted and shows the shared audio policy as `capture-audio-verification`.
+/// - `-ui-testing-manual-capture` turns on Settings > Show Manual mode, which
+///   is off by default. It is saved, so it survives a relaunch without a seed.
 /// - `-ui-testing-detections 2,150,300` makes each Manual recording report a
 ///   1-second swing at each start time, in seconds.
 /// - `-ui-testing-recording-seconds N` sets the synthetic recording length.
@@ -29,6 +31,9 @@ import Foundation
 ///   gives the fixture's full report (or fails) instead of running Vision.
 /// - `-ui-testing-coaching-short`, with the `coaching` seed: the oldest swing
 ///   is a chip, measured but not judged.
+/// - `-ui-testing-coaching-camera-high`, with the `coaching` seed: every
+///   swing's camera read as above hand height, so its club check (the
+///   transition) is held: drawn, not judged.
 /// - `-ui-testing-auto-library`, with the synthetic camera and no seed: the
 ///   Library's own swings are the Auto session, as on the `coaching` seed. The
 ///   UI council's screenshot tour seeds a coached range session this way.
@@ -77,6 +82,7 @@ nonisolated enum UITestFixture {
     static let detectionStarts = value(after: "-ui-testing-detections")?
         .split(separator: ",").compactMap { Double($0) } ?? []
     static let recordedFrameRate = value(after: "-ui-testing-frame-rate").flatMap(Int.init)
+    private static let showsManualMode = arguments.contains("-ui-testing-manual-capture")
     static let exportsAutoClip = arguments.contains("-ui-testing-auto-export")
     static let detectorState = value(after: "-ui-testing-detector")
     static let showsAutoError = arguments.contains("-ui-testing-auto-error")
@@ -122,6 +128,9 @@ extension UITestFixture {
         if let seed {
             eraseAppData()
             install(seed)
+        }
+        if showsManualMode {
+            UserDefaults.standard.set(true, forKey: ExperimentalSettingKey.manualCaptureEnabled)
         }
         if camera == .synthetic {
             // Write the recording now so stopping a recording does not wait for it.
@@ -213,6 +222,15 @@ extension UITestFixture {
                 // The third swing of the session is the clean one.
                 var report = fixtureCoachingReport(steep: index != 2)
                 if index == 0, arguments.contains("-ui-testing-coaching-short") { report.swingLength = .short }
+                if arguments.contains("-ui-testing-coaching-camera-high") {
+                    let placement = CoachingCameraPlacement(heightAboveHands: 22, offHandLine: 2, lineUncertainty: 8)
+                    report.cameraPlacement = placement
+                    swings[index].cameraPlacement = placement
+                    for held in report.metrics.indices
+                    where report.metrics[held].definition.dependsOnCamera && report.metrics[held].definition.scored {
+                        report.metrics[held].cameraHold = true
+                    }
+                }
                 if simulatedClipRead != nil, index == 4 {
                     // A first reading from Auto's copies: body checks, no evidence file.
                     report.fromLiveCopies = true

@@ -23,8 +23,9 @@ final class SmokeUITests: XCTestCase {
         app.buttons["Back to library"].tap()
         XCTAssertTrue(card.waitForExistence(timeout: 5))
         app.tabBars.buttons["Capture"].tap()
-        XCTAssertTrue(app.autoModeSegment.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.autoModeSegment.isSelected)
+        XCTAssertTrue(app.captureFrameRate.waitForExistence(timeout: 10))
+        XCTAssertEqual(app.staticTexts["capture-status-title"].label, "Swings save automatically")
+        XCTAssertFalse(app.segmentedControls["capture-mode"].exists, "Manual is off by default")
         attach(app, "capture")
     }
 

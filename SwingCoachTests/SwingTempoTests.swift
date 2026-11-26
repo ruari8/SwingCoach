@@ -149,12 +149,23 @@ final class SwingTempoTests: XCTestCase {
             sourceTimeScale: 8
         )
         swing.swingPositions = makePositions(p1: 8.0, takeawayStart: 8.64, p4: 14.40, p7: 16.32)
+        let judgedReport = SwingCoachingReport(rightHanded: true, metrics: [], unavailable: [])
         XCTAssertEqual(swing.tempo?.ratioText, "3.0:1")
-        XCTAssertEqual(swing.tempo(excluding: nil)?.ratioText, "3.0:1")
+        XCTAssertEqual(swing.tempo(for: judgedReport)?.ratioText, "3.0:1")
+
+        // Missing/stale coaching report (nil) must hide tempo until re-read.
+        XCTAssertNil(swing.tempo(for: nil), "Missing or stale report must treat swing as excluded")
 
         // Swings coaching refuses to judge get no tempo.
-        for exclusion in [CoachingExclusion.shortSwing, .cameraMoved, .positionsUnclear] {
-            XCTAssertNil(swing.tempo(excluding: exclusion), "Excluded (\(exclusion.rawValue)) must hide tempo")
+        var shortReport = judgedReport
+        shortReport.swingLength = .short
+        var movedReport = judgedReport
+        movedReport.cameraMoved = true
+        var unclearReport = judgedReport
+        unclearReport.positionsUnclear = true
+        for excludedReport in [shortReport, movedReport, unclearReport] {
+            XCTAssertNil(swing.tempo(for: excludedReport),
+                         "Excluded (\(excludedReport.exclusion?.rawValue ?? "nil")) must hide tempo")
         }
 
         // Face-on gets no tempo.
@@ -389,21 +400,23 @@ final class SwingTempoTests: XCTestCase {
                        isLowConfidence: low, takeawayStartClipTime: 8.5)
         }
 
-        // Backswing lengthens 700/750 -> 800/850 ms (+100 ms >= 60 ms), downswing steady 250 ms.
-        // Ratio shifts 2.9 -> 3.3 (+0.4 >= 0.4) -> .longerBackswing.
+        // Backswing lengthens 700/725/750 -> 800/825/850 ms (+100 ms >= 60 ms), downswing steady 250 ms.
+        // Ratio shifts 2.9 -> 3.3 (+0.4 >= 0.4) -> .longerBackswing (6 samples: 3 per half).
         let entries: [(id: UUID, tempo: SwingTempo?, excluded: Bool)] = [
             (UUID(), tempo(back: 700, down: 250), false),        // 2.8:1
+            (UUID(), tempo(back: 725, down: 250), false),        // 2.9:1
             (UUID(), tempo(back: 750, down: 250), false),        // 3.0:1
             (UUID(), tempo(back: 400, down: 250, low: true), false),  // low confidence -> excluded
             (UUID(), tempo(back: 500, down: 250), true),              // chip/excluded -> excluded
             (UUID(), nil, false),                                      // missing -> excluded
             (UUID(), tempo(back: 800, down: 250), false),        // 3.2:1
+            (UUID(), tempo(back: 825, down: 250), false),        // 3.3:1
             (UUID(), tempo(back: 850, down: 250), false),        // 3.4:1
         ]
         let trend = SwingTempoTrend.build(from: entries)
-        XCTAssertEqual(trend.totalSwings, 7)
-        XCTAssertEqual(trend.samples.count, 4)
-        XCTAssertEqual(trend.samples.map(\.swingNumber), [1, 2, 6, 7])
+        XCTAssertEqual(trend.totalSwings, 9)
+        XCTAssertEqual(trend.samples.count, 6)
+        XCTAssertEqual(trend.samples.map(\.swingNumber), [1, 2, 3, 7, 8, 9])
         XCTAssertEqual(try XCTUnwrap(trend.medianRatio), 3.1, accuracy: 1e-6)
         XCTAssertEqual(trend.medianRatioText, "3.1:1")
         XCTAssertEqual(trend.medianBackswingMS, 775)
@@ -416,6 +429,8 @@ final class SwingTempoTests: XCTestCase {
         let downswingQuicker = SwingTempoTrend.build(from: [
             (UUID(), tempo(back: 750, down: 280), false),
             (UUID(), tempo(back: 750, down: 280), false),
+            (UUID(), tempo(back: 750, down: 280), false),
+            (UUID(), tempo(back: 750, down: 230), false),
             (UUID(), tempo(back: 750, down: 230), false),
             (UUID(), tempo(back: 750, down: 230), false),
         ])
@@ -426,6 +441,8 @@ final class SwingTempoTests: XCTestCase {
         let downswingSlower = SwingTempoTrend.build(from: [
             (UUID(), tempo(back: 750, down: 230), false),
             (UUID(), tempo(back: 750, down: 230), false),
+            (UUID(), tempo(back: 750, down: 230), false),
+            (UUID(), tempo(back: 750, down: 280), false),
             (UUID(), tempo(back: 750, down: 280), false),
             (UUID(), tempo(back: 750, down: 280), false),
         ])
@@ -435,26 +452,32 @@ final class SwingTempoTests: XCTestCase {
         let p4OneSlotNoise = SwingTempoTrend.build(from: [
             (UUID(), tempo(back: 720, down: 280), false),
             (UUID(), tempo(back: 720, down: 280), false),
+            (UUID(), tempo(back: 720, down: 280), false),
+            (UUID(), tempo(back: 753, down: 247), false),
             (UUID(), tempo(back: 753, down: 247), false),
             (UUID(), tempo(back: 753, down: 247), false),
         ])
         XCTAssertEqual(p4OneSlotNoise.direction, .steady)
 
-        // Quicker backswing (820 -> 700 ms, steady 250 ms downswing) -> "Quicker backswing".
+        // Quicker backswing (820/800/800 -> 700/700/680 ms, steady 250 ms downswing) -> "Quicker backswing".
         let quicker = SwingTempoTrend.build(from: [
             (UUID(), tempo(back: 820, down: 250), false),
             (UUID(), tempo(back: 800, down: 250), false),
+            (UUID(), tempo(back: 800, down: 250), false),
+            (UUID(), tempo(back: 700, down: 250), false),
             (UUID(), tempo(back: 700, down: 250), false),
             (UUID(), tempo(back: 680, down: 250), false),
         ])
         XCTAssertEqual(quicker.direction, .quickerBackswing)
 
-        // Too few samples for direction (< 4).
-        let short = SwingTempoTrend.build(from: [
+        // Too few samples for direction (< 6, including 5 swings where halves would only be 2 each).
+        let fiveSwings = SwingTempoTrend.build(from: [
             (UUID(), tempo(back: 700, down: 250), false),
-            (UUID(), tempo(back: 800, down: 250), false),
-            (UUID(), tempo(back: 900, down: 250), false),
+            (UUID(), tempo(back: 700, down: 250), false),
+            (UUID(), tempo(back: 750, down: 250), false),
+            (UUID(), tempo(back: 850, down: 250), false),
+            (UUID(), tempo(back: 850, down: 250), false),
         ])
-        XCTAssertNil(short.direction)
+        XCTAssertNil(fiveSwings.direction)
     }
 }
