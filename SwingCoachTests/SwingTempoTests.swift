@@ -226,7 +226,15 @@ final class SwingTempoTests: XCTestCase {
         }
         let address = makeFrame(position: 1, time: p1, headDX: 0, gripDX: 0)
         let takeaway = makeFrame(position: 2, time: p2, headDX: -0.10, gripDX: -0.04)
-        let track = clubheadMoves.map { makeFrame(position: 0, time: $0.time, headDX: $0.headDX, gripDX: $0.gripDX) }
+        var track = clubheadMoves.map { makeFrame(position: 0, time: $0.time, headDX: $0.headDX, gripDX: $0.gripDX) }
+        // Later backswing/downswing samples past P2 (as in a real swing track), so
+        // CoachingSwingGeometry's stationary-bag junk filter does not mistake the
+        // address clubhead for a static object occupying >40% of the whole clip.
+        for step in 1...16 {
+            let t = p2 + Double(step) * 0.25
+            let move = -0.10 - Double(step) * 0.01
+            track.append(makeFrame(position: 0, time: t, headDX: move, gripDX: -0.04))
+        }
         return SwingCoachingEvidence(frameWidth: 1080, frameHeight: 1920, timeScale: 8,
                                      frames: [address, takeaway], track: track)
     }
@@ -309,23 +317,23 @@ final class SwingTempoTests: XCTestCase {
 
         let entries: [(id: UUID, tempo: SwingTempo?, excluded: Bool)] = [
             (UUID(), tempo(back: 700, down: 250), false),        // 2.8:1
-            (UUID(), tempo(back: 725, down: 250), false),        // 2.9:1
+            (UUID(), tempo(back: 750, down: 250), false),        // 3.0:1
             (UUID(), tempo(back: 400, down: 250, low: true), false),  // low confidence -> excluded
             (UUID(), tempo(back: 500, down: 250), true),              // chip/excluded -> excluded
             (UUID(), nil, false),                                      // missing -> excluded
             (UUID(), tempo(back: 800, down: 250), false),        // 3.2:1
-            (UUID(), tempo(back: 825, down: 250), false),        // 3.3:1
+            (UUID(), tempo(back: 850, down: 250), false),        // 3.4:1
         ]
         let trend = SwingTempoTrend.build(from: entries)
         XCTAssertEqual(trend.totalSwings, 7)
         XCTAssertEqual(trend.samples.count, 4)
         XCTAssertEqual(trend.samples.map(\.swingNumber), [1, 2, 6, 7])
-        // Median of [2.8, 2.9, 3.2, 3.3] = 3.05 -> "3.1:1"
-        XCTAssertEqual(try XCTUnwrap(trend.medianRatio), 3.05, accuracy: 1e-6)
+        // Median of [2.8, 3.0, 3.2, 3.4] = 3.1 -> "3.1:1"
+        XCTAssertEqual(try XCTUnwrap(trend.medianRatio), 3.1, accuracy: 1e-6)
         XCTAssertEqual(trend.medianRatioText, "3.1:1")
-        XCTAssertEqual(trend.medianBackswingMS, 763)
+        XCTAssertEqual(trend.medianBackswingMS, 775)
         XCTAssertEqual(trend.medianDownswingMS, 250)
-        // First half median 2.85, second half median 3.25 (+0.40 >= 0.2) -> slowerBackswing
+        // First half median 2.9, second half median 3.3 (+0.40 >= 0.2) -> slowerBackswing
         XCTAssertEqual(trend.direction, .slowerBackswing)
 
         // Steady session (within ±0.2)

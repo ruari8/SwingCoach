@@ -338,6 +338,7 @@ final class SwingCoachingUITests: XCTestCase {
 
         let ratio = app.descendants(matching: .any)["swing-tempo-ratio"]
         XCTAssertTrue(ratio.waitForExistence(timeout: 5))
+        XCTAssertTrue(ratio.label.contains("3.0:1"), ratio.label)
         XCTAssertTrue(app.staticTexts["131 ms"].exists)
         XCTAssertTrue(app.staticTexts["44 ms"].exists)
         attach(app, "swing-info-tempo")

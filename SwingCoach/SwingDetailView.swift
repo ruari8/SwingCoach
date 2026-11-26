@@ -386,7 +386,6 @@ struct SwingInfoView: View {
                          : "First club movement after P1 to top (P4), then top to impact (P7). Tour swings are often near 3:1.")
                         .foregroundStyle(Color.helpText)
                 }
-                .accessibilityIdentifier("swing-tempo")
             } else if positionProcessor.pending.contains(currentSwing.id)
                         || coachingStore.pending.contains(currentSwing.id) {
                 Section {
@@ -397,10 +396,10 @@ struct SwingInfoView: View {
                             .foregroundStyle(Color.helpText)
                     }
                     .listRowInsets(Self.rowInsets)
+                    .accessibilityIdentifier("swing-tempo-pending")
                 } header: {
                     SectionHeading("Tempo")
                 }
-                .accessibilityIdentifier("swing-tempo")
             }
         }
     }
