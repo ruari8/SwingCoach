@@ -47,6 +47,9 @@ struct SessionCoachingView: View {
             default: false
             }
         }.count
+        let tempoTrend = SwingTempoTrend.build(from: zip(coachable, coached).map { swing, report in
+            (id: swing.id, tempo: swing.tempo, excluded: report?.exclusion != nil)
+        })
 
         NavigationStack {
             List {
@@ -135,6 +138,16 @@ struct SessionCoachingView: View {
                         } header: {
                             SectionHeading("Also seen, weaker")
                         }
+                    }
+                }
+                if !tempoTrend.samples.isEmpty {
+                    Section {
+                        tempoTrendCard(tempoTrend)
+                    } header: {
+                        SectionHeading("Tempo")
+                    } footer: {
+                        Text("First club movement after P1 to top (P4), then top to impact (P7). Dashed line is 3:1.")
+                            .foregroundStyle(Color.helpText)
                     }
                 }
             }
@@ -374,6 +387,113 @@ struct SessionCoachingView: View {
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("session-trend-\(theme.metric.rawValue)")
+    }
+
+    /// Session tempo summary and swing-by-swing ratio chart.
+    private func tempoTrendCard(_ trend: SwingTempoTrend) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                if let ratio = trend.medianRatioText {
+                    Text(ratio)
+                        .font(.appTitle.monospacedDigit())
+                }
+                if let direction = trend.direction {
+                    Text(direction.label)
+                        .font(.appCaption)
+                        .foregroundStyle(Color.helpText)
+                }
+                Spacer(minLength: 8)
+                if let times = trend.medianTimesText {
+                    Text(times)
+                        .font(.appBody.monospacedDigit())
+                        .foregroundStyle(Color.helpText)
+                }
+            }
+            if trend.samples.count < SwingTempoTrend.minimumTrendSamples {
+                Text("Too few swings to show a trend.")
+                    .font(.appCaption)
+                    .foregroundStyle(Color.helpText)
+            } else {
+                SwingTempoTrendChart(trend: trend)
+                    .frame(height: 96)
+                HStack {
+                    Text("First swing")
+                    Spacer()
+                    Text("Last swing")
+                }
+                .font(.appCaption)
+                .foregroundStyle(Color.helpText)
+            }
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(tempoTrendAccessibilityLabel(trend))
+        .accessibilityIdentifier("session-tempo-trend")
+    }
+
+    private func tempoTrendAccessibilityLabel(_ trend: SwingTempoTrend) -> String {
+        guard let ratio = trend.medianRatioText,
+              let back = trend.medianBackswingMS,
+              let down = trend.medianDownswingMS
+        else { return "Session tempo" }
+        let directionText = trend.direction.map { ", \($0.label.lowercased())" } ?? ""
+        return "Tempo median \(ratio), backswing \(back) milliseconds, downswing \(down) milliseconds, "
+            + "across \(trend.samples.count) swing\(trend.samples.count == 1 ? "" : "s")\(directionText)"
+    }
+}
+
+/// Swing-by-swing tempo ratio across a session, over a neutral dashed 3:1
+/// reference line labelled in the trailing gutter.
+struct SwingTempoTrendChart: View {
+    let trend: SwingTempoTrend
+
+    var body: some View {
+        Canvas { context, size in
+            let ratios = trend.samples.map(\.tempo.ratio)
+            let values = ratios + [SwingTempo.referenceRatio]
+            let low = values.min() ?? 2.0
+            let high = values.max() ?? 3.5
+            let span = max(high - low, 0.8)
+            let margin = max(span * 0.16, 0.2)
+            let bottom = low - margin
+            let top = high + margin
+
+            func y(_ value: Double) -> CGFloat {
+                size.height * CGFloat(1 - (value - bottom) / (top - bottom))
+            }
+
+            let word = context.resolve(Text("3:1").font(.appCaptionLabel.monospacedDigit()).foregroundColor(Color.helpText))
+            let wordSize = word.measure(in: size)
+            let plotWidth = max(size.width - wordSize.width - 10, 1)
+
+            func x(_ swingNumber: Int) -> CGFloat {
+                let inset: CGFloat = 6
+                guard trend.totalSwings > 1 else { return plotWidth / 2 }
+                return inset + (plotWidth - 2 * inset) * CGFloat(swingNumber - 1) / CGFloat(trend.totalSwings - 1)
+            }
+
+            let refY = y(SwingTempo.referenceRatio)
+            var guide = Path()
+            guide.move(to: CGPoint(x: 0, y: refY))
+            guide.addLine(to: CGPoint(x: plotWidth, y: refY))
+            context.stroke(guide, with: .color(Color.helpText.opacity(0.45)),
+                           style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+            let wordY = min(max(refY, wordSize.height / 2), size.height - wordSize.height / 2)
+            context.draw(word, at: CGPoint(x: size.width - 4, y: wordY), anchor: .trailing)
+
+            let centres = trend.samples.map { CGPoint(x: x($0.swingNumber), y: y($0.tempo.ratio)) }
+            if centres.count >= 2 {
+                var line = Path()
+                line.move(to: centres[0])
+                for point in centres.dropFirst() { line.addLine(to: point) }
+                context.stroke(line, with: .color(Color.appAccent.opacity(0.55)),
+                               style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+            }
+            for centre in centres {
+                let dot = Path(ellipseIn: CGRect(x: centre.x - 3.5, y: centre.y - 3.5, width: 7, height: 7))
+                context.fill(dot, with: .color(Color.appAccent))
+            }
+        }
     }
 }
 

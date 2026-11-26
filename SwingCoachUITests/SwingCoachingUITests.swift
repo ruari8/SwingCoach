@@ -230,8 +230,18 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertTrue(trend.label.contains("1 of 5 swings in the good zone"), trend.label)
         attach(app, "session-coaching-trend")
 
+        // Session tempo trend card.
+        let tempoTrend = app.descendants(matching: .any)["session-tempo-trend"]
+        for _ in 0..<4 where !(tempoTrend.exists && tempoTrend.isHittable) {
+            app.collectionViews.firstMatch.swipeUp(velocity: .slow)
+        }
+        XCTAssertTrue(tempoTrend.exists)
+        XCTAssertTrue(tempoTrend.label.contains("3.0:1"), tempoTrend.label)
+        XCTAssertTrue(tempoTrend.label.contains("across 5 swings"), tempoTrend.label)
+        attach(app, "session-coaching-tempo")
+
         // A dot opens its swing, on what went right.
-        for _ in 0..<4 where !(third.exists && third.isHittable) {
+        for _ in 0..<6 where !(third.exists && third.isHittable) {
             app.collectionViews.firstMatch.swipeDown(velocity: .slow)
         }
         third.tap()
@@ -267,6 +277,9 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertFalse(app.descendants(matching: .any)["coach-recap-level"].exists, "No level badge beside a picture")
         XCTAssertFalse(app.descendants(matching: .any)["coaching-camera-caveat"].exists, "The caveat is in the comparison")
         XCTAssertTrue(app.descendants(matching: .any)["coach-recap-picture"].exists, "The recap pictures the theme")
+        let recapTempo = app.staticTexts["coach-recap-tempo"]
+        XCTAssertTrue(recapTempo.exists, "The recap carries the window's median tempo")
+        XCTAssertTrue(recapTempo.label.contains("3.0:1"), recapTempo.label)
         attach(app, "capture-recap")
 
         // The count of swings that showed it is in the comparison, out of
@@ -316,6 +329,26 @@ final class SwingCoachingUITests: XCTestCase {
         XCTAssertTrue(title.waitForExistence(timeout: 5))
         XCTAssertEqual(title.label, "Shaft steepened coming down")
         XCTAssertTrue(app.descendants(matching: .any)["coaching-caption-transition"].firstMatch.waitForExistence(timeout: 2))
+    }
+
+    func testSwingInfoShowsTempoForDownTheLineSwingAndOmitsItForReference() {
+        let app = XCUIApplication.launched(seed: "positions", ["-ui-testing-library"])
+        app.openLibraryCard("Positions DTL", sessionCard: true)
+        app.buttons["Show swing metadata"].tap()
+
+        let ratio = app.descendants(matching: .any)["swing-tempo-ratio"]
+        XCTAssertTrue(ratio.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["131 ms"].exists)
+        XCTAssertTrue(app.staticTexts["44 ms"].exists)
+        attach(app, "swing-info-tempo")
+        app.navigationBars["Swing Info"].buttons["Done"].tap()
+        app.buttons["Back to library"].tap()
+
+        // Reference clip has no stored sourceTimeScale: tempo must not be invented.
+        app.openLibraryCard("Reference swing 1", sessionCard: false)
+        app.buttons["Show swing metadata"].tap()
+        XCTAssertTrue(app.navigationBars["Swing Info"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.descendants(matching: .any)["swing-tempo-ratio"].exists)
     }
 
     private func attach(_ app: XCUIApplication, _ name: String) {

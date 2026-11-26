@@ -527,6 +527,16 @@ final class SwingCoachingStore: ObservableObject {
                           clipTime: evidence.frame(position.number)?.clipTime ?? position.clipTime,
                           confidence: position.confidence)
         })
+        var modelTimes: [Int: Double] = [:]
+        for position in positions.positions { modelTimes[position.number] = position.clipTime }
+        if let geometry = CoachingSwingGeometry(evidence: evidence) {
+            let takeawayTime = result.positions.first { $0.number == 2 }?.clipTime
+            result.takeawayStartClipTime = CoachingCheckpointTiming.takeawayStart(
+                geometry: geometry, modelTimes: modelTimes, takeawayTime: takeawayTime
+            )
+        } else if evidence.frames.isEmpty {
+            result.takeawayStartClipTime = positions.takeawayStartClipTime
+        }
         if result.positions != positions.positions {
             result.modelClipTimes = positions.positions.map(\.clipTime)
         }

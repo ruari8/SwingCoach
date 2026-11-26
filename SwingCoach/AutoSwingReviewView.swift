@@ -84,7 +84,7 @@ struct AutoSwingReviewView: View {
         .sheet(isPresented: $showsInfo) {
             if let selectedSwing {
                 SwingInfoView(swing: selectedSwing)
-                    .presentationDetents([.medium])
+                    .presentationDetents([.medium, .large])
             }
         }
         .sheet(isPresented: $showsCoachingLayers) {

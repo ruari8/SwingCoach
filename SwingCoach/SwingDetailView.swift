@@ -96,7 +96,7 @@ struct SwingDetailView: View {
         .toolbar(.hidden, for: .tabBar)
         .sheet(isPresented: $showMetadata) {
             SwingInfoView(swing: currentSwing)
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
         }
         .onAppear {
             preparePlaybackWindow()
@@ -323,10 +323,11 @@ struct SwingDetailView: View {
 }
 
 
-/// Swing Info: the clip's details and its P1–P10, in Library and Auto review.
+/// Swing Info: the clip's details, tempo, and its P1–P10, in Library and Auto review.
 struct SwingInfoView: View {
     let swing: SavedSwing
     @ObservedObject private var positionProcessor = SwingPositionProcessor.shared
+    @ObservedObject private var coachingStore = SwingCoachingStore.shared
     @Environment(\.dismiss) private var dismiss
 
     private var currentSwing: SavedSwing { swing }
@@ -346,6 +347,7 @@ struct SwingInfoView: View {
                 } header: {
                     SectionHeading("Details")
                 }
+                swingTempoSection
                 swingPositionsSection
             }
             .listStyle(.insetGrouped)
@@ -361,6 +363,84 @@ struct SwingInfoView: View {
             }
         }
         .playerSheetStyle()
+    }
+
+    @ViewBuilder
+    private var swingTempoSection: some View {
+        if SwingPositionProcessor.canFindPositions(for: currentSwing) {
+            if let tempo = currentSwing.tempo {
+                Section {
+                    tempoSummaryRow(tempo)
+                        .listRowInsets(Self.rowInsets)
+                    metadataRow("Backswing", tempo.backswingText)
+                        .listRowInsets(Self.rowInsets)
+                        .accessibilityIdentifier("swing-tempo-backswing")
+                    metadataRow("Downswing", tempo.downswingText)
+                        .listRowInsets(Self.rowInsets)
+                        .accessibilityIdentifier("swing-tempo-downswing")
+                } header: {
+                    SectionHeading("Tempo")
+                } footer: {
+                    Text(tempo.isLowConfidence
+                         ? "First club movement after P1 to top (P4), then top to impact (P7). A ? and Low mark tempo when P1, P4 or P7 had low confidence."
+                         : "First club movement after P1 to top (P4), then top to impact (P7). Tour swings are often near 3:1.")
+                        .foregroundStyle(Color.helpText)
+                }
+                .accessibilityIdentifier("swing-tempo")
+            } else if positionProcessor.pending.contains(currentSwing.id)
+                        || coachingStore.pending.contains(currentSwing.id) {
+                Section {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text("Measuring tempo…")
+                            .font(.appCaption)
+                            .foregroundStyle(Color.helpText)
+                    }
+                    .listRowInsets(Self.rowInsets)
+                } header: {
+                    SectionHeading("Tempo")
+                }
+                .accessibilityIdentifier("swing-tempo")
+            }
+        }
+    }
+
+    private func tempoSummaryRow(_ tempo: SwingTempo) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Ratio")
+                    .font(.appBody)
+                    .foregroundStyle(Color.helpText)
+                Spacer(minLength: 12)
+                if tempo.isLowConfidence {
+                    LowConfidenceTag(value: tempo.ratioText, font: .appTitle.monospacedDigit())
+                } else {
+                    Text(tempo.ratioText)
+                        .font(.appTitle.monospacedDigit())
+                }
+            }
+            GeometryReader { geometry in
+                let gap: CGFloat = 2
+                let usable = max(geometry.size.width - gap, 1)
+                let backWidth = usable * CGFloat(tempo.backswingShare)
+                HStack(spacing: gap) {
+                    Capsule()
+                        .fill(Color.appAccent.opacity(tempo.isLowConfidence ? 0.5 : 0.9))
+                        .frame(width: max(backWidth, 4))
+                    Capsule()
+                        .fill(Color.white.opacity(0.28))
+                }
+            }
+            .frame(height: 6)
+            .accessibilityHidden(true)
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .ignore)
+        .accessibilityIdentifier("swing-tempo-ratio")
+        .accessibilityLabel(
+            "Tempo ratio \(tempo.ratioText)\(tempo.isLowConfidence ? ", \(SwingPosition.lowConfidenceWords)" : ""), "
+            + "backswing \(tempo.backswingMS) milliseconds, downswing \(tempo.downswingMS) milliseconds"
+        )
     }
 
     @ViewBuilder
