@@ -1080,6 +1080,37 @@ final class SwingCoachingTests: XCTestCase {
         XCTAssertEqual(CoachingCameraPlacement().verdict, .unsure)
     }
 
+    func testASlippedAnkleOrAShakyShaftAtAddressIsNotAPass() throws {
+        // The lead ankle found above the middle row: the line would be
+        // followed less than its own length and look sure.
+        let slipped = try XCTUnwrap(CoachingAnalyzer.analyze(steepSwing(leadAnkle: (0.30, 0.45))))
+        XCTAssertNil(slipped.cameraPlacement?.offHandLine)
+        XCTAssertEqual(slipped.cameraPlacement?.verdict, .unsure)
+
+        // The shaft at address under the confidence a check needs.
+        let golfer = SyntheticSwing()
+        var address = golfer.frame(1, wristConfidence: 0.1)
+        address.shafts = address.shafts.map { var box = $0; box.confidence = 0.2; return box }
+        let shaky = try XCTUnwrap(CoachingAnalyzer.analyze(golfer.evidence([
+            address,
+            golfer.frame(3, grip: (0.22, 0.40), head: (0.10, 0.28)),
+            golfer.frame(5, grip: (0.22, 0.40), head: (0.14, 0.26)),
+            golfer.frame(7, wristConfidence: 0.1, ball: false),
+        ])))
+        XCTAssertNil(shaky.cameraPlacement?.heightAboveHands)
+        XCTAssertEqual(shaky.cameraPlacement?.verdict, .unsure)
+    }
+
+    func testHeldClubChecksDoNotCountTowardEnoughOfTheSwingBeingSeen() throws {
+        // Four frames give fewer than 8 judged checks either way; what
+        // counts is which checks are counted.
+        let good = try XCTUnwrap(CoachingAnalyzer.analyze(steepSwing()))
+        let held = try XCTUnwrap(CoachingAnalyzer.analyze(steepSwing(addressGrip: (0.30, 0.60))))
+        XCTAssertGreaterThan(good.metrics.filter(\.isJudged).count, held.metrics.filter(\.isJudged).count)
+        XCTAssertLessThan(held.metrics.filter(\.isJudged).count, CoachingAnalyzer.minimumJudgedMetrics)
+        XCTAssertTrue(held.positionsUnclear)
+    }
+
     func testDistanceIsCheckedOnlyWithLensData() throws {
         func lens(focal: Double) throws -> CameraLensData {
             try XCTUnwrap(CameraLensData.make(
@@ -1129,7 +1160,7 @@ final class SwingCoachingTests: XCTestCase {
         }
     }
 
-    func testWordsSayWhyClubChecksAreNotJudged() {
+    func testWordsSayWhyClubChecksAreNotJudged() throws {
         var held = result(.takeawayClub, level: -4)
         held.cameraHold = true
         var swing = report([held, result(.hipDepthImpact, level: 0)])
@@ -1139,9 +1170,20 @@ final class SwingCoachingTests: XCTestCase {
         XCTAssertEqual(CoachingWords.headline(held), "Takeaway")
         XCTAssertEqual(CoachingWords.clubChecksHeld(swing.cameraPlacement), "Club checks not judged · camera too high")
         XCTAssertEqual(CoachingWords.cameraAdvice(swing.cameraPlacement), "Lower the camera to hand height.")
-        XCTAssertEqual(CoachingWords.cameraSummary(swing.cameraPlacement), "Above hand height")
-        XCTAssertEqual(CoachingWords.reason(notJudged: swing, on: .takeawayClub), "camera too high")
-        XCTAssertEqual(CoachingWords.reason(notJudged: swing, on: .hipDepthImpact), "no reading")
+        XCTAssertEqual(CoachingWords.cameraSummary(try XCTUnwrap(swing.cameraPlacement)), "Above hand height")
+        func theme(_ fault: CoachingFault, _ metric: CoachingMetricID) -> CoachingTheme {
+            CoachingTheme(fault: fault, metric: metric, direction: 1, position: 5, text: "", swings: 4, measured: 4,
+                          medianLevel: 3, score: 1)
+        }
+        XCTAssertEqual(CoachingWords.reason(notJudged: swing, on: theme(.takeaway, .takeawayClub)), "camera too high")
+        XCTAssertEqual(CoachingWords.reason(notJudged: swing, on: theme(.earlyExtension, .hipDepthImpact)), "no reading")
+        // A steep-coming-down theme read on the transition, on a swing
+        // with no transition but a held shaft halfway down.
+        var down = result(.shaftHalfwayDown, level: -3)
+        down.cameraHold = true
+        var other = report([down])
+        other.cameraPlacement = swing.cameraPlacement
+        XCTAssertEqual(CoachingWords.reason(notJudged: other, on: theme(.steepTransition, .transition)), "camera too high")
         // Unsure is said as unsure, never as fine.
         let unsure = CoachingCameraPlacement(heightAboveHands: 3)
         XCTAssertEqual(CoachingWords.cameraReason(unsure), "camera position unclear")

@@ -131,7 +131,7 @@ The shell is zsh on macOS: quote globs in flags (`grep -r --include='*.py'`), an
 
 ## Current Status
 
-- On-device coaching: metrics, drawings, per-swing verdicts, recaps on the Auto camera screen and a session review for down-the-line swings, checked on a Mac against range sessions. Club checks are held unless the swing's camera placement passes (57 of 170 range swings pass). Run on an iPhone 17 with range footage (16 Nov 2026), not yet at the range. Measuring while Auto records is off by default. See [COACHING.md](./docs/COACHING.md).
+- On-device coaching: metrics, drawings, per-swing verdicts, recaps on the Auto camera screen and a session review for down-the-line swings, checked on a Mac against range sessions. Club checks are held unless the swing's camera placement passes (55 of 170 range swings pass). Run on an iPhone 17 with range footage (16 Nov 2026), not yet at the range. Measuring while Auto records is off by default. See [COACHING.md](./docs/COACHING.md).
 - The server-side coaching (a FastAPI backend, the Coach tab, Analyze Swing) was removed in November 2026; it is in the git history. Voice, drills and written explanations are not built.
 - iOS: capture, Auto capture, trim, library and swing detail are implemented. Auto-capture frame cadence is still under investigation; see the [evidence index](./docs/evidence/README.md).
 

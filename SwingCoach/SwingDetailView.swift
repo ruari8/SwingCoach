@@ -344,8 +344,8 @@ struct SwingInfoView: View {
                     metadataRow("Saved", formatDate(currentSwing.createdAt))
                     metadataRow("Lens", currentSwing.lensData?.summaryText ?? "Unknown")
                     // Down-the-line swings only: coaching reads it off address.
-                    if currentSwing.cameraPlacement != nil {
-                        metadataRow("Camera", CoachingWords.cameraSummary(currentSwing.cameraPlacement))
+                    if let placement = currentSwing.cameraPlacement {
+                        metadataRow("Camera", CoachingWords.cameraSummary(placement))
                     }
                 } header: {
                     SectionHeading("Details")

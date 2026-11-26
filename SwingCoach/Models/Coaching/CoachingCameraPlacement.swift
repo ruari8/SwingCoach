@@ -53,6 +53,10 @@ nonisolated struct CoachingCameraPlacement: Codable, Equatable {
     /// shrinks in the picture as it swings toward and away from the camera.
     static let nearestDistance = 1.5
     /// Further than this (about 6 m) the golfer is too small to measure.
+    /// A camera rarely gets here as "far": the feet's line is followed
+    /// about (distance / stance width) times its length, so past 3 to 4 m
+    /// the line reading goes over `lineUncertaintyLimit` and the result is
+    /// unsure first. This limit catches a far camera with a wide stance.
     static let furthestDistance = 4.5
     /// An ankle joint's wander on a tripod clip, percent of body scale.
     static let ankleNoise = 1.0
@@ -106,16 +110,19 @@ nonisolated extension CoachingCameraPlacement {
     /// Read off the address frame. `lens` adds the distance.
     init(geometry: CoachingSwingGeometry, lens: CameraLensData? = nil) {
         let scale = geometry.bodyScale
-        let hands = geometry.shaft(at: 1)?.grip
+        // The same bar a check has to clear: a shaky shaft at address
+        // gives no hands to read the camera from.
+        let hands = geometry.shaft(at: 1).flatMap { $0.confidence >= CoachingAnalyzer.minimumConfidence ? $0.grip : nil }
         heightAboveHands = hands.map { ($0.y - Self.horizon) / scale * 100 }
 
         // The trail ankle is nearer the camera, so from above ankle height
         // it sits lower in the picture than the lead ankle. Without that
-        // drop there is no line to follow.
+        // drop there is no line to follow. Both feet are under the middle
+        // row from any camera above the ground; an ankle over it is a slip.
         if let hands,
            let trail = geometry.joint(geometry.trailSide.ankle, at: 1),
            let lead = geometry.joint(geometry.leadSide.ankle, at: 1),
-           trail.y > Self.horizon, trail.y - lead.y > 0.02 * scale {
+           lead.y > Self.horizon, trail.y - lead.y > 0.02 * scale {
             let reach = (trail.y - Self.horizon) / (trail.y - lead.y)
             let ahead = trail.x + reach * (lead.x - trail.x)
             offHandLine = (ahead - hands.x) * geometry.facing / scale * 100

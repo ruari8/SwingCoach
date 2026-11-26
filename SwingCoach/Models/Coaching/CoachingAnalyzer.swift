@@ -46,9 +46,9 @@ nonisolated enum CoachingAnalyzer {
         let short = (geometry.handsAboveShoulderAtTop ?? 1) < 0
         let moved = (geometry.footShiftAtTop ?? 0) > SwingCoachingReport.steadyFootShift
         // "Good swing" has to mean most of the swing was seen and in zone,
-        // not that little of it could be measured. A held club check was
-        // still seen.
-        let judged = metrics.filter { $0.definition.scored }.count
+        // not that little of it could be measured. A club check held for
+        // the camera isn't judged, so it doesn't count.
+        let judged = metrics.filter(\.isJudged).count
         let unclear = !geometry.positionsLookRight || judged < minimumJudgedMetrics
         return SwingCoachingReport(rightHanded: geometry.isRightHanded, swingLength: short ? .short : .full,
                                    cameraMoved: moved, positionsUnclear: unclear, fromLiveCopies: live,

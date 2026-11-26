@@ -217,7 +217,8 @@ extension UITestFixture {
                     let placement = CoachingCameraPlacement(heightAboveHands: 22, offHandLine: 2, lineUncertainty: 8)
                     report.cameraPlacement = placement
                     swings[index].cameraPlacement = placement
-                    for held in report.metrics.indices where report.metrics[held].definition.dependsOnCamera {
+                    for held in report.metrics.indices
+                    where report.metrics[held].definition.dependsOnCamera && report.metrics[held].definition.scored {
                         report.metrics[held].cameraHold = true
                     }
                 }

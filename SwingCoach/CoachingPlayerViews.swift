@@ -111,9 +111,11 @@ enum CoachingWords {
 
     /// Why a swing has no level on a theme: its exclusion, the theme's
     /// check held for the camera, or no reading of it (or no reading yet).
-    static func reason(notJudged report: SwingCoachingReport?, on metric: CoachingMetricID? = nil) -> String {
+    static func reason(notJudged report: SwingCoachingReport?, on theme: CoachingTheme? = nil) -> String {
         if let exclusion = report?.exclusion { return reason(exclusion) }
-        if let report, let metric, report.metric(metric)?.heldForCamera == true {
+        // Any check that could have shown the theme, not only its own.
+        let checks = theme.map { $0.fault.isOneDirection ? $0.fault.metrics : [$0.metric] } ?? []
+        if let report, checks.contains(where: { report.metric($0)?.heldForCamera == true }) {
             return cameraReason(report.cameraPlacement)
         }
         return "no reading"
@@ -169,8 +171,7 @@ enum CoachingWords {
 
     /// Where the camera stood, for Swing Info: "On the hand line at hand
     /// height", what is wrong with it, or that it couldn't be told.
-    static func cameraSummary(_ placement: CoachingCameraPlacement?) -> String {
-        guard let placement else { return "Not read yet" }
+    static func cameraSummary(_ placement: CoachingCameraPlacement) -> String {
         switch placement.verdict {
         case .good: return "On the hand line at hand height"
         case .unsure: return "Unclear"
@@ -489,9 +490,10 @@ struct CoachingDrawingLayer: View {
         isNeutral(result, swingNeutral: swingNeutral) ? neutralColour : .coachingLevel(result.level)
     }
 
-    /// Good players' zone: green, except on a guide, which isn't judged.
+    /// Good players' zone: green, except on a guide or a club check held
+    /// for the camera, which aren't judged.
     static func zoneColour(_ result: CoachingMetricResult) -> Color {
-        result.definition.scored ? .coachingLevel(0) : .white
+        result.isJudged ? .coachingLevel(0) : .white
     }
 
     private func draw(_ shape: CoachingDrawing, of result: CoachingMetricResult, weight: CGFloat,
@@ -1340,7 +1342,9 @@ struct SwingCoachingPanel: View {
     private func readingNote(_ report: SwingCoachingReport) -> some View {
         if let before = store.replacedFirstReadings[swing.id] {
             let now = store.verdict(for: swing, report: report).headline
-            note(before == now ? "Club checks added. The pointer is the same."
+            // Held club checks added nothing to the verdict: say that.
+            note(report.holdsClubChecks ? CoachingWords.clubChecksHeld(report.cameraPlacement) + "."
+                 : before == now ? "Club checks added. The pointer is the same."
                  : "Club checks added. On the body checks alone it was: \(before).", busy: false)
         } else if report.fromLiveCopies {
             if store.pending.contains(swing.id), !store.isWaitingForAuto {
@@ -1622,7 +1626,7 @@ struct CoachingKeyGlyph: View {
 /// The one key, wherever a drawing or a track is keyed (All checks, the
 /// recap's comparison): the drawing's parts with the fixed
 /// `CoachingKeyGlyph`s (You, Good zone, Address), a guide's dash and
-/// dashed range ("Reference only"), then a club check's camera caveat,
+/// dashed range ("Reference only"),
 /// all on one caption line that wraps only when it has to. Only what the
 /// row or the drawing can show is keyed. The verdict badges need no key:
 /// a tick, "!" and "!!" carry their meaning, and a word sits beside them.
@@ -1666,7 +1670,7 @@ struct CoachingLegend: View {
                 entry(CoachingKeyGlyph(role: .you, judged: judged, colours: subjectColours ?? [subjectColour]), "You")
             }
             if roles.contains(.zone) {
-                entry(CoachingKeyGlyph(role: .zone, judged: results.first?.definition.scored ?? true),
+                entry(CoachingKeyGlyph(role: .zone, judged: results.first?.isJudged ?? true),
                       CoachingWords.zoneName)
             }
             if roles.contains(.reference) {
@@ -1709,7 +1713,7 @@ struct CoachingLegend: View {
         if referenceKey { parts.append("a dash and a dashed range are reference only, not judged") }
         if roles.contains(.subject) { parts.append(judged ? "you are drawn in your level's colour" : "you are drawn in grey") }
         if roles.contains(.zone) {
-            parts.append(results.first?.definition.scored == false ? "the dashed outline is the good zone, for reference"
+            parts.append(results.first?.isJudged == false ? "the dashed outline is the good zone, for reference"
                                                                     : "the green shading is the good zone")
         }
         if roles.contains(.reference) { parts.append("white is where you were at address") }
@@ -2001,6 +2005,8 @@ struct SwingCoachingChecks: View {
         let neutral = report.isNeutral(result)
         let judged = result.isJudged && !neutral
         let reason = CoachingWords.notJudgedReason(result, in: report)
+        // Held for the camera on a swing that is otherwise judged.
+        let heldAlone = result.heldForCamera && report.exclusion == nil
         return HStack(spacing: 12) {
             // Cut toward the drawing, big enough to see it on.
             CoachingFrameView(swing: swing, report: report, metric: result.id, cropsToGolfer: true)
@@ -2015,18 +2021,25 @@ struct SwingCoachingChecks: View {
                     Text(judged ? CoachingWords.headline(result) : result.definition.title)
                         .font(.appLabel)
                         .fixedSize(horizontal: false, vertical: true)
-                    if !judged {
+                    // A camera reason is long: it goes under the name.
+                    if !judged, !heldAlone {
                         Text(reason.map { CoachingWords.notJudged($0) } ?? CoachingWords.referenceOnly)
                             .font(.appCaptionLabel)
                             .foregroundStyle(Color.helpText)
                             .fixedSize()
                     }
                 }
+                if heldAlone, let reason {
+                    Text(CoachingWords.notJudged(reason))
+                        .font(.appCaptionLabel)
+                        .foregroundStyle(Color.helpText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 // The badge carries the level; VoiceOver reads it as the value.
                 CoachingZoneTrack(result: result, neutral: neutral)
                     .padding(.vertical, 2)
                 // A held club check says what to do with the camera.
-                if result.heldForCamera, report.exclusion == nil {
+                if heldAlone {
                     CoachingCameraCaveat(placement: report.cameraPlacement)
                 }
             }

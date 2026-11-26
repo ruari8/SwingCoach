@@ -74,7 +74,7 @@ A single reading more than ten steps outside its zone is dropped as a measuremen
 
 ## Camera placement
 
-The six club checks (takeaway, shaft halfway back, transition, shaft halfway down and the two address-plane guides, `dependsOnCamera`) are a flat picture of where the club points. That picture changes with where the camera stands. So each swing's address frame is read for where the camera stood (`CoachingCameraPlacement`), and **the club checks are judged only when it passes**. Otherwise they are still measured and drawn, in the neutral grey of a guide, and marked `cameraHold`: they give no pointer, no walkthrough step, no mark on the pose strip, no session theme and no recap, and they are left out of every count. The body checks are judged either way.
+The six club checks (takeaway, shaft halfway back, transition, shaft halfway down and the two address-plane guides, `dependsOnCamera`) are a flat picture of where the club points. That picture changes with where the camera stands. So each swing's address frame is read for where the camera stood (`CoachingCameraPlacement`), and **the four judged club checks are judged only when it passes** (the two guides are never judged). Otherwise those four are still measured and drawn, in the neutral style of a guide (the swing grey, the zone white, never green), and marked `cameraHold`: they give no pointer, no walkthrough step, no mark on the pose strip, no session theme and no recap, and they are left out of every count, including the 8 judged measurements a swing needs to be judged at all. The body checks are judged either way.
 
 Two readings decide it, both as a share of body scale:
 
@@ -90,7 +90,9 @@ The line reading is the weak one. The ankles are close together in the picture, 
 The result is one of three:
 - **Good**: height and line both known and inside their limits. Club checks judged.
 - **Off**: any reading known to be outside its limit. The app says which: too high, too low, off the hand line, too close, too far.
-- **Unsure**: nothing known to be off, but the hands weren't found at address, or the feet give no line or too shaky a one. **Unsure is not a pass.**
+- **Unsure**: nothing known to be off, but the hands weren't found at address (the shaft there has to clear the same 0.3 confidence a check does), or the feet give no line (an ankle missing, level with the other, or above the middle row) or too shaky a one. **Unsure is not a pass.**
+
+The line is followed about (distance ÷ stance width) times its own length, so from past 3 to 4 m it goes over the 15% and the result is unsure before the camera counts as too far. The 4.5 limit only catches a far camera with a wide stance.
 
 What it assumes, and can't check:
 - **The phone is upright.** A phone tilted 5° up or down reads as a camera about 25 cm lower or higher. The tilt isn't recorded.
@@ -234,7 +236,7 @@ On a Mac, with the app's own code, on real range sessions exported from the phon
 | 23 Oct 2026 | 48 | Trail knee moves out toward the ball (38 of 43, level 3) |
 | 6 Nov 2026 | 35 | Clubhead inside the hands at takeaway (5 of 6, level 7); trail knee moves out (24 of 29, level 3) |
 | 7 Nov 2026 | 35 | Clubhead inside the hands (20 of 20, level 5); trail knee moves out (28 of 31, level 3); shaft pointed outside the ball halfway back (17 of 23, level 2); shaft steepened coming down (13 of 23, level 2) |
-| 15 Nov 2026 | 52 | Shaft pointed outside the ball halfway back (18 of 27, level 3); head stays up through impact (36 of 48, level 3) |
+| 15 Nov 2026 | 52 | Clubhead inside the hands (11 of 22, level 5); head stays up through impact (36 of 48, level 3); shaft pointed outside the ball halfway back (16 of 25, level 3) |
 
 The club themes are counted only on swings whose [camera placement](#camera-placement) passed (26 November 2026); see [the next section](#club-readings-move-with-the-camera-body-readings-dont).
 
@@ -276,12 +278,12 @@ A club reading from down the line is a picture of a 3D direction, and it changes
 | | 23 Oct | 6 Nov | 7 Nov | 15 Nov |
 | --- | --- | --- | --- | --- |
 | Swings | 48 | 35 | 35 | 52 |
-| Good | 0 | 6 | 24 | 27 |
-| Off | 48, too high | 28, too high | 8, too high | 10 too low, 1 off the line |
-| Unsure | 0 | 1 | 3 | 14 |
-| Camera against the hands | 16 to 26% above | 12 to 37% above | 7 to 19% above | 7% above to 3% below, then 10 to 23% below |
+| Good | 0 | 6 | 24 | 25 |
+| Off | 46, too high | 27, too high | 8, too high | 10 too low, 1 off the line |
+| Unsure | 2 | 2 | 3 | 16 |
+| Camera against the hands | 16 to 26% above | 12 to 37% above | 7 to 19% above | 10 to 23% below, then 3% below to 7% above |
 
-- On 23 October the camera was a hand's width over the limit all session. On 6 November it passed for six swings in a row and was higher before and after. On 15 November it sat at hand height for the first 39 swings and was 20% lower for the last 13: the point where the club readings flipped.
+- On 23 October the camera was a hand's width over the limit all session. On 6 November it passed for six swings in a row and was higher before and after. On 15 November it was 20% low for the first 13 swings and at hand height for the other 39: the point where the club readings flipped from in zone to well out.
 - The height reading holds to a percent or two from swing to swing. The line reading spreads 5 to 15%, and every camera read within about 15% of the hand line, so height did the deciding. The unsure swings are short-club swings, where the feet are closest together in the picture.
 
 **The swings that pass agree with each other; the ones held are the ones that drifted.** Medians over the judged swings, long club (address posture under 26°) and short:
@@ -292,7 +294,7 @@ A club reading from down the line is a picture of a 3D direction, and it changes
 | 7 Nov, long, pass (19) | −21% | +12% | +10° |
 | 15 Nov, long, pass (11) | −20% | +18% | +12° |
 | 7 Nov, short, pass (4) | | +12% | +8° |
-| 15 Nov, short, pass (16) | | +11% | +6° |
+| 15 Nov, short, pass (14) | | +9% | +6° |
 | 23 Oct, long, held: too high (17) | +4% | −10% | −2° |
 | 23 Oct, short, held: too high (26) | +7% | 0% | 0° |
 | 15 Nov, long, held: too low (8) | +10% | −4% | 0° |
@@ -354,7 +356,7 @@ iPhone 17, iOS 27.2.1, Debug build of `d75f001`, 16 November 2026 ([#72](https:/
 - **The first reading costs nothing measurable while Auto records.** Each swing was read from the copies before the next swing, the join to the saved swing worked, and the reports looked at had 15 body checks, with the six club checks left for the clip. Most of the 1.1 s is the person outline (0.7 s) and the club detector (0.3 s); pose is 0.1 s. The first swing after launch takes about 2.6 s while the models load.
 - The one "fair" thermal state came on the fourth run in a row; the off run of the same video, run just before, stayed nominal. Heat over a long session still needs the range.
 - **A saved clip takes 8.8 s** on the phone (median of 76; 6.0–11.5 s), against 3.5 s on a Mac: 5.5 s following the club, 2.1 s reading the position frames, 0.7 s for the outlines. Opening a swing that had not been read showed its pill after 12 s.
-- **Session review of the 15 November session** (52 swings, none read before): 7.7 minutes to read all 52. The app's memory stayed at 460–470 MB throughout (peak 535 MB), CPU about 75% of one core. It found the same body theme as the Mac harness, head stays up through impact on 36 of 47 judged swings (Mac: 36 of 48), but led with "Shaft flat: points outside the ball" (28 of 47), a camera-dependent club reading ([#71](https://github.com/ruari8/SwingCoach/issues/71)). Since then that reading is counted only on the swings whose camera placement passed (18 of 27 on the Mac).
+- **Session review of the 15 November session** (52 swings, none read before): 7.7 minutes to read all 52. The app's memory stayed at 460–470 MB throughout (peak 535 MB), CPU about 75% of one core. It found the same body theme as the Mac harness, head stays up through impact on 36 of 47 judged swings (Mac: 36 of 48), but led with "Shaft flat: points outside the ball" (28 of 47), a camera-dependent club reading ([#71](https://github.com/ruari8/SwingCoach/issues/71)). Since then that reading is counted only on the swings whose camera placement passed (16 of 25 on the Mac).
 - **Not checked on the phone:** a real camera at the range (cadence, heat in the sun), a clip being read when Auto resumes, and reading clips beside the camera.
 
 ## Checking a change
