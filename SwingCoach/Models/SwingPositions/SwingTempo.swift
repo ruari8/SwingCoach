@@ -187,14 +187,14 @@ nonisolated struct SwingTempoTrend: Equatable {
         else { return nil }
 
         let ratioDelta = lateRatio - earlyRatio
-        guard abs(ratioDelta) >= Self.ratioShiftThreshold else { return .steady }
+        guard abs(ratioDelta) + 1e-9 >= Self.ratioShiftThreshold else { return .steady }
 
         let backDelta = lateBack - earlyBack
         let downDelta = lateDown - earlyDown
         // Only count a phase if it moved in the direction that explains `ratioDelta`
         // (ratio rises when backswing lengthens or downswing quickens).
-        let backExplains = (ratioDelta > 0 ? backDelta : -backDelta) >= Self.backswingShiftThresholdMs
-        let downExplains = (ratioDelta > 0 ? -downDelta : downDelta) >= Self.downswingShiftThresholdMs
+        let backExplains = (ratioDelta > 0 ? backDelta : -backDelta) + 1e-9 >= Self.backswingShiftThresholdMs
+        let downExplains = (ratioDelta > 0 ? -downDelta : downDelta) + 1e-9 >= Self.downswingShiftThresholdMs
 
         switch (backExplains, downExplains) {
         case (true, false):
