@@ -70,7 +70,7 @@ final class AutoReviewAnnotationUITests: XCTestCase {
         app.buttons["Finish drawing lines"].tap()
         app.buttons["Close swing review"].tap()
         XCTAssertTrue(saved.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.autoModeSegment.isSelected)
+        XCTAssertEqual(app.staticTexts["capture-status-title"].label, "Swings save automatically")
     }
 
     func testStarToggledInAutoReviewPersists() {

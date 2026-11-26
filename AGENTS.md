@@ -87,7 +87,7 @@ SwingCoach/
 | Coaching colours and the session review | `SwingCoach/SwingCoachingViews.swift` |
 | Coaching on the Auto camera screen: coach chip, recap, comparison | `SwingCoach/AutoCoachingViews.swift` |
 | Left/right swing paging | `SwingCoach/SwingReviewPager.swift` |
-| Capture tab, manual + Auto | `SwingCoach/CaptureView.swift` |
+| Capture tab: Auto, and Manual when its setting is on | `SwingCoach/CaptureView.swift` |
 | Auto rolling recording buffer | `SwingCoach/Models/AutoRollingVideoBuffer.swift` |
 | Review after Auto capture | `SwingCoach/AutoSwingReviewView.swift` |
 | Trim | `SwingCoach/TrimView/TrimView.swift`, `TrimReviewView.swift` |
@@ -133,7 +133,7 @@ The shell is zsh on macOS: quote globs in flags (`grep -r --include='*.py'`), an
 
 - On-device coaching: metrics, drawings, per-swing verdicts, recaps on the Auto camera screen and a session review for down-the-line swings, checked on a Mac against range sessions. Run on an iPhone 17 with range footage (16 Nov 2026), not yet at the range. Measuring while Auto records is off by default. See [COACHING.md](./docs/COACHING.md).
 - The server-side coaching (a FastAPI backend, the Coach tab, Analyze Swing) was removed in November 2026; it is in the git history. Voice, drills and written explanations are not built.
-- iOS: capture, Auto capture, trim, library and swing detail are implemented. Auto-capture frame cadence is still under investigation; see the [evidence index](./docs/evidence/README.md).
+- iOS: capture, Auto capture, trim, library and swing detail are implemented. Manual capture is behind a setting, off by default. Auto-capture frame cadence is still under investigation; see the [evidence index](./docs/evidence/README.md).
 
 ## Technical Guardrails
 

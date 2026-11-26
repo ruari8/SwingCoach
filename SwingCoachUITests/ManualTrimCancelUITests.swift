@@ -5,7 +5,7 @@ import XCTest
 final class ManualTrimCancelUITests: XCTestCase {
     func testCancelReturnsToManualAndAllowsAnotherRecording() {
         continueAfterFailure = false
-        let app = XCUIApplication.launched(seed: "empty", Fixture.syntheticCamera)
+        let app = XCUIApplication.launched(seed: "empty", Fixture.syntheticCamera + Fixture.manualCapture)
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         for _ in 0..<4 {
             let alert = springboard.alerts.firstMatch

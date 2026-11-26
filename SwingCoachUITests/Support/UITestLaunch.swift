@@ -47,9 +47,10 @@ extension XCUIApplication {
         XCTFail("The player's tools never settled", file: file, line: line)
     }
 
-    /// Capture's Auto segment.
-    var autoModeSegment: XCUIElement {
-        segmentedControls.buttons["Auto"]
+    /// Capture's frame-rate chip: on screen whenever Capture is idle, with
+    /// or without the Manual mode switch.
+    var captureFrameRate: XCUIElement {
+        buttons["capture-frame-rate"]
     }
 
     /// Relaunches without reseeding, so the data the test built persists.
@@ -77,4 +78,6 @@ func pageIndex(fromCounter counter: String, total: Int) -> Int {
 
 enum Fixture {
     static let syntheticCamera = ["-ui-testing-camera", "synthetic"]
+    /// Turns on Settings > Show Manual mode (off by default) and saves it.
+    static let manualCapture = ["-ui-testing-manual-capture"]
 }

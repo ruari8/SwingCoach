@@ -13,6 +13,8 @@ import Foundation
 ///   shows the Library's reference swings as its session (see `CameraSession`).
 /// - `-ui-testing-camera audio` keeps the real preview setup with camera access
 ///   granted and shows the shared audio policy as `capture-audio-verification`.
+/// - `-ui-testing-manual-capture` turns on Settings > Show Manual mode, which
+///   is off by default. It is saved, so it survives a relaunch without a seed.
 /// - `-ui-testing-detections 2,150,300` makes each Manual recording report a
 ///   1-second swing at each start time, in seconds.
 /// - `-ui-testing-recording-seconds N` sets the synthetic recording length.
@@ -77,6 +79,7 @@ nonisolated enum UITestFixture {
     static let detectionStarts = value(after: "-ui-testing-detections")?
         .split(separator: ",").compactMap { Double($0) } ?? []
     static let recordedFrameRate = value(after: "-ui-testing-frame-rate").flatMap(Int.init)
+    private static let showsManualMode = arguments.contains("-ui-testing-manual-capture")
     static let exportsAutoClip = arguments.contains("-ui-testing-auto-export")
     static let detectorState = value(after: "-ui-testing-detector")
     static let showsAutoError = arguments.contains("-ui-testing-auto-error")
@@ -122,6 +125,9 @@ extension UITestFixture {
         if let seed {
             eraseAppData()
             install(seed)
+        }
+        if showsManualMode {
+            UserDefaults.standard.set(true, forKey: ExperimentalSettingKey.manualCaptureEnabled)
         }
         if camera == .synthetic {
             // Write the recording now so stopping a recording does not wait for it.

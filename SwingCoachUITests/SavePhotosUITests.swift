@@ -11,7 +11,7 @@ final class SavePhotosUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
     func testOffPersistsAndSavesManualTrimAndAutoLocally() {
-        let app = XCUIApplication.launched(seed: "empty", Fixture.syntheticCamera)
+        let app = XCUIApplication.launched(seed: "empty", Fixture.syntheticCamera + Fixture.manualCapture)
         openSettings(app)
         let toggle = app.switches["save-to-photos"]
         XCTAssertEqual(toggle.value as? String, "1", "New installs retain existing ON behavior")
@@ -55,7 +55,7 @@ final class SavePhotosUITests: XCTestCase {
 
     func testOnCreatesPhotosCopiesForManualTrimAndAuto() {
         allowPhotosAccessWhenAsked()
-        let app = XCUIApplication.launched(seed: "empty", Fixture.syntheticCamera)
+        let app = XCUIApplication.launched(seed: "empty", Fixture.syntheticCamera + Fixture.manualCapture)
         openSettings(app)
         let toggle = app.switches["save-to-photos"]
         XCTAssertEqual(toggle.value as? String, "1", "New installs save to Photos")
