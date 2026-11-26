@@ -284,7 +284,7 @@ A club reading from down the line is a picture of a 3D direction, and it changes
 | Camera against the hands | 16 to 26% above | 12 to 37% above | 7 to 19% above | 10 to 23% below, then 3% below to 7% above |
 
 - On 23 October the camera was a hand's width over the limit all session. On 6 November it passed for six swings in a row and was higher before and after. On 15 November it was 20% low for the first 13 swings and at hand height for the other 39: the point where the club readings flipped from in zone to well out.
-- The height reading holds to a percent or two from swing to swing. The line reading spreads 5 to 15%, and every camera read within about 15% of the hand line, so height did the deciding. The unsure swings are short-club swings, where the feet are closest together in the picture.
+- The height reading holds to a percent or two from swing to swing. The line reading spreads 5 to 15%, and every camera read within about 15% of the hand line, so height did the deciding. The unsure swings are mostly short-club swings, where the feet are closest together in the picture; a few had no confident shaft at address.
 
 **The swings that pass agree with each other; the ones held are the ones that drifted.** Medians over the judged swings, long club (address posture under 26°) and short:
 
